@@ -9,8 +9,8 @@ import type { ParsedConfig, RouteInput } from "./schema.js";
 export interface ConfigOverrides {
   production?: string;
   staging?: string;
-  /** `--route` values: replace the configured routes for this run. */
-  routes?: string[];
+  /** `--route` values (or routes from positional URLs): replace the configured routes. */
+  routes?: RouteInput[];
   /** `--only` globs: filter the route list. */
   only?: string[];
   /** `--viewport` names: run only these viewports. */
@@ -70,13 +70,13 @@ export function resolveConfig(
   let routes = config.routes;
   if (overrides.routes && overrides.routes.length > 0) {
     for (const route of overrides.routes) {
-      if (!route.startsWith("/")) {
+      if (typeof route === "string" && !route.startsWith("/")) {
         throw new ConfigError(`--route "${route}" must be a path starting with "/"`, {
           hint: "Use --staging/--production to change the site, and --route for the page.",
         });
       }
     }
-    routes = overrides.routes satisfies RouteInput[];
+    routes = overrides.routes;
   }
 
   let viewports = config.viewports;

@@ -43,6 +43,8 @@ export interface HealthSignals {
 }
 
 export interface CaptureResult {
+  /** "baseline" when the image came from a stored snapshot instead of a live capture. */
+  source?: "live" | "baseline";
   /** Path relative to the run directory. */
   image: string;
   /** DOM snapshot path relative to the run directory, when captured. */
@@ -138,6 +140,14 @@ export interface Analysis {
   cached: boolean;
 }
 
+export type FindingSeverity = "regression" | "review" | "info";
+
+export interface Finding {
+  severity: FindingSeverity;
+  message: string;
+  source: "health" | "heuristic" | "baseline";
+}
+
 export interface JobResult {
   id: string;
   route: string;
@@ -148,8 +158,8 @@ export interface JobResult {
   captures: Partial<Record<Env, CaptureResult>>;
   diff?: DiffResult;
   regions: RegionResult[];
-  /** Plain-language findings from heuristics (no AI). */
-  findings?: string[];
+  /** Plain-language findings from health checks and heuristics (no AI). */
+  findings?: Finding[];
   analysis?: Analysis;
   acceptedBy?: { hash: string; at: string; note?: string };
   error?: { stage: "capture" | "diff" | "mapping" | "ai"; message: string };

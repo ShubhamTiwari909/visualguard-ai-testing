@@ -175,6 +175,20 @@ export const configSchema = z.object({
     })
     .prefault({}),
 
+  ai: z
+    .object({
+      provider: z.enum(["gemini", "ollama", "none"]).default("none"),
+      /** Model id; defaults per provider. */
+      model: z.string().min(1).optional(),
+      /** Upper bound on AI calls per run; remaining jobs fall back to heuristics. */
+      maxCallsPerRun: z.number().int().min(0).default(30),
+      concurrency: z.number().int().min(1).max(8).default(2),
+      /** "noise" results at or above this confidence become `pass`. */
+      noiseConfidence: z.number().min(0).max(1).default(0.8),
+      maxRegionsPerJob: z.number().int().min(1).max(10).default(3),
+    })
+    .prefault({}),
+
   output: z
     .object({
       dir: z.string().default(".visualguard"),

@@ -49,7 +49,10 @@ export function jobDetail(job: JobResult): string {
   if (job.error) return `${job.error.stage} failed: ${job.error.message.split("\n")[0]}`;
   if (job.status === "accepted") return "matches an accepted change";
   if (job.analysis) return job.analysis.title;
-  if (job.findings && job.findings.length > 0) return job.findings[0]!;
+  const finding =
+    job.findings?.find((item) => item.severity === job.status) ??
+    job.findings?.find((item) => item.severity !== "info");
+  if (finding) return finding.message;
   if (!job.diff || job.diff.diffPixels === 0) return "";
   const percent = job.diff.diffRatio * 100;
   const share = percent < 0.01 ? "<0.01%" : `${percent.toFixed(2)}%`;
@@ -88,8 +91,12 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
             write(colors.cyan("╰──────────────────────────────────────────╯"));
           }
           write();
-          write(`  ${colors.dim("production")}  ${event.baseURL.production ?? "-"}`);
-          write(`  ${colors.dim("staging   ")}  ${event.baseURL.staging ?? "-"}`);
+          if (event.baseURL.production) {
+            write(`  ${colors.dim("production")}  ${event.baseURL.production}`);
+            write(`  ${colors.dim("staging   ")}  ${event.baseURL.staging ?? "-"}`);
+          } else {
+            write(`  ${colors.dim("site      ")}  ${event.baseURL.staging ?? "-"}`);
+          }
           write(`  ${colors.dim("viewports ")}  ${viewports}`);
           write();
           for (const warning of event.warnings) write(colors.yellow(`  ⚠ ${warning}`));

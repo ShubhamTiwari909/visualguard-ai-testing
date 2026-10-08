@@ -54,8 +54,11 @@ export interface JobPlan {
 }
 
 /** Resolves routes (including discovery) and builds the job list. */
-export async function planJobs(config: ResolvedConfig): Promise<JobPlan> {
-  const resolved = await resolveRoutes(config);
+export async function planJobs(
+  config: ResolvedConfig,
+  options: { discoveryLimit?: number } = {},
+): Promise<JobPlan> {
+  const resolved = await resolveRoutes(config, options);
   const routes =
     config.only.length > 0
       ? resolved.routes.filter((route) => matchesAny(route.route, config.only))

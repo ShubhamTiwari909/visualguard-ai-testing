@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { join, relative } from "node:path";
 import pLimit from "p-limit";
@@ -7,7 +7,9 @@ import { launchBrowser, playwrightVersion } from "../capture/browser.js";
 import { capturePage } from "../capture/capture.js";
 import type { ResolvedConfig } from "../config/resolve.js";
 import { createDiffRunner, type DiffRunner } from "../diff/runner.js";
+import { pngSize } from "./util.js";
 import { ConfigError, errorMessage } from "./errors.js";
+import { applyFindings, healthFindings } from "./findings.js";
 import { RunEmitter, type RunEvent } from "./events.js";
 import { planJobs } from "./jobs.js";
 import { checkReachable } from "./reachability.js";
@@ -16,6 +18,7 @@ import { summarize } from "./status.js";
 import {
   ENVS,
   type CaptureResult,
+  type Env,
   type FailOn,
   type JobResult,
   type JobSpec,
@@ -36,6 +39,17 @@ export interface Reporter {
 }
 
 export interface RunOptions {
+  /**
+   * "compare" captures production and staging live. "baseline" and "scan" capture staging live
+   * and compare it with a stored snapshot from `baselineDir` (PLAN.md §14.2).
+   */
+  mode?: RunManifest["mode"];
+  /** Snapshot directory for baseline and scan modes. */
+  baselineDir?: string;
+  /** Overwrite the stored snapshots with this run's captures. */
+  updateBaselines?: boolean;
+  /** Route limit when routes are discovered. */
+  discoveryLimit?: number;
   failOn?: FailOn;
   /** Record a Playwright trace for every capture. */
   debug?: boolean;
@@ -73,7 +87,12 @@ export class Run extends RunEmitter {
     const { config } = this;
     const failOn = this.options.failOn ?? "regression";
 
-    const plan = await planJobs(config);
+    const mode = this.options.mode ?? "compare";
+    if (mode !== "compare" && !this.options.baselineDir) {
+      throw new ConfigError(`${mode} mode needs a baseline directory`);
+    }
+    const liveEnvs: readonly Env[] = mode === "compare" ? ENVS : ["staging"];
+    const plan = await planJobs(config, { discoveryLimit: this.options.discoveryLimit });
     const { jobs } = plan;
     if (jobs.length === 0) {
       throw new ConfigError("No routes to test", {
@@ -84,7 +103,7 @@ export class Run extends RunEmitter {
 
     if (!this.options.skipReachabilityCheck && !config.browser.ignoreHTTPSErrors) {
       await Promise.all(
-        ENVS.map((env) =>
+        liveEnvs.map((env) =>
           checkReachable(
             env,
             config.baseURL[env]!,
@@ -101,7 +120,7 @@ export class Run extends RunEmitter {
       number: run.number,
       runDir: run.dir,
       jobs,
-      baseURL: config.baseURL,
+      baseURL: mode === "compare" ? config.baseURL : { staging: config.baseURL.staging },
       viewports: config.viewports,
       routeCount: plan.routes.length,
       warnings: plan.warnings,
@@ -114,7 +133,7 @@ export class Run extends RunEmitter {
     try {
       const limit = pLimit(config.concurrency);
       results = await Promise.all(
-        jobs.map((job) => limit(() => this.runJob(job, run.dir, browser, diffRunner))),
+        jobs.map((job) => limit(() => this.runJob(job, run.dir, browser, diffRunner, liveEnvs))),
       );
     } finally {
       await browser.close().catch(() => {});
@@ -127,7 +146,7 @@ export class Run extends RunEmitter {
       number: run.number,
       startedAt: run.startedAt.toISOString(),
       durationMs: Date.now() - run.startedAt.getTime(),
-      mode: "compare",
+      mode,
       tool: {
         version: VERSION,
         playwright: playwrightVersion(),
@@ -135,7 +154,7 @@ export class Run extends RunEmitter {
         browser: `${config.browser.name} ${browser.version()}`,
       },
       config: {
-        baseURL: config.baseURL,
+        baseURL: mode === "compare" ? config.baseURL : { staging: config.baseURL.staging },
         viewports: Object.fromEntries(
           Object.entries(config.viewports).map(([name, vp]) => [
             name,
@@ -163,6 +182,7 @@ export class Run extends RunEmitter {
     runDir: string,
     browser: Browser,
     diffRunner: DiffRunner,
+    liveEnvs: readonly Env[],
   ): Promise<JobResult> {
     const started = Date.now();
     this.emitAll({ type: "job:start", job });
@@ -188,7 +208,7 @@ export class Run extends RunEmitter {
     };
 
     // Capture production then staging back to back to keep time skew small.
-    for (const env of ENVS) {
+    for (const env of liveEnvs) {
       try {
         const outcome = await capturePage({
           browser,
@@ -200,6 +220,7 @@ export class Run extends RunEmitter {
         const imagePath = join(jobDir, `${env}.png`);
         writeFileSync(imagePath, outcome.png);
         const capture: CaptureResult = {
+          source: "live",
           image: rel(imagePath),
           size: outcome.size,
           truncated: outcome.truncated || undefined,
@@ -214,6 +235,37 @@ export class Run extends RunEmitter {
         result.error = { stage: "capture", message: `${env}: ${errorMessage(error)}` };
         return finish();
       }
+    }
+
+    const baselinePath = this.options.baselineDir
+      ? join(this.options.baselineDir, `${job.id}.png`)
+      : undefined;
+    if (!liveEnvs.includes("production")) {
+      if (baselinePath && existsSync(baselinePath)) {
+        result.captures.production = this.loadBaseline(baselinePath, jobDir, rel);
+      }
+      if (this.options.updateBaselines && baselinePath) {
+        this.saveBaseline(
+          baselinePath,
+          join(runDir, result.captures.staging!.image),
+          result.captures.staging!,
+        );
+      }
+    }
+
+    const findings = healthFindings(result.captures);
+    if (!result.captures.production) {
+      // Nothing to compare against yet: the status comes from health checks alone.
+      findings.push({
+        severity: "info",
+        message: this.options.updateBaselines
+          ? "No previous snapshot; saved this capture"
+          : "No baseline snapshot",
+        source: "baseline",
+      });
+      result.findings = findings;
+      result.status = applyFindings("pass", findings);
+      return finish();
     }
 
     try {
@@ -243,11 +295,42 @@ export class Run extends RunEmitter {
         elements: [],
         deltas: [],
       }));
-      result.status = diff.passed ? "pass" : "review";
+      result.findings = findings.length > 0 ? findings : undefined;
+      result.status = applyFindings(diff.passed ? "pass" : "review", findings);
     } catch (error) {
       result.error = { stage: "diff", message: errorMessage(error) };
     }
     return finish();
+  }
+
+  /** Copies a stored snapshot into the job directory as the "production" side. */
+  private loadBaseline(
+    baselinePath: string,
+    jobDir: string,
+    rel: (path: string) => string,
+  ): CaptureResult {
+    const target = join(jobDir, "production.png");
+    copyFileSync(baselinePath, target);
+    const healthPath = baselinePath.replace(/\.png$/, ".health.json");
+    return {
+      source: "baseline",
+      image: rel(target),
+      size: pngSize(readFileSync(target)),
+      durationMs: 0,
+      attempts: 0,
+      health: existsSync(healthPath)
+        ? (JSON.parse(readFileSync(healthPath, "utf8")) as CaptureResult["health"])
+        : { consoleErrors: [], failedRequests: [], brokenImages: [] },
+    };
+  }
+
+  private saveBaseline(baselinePath: string, imagePath: string, capture: CaptureResult): void {
+    mkdirSync(join(baselinePath, ".."), { recursive: true });
+    copyFileSync(imagePath, baselinePath);
+    writeFileSync(
+      baselinePath.replace(/\.png$/, ".health.json"),
+      `${JSON.stringify(capture.health, null, 2)}\n`,
+    );
   }
 }
 
