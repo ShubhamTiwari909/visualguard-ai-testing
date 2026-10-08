@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{{origin}}/</loc></url>
+  <url><loc>{{origin}}/identical</loc></url>
+  <url><loc>{{origin}}/animated</loc></url>
+  <url><loc>{{origin}}/dynamic</loc></url>
+  <url><loc>{{origin}}/text-change</loc></url>
+  <url><loc>{{origin}}/color-change</loc></url>
+  <url><loc>{{origin}}/alignment</loc></url>
+  <url><loc>{{origin}}/spacing</loc></url>
+  <url><loc>{{origin}}/layout-shift</loc></url>
+  <url><loc>{{origin}}/missing-image</loc></url>
+  <url><loc>{{origin}}/overflow</loc></url>
+  <url><loc>{{origin}}/overlap</loc></url>
+  <url><loc>{{origin}}/hidden</loc></url>
+  <url><loc>{{origin}}/pricing</loc></url>
+</urlset>

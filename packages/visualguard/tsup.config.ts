@@ -9,6 +9,7 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     cli: "src/cli/main.ts",
+    "diff-worker": "src/diff/worker.ts",
   },
   format: ["esm"],
   target: "node22",
@@ -17,6 +18,8 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   splitting: true,
+  // Playwright is an optional peer dependency, loaded lazily at runtime.
+  external: ["playwright"],
   define: {
     __VISUALGUARD_VERSION__: JSON.stringify(pkg.version),
   },
