@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# VisualGuard output
+.visualguard/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Next.js examples
+.next/
+next-env.d.ts

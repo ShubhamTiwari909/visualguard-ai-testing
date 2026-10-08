@@ -1,0 +1,6 @@
+dist
+coverage
+pnpm-lock.yaml
+PLAN.md
+.changeset/*.md
+fixtures/site
