@@ -16,7 +16,10 @@ export default defineConfig({
     // Next.js dev mode shows an indicator in the corner.
     hide: ["nextjs-portal"],
   },
-  ai: { provider: "none" },
+  ai: {
+    provider: "gemini",
+    model: "gemini-flash-latest",
+  },
   fix: {
     enabled: true,
     include: ["app/**", "components/**"],

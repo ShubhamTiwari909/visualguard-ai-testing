@@ -1,6 +1,6 @@
 {
   "name": "visualguard",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "description": "AI visual regression agent: compare production and staging, explain every visual difference, and fix regressions.",
   "keywords": [
     "visual regression",
@@ -21,11 +21,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./playwright": {
       "types": "./dist/playwright.d.ts",
-      "import": "./dist/playwright.js"
+      "import": "./dist/playwright.js",
+      "default": "./dist/playwright.js"
     },
     "./package.json": "./package.json"
   },

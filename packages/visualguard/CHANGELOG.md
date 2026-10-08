@@ -1,5 +1,11 @@
 # visualguard
 
+## 1.0.0
+
+### Major Changes
+
+- First release
+
 ## 0.7.0
 
 ### Minor Changes

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "accepted": [
+    {
+      "job": "checkout__desktop",
+      "route": "/checkout",
+      "viewport": "desktop",
+      "hash": "d996e35a1443b8fe295689c4152dbaaebbe1145e05cf8946d33b3baa5b1f2d2f",
+      "acceptedAt": "2026-10-08T11:19:44.454Z",
+      "run": "0011_2026-10-08T11-17-57Z"
+    }
+  ]
+}
