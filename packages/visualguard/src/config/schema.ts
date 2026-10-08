@@ -85,6 +85,18 @@ const hookSchema = z.custom<CaptureHook>((value) => typeof value === "function",
  * Nested objects use `.prefault({})` so their own defaults are applied (zod 4 semantics).
  */
 export const configSchema = z.object({
+  /**
+   * "compare": production vs staging, both live. "baseline": the site (baseURL.staging) vs
+   * screenshots committed in `baseline.dir` (PLAN.md §14.2).
+   */
+  mode: z.enum(["compare", "baseline"]).default("compare"),
+  baseline: z
+    .object({
+      /** Commit this directory (Git LFS works well for the images). */
+      dir: z.string().default("visualguard/baselines"),
+    })
+    .prefault({}),
+
   baseURL: z
     .object({
       production: urlSchema.optional(),

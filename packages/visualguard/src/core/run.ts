@@ -314,7 +314,7 @@ export class Run extends RunEmitter {
         severity: "info",
         message: this.options.updateBaselines
           ? "No previous snapshot; saved this capture"
-          : "No baseline snapshot",
+          : "No baseline yet; run with --update-baselines to save one",
         source: "baseline",
       });
       result.findings = findings;

@@ -15,6 +15,8 @@ export interface ReportServerOptions {
   host?: string;
   /** Mutating endpoints, e.g. { "accept": handler } → POST /api/accept. */
   api?: Record<string, ApiHandler>;
+  /** Show "Generate fix" in the page (fix.enabled). */
+  fixEnabled?: boolean;
 }
 
 export interface ReportServer {
@@ -70,7 +72,9 @@ export async function startReportServer(options: ReportServerOptions): Promise<R
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
       try {
-        const html = renderReportHTML(readManifest(options.runDir), { server: { token } });
+        const html = renderReportHTML(readManifest(options.runDir), {
+          server: { token, fixEnabled: options.fixEnabled },
+        });
         response.writeHead(200, {
           "content-type": "text/html; charset=utf-8",
           "cache-control": "no-store",

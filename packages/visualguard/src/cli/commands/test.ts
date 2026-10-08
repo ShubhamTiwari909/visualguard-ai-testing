@@ -1,4 +1,6 @@
+import { resolve } from "node:path";
 import { Option, type Command } from "commander";
+import { ConfigError } from "../../core/errors.js";
 import pc from "picocolors";
 import type { ResolvedConfig } from "../../config/resolve.js";
 import { planJobs } from "../../core/jobs.js";
@@ -25,6 +27,8 @@ export interface TestFlags extends ConfigFlags {
   junit?: string;
   debug?: boolean;
   list?: boolean;
+  /** Baseline mode: save this run's screenshots as the new baselines. */
+  updateBaselines?: boolean;
 }
 
 export function addConfigOptions(command: Command): Command {
@@ -57,6 +61,7 @@ export function registerTestCommand(program: Command): void {
     .option("--junit <path>", "write a JUnit XML report")
     .option("--debug", "save Playwright traces")
     .option("--list", "print the resolved URL pairs and exit without capturing")
+    .option("--update-baselines", "baseline mode: save this run's screenshots as the baselines")
     .action(async (flags: TestFlags) => {
       process.exitCode = await runTestCommand(flags);
     });
@@ -67,7 +72,20 @@ export async function runTestCommand(
   reporters: Reporter[] = [],
 ): Promise<number> {
   const config = await loadResolvedConfig(flags);
-  requireCompareURLs(config);
+  const baseline = config.mode === "baseline";
+  if (baseline) {
+    if (!config.baseURL.staging) {
+      throw new ConfigError(
+        "Baseline mode needs the site's URL in baseURL.staging (or --staging).",
+      );
+    }
+    // Only the site is captured; production paths come from the same URL.
+    config.baseURL.production ??= config.baseURL.staging;
+  } else {
+    if (flags.updateBaselines)
+      throw new ConfigError('--update-baselines only applies when mode is "baseline".');
+    requireCompareURLs(config);
+  }
 
   if (flags.list) {
     await printJobList(config);
@@ -77,6 +95,13 @@ export async function runTestCommand(
   const allReporters: Reporter[] = [...standardReporters(config, flags), ...reporters];
 
   const { manifest } = await createRun(config, {
+    ...(baseline
+      ? {
+          mode: "baseline" as const,
+          baselineDir: resolve(config.cwd, config.baseline.dir),
+          updateBaselines: flags.updateBaselines,
+        }
+      : {}),
     failOn: flags.failOn,
     debug: flags.debug,
     ai: flags.ai === false ? false : undefined,

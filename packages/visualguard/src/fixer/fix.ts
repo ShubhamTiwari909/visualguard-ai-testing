@@ -8,10 +8,10 @@ import { ConfigError, errorMessage } from "../core/errors.js";
 import { findRun, readManifest } from "../core/runs.js";
 import type { JobResult } from "../core/types.js";
 import { applyEdits, renderDiff, revertEdits, validateEdits, type Edit } from "./edits.js";
-import { listSourceFiles } from "./files.js";
+import { listSourceFiles, type SourceFile } from "./files.js";
 import { changedSince, dirtyFiles, gitRoot } from "./git.js";
 import { heuristicEdits } from "./heuristic-edits.js";
-import { collectClues, excerpt, locateSource, type Candidate } from "./locate.js";
+import { collectClues, excerpt, locateSource, type Candidate, type Clues } from "./locate.js";
 import { DevServer, runCommands, verifyAgainstProduction } from "./verify.js";
 
 export interface Proposal {
@@ -57,11 +57,13 @@ export interface FixOptions {
   callbacks: FixCallbacks;
   /** Project directory to edit; defaults to config.cwd (a worktree in --auto mode). */
   workdir?: string;
+  /** In a worktree, the dev server must be started here, not reused from the main checkout. */
+  freshServer?: boolean;
 }
 
 const consentPath = (config: ResolvedConfig) => join(config.outputDir, "consent.json");
 
-function hasConsent(config: ResolvedConfig, provider: AIProvider): boolean {
+export function hasConsent(config: ResolvedConfig, provider: AIProvider): boolean {
   if (config.fix.allowSourceUpload) return true;
   if (!existsSync(consentPath(config))) return false;
   try {
@@ -74,14 +76,15 @@ function hasConsent(config: ResolvedConfig, provider: AIProvider): boolean {
   }
 }
 
-function recordConsent(config: ResolvedConfig, provider: AIProvider): void {
+export function recordConsent(config: ResolvedConfig, provider: AIProvider): void {
   const path = consentPath(config);
   const providers = new Set<string>([provider.name]);
   if (existsSync(path)) {
     try {
       for (const name of (JSON.parse(readFileSync(path, "utf8")) as { providers?: string[] })
-        .providers ?? [])
+        .providers ?? []) {
         providers.add(name);
+      }
     } catch {
       // Rewrite a broken file.
     }
@@ -108,6 +111,211 @@ export function selectFixableJobs(
   );
 }
 
+export function assertCanFix(config: ResolvedConfig, workdir: string, allowDirty = false): void {
+  if (!config.fix.enabled) {
+    throw new ConfigError("Fixing is turned off.", {
+      hint: "Set fix: { enabled: true } in visualguard.config.ts. Fixes are applied only after you confirm them.",
+    });
+  }
+  if (!gitRoot(workdir)) {
+    throw new ConfigError(
+      "`visualguard fix` needs a git repository, so every change can be reviewed and undone.",
+    );
+  }
+  const dirty = dirtyFiles(workdir);
+  if (dirty.length > 0 && !allowDirty) {
+    throw new ConfigError(
+      `The working tree has uncommitted changes (${dirty.slice(0, 3).join(", ")}${dirty.length > 3 ? ", …" : ""}).`,
+      { hint: "Commit or stash them first, or pass --allow-dirty." },
+    );
+  }
+}
+
+/** Everything the fixer knows about one job's source. */
+export interface FixWorkspace {
+  job: JobResult;
+  workdir: string;
+  runDir: string;
+  files: SourceFile[];
+  clues: Clues;
+  candidates: Candidate[];
+}
+
+export function prepareWorkspace(
+  config: ResolvedConfig,
+  job: JobResult,
+  options: { workdir: string; runDir: string; changed?: Set<string> },
+): FixWorkspace {
+  const files = listSourceFiles(options.workdir, config.fix.include);
+  const clues = collectClues(job, options.runDir);
+  const candidates = locateSource({
+    job,
+    clues,
+    files,
+    cwd: options.workdir,
+    changed: options.changed,
+  });
+  return { job, workdir: options.workdir, runDir: options.runDir, files, clues, candidates };
+}
+
+export type ProposeResult =
+  | { kind: "proposal"; proposal: Proposal }
+  | { kind: "invalid"; edits: Edit[]; problems: string[] }
+  | { kind: "stop"; result: FixResult; message: string };
+
+/**
+ * One proposal: the deterministic patch when allowed and possible, otherwise the AI's. Edits are
+ * validated against the files before they are returned.
+ */
+export async function proposeEdits(
+  config: ResolvedConfig,
+  workspace: FixWorkspace,
+  options: {
+    attempt: number;
+    useHeuristic: boolean;
+    provider?: AIProvider;
+    consent: (files: string[], provider: AIProvider) => Promise<boolean>;
+    progress?: (message: string) => void;
+    feedback?: string;
+    previous?: Edit[];
+  },
+): Promise<ProposeResult> {
+  const { job, workdir, candidates } = workspace;
+  const make = (edits: Edit[], source: Proposal["source"], summary: string): ProposeResult => ({
+    kind: "proposal",
+    proposal: {
+      job,
+      edits,
+      diff: renderDiff(workdir, edits),
+      source,
+      summary,
+      attempt: options.attempt,
+      candidates,
+    },
+  });
+
+  if (options.useHeuristic) {
+    const candidateFiles = workspace.files.filter((file) =>
+      candidates.some((candidate) => candidate.path === file.path),
+    );
+    const edits = heuristicEdits(workspace.clues, candidateFiles);
+    if (edits.length > 0 && validateEdits(workdir, edits, config.fix.include).length === 0) {
+      return make(edits, "heuristic", edits.map((edit) => edit.reason).join("; "));
+    }
+  }
+
+  const provider = options.provider;
+  if (!provider) {
+    return {
+      kind: "stop",
+      result: "skipped",
+      message: "No deterministic fix found, and no AI provider is configured to propose one.",
+    };
+  }
+  if (!hasConsent(config, provider)) {
+    const ok = await options.consent(
+      candidates.map((candidate) => candidate.path),
+      provider,
+    );
+    if (!ok)
+      return {
+        kind: "stop",
+        result: "skipped",
+        message: "Not sending source code to the AI provider.",
+      };
+    recordConsent(config, provider);
+  }
+  try {
+    options.progress?.(
+      `Asking ${provider.name} for a patch${options.attempt > 1 ? ` (attempt ${options.attempt})` : ""}`,
+    );
+    const patch = await generatePatch(provider, {
+      job,
+      runDir: workspace.runDir,
+      files: candidates.map((candidate) => ({
+        path: candidate.path,
+        reasons: candidate.reasons,
+        excerpt: excerpt(
+          workspace.files.find((file) => file.path === candidate.path)!.content,
+          candidate.lines,
+        ),
+      })),
+      feedback: options.feedback,
+      previous: options.previous,
+    });
+    const problems = validateEdits(workdir, patch.edits, config.fix.include);
+    if (problems.length > 0) return { kind: "invalid", edits: patch.edits, problems };
+    return make(patch.edits, "ai", patch.summary);
+  } catch (error) {
+    return { kind: "stop", result: "failed", message: `AI patch failed: ${errorMessage(error)}` };
+  }
+}
+
+export type VerifyResult =
+  | { kind: "done"; result: "fixed" | "unverified"; message: string }
+  | { kind: "retry"; feedback: string }
+  | { kind: "failed"; message: string };
+
+/**
+ * Applies edits, runs the verify commands, then re-captures the page on the dev server and
+ * compares it with production. Anything short of a match reverts the edits.
+ */
+export async function applyAndVerify(
+  config: ResolvedConfig,
+  job: JobResult,
+  workdir: string,
+  edits: Edit[],
+  options: { server?: DevServer; progress?: (message: string) => void },
+): Promise<VerifyResult> {
+  const progress = options.progress ?? (() => {});
+  const originals = applyEdits(workdir, edits);
+  progress(`Applied ${edits.length} edit${edits.length === 1 ? "" : "s"}`);
+
+  const commands = await runCommands(
+    config.fix.verify.commands,
+    workdir,
+    config.fix.verify.commandTimeoutMs,
+  );
+  for (const result of commands) progress(`${result.ok ? "✓" : "✖"} ${result.command}`);
+  const failedCommand = commands.find((result) => !result.ok);
+  if (failedCommand) {
+    revertEdits(workdir, originals);
+    return {
+      kind: "retry",
+      feedback: `\`${failedCommand.command}\` failed after the edit:\n${failedCommand.output}`,
+    };
+  }
+
+  if (!options.server) {
+    return {
+      kind: "done",
+      result: "unverified",
+      message: "Applied but not verified: set fix.verify.server to check it visually.",
+    };
+  }
+  try {
+    await options.server.ensure();
+    progress(`Re-capturing ${job.route} on ${options.server.url}`);
+    const verification = await verifyAgainstProduction(config, job, options.server.url);
+    if (verification.resolved) {
+      const pixels = verification.job.diff?.diffPixels ?? 0;
+      return {
+        kind: "done",
+        result: "fixed",
+        message: `${job.route} now matches production (${pixels} differing pixel${pixels === 1 ? "" : "s"})`,
+      };
+    }
+    revertEdits(workdir, originals);
+    const still = verification.job.findings?.find((item) => item.severity !== "info")?.message;
+    const feedback = `After the edit the page still differs from production (${((verification.job.diff?.diffRatio ?? 0) * 100).toFixed(2)}% of pixels${still ? `; ${still}` : ""}).`;
+    progress(`Still differs; reverted. ${feedback}`);
+    return { kind: "retry", feedback };
+  } catch (error) {
+    revertEdits(workdir, originals);
+    return { kind: "failed", message: `Verification failed: ${errorMessage(error)}` };
+  }
+}
+
 /**
  * The fix loop (PLAN.md §13.2): locate source → propose edits (deterministic first, then AI) →
  * validate → confirm → apply → run commands → re-capture on the local server and compare with
@@ -117,26 +325,8 @@ export async function fixRegressions(
   config: ResolvedConfig,
   options: FixOptions,
 ): Promise<FixOutcome[]> {
-  if (!config.fix.enabled) {
-    throw new ConfigError("Fixing is turned off.", {
-      hint: "Set fix: { enabled: true } in visualguard.config.ts. Fixes are applied only after you confirm them.",
-    });
-  }
   const workdir = options.workdir ?? config.cwd;
-  if (!gitRoot(workdir)) {
-    throw new ConfigError(
-      "`visualguard fix` needs a git repository, so every change can be reviewed and undone.",
-    );
-  }
-  const dirty = dirtyFiles(workdir);
-  if (dirty.length > 0 && !options.allowDirty) {
-    throw new ConfigError(
-      `The working tree has uncommitted changes (${dirty.slice(0, 3).join(", ")}${dirty.length > 3 ? ", …" : ""}).`,
-      {
-        hint: "Commit or stash them first, or pass --allow-dirty.",
-      },
-    );
-  }
+  assertCanFix(config, workdir, options.allowDirty);
 
   const { dir: runDir } = findRun(config.outputDir, options.runId);
   const manifest = readManifest(runDir);
@@ -147,13 +337,19 @@ export async function fixRegressions(
     ? new Set(changedSince(workdir, config.fix.compareRef))
     : undefined;
   const server = config.fix.verify.server
-    ? new DevServer(config.fix.verify.server, workdir)
+    ? new DevServer(config.fix.verify.server, workdir, { requireFresh: options.freshServer })
     : undefined;
   const outcomes: FixOutcome[] = [];
-
   try {
     for (const job of jobs) {
-      outcomes.push(await fixJob(config, job, { ...options, workdir, runDir, changed, server }));
+      outcomes.push(
+        await fixJob(
+          config,
+          prepareWorkspace(config, job, { workdir, runDir, changed }),
+          options,
+          server,
+        ),
+      );
     }
   } finally {
     await server?.stop();
@@ -163,19 +359,13 @@ export async function fixRegressions(
 
 async function fixJob(
   config: ResolvedConfig,
-  job: JobResult,
-  context: FixOptions & {
-    workdir: string;
-    runDir: string;
-    changed?: Set<string>;
-    server?: DevServer;
-  },
+  workspace: FixWorkspace,
+  options: FixOptions,
+  server: DevServer | undefined,
 ): Promise<FixOutcome> {
-  const { callbacks, workdir } = context;
-  const files = listSourceFiles(workdir, config.fix.include);
-  const clues = collectClues(job, context.runDir);
-  const candidates = locateSource({ job, clues, files, cwd: workdir, changed: context.changed });
-  if (candidates.length === 0) {
+  const { job } = workspace;
+  const progress = (message: string) => options.callbacks.progress(job, message);
+  if (workspace.candidates.length === 0) {
     return {
       job,
       result: "skipped",
@@ -184,170 +374,80 @@ async function fixJob(
       attempts: 0,
     };
   }
-  callbacks.progress(
-    job,
-    `Likely source: ${candidates
+  progress(
+    `Likely source: ${workspace.candidates
       .slice(0, 3)
       .map((candidate) => candidate.path)
       .join(", ")}`,
   );
 
-  const candidateFiles = files.filter((file) =>
-    candidates.some((candidate) => candidate.path === file.path),
-  );
   let feedback: string | undefined;
   let previous: Edit[] | undefined;
-  let triedHeuristic = false;
-
   for (let attempt = 1; attempt <= config.fix.maxAttempts; attempt++) {
-    let edits: Edit[] = [];
-    let source: Proposal["source"] = "heuristic";
-    let summary = "";
-
-    if (!triedHeuristic) {
-      triedHeuristic = true;
-      edits = heuristicEdits(clues, candidateFiles);
-      summary = edits.map((edit) => edit.reason).join("; ");
-      if (edits.length > 0 && validateEdits(workdir, edits, config.fix.include).length > 0)
-        edits = [];
-    }
-    if (edits.length === 0) {
-      if (!context.provider) {
-        return {
-          job,
-          result: "skipped",
-          message: "No deterministic fix found, and no AI provider is configured to propose one.",
-          edits: [],
-          attempts: attempt - 1,
-        };
-      }
-      if (!hasConsent(config, context.provider)) {
-        const ok = await callbacks.consent(
-          candidates.map((candidate) => candidate.path),
-          context.provider,
-        );
-        if (!ok)
-          return {
-            job,
-            result: "skipped",
-            message: "Not sending source code to the AI provider.",
-            edits: [],
-            attempts: attempt - 1,
-          };
-        recordConsent(config, context.provider);
-      }
-      source = "ai";
-      try {
-        callbacks.progress(
-          job,
-          `Asking ${context.provider.name} for a patch${attempt > 1 ? ` (attempt ${attempt})` : ""}`,
-        );
-        const patch = await generatePatch(context.provider, {
-          job,
-          runDir: context.runDir,
-          files: candidates.map((candidate) => ({
-            path: candidate.path,
-            reasons: candidate.reasons,
-            excerpt: excerpt(
-              files.find((file) => file.path === candidate.path)!.content,
-              candidate.lines,
-            ),
-          })),
-          feedback,
-          previous,
-        });
-        edits = patch.edits;
-        summary = patch.summary;
-      } catch (error) {
-        return {
-          job,
-          result: "failed",
-          message: `AI patch failed: ${errorMessage(error)}`,
-          edits: [],
-          attempts: attempt,
-        };
-      }
-      const problems = validateEdits(workdir, edits, config.fix.include);
-      if (problems.length > 0) {
-        feedback = problems.join(" ");
-        previous = edits;
-        callbacks.progress(job, `Proposed edits were invalid: ${feedback}`);
-        continue;
-      }
-    }
-
-    const proposal: Proposal = {
-      job,
-      edits,
-      diff: renderDiff(workdir, edits),
-      source,
-      summary,
+    const proposed = await proposeEdits(config, workspace, {
       attempt,
-      candidates,
-    };
-    if (config.fix.requireConfirmation && !context.yes && !(await callbacks.confirm(proposal))) {
-      return { job, result: "rejected", message: "Change not applied.", edits, attempts: attempt };
+      useHeuristic: attempt === 1,
+      provider: options.provider,
+      consent: options.callbacks.consent,
+      progress,
+      feedback,
+      previous,
+    });
+    if (proposed.kind === "stop") {
+      return {
+        job,
+        result: proposed.result,
+        message: proposed.message,
+        edits: [],
+        attempts: attempt - (proposed.result === "failed" ? 0 : 1),
+      };
     }
-
-    const originals = applyEdits(workdir, edits);
-    callbacks.progress(job, `Applied ${edits.length} edit${edits.length === 1 ? "" : "s"}`);
-
-    const commands = await runCommands(
-      config.fix.verify.commands,
-      workdir,
-      config.fix.verify.commandTimeoutMs,
-    );
-    const failedCommand = commands.find((result) => !result.ok);
-    for (const result of commands)
-      callbacks.progress(job, `${result.ok ? "✓" : "✖"} ${result.command}`);
-    if (failedCommand) {
-      revertEdits(workdir, originals);
-      feedback = `\`${failedCommand.command}\` failed after the edit:\n${failedCommand.output}`;
-      previous = edits;
+    if (proposed.kind === "invalid") {
+      feedback = proposed.problems.join(" ");
+      previous = proposed.edits;
+      progress(`Proposed edits were invalid: ${feedback}`);
       continue;
     }
 
-    if (!context.server) {
+    const { proposal } = proposed;
+    if (
+      config.fix.requireConfirmation &&
+      !options.yes &&
+      !(await options.callbacks.confirm(proposal))
+    ) {
       return {
         job,
-        result: "unverified",
-        message: "Applied but not verified: set fix.verify.server to check it visually.",
-        edits,
+        result: "rejected",
+        message: "Change not applied.",
+        edits: proposal.edits,
+        attempts: attempt,
+      };
+    }
+    const verified = await applyAndVerify(config, job, workspace.workdir, proposal.edits, {
+      server,
+      progress,
+    });
+    if (verified.kind === "done") {
+      return {
+        job,
+        result: verified.result,
+        message: verified.message,
+        edits: proposal.edits,
         attempts: attempt,
         diff: proposal.diff,
       };
     }
-
-    try {
-      await context.server.ensure();
-      callbacks.progress(job, `Re-capturing ${job.route} on ${context.server.url}`);
-      const verification = await verifyAgainstProduction(config, job, context.server.url);
-      if (verification.resolved) {
-        const pixels = verification.job.diff?.diffPixels ?? 0;
-        return {
-          job,
-          result: "fixed",
-          message: `${job.route} now matches production (${pixels} differing pixel${pixels === 1 ? "" : "s"})`,
-          edits,
-          attempts: attempt,
-          diff: proposal.diff,
-        };
-      }
-      revertEdits(workdir, originals);
-      const still = verification.job.findings?.find((item) => item.severity !== "info")?.message;
-      feedback = `After the edit the page still differs from production (${((verification.job.diff?.diffRatio ?? 0) * 100).toFixed(2)}% of pixels${still ? `; ${still}` : ""}).`;
-      previous = edits;
-      callbacks.progress(job, `Still differs; reverted. ${feedback}`);
-    } catch (error) {
-      revertEdits(workdir, originals);
+    if (verified.kind === "failed") {
       return {
         job,
         result: "failed",
-        message: `Verification failed: ${errorMessage(error)}`,
-        edits,
+        message: verified.message,
+        edits: proposal.edits,
         attempts: attempt,
       };
     }
+    feedback = verified.feedback;
+    previous = proposal.edits;
   }
   return {
     job,

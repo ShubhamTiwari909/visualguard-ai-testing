@@ -3,7 +3,8 @@ import type { Command } from "commander";
 import pc from "picocolors";
 import { createProvider } from "../../ai/factory.js";
 import type { AIProvider } from "../../ai/provider.js";
-import { ExitCode } from "../../core/errors.js";
+import { ConfigError, ExitCode } from "../../core/errors.js";
+import { autoFix } from "../../fixer/auto.js";
 import {
   fixRegressions,
   type FixCallbacks,
@@ -19,6 +20,12 @@ export interface FixFlags extends Pick<ConfigFlags, "config" | "provider" | "mod
   allowDirty?: boolean;
   yes?: boolean;
   ai?: boolean;
+  auto?: boolean;
+  pr?: boolean;
+  base?: string;
+  branch?: string;
+  inPlace?: boolean;
+  keepWorktree?: boolean;
 }
 
 export function registerFixCommand(program: Command): void {
@@ -36,7 +43,16 @@ export function registerFixCommand(program: Command): void {
     .option(
       "-y, --yes",
       "apply without asking (only when fix.requireConfirmation is false or you're sure)",
-    );
+    )
+    .option(
+      "--auto",
+      "no prompts: fix on a new branch in a separate git worktree and commit verified fixes",
+    )
+    .option("--pr", "with --auto: push the branch and open a pull request")
+    .option("--base <branch>", "with --pr: base branch (default: the current branch)")
+    .option("--branch <name>", "with --auto: branch name (default: visualguard/fix-<run>-<id>)")
+    .option("--in-place", "with --auto: use the current checkout instead of a worktree (CI)")
+    .option("--keep-worktree", "with --auto: keep the worktree for inspection");
   addAIOptions(command).action(async (routes: string[], flags: FixFlags) => {
     process.exitCode = await runFixCommand(routes, flags);
   });
@@ -76,6 +92,10 @@ export async function runFixCommand(routes: string[], flags: FixFlags): Promise<
     provider = created.provider;
     if (!provider && created.reason)
       p.log.warn(`AI off: ${created.reason}. Only deterministic fixes are possible.`);
+  }
+  if (flags.auto) return runAutoFix(routes, flags, config, provider);
+  if (flags.pr || flags.inPlace || flags.branch || flags.keepWorktree) {
+    throw new ConfigError("--pr, --branch, --in-place and --keep-worktree need --auto.");
   }
 
   p.intro(pc.bgCyan(pc.black(" VisualGuard fix ")));
@@ -149,4 +169,44 @@ function printSummary(outcomes: FixOutcome[]): void {
     return `${style(outcome.result.toUpperCase().padEnd(10))} ${outcome.job.route} ${pc.dim(outcome.job.viewport)}  ${pc.dim(outcome.message)}`;
   });
   p.note(lines.join("\n"), "Summary");
+}
+
+async function runAutoFix(
+  routes: string[],
+  flags: FixFlags,
+  config: Awaited<ReturnType<typeof loadResolvedConfig>>,
+  provider: AIProvider | undefined,
+): Promise<number> {
+  const write = (line = "") => process.stdout.write(`${line}\n`);
+  write(`VisualGuard fix --auto${flags.pr ? " --pr" : ""}`);
+  const result = await autoFix(config, {
+    runId: flags.run,
+    routes,
+    viewports: flags.viewport,
+    includeReview: flags.includeReview,
+    provider,
+    inPlace: flags.inPlace,
+    pr: flags.pr,
+    base: flags.base,
+    branch: flags.branch,
+    keepWorktree: flags.keepWorktree,
+    progress: (message) => write(`  ${message}`),
+  });
+  write();
+  for (const outcome of result.outcomes) {
+    write(
+      `  ${outcome.result.toUpperCase().padEnd(10)} ${outcome.job.route} ${outcome.job.viewport}  ${outcome.message}`,
+    );
+  }
+  write();
+  if (result.commit) write(`  Committed ${result.commit.slice(0, 7)} on ${result.branch}`);
+  if (result.pr) write(`  Pull request: ${result.pr.url}`);
+  if (result.worktree) write(`  Worktree kept at ${result.worktree}`);
+  if (result.outcomes.length === 0) write("  No regressions to fix in this run.");
+  else if (!result.commit) write("  No fix could be verified; nothing was committed.");
+  write();
+  return result.outcomes.length > 0 &&
+    result.outcomes.every((outcome) => outcome.result === "fixed")
+    ? ExitCode.Ok
+    : ExitCode.Failed;
 }

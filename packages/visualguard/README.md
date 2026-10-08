@@ -45,6 +45,7 @@ npx visualguard https://example.com/pricing https://staging.example.com/pricing
 | `visualguard accept [routes]` | Accepts changes as intentional (`--all`, `--viewport`, `--note`)      |
 | `visualguard comment`         | Posts or updates the sticky PR comment (CI; `--link`, `--dry-run`)    |
 | `visualguard fix [routes]`    | Proposes, applies and visually verifies fixes (asks first)            |
+| `visualguard watch [routes]`  | Re-tests changed routes against your dev server on save               |
 | `visualguard report`          | Opens the HTML report for the latest run (`--run <id>`, `--no-serve`) |
 
 Useful `test` flags:
@@ -162,6 +163,36 @@ the regressions in the latest run:
 `fix` needs a git repository with a clean working tree (or `--allow-dirty`), and never touches
 lockfiles, `.env` files or config files. The `examples/nextjs` app in the repository walks
 through the whole loop.
+
+**Without prompts.** `npx visualguard fix --auto` works on a new branch in a separate git
+worktree (your checkout is untouched, `node_modules` is linked in), starts its own dev server
+there, and commits only the fixes it could verify. Add `--pr` to push the branch and open a pull
+request (with the `gh` CLI, or `GITHUB_TOKEN` and the REST API). In CI, `--in-place` skips the
+worktree. AI patches in `--auto` mode need consent given once in a terminal, or
+`fix.allowSourceUpload: true`.
+
+**From the report.** With `fix.enabled`, the served report (`npx visualguard report`) has a
+"Generate fix" button: it shows the proposed diff and applies and verifies it only when you
+click "Apply and verify".
+
+## Watch mode
+
+`npx visualguard watch` compares your local dev server (`fix.verify.server.url`, or `--staging`)
+with production and re-tests whenever you save. Only the routes whose page imports the changed
+file are captured again; changes that can't be traced to a page (global CSS) re-test everything.
+
+## Baseline mode
+
+No staging site? Compare the site against screenshots you commit:
+
+```ts
+mode: "baseline",
+baseURL: { staging: "http://localhost:3000" },
+baseline: { dir: "visualguard/baselines" },   // commit this (Git LFS works well)
+```
+
+`npx visualguard test --update-baselines` saves the current screenshots; later runs compare
+against them with the same diff, explanations and AI.
 
 ## CI and pull requests
 

@@ -82,6 +82,7 @@ export class DevServer {
   constructor(
     private readonly options: { command?: string; url: string; readyTimeoutMs: number },
     private readonly cwd: string,
+    private readonly mode: { requireFresh?: boolean } = {},
   ) {}
 
   get url(): string {
@@ -90,7 +91,14 @@ export class DevServer {
 
   /** Starts the server (unless one already answers) and waits until it responds. */
   async ensure(): Promise<void> {
-    if (await responds(this.options.url)) return;
+    if (!this.child && (await responds(this.options.url))) {
+      if (!this.mode.requireFresh) return;
+      // In a worktree, a server that's already running serves the main checkout, not our edits.
+      throw new EnvironmentError(`A server is already running at ${this.options.url}`, {
+        hint: "Stop it so VisualGuard can start the dev server from the fix worktree, or use --in-place.",
+      });
+    }
+    if (this.child && (await responds(this.options.url))) return;
     if (!this.options.command) {
       throw new EnvironmentError(`Nothing is answering at ${this.options.url}`, {
         hint: "Start your dev server, or set fix.verify.server.command so VisualGuard starts it.",

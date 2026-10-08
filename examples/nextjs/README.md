@@ -16,6 +16,8 @@ npx visualguard fix --include-review   # restores production's classes and verif
 
 git diff                         # review what changed
 pnpm unseed                      # or undo the seeded regressions
+
+npx visualguard watch            # re-test pages as you edit components
 ```
 
 The regressions are Tailwind class changes, so `fix` repairs them without AI: it restores the

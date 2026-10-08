@@ -1,5 +1,11 @@
 # visualguard
 
+## 0.6.0
+
+### Minor Changes
+
+- Add `visualguard fix --auto` (fixes on a new branch in a separate git worktree with its own dev server, commits verified fixes; `--pr` pushes and opens a pull request via `gh` or the REST API; `--in-place` for CI), `visualguard watch` (re-tests the routes affected by each saved file against the local dev server), baseline mode (`mode: "baseline"`, `test --update-baselines`, committed screenshots in `visualguard/baselines`), and a "Generate fix" button in the served report that shows the diff and applies and verifies it on confirmation.
+
 ## 0.5.0
 
 ### Minor Changes

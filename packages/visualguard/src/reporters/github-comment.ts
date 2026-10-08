@@ -142,3 +142,17 @@ export async function upsertComment(
   );
   return { action: "created", id: created.id, url: created.html_url, pullNumber };
 }
+
+/** Opens a pull request (used by `fix --auto --pr` when the `gh` CLI isn't available). */
+export async function createPullRequest(
+  context: GitHubContext,
+  pull: { title: string; body: string; head: string; base: string },
+): Promise<{ number: number; url: string }> {
+  const created = await request<{ number: number; html_url: string }>(
+    context,
+    "POST",
+    `/repos/${context.owner}/${context.repo}/pulls`,
+    pull,
+  );
+  return { number: created.number, url: created.html_url };
+}

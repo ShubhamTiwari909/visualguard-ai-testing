@@ -8,6 +8,7 @@ import { registerFixCommand } from "./commands/fix.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerReportCommand } from "./commands/report.js";
 import { registerTestCommand } from "./commands/test.js";
+import { registerWatchCommand } from "./commands/watch.js";
 import { registerZeroConfigCommand } from "./commands/zero-config.js";
 
 export function createProgram(): Command {
@@ -44,5 +45,6 @@ Examples:
   registerAcceptCommand(program);
   registerCommentCommand(program);
   registerFixCommand(program);
+  registerWatchCommand(program);
   return program;
 }

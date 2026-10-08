@@ -9,6 +9,8 @@ export interface ReportData {
 
 export interface ServerInfo {
   token: string;
+  /** fix.enabled: show "Generate fix". */
+  fixEnabled?: boolean;
 }
 
 declare global {

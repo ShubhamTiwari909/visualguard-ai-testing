@@ -47,7 +47,7 @@ function scriptJSON(value: unknown): string {
 
 export interface RenderOptions {
   /** Present when served by `visualguard report`: enables actions through the local API. */
-  server?: { token: string };
+  server?: { token: string; fixEnabled?: boolean };
 }
 
 /**

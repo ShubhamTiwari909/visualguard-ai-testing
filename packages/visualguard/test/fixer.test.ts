@@ -324,3 +324,27 @@ describe("fix end to end (local server, production fixture)", () => {
     await expect(fixRegressions(config, { callbacks })).rejects.toThrow(/uncommitted changes/);
   });
 });
+
+describe("watch", () => {
+  it("maps changed files to the routes that import them", async () => {
+    const { affectedRoutes } = await import("../src/cli/commands/watch.js");
+    const pages = [
+      { path: "/pricing", file: "app/pricing/page.tsx" },
+      { path: "/checkout", file: "app/checkout/page.tsx" },
+    ];
+    const graph = new Map([
+      ["components/PricingCard.tsx", new Set(["app/pricing/page.tsx"])],
+      [
+        "components/Button.tsx",
+        new Set(["components/PricingCard.tsx", "components/CheckoutSummary.tsx"]),
+      ],
+      ["components/CheckoutSummary.tsx", new Set(["app/checkout/page.tsx"])],
+    ]);
+    expect(affectedRoutes(["components/PricingCard.tsx"], pages, graph)).toEqual(["/pricing"]);
+    expect(affectedRoutes(["components/Button.tsx"], pages, graph)?.sort()).toEqual([
+      "/checkout",
+      "/pricing",
+    ]);
+    expect(affectedRoutes(["app/globals.css"], pages, graph)).toBeUndefined();
+  });
+});

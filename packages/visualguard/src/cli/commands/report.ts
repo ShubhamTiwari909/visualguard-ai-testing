@@ -5,6 +5,13 @@ import open from "open";
 import pc from "picocolors";
 import type { ResolvedConfig } from "../../config/resolve.js";
 import { findRun, readManifest } from "../../core/runs.js";
+import { createProvider } from "../../ai/factory.js";
+import type { JobResult } from "../../core/types.js";
+import type { Edit } from "../../fixer/edits.js";
+import { validateEdits } from "../../fixer/edits.js";
+import { applyAndVerify, prepareWorkspace, proposeEdits } from "../../fixer/fix.js";
+import { changedSince } from "../../fixer/git.js";
+import { DevServer } from "../../fixer/verify.js";
 import { acceptChanges } from "./accept.js";
 import { writeReport } from "../../reporters/html.js";
 import { startReportServer, type ApiHandler } from "../../server/report-server.js";
@@ -35,7 +42,82 @@ export const reportActions: Record<
       });
       return { accepted: result.added.map((item) => item.job) };
     },
+
+  /** Step 1 of "Generate fix": a proposal with its diff; nothing is changed yet. */
+  "fix-propose":
+    ({ config, runDir }) =>
+    async (body) => {
+      const job = fixableJob(config, runDir, body);
+      const workspace = prepareWorkspace(config, job, {
+        workdir: config.cwd,
+        runDir,
+        changed: config.fix.compareRef
+          ? new Set(changedSince(config.cwd, config.fix.compareRef))
+          : undefined,
+      });
+      if (workspace.candidates.length === 0)
+        return { ok: false, message: "No source files matched this change (check fix.include)." };
+      const proposed = await proposeEdits(config, workspace, {
+        attempt: 1,
+        useHeuristic: true,
+        provider: createProvider(config.ai).provider,
+        // Consent is given in the terminal (`visualguard fix`) or with fix.allowSourceUpload.
+        consent: async () => false,
+      });
+      if (proposed.kind === "proposal") {
+        const { edits, diff, summary, source } = proposed.proposal;
+        return { ok: true, edits, diff, summary, source };
+      }
+      if (proposed.kind === "invalid")
+        return {
+          ok: false,
+          message: `The proposed edits were invalid: ${proposed.problems.join(" ")}`,
+        };
+      return {
+        ok: false,
+        message:
+          proposed.message === "Not sending source code to the AI provider."
+            ? "Run `npx visualguard fix` once in a terminal to allow sending source code to the AI provider."
+            : proposed.message,
+      };
+    },
+
+  /** Step 2 of "Generate fix": apply the confirmed edits and verify them visually. */
+  "fix-apply":
+    ({ config, runDir }) =>
+    async (body) => {
+      const job = fixableJob(config, runDir, body);
+      const edits = (body as { edits?: unknown }).edits;
+      if (!Array.isArray(edits)) throw new Error("edits are required");
+      const problems = validateEdits(config.cwd, edits as Edit[], config.fix.include);
+      if (problems.length > 0) return { ok: false, message: problems.join(" ") };
+      const server = config.fix.verify.server
+        ? new DevServer(config.fix.verify.server, config.cwd)
+        : undefined;
+      try {
+        const result = await applyAndVerify(config, job, config.cwd, edits as Edit[], { server });
+        if (result.kind === "done")
+          return { ok: true, result: result.result, message: result.message };
+        return {
+          ok: false,
+          message: result.kind === "retry" ? `Reverted: ${result.feedback}` : result.message,
+        };
+      } finally {
+        await server?.stop();
+      }
+    },
 };
+
+function fixableJob(config: ResolvedConfig, runDir: string, body: unknown): JobResult {
+  if (!config.fix.enabled)
+    throw new Error("Fixing is turned off (fix.enabled in visualguard.config.ts).");
+  const { jobId } = body as { jobId?: unknown };
+  if (typeof jobId !== "string") throw new Error("jobId is required");
+  const job = readManifest(runDir).jobs.find((candidate) => candidate.id === jobId);
+  if (!job || !job.captures.production || !job.captures.staging)
+    throw new Error(`No fixable job "${jobId}" in this run`);
+  return job;
+}
 
 export function registerReportCommand(program: Command): void {
   program
@@ -66,7 +148,12 @@ export async function runReportCommand(flags: ReportFlags): Promise<void> {
   const api = Object.fromEntries(
     Object.entries(reportActions).map(([name, create]) => [name, create({ runDir: dir, config })]),
   );
-  const server = await startReportServer({ runDir: dir, port: flags.port, api });
+  const server = await startReportServer({
+    runDir: dir,
+    port: flags.port,
+    api,
+    fixEnabled: config.fix.enabled,
+  });
   process.stdout.write(
     `\n  ${pc.bold("VisualGuard report")} · run #${manifest.number}\n\n` +
       `  ${pc.dim("Local  ")} ${pc.cyan(server.url)}\n` +
