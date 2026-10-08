@@ -35,12 +35,13 @@ npx visualguard https://example.com/pricing https://staging.example.com/pricing
 
 ## Commands
 
-| Command                    | What it does                                                  |
-| -------------------------- | ------------------------------------------------------------- |
-| `visualguard <url> [url2]` | Zero-config scan of one site, or comparison of two            |
-| `visualguard init`         | Interactive setup; writes `visualguard.config.ts`             |
-| `visualguard doctor`       | Checks Node, Playwright, the browser, the config and the URLs |
-| `visualguard test`         | Captures production and staging, diffs every route, reports   |
+| Command                    | What it does                                                          |
+| -------------------------- | --------------------------------------------------------------------- |
+| `visualguard <url> [url2]` | Zero-config scan of one site, or comparison of two                    |
+| `visualguard init`         | Interactive setup; writes `visualguard.config.ts`                     |
+| `visualguard doctor`       | Checks Node, Playwright, the browser, the config and the URLs         |
+| `visualguard test`         | Captures production and staging, diffs every route, reports           |
+| `visualguard report`       | Opens the HTML report for the latest run (`--run <id>`, `--no-serve`) |
 
 Useful `test` flags:
 
@@ -103,8 +104,11 @@ takes screenshots until two in a row match. Each capture runs in its own browser
 
 ## Output
 
-Every run writes `.visualguard/runs/<run>/manifest.json` plus screenshots, a diff image and crops
-of each changed region. Add `.visualguard/` to `.gitignore` (`init` does this for you).
+Every run writes `.visualguard/runs/<run>/` with `manifest.json`, the screenshots, a diff image,
+crops of each changed region and `index.html`: a self-contained report with side-by-side, slider,
+onion-skin and diff views. It opens straight from disk, so you can upload the run directory as a
+CI artifact. `npx visualguard report` serves it locally. Add `.visualguard/` to `.gitignore`
+(`init` does this for you).
 
 ## Requirements
 
