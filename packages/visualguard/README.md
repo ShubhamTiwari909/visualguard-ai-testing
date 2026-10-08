@@ -41,6 +41,7 @@ npx visualguard https://example.com/pricing https://staging.example.com/pricing
 | `visualguard init`         | Interactive setup; writes `visualguard.config.ts`                     |
 | `visualguard doctor`       | Checks Node, Playwright, the browser, the config and the URLs         |
 | `visualguard test`         | Captures production and staging, diffs every route, reports           |
+| `visualguard analyze`      | Re-runs AI analysis on a run (`--provider`, `--model`, `--no-cache`)  |
 | `visualguard report`       | Opens the HTML report for the latest run (`--run <id>`, `--no-serve`) |
 
 Useful `test` flags:
@@ -94,6 +95,39 @@ A page URL is the base URL plus the route: `https://example.com/app` + `/pricing
 `https://example.com/app/pricing`. Query params on a base URL are added to every page. Settings
 are resolved in this order: CLI flags, then environment variables
 (`VISUALGUARD_PRODUCTION_URL`, `VISUALGUARD_STAGING_URL`), then the config file.
+
+## Explanations, with or without AI
+
+Every capture records a compact DOM snapshot. Changed regions are mapped to the elements under
+them and to what changed: computed styles, text, position, added or removed elements. That gives a
+plain-language reason for each difference without any AI:
+
+```
+⚠  /alignment   REVIEW      Alignment changed: align-items center → flex-start on div.actions
+✖  /hidden      REGRESSION  [data-testid="cta"] “Start free trial” is missing on staging
+✖  /contrast    REGRESSION  Low contrast: .hero > p is 1.2:1 (was 7.6:1)
+```
+
+Removed controls, new overlaps, low contrast, cut-off text, broken images, horizontal overflow and
+HTTP errors are regressions. Layout shifts are reported once ("New element: div.banner; content
+below y=95 moved 72px down") instead of as a page full of red. Tiny changes with no DOM change are
+treated as rendering noise.
+
+Add an AI provider to classify the rest (regression, intentional, content or noise) and suggest
+fixes:
+
+```ts
+ai: { provider: "gemini" },            // reads GEMINI_API_KEY; model defaults to gemini-flash-latest
+ai: { provider: "ollama", model: "qwen2.5vl" },   // local and private; OLLAMA_HOST
+```
+
+The model sees crops of each changed region and the DOM changes, never your source code. It can
+raise or lower a heuristic "review", but it can never downgrade a hard failure. Answers are cached
+by their inputs, `ai.maxCallsPerRun` caps spending, and any AI error falls back to the heuristics.
+`npx visualguard analyze` re-runs the AI on the latest run without capturing again.
+
+On Google's free (unpaid) tier, submitted content may be used to improve Google products; that
+includes screenshots of unreleased pages. Use Ollama or a paid key for confidential work.
 
 ## How captures stay stable
 

@@ -163,6 +163,8 @@ export interface JobResult {
   /** Plain-language findings from health checks and heuristics (no AI). */
   findings?: Finding[];
   analysis?: Analysis;
+  /** Status from the pixel diff, heuristics and health checks, before AI analysis. */
+  baseStatus?: Status;
   acceptedBy?: { hash: string; at: string; note?: string };
   error?: { stage: "capture" | "diff" | "mapping" | "ai"; message: string };
   durationMs: number;

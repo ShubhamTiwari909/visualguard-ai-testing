@@ -99,6 +99,9 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
             write(`  ${colors.dim("site      ")}  ${event.baseURL.staging ?? "-"}`);
           }
           write(`  ${colors.dim("viewports ")}  ${viewports}`);
+          write(
+            `  ${colors.dim("ai        ")}  ${event.ai ? `${event.ai.provider} (${event.ai.model})` : "off (heuristics only)"}`,
+          );
           write();
           for (const warning of event.warnings) write(colors.yellow(`  ⚠ ${warning}`));
           const viewportCount = Object.keys(event.viewports).length;
@@ -135,12 +138,32 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
             ),
             (summary.error > 0 ? colors.red : colors.dim)(`${pluralize(summary.error, "error")}`),
           ].filter(Boolean);
+          const rule = plain ? "-".repeat(60) : colors.dim("━".repeat(60));
           write();
-          write(plain ? "-".repeat(60) : colors.dim("━".repeat(60)));
+          write(rule);
+          const explained = manifest.jobs
+            .filter((job) => job.status === "regression" && job.analysis)
+            .slice(0, 5);
+          if (explained.length > 0) {
+            write();
+            write(`  ${colors.bold("AI ANALYSIS")}`);
+            for (const job of explained) writeAnalysis(write, colors, job);
+            write();
+            write(rule);
+          }
           write();
           write(
             `  ${parts.join(colors.dim(" · "))}   ${colors.dim(`(${formatDuration(manifest.durationMs)})`)}`,
           );
+          if (manifest.usage && manifest.usage.aiCalls > 0) {
+            const k = (tokens: number) =>
+              tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}k` : String(tokens);
+            write(
+              colors.dim(
+                `  AI: ${manifest.config.ai.model} · ${pluralize(manifest.usage.aiCalls, "call")} · ${k(manifest.usage.inputTokens)} tokens in / ${k(manifest.usage.outputTokens)} out`,
+              ),
+            );
+          }
           write();
           const steps: Array<[string, string]> = [
             ["Results", relative(process.cwd(), runDir) || runDir],
@@ -156,4 +179,37 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
       }
     },
   };
+}
+
+/** The "AI ANALYSIS" block for one job (PLAN.md §3.6). */
+export function writeAnalysis(
+  write: (line?: string) => void,
+  colors: Colors,
+  job: JobResult,
+): void {
+  const analysis = job.analysis!;
+  const label = analysis.classification[0]!.toUpperCase() + analysis.classification.slice(1);
+  write();
+  write(`  ${colors.bold(job.route)} ${colors.dim(`· ${job.viewport}`)}`);
+  write(
+    `  ${statusColor(colors, job.status)(label)} ${colors.dim(`· model confidence ${analysis.confidence.toFixed(2)}`)}`,
+  );
+  write();
+  write(`  ${analysis.title}`);
+  if (analysis.summary && analysis.summary !== analysis.title)
+    write(`  ${colors.dim(analysis.summary)}`);
+  if (analysis.likelyCause) write(`  ${colors.dim("Cause   ")} ${analysis.likelyCause}`);
+  if (analysis.affected.length > 0) {
+    write(
+      `  ${colors.dim("Element ")} ${analysis.affected.map((item) => item.component ?? item.selector).join(", ")}`,
+    );
+  }
+  if (analysis.suggestedFix) {
+    write(`  ${colors.dim("Fix     ")} ${analysis.suggestedFix.description}`);
+    for (const line of analysis.suggestedFix.snippet?.split("\n") ?? []) {
+      write(
+        `  ${line.startsWith("+") ? colors.green(line) : line.startsWith("-") ? colors.red(line) : line}`,
+      );
+    }
+  }
 }

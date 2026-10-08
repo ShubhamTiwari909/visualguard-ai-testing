@@ -16,6 +16,9 @@ export interface ConfigOverrides {
   /** `--viewport` names: run only these viewports. */
   viewports?: string[];
   concurrency?: number;
+  /** `--provider` / `--model`. */
+  aiProvider?: "gemini" | "ollama" | "none";
+  aiModel?: string;
 }
 
 export interface ResolvedConfig extends ParsedConfig {
@@ -92,8 +95,26 @@ export function resolveConfig(
     );
   }
 
+  const providerFromEnv = vars.VISUALGUARD_AI_PROVIDER;
+  if (providerFromEnv && !["gemini", "ollama", "none"].includes(providerFromEnv)) {
+    throw new ConfigError(
+      `VISUALGUARD_AI_PROVIDER must be gemini, ollama or none (got "${providerFromEnv}")`,
+    );
+  }
+  const provider =
+    overrides.aiProvider ??
+    (providerFromEnv as ConfigOverrides["aiProvider"]) ??
+    config.ai.provider;
+  const ai = {
+    ...config.ai,
+    provider,
+    // A model id belongs to one provider: switching provider drops the configured model.
+    model: overrides.aiModel ?? (provider === config.ai.provider ? config.ai.model : undefined),
+  };
+
   return {
     ...config,
+    ai,
     baseURL,
     routes,
     viewports,

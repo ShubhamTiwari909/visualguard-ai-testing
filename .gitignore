@@ -15,3 +15,6 @@ coverage/
 # Next.js examples
 .next/
 next-env.d.ts
+
+# Eval output (results/ is committed)
+evals/.output/

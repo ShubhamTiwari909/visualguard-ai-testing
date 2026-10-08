@@ -268,3 +268,28 @@ describe("classifyJob", () => {
     expect(result.findings[0]!.message).toBe('[data-testid="cta"] “Buy now” is missing on staging');
   });
 });
+
+describe("contrast", () => {
+  it("computes WCAG ratios and blends backgrounds", async () => {
+    const { contrastRatio, parseColor, textContrast } = await import("../src/mapping/contrast.js");
+    const white = parseColor("rgb(255, 255, 255)")!;
+    expect(contrastRatio(parseColor("rgb(0, 0, 0)")!, white)).toBeCloseTo(21, 0);
+    expect(contrastRatio(parseColor("rgb(71, 85, 105)")!, white)).toBeCloseTo(7.6, 1);
+    expect(contrastRatio(parseColor("rgb(226, 232, 240)")!, white)).toBeLessThan(1.3);
+
+    const dom = new DomIndex(
+      snapshot({
+        tag: "body",
+        style: { "background-color": "rgb(15, 23, 42)" },
+        children: [
+          {
+            tag: "p",
+            text: "Hi",
+            style: { color: "rgb(255, 255, 255)", "background-color": "rgba(0, 0, 0, 0)" },
+          },
+        ],
+      }),
+    );
+    expect(textContrast(dom, 1)).toBeGreaterThan(15);
+  });
+});

@@ -25,6 +25,8 @@ export interface DomNode {
   comp?: string;
   src?: string;
   broken?: boolean;
+  /** Content is wider or taller than the box and the overflow is hidden: text is cut off. */
+  clip?: boolean;
   /** [x, y, width, height] in page coordinates. */
   box: [number, number, number, number];
   /** Index into `styles`. */
@@ -242,6 +244,13 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
       if (role) node.role = role;
       const component = el.getAttribute("data-component");
       if (component) node.comp = component;
+      if (text) {
+        const clipsX =
+          /hidden|clip/.test(computed.overflowX) && el.scrollWidth > el.clientWidth + 1;
+        const clipsY =
+          /hidden|clip/.test(computed.overflowY) && el.scrollHeight > el.clientHeight + 1;
+        if (clipsX || clipsY) node.clip = true;
+      }
       if (el instanceof HTMLImageElement) {
         node.src = el.currentSrc || el.src;
         if (el.complete && el.naturalWidth === 0) node.broken = true;

@@ -1,4 +1,4 @@
-import { InvalidArgumentError } from "commander";
+import { InvalidArgumentError, Option, type Command } from "commander";
 import pc from "picocolors";
 import { loadConfig, loadEnvFiles } from "../config/load.js";
 import { resolveConfig, type ConfigOverrides, type ResolvedConfig } from "../config/resolve.js";
@@ -40,6 +40,8 @@ export interface ConfigFlags {
   only?: string[];
   viewport?: string[];
   concurrency?: number;
+  provider?: "gemini" | "ollama" | "none";
+  model?: string;
 }
 
 /** Loads .env files and the config, then applies CLI overrides. */
@@ -60,6 +62,8 @@ export async function loadResolvedConfig(
       only: flags.only,
       viewports: flags.viewport,
       concurrency: flags.concurrency,
+      aiProvider: flags.provider,
+      aiModel: flags.model,
       ...extra,
     },
   });
@@ -128,4 +132,12 @@ export function standardReporters(
   if (config.report.html) reporters.push(htmlReporter());
   if (flags.json) reporters.push(jsonReporter());
   return reporters;
+}
+
+/** `--provider`, `--model` and `--no-ai`. */
+export function addAIOptions(command: Command): Command {
+  return command
+    .addOption(new Option("--provider <name>", "AI provider").choices(["gemini", "ollama", "none"]))
+    .option("--model <id>", "AI model id")
+    .option("--no-ai", "skip AI analysis (heuristics only)");
 }

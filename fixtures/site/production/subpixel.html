@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subpixel</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; line-height: 1.5; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid #e2e8f0; }
+  header .logo { font-size: 20px; }
+  nav a { margin-left: 16px; color: #334155; text-decoration: none; font-size: 14px; }
+  main { padding: 32px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 36px; margin: 0 0 16px; }
+  p { margin: 0 0 16px; color: #475569; }
+  .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .btn { display: inline-block; padding: 12px 20px; border-radius: 8px; background: #2563eb; color: #ffffff; font-weight: 600; text-decoration: none; }
+  .actions { display: flex; align-items: center; justify-content: space-between; height: 96px; padding: 0 24px; background: #f8fafc; border-radius: 12px; }
+  .total { font-size: 28px; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  footer { padding: 32px; text-align: center; color: #94a3b8; font-size: 13px; border-top: 1px solid #e2e8f0; margin-top: 48px; }
+</style>
+</head>
+<body>
+<header><strong class="logo">Acme</strong><nav><a href="/">Home</a><a href="/identical">Identical</a><a href="/pricing">Pricing</a><a href="/checkout">Checkout</a></nav></header>
+<main>
+<section class="card hero" data-testid="hero">
+  <h1>Ship UI without surprises</h1>
+  <p>VisualGuard compares production and staging and explains every visual difference.</p>
+  <a class="btn" data-testid="cta" href="/signup">Start free trial</a>
+</section>
+<div class="grid">
+  <div class="card"><h3>Fast</h3><p>Screenshots in seconds.</p></div>
+  <div class="card"><h3>Private</h3><p>Runs on your machine.</p></div>
+  <div class="card"><h3>Free</h3><p>Open source forever.</p></div>
+</div>
+
+</main>
+<footer>Acme Inc. · VisualGuard fixture</footer>
+
+</body>
+</html>

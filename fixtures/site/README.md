@@ -18,3 +18,17 @@ serves `/name` from `name.html` and replaces `{{origin}}` in `.xml` and `.txt` f
 | `/overflow`                             | promo box wider than a 390px viewport       | regression on mobile: horizontal overflow |
 | `/overlap`                              | badge moved on top of the hero              | regression: new overlap                  |
 | `/hidden`                               | CTA hidden                                  | regression: control missing              |
+| `/contrast`                             | paragraph text turned light grey            | regression: low contrast                 |
+| `/clipped`                              | CTA narrowed, text cut off                  | regression: text cut off                 |
+| `/misaligned-grid`                      | one card pushed down 28px                   | review (AI: regression)                  |
+| `/wrapped-nav`                          | larger nav links wrap the header            | review (AI: regression)                  |
+| `/font-size`                            | bigger heading                              | review (AI: intentional)                 |
+| `/nav-item`                             | new "Blog" link                             | review (AI: intentional)                 |
+| `/rounded`                              | rounder cards and pill buttons              | review (AI: intentional)                 |
+| `/button-style`                         | uppercase dark buttons                      | review (AI: intentional)                 |
+| `/price`                                | $49 → $59                                   | review (AI: content)                     |
+| `/blog-list`                            | different posts                             | review (AI: content)                     |
+| `/footer-year`                          | © 2025 → © 2026                             | review (AI: content)                     |
+| `/subpixel`                             | text nudged 0.4px                           | review (AI: noise)                       |
+
+Labels for AI evals are in [`evals/labels.json`](../../evals/labels.json).

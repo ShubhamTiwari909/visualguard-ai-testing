@@ -11,6 +11,7 @@ export type RunEvent =
       viewports: Record<string, { width: number; height: number }>;
       routeCount: number;
       warnings: string[];
+      ai?: { provider: string; model: string };
     }
   | { type: "job:start"; job: JobSpec }
   | { type: "job:captured"; job: JobSpec; env: Env; capture: CaptureResult }

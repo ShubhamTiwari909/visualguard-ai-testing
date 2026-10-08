@@ -1,0 +1,42 @@
+name: Evals
+
+# Manual: measures AI classification quality on the labelled fixture pages (evals/README.md).
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "AI provider (none = heuristics baseline)"
+        type: choice
+        options: [gemini, none]
+        default: gemini
+      model:
+        description: "Model id (empty = default)"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter visualguard exec playwright install --with-deps chromium
+      - name: Run evals
+        run: pnpm eval -- --provider "${{ inputs.provider }}" ${{ inputs.model && format('--model "{0}"', inputs.model) || '' }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: |
+            evals/results/
+            evals/.output/runs/

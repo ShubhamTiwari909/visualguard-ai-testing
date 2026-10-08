@@ -7,6 +7,7 @@ import { createRun } from "../../core/run.js";
 import { exitCodeFor, FAIL_ON_VALUES } from "../../core/status.js";
 import type { FailOn, RunManifest } from "../../core/types.js";
 import {
+  addAIOptions,
   collect,
   loadResolvedConfig,
   parsePositiveInt,
@@ -16,6 +17,7 @@ import {
 
 export interface ZeroConfigFlags extends Omit<ConfigFlags, "production" | "staging" | "route"> {
   failOn: FailOn;
+  ai?: boolean;
   ci?: boolean;
   json?: boolean;
   debug?: boolean;
@@ -80,11 +82,11 @@ export function registerZeroConfigCommand(program: Command): void {
     )
     .option("--ci", "no prompts, colours or spinners")
     .option("--json", "print the manifest JSON to stdout")
-    .option("--debug", "save Playwright traces")
-    .action(async (urls: string[], flags: ZeroConfigFlags) => {
-      if (urls.length === 0) program.help();
-      process.exitCode = await runZeroConfig(urls, flags);
-    });
+    .option("--debug", "save Playwright traces");
+  addAIOptions(program).action(async (urls: string[], flags: ZeroConfigFlags) => {
+    if (urls.length === 0) program.help();
+    process.exitCode = await runZeroConfig(urls, flags);
+  });
 }
 
 export async function runZeroConfig(urls: string[], flags: ZeroConfigFlags): Promise<number> {
@@ -101,6 +103,16 @@ export async function runZeroConfig(urls: string[], flags: ZeroConfigFlags): Pro
     routes,
   });
 
+  // Without a config file, use Gemini automatically when a key is available.
+  if (
+    !config.configPath &&
+    !flags.provider &&
+    config.ai.provider === "none" &&
+    process.env.GEMINI_API_KEY
+  ) {
+    config.ai = { ...config.ai, provider: "gemini" };
+  }
+
   const reporters = standardReporters(config, flags, (manifest) =>
     nextSteps(manifest, Boolean(config.configPath)),
   );
@@ -113,6 +125,7 @@ export async function runZeroConfig(urls: string[], flags: ZeroConfigFlags): Pro
     discoveryLimit: 25,
     failOn: flags.failOn,
     debug: flags.debug,
+    ai: flags.ai === false ? false : undefined,
     reporters,
   }).start();
   return exitCodeFor(manifest, flags.failOn);

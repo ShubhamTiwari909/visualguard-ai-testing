@@ -7,6 +7,7 @@ import { exitCodeFor, FAIL_ON_VALUES } from "../../core/status.js";
 import type { FailOn } from "../../core/types.js";
 import { pluralize } from "../../core/util.js";
 import {
+  addAIOptions,
   collect,
   loadResolvedConfig,
   parsePositiveInt,
@@ -17,6 +18,8 @@ import {
 
 export interface TestFlags extends ConfigFlags {
   failOn: FailOn;
+  /** false with --no-ai */
+  ai?: boolean;
   ci?: boolean;
   json?: boolean;
   debug?: boolean;
@@ -42,7 +45,7 @@ export function registerTestCommand(program: Command): void {
   const command = program
     .command("test")
     .description("capture production and staging, diff every route, and report the differences");
-  addConfigOptions(command)
+  addAIOptions(addConfigOptions(command))
     .addOption(
       new Option("--fail-on <level>", "what makes the exit code non-zero")
         .choices(FAIL_ON_VALUES as string[])
@@ -74,6 +77,7 @@ export async function runTestCommand(
   const { manifest } = await createRun(config, {
     failOn: flags.failOn,
     debug: flags.debug,
+    ai: flags.ai === false ? false : undefined,
     reporters: allReporters,
   }).start();
   return exitCodeFor(manifest, flags.failOn);

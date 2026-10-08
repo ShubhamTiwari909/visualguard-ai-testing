@@ -27,6 +27,8 @@ beforeAll(async () => {
       "/overflow",
       "/overlap",
       "/hidden",
+      "/contrast",
+      "/clipped",
     ],
     viewports: {
       desktop: { width: 1440, height: 900 },
@@ -99,6 +101,17 @@ describe("explanations without AI", () => {
         "Horizontal overflow: page is 512px wide at a 390px viewport",
         "Size changed: max-width 100% → none on main > div.promo",
       ]),
+    );
+  });
+
+  it("low contrast and clipped text are regressions", () => {
+    expect(job("/contrast").status).toBe("regression");
+    expect(messages("/contrast").join("\n")).toMatch(
+      /Low contrast: \[data-testid="hero"\] > p “VisualGuard compares.*” is 1\.\d:1 \(was 7\.\d:1\)/,
+    );
+    expect(job("/clipped").status).toBe("regression");
+    expect(messages("/clipped")).toContain(
+      'Text is cut off in [data-testid="cta"] “Start free trial”',
     );
   });
 

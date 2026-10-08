@@ -7,6 +7,9 @@ import { launchBrowser, playwrightVersion } from "../capture/browser.js";
 import { capturePage } from "../capture/capture.js";
 import { captureDomSnapshot, type DomSnapshot } from "../capture/dom-snapshot.js";
 import { classifyJob } from "../mapping/classify.js";
+import { AnalysisSession, needsAnalysis } from "../ai/analyze-job.js";
+import { createProvider } from "../ai/factory.js";
+import type { AIProvider } from "../ai/provider.js";
 import type { ResolvedConfig } from "../config/resolve.js";
 import { createDiffRunner, type DiffRunner } from "../diff/runner.js";
 import { pngSize } from "./util.js";
@@ -52,6 +55,10 @@ export interface RunOptions {
   updateBaselines?: boolean;
   /** Route limit when routes are discovered. */
   discoveryLimit?: number;
+  /** AI provider for this run; `false` disables AI. Defaults to the configured provider. */
+  ai?: AIProvider | false;
+  /** Reuse cached AI answers (default true). */
+  aiCache?: boolean;
   failOn?: FailOn;
   /** Record a Playwright trace for every capture. */
   debug?: boolean;
@@ -115,6 +122,25 @@ export class Run extends RunEmitter {
       );
     }
 
+    // AI is optional: without a provider (or a key) the heuristics explain everything.
+    let provider: AIProvider | undefined;
+    const warnings = [...plan.warnings];
+    if (this.options.ai !== false) {
+      if (this.options.ai) {
+        provider = this.options.ai;
+      } else {
+        const created = createProvider(config.ai, this.options.env ?? process.env);
+        provider = created.provider;
+        if (!provider && created.reason) warnings.push(`AI off: ${created.reason}`);
+      }
+    }
+    const session = provider
+      ? new AnalysisSession(provider, config.ai, {
+          cacheDir:
+            this.options.aiCache === false ? undefined : join(config.outputDir, "cache", "ai"),
+        })
+      : undefined;
+
     const run = createRunDir(config.outputDir, this.options.env);
     this.emitAll({
       type: "run:start",
@@ -125,7 +151,8 @@ export class Run extends RunEmitter {
       baseURL: mode === "compare" ? config.baseURL : { staging: config.baseURL.staging },
       viewports: config.viewports,
       routeCount: plan.routes.length,
-      warnings: plan.warnings,
+      warnings,
+      ai: provider ? { provider: provider.name, model: provider.model } : undefined,
     });
 
     const browser = await launchBrowser(config);
@@ -133,9 +160,20 @@ export class Run extends RunEmitter {
     let results: JobResult[];
 
     try {
-      const limit = pLimit(config.concurrency);
+      const captureLimit = pLimit(config.concurrency);
+      const aiLimit = pLimit(config.ai.concurrency);
       results = await Promise.all(
-        jobs.map((job) => limit(() => this.runJob(job, run.dir, browser, diffRunner, liveEnvs))),
+        jobs.map(async (job) => {
+          // AI calls get their own limit so captures keep going while the model thinks.
+          let result = await captureLimit(() =>
+            this.runJob(job, run.dir, browser, diffRunner, liveEnvs),
+          );
+          if (session && needsAnalysis(result)) {
+            result = await aiLimit(() => session.analyze(result, run.dir, mode));
+          }
+          this.emitAll({ type: "job:end", job: result });
+          return result;
+        }),
       );
     } finally {
       await browser.close().catch(() => {});
@@ -163,10 +201,17 @@ export class Run extends RunEmitter {
             { width: vp.width, height: vp.height },
           ]),
         ),
-        ai: { provider: "none" },
+        ai: provider ? { provider: provider.name, model: provider.model } : { provider: "none" },
         failOn,
       },
       summary: summarize(results),
+      usage: session
+        ? {
+            aiCalls: session.calls,
+            inputTokens: session.usage.inputTokens,
+            outputTokens: session.usage.outputTokens,
+          }
+        : undefined,
       jobs: results,
     };
 
@@ -205,7 +250,7 @@ export class Run extends RunEmitter {
     };
     const finish = (): JobResult => {
       result.durationMs = Date.now() - started;
-      this.emitAll({ type: "job:end", job: result });
+      result.baseStatus = result.status;
       return result;
     };
 

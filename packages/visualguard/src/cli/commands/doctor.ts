@@ -2,6 +2,9 @@ import { accessSync, constants, existsSync, mkdirSync, readFileSync } from "node
 import { join, relative } from "node:path";
 import type { Command } from "commander";
 import pc from "picocolors";
+import { createProvider } from "../../ai/factory.js";
+import { GeminiProvider } from "../../ai/providers/gemini.js";
+import { OllamaProvider } from "../../ai/providers/ollama.js";
 import { launchBrowser, playwrightVersion } from "../../capture/browser.js";
 import { loadConfig, loadEnvFiles } from "../../config/load.js";
 import { resolveConfig, type ResolvedConfig } from "../../config/resolve.js";
@@ -115,43 +118,63 @@ async function urlChecks(config: ResolvedConfig): Promise<CheckResult[]> {
 }
 
 async function aiCheck(config: ResolvedConfig): Promise<CheckResult> {
-  const { provider } = config.ai;
-  if (provider === "none")
-    return { name: "AI provider", status: "ok", detail: "none (heuristics only)" };
-  if (provider === "gemini") {
-    return process.env.GEMINI_API_KEY
-      ? { name: "AI provider", status: "ok", detail: "gemini (GEMINI_API_KEY set)" }
-      : {
-          name: "AI provider",
-          status: "warn",
-          detail: "gemini, but GEMINI_API_KEY is not set",
-          hint: "Add GEMINI_API_KEY to .env.local or your CI secrets. Without it, runs fall back to heuristics.",
-        };
-  }
-  const host = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
-  try {
-    const response = await fetch(new URL("/api/tags", host), {
-      signal: AbortSignal.timeout(3_000),
-    });
-    const { models = [] } = (await response.json()) as { models?: Array<{ name: string }> };
-    return models.length > 0
-      ? {
-          name: "AI provider",
-          status: "ok",
-          detail: `ollama at ${host} (${models.length} model(s))`,
-        }
-      : {
-          name: "AI provider",
-          status: "warn",
-          detail: `ollama at ${host} has no models`,
-          hint: "Pull a vision model.",
-        };
-  } catch {
+  const name = "AI provider";
+  if (config.ai.provider === "none")
+    return { name, status: "ok", detail: "none (heuristics only)" };
+  const { provider, reason } = createProvider(config.ai);
+  if (!provider) {
     return {
-      name: "AI provider",
+      name,
       status: "warn",
-      detail: `ollama not reachable at ${host}`,
-      hint: "Start Ollama or set OLLAMA_HOST. Without it, runs fall back to heuristics.",
+      detail: `${config.ai.provider}: ${reason}`,
+      hint: "Add GEMINI_API_KEY to .env.local or your CI secrets. Without it, runs fall back to heuristics.",
+    };
+  }
+  try {
+    if (provider instanceof GeminiProvider) {
+      const models = await provider.listModels();
+      const available = models.includes(provider.model);
+      return available
+        ? { name, status: "ok", detail: `gemini (${provider.model})` }
+        : {
+            name,
+            status: "warn",
+            detail: `gemini: model "${provider.model}" not in this key's model list`,
+            hint: `Set ai.model to one of: ${models
+              .filter((model) => /gemini/.test(model))
+              .slice(0, 6)
+              .join(", ")}`,
+          };
+    }
+    if (provider instanceof OllamaProvider) {
+      const models = await provider.listModels();
+      const model = models.find(
+        (item) => item.name === provider.model || item.name.startsWith(`${provider.model}:`),
+      );
+      if (!model) {
+        return {
+          name,
+          status: "warn",
+          detail: `ollama at ${provider.host}: "${provider.model}" is not installed`,
+          hint: `Run: ollama pull ${provider.model}`,
+        };
+      }
+      return model.vision === false
+        ? {
+            name,
+            status: "warn",
+            detail: `ollama: "${model.name}" can't read images`,
+            hint: "Pick a vision model.",
+          }
+        : { name, status: "ok", detail: `ollama at ${provider.host} (${model.name})` };
+    }
+    return { name, status: "ok", detail: provider.name };
+  } catch (error) {
+    return {
+      name,
+      status: "warn",
+      detail: `${config.ai.provider}: ${errorMessage(error)}`,
+      hint: "Without a working provider, runs fall back to heuristics.",
     };
   }
 }

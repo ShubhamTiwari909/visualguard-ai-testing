@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { VERSION } from "../core/version.js";
+import { registerAnalyzeCommand } from "./commands/analyze.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerReportCommand } from "./commands/report.js";
@@ -16,6 +17,9 @@ export function createProgram(): Command {
     )
     .version(VERSION, "-v, --version")
     .showHelpAfterError()
+    // Options after a subcommand belong to it: `test --viewport mobile` must not be taken by the
+    // zero-config root command, which has options with the same names.
+    .enablePositionalOptions()
     // Throw instead of exiting so main.ts can map usage errors to exit code 2.
     .exitOverride()
     .addHelpText(
@@ -33,5 +37,6 @@ Examples:
   registerDoctorCommand(program);
   registerTestCommand(program);
   registerReportCommand(program);
+  registerAnalyzeCommand(program);
   return program;
 }

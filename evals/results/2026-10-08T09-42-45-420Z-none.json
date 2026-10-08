@@ -1,0 +1,426 @@
+{
+  "provider": {
+    "provider": "none"
+  },
+  "accuracy": 0.6585365853658537,
+  "statusAccuracy": 0.8048780487804879,
+  "perClass": {
+    "regression": {
+      "precision": 1,
+      "recall": 0.6470588235294118,
+      "support": 17
+    },
+    "intentional": {
+      "precision": 0.5333333333333333,
+      "recall": 1,
+      "support": 16
+    },
+    "content": {
+      "precision": null,
+      "recall": 0,
+      "support": 6
+    },
+    "noise": {
+      "precision": null,
+      "recall": 0,
+      "support": 2
+    }
+  },
+  "matrix": {
+    "regression": {
+      "regression": 11,
+      "intentional": 6,
+      "content": 0,
+      "noise": 0
+    },
+    "intentional": {
+      "regression": 0,
+      "intentional": 16,
+      "content": 0,
+      "noise": 0
+    },
+    "content": {
+      "regression": 0,
+      "intentional": 6,
+      "content": 0,
+      "noise": 0
+    },
+    "noise": {
+      "regression": 0,
+      "intentional": 2,
+      "content": 0,
+      "noise": 0
+    }
+  },
+  "cases": [
+    {
+      "route": "/text-change",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “Start free trial” → “Start trial”"
+    },
+    {
+      "route": "/text-change",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “Start free trial” → “Start trial”"
+    },
+    {
+      "route": "/color-change",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Colour changed: background-color #2563eb → #7c3aed on [data-testid=\"cta\"]"
+    },
+    {
+      "route": "/color-change",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Colour changed: background-color #2563eb → #7c3aed on [data-testid=\"cta\"]"
+    },
+    {
+      "route": "/font-size",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Typography changed: font-size 36px → 42px on [data-testid=\"hero\"] > h1; content below y=167 moved 9px down"
+    },
+    {
+      "route": "/font-size",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Typography changed: font-size 36px → 42px on [data-testid=\"hero\"] > h1; content below y=167 moved 81px down"
+    },
+    {
+      "route": "/nav-item",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "New element: header > nav > a"
+    },
+    {
+      "route": "/nav-item",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "New element: header > nav > a"
+    },
+    {
+      "route": "/rounded",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Colour changed: border-top-left-radius 8px → 999px on [data-testid=\"cta\"]"
+    },
+    {
+      "route": "/rounded",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Colour changed: border-top-left-radius 8px → 999px on [data-testid=\"cta\"]"
+    },
+    {
+      "route": "/button-style",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Typography changed: letter-spacing normal → 0.8px on [data-testid=\"cta\"]"
+    },
+    {
+      "route": "/button-style",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Typography changed: letter-spacing normal → 0.8px on [data-testid=\"cta\"]"
+    },
+    {
+      "route": "/layout-shift",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "New element: main > div.banner; content below y=95 moved 72px down"
+    },
+    {
+      "route": "/layout-shift",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "New element: main > div.banner; content below y=95 moved 72px down"
+    },
+    {
+      "route": "/spacing",
+      "viewport": "desktop",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Spacing changed: padding 24px → 12px on main > div.grid > div.card"
+    },
+    {
+      "route": "/spacing",
+      "viewport": "mobile",
+      "label": "intentional",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Spacing changed: padding 24px → 12px on main > div.grid > div.card"
+    },
+    {
+      "route": "/alignment",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "regression",
+      "title": "Alignment changed: align-items center → flex-start on main > div.checkout-summary > div.actions"
+    },
+    {
+      "route": "/alignment",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "regression",
+      "title": "Alignment changed: align-items center → flex-start on main > div.checkout-summary > div.actions"
+    },
+    {
+      "route": "/missing-image",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "Size changed: width 240px → 71.1px on [data-testid=\"product-image\"]; content below y=370 moved 143px up"
+    },
+    {
+      "route": "/missing-image",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "Size changed: width 240px → 71.1px on [data-testid=\"product-image\"]; content below y=472 moved 143px up"
+    },
+    {
+      "route": "/overlap",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "main > span.badge “New” now overlaps [data-testid=\"hero\"]"
+    },
+    {
+      "route": "/overlap",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "main > span.badge “New” now overlaps [data-testid=\"hero\"]"
+    },
+    {
+      "route": "/hidden",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "[data-testid=\"cta\"] “Start free trial” is missing on staging"
+    },
+    {
+      "route": "/hidden",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "[data-testid=\"cta\"] “Start free trial” is missing on staging"
+    },
+    {
+      "route": "/contrast",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "Low contrast: [data-testid=\"hero\"] > p “VisualGuard compares production and sta…” is 1.2:1 (was 7.6:1)"
+    },
+    {
+      "route": "/contrast",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "Low contrast: [data-testid=\"hero\"] > p “VisualGuard compares production and sta…” is 1.2:1 (was 7.6:1)"
+    },
+    {
+      "route": "/clipped",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "Text is cut off in [data-testid=\"cta\"] “Start free trial”"
+    },
+    {
+      "route": "/clipped",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "Text is cut off in [data-testid=\"cta\"] “Start free trial”"
+    },
+    {
+      "route": "/misaligned-grid",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "regression",
+      "title": "Spacing changed: margin-top 0px → 28px on main > div.grid > div.card"
+    },
+    {
+      "route": "/misaligned-grid",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "regression",
+      "title": "Spacing changed: margin-top 0px → 28px on main > div.grid > div.card"
+    },
+    {
+      "route": "/overflow",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "regression",
+      "status": "regression",
+      "expectedStatus": "regression",
+      "title": "Size changed: max-width 100% → none on main > div.promo"
+    },
+    {
+      "route": "/wrapped-nav",
+      "viewport": "desktop",
+      "label": "regression",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "regression",
+      "title": "Alignment changed: flex-wrap nowrap → wrap on header"
+    },
+    {
+      "route": "/wrapped-nav",
+      "viewport": "mobile",
+      "label": "regression",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "regression",
+      "title": "Alignment changed: flex-wrap nowrap → wrap on header; content below y=43 moved 27px down"
+    },
+    {
+      "route": "/price",
+      "viewport": "desktop",
+      "label": "content",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “$49” → “$59”"
+    },
+    {
+      "route": "/price",
+      "viewport": "mobile",
+      "label": "content",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “$49” → “$59”"
+    },
+    {
+      "route": "/blog-list",
+      "viewport": "desktop",
+      "label": "content",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “Shipping faster” → “Visual testing 101”"
+    },
+    {
+      "route": "/blog-list",
+      "viewport": "mobile",
+      "label": "content",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “Shipping faster” → “Visual testing 101”"
+    },
+    {
+      "route": "/dynamic",
+      "viewport": "desktop",
+      "label": "content",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “$781.15” → “$659.71”"
+    },
+    {
+      "route": "/dynamic",
+      "viewport": "mobile",
+      "label": "content",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "review",
+      "title": "Text changed: “$261.63” → “$814.92”"
+    },
+    {
+      "route": "/subpixel",
+      "viewport": "desktop",
+      "label": "noise",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "pass",
+      "title": "Layout changed: transform none → matrix(1, 0, 0, 1, 0.4, 0) on div.grid > div.card > p"
+    },
+    {
+      "route": "/subpixel",
+      "viewport": "mobile",
+      "label": "noise",
+      "predicted": "intentional",
+      "status": "review",
+      "expectedStatus": "pass",
+      "title": "Layout changed: transform none → matrix(1, 0, 0, 1, 0.4, 0) on div.grid > div.card > p"
+    }
+  ]
+}

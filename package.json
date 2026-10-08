@@ -16,7 +16,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
-    "test:pack": "pnpm build && node scripts/pack-smoke.mjs"
+    "test:pack": "pnpm build && node scripts/pack-smoke.mjs",
+    "eval": "pnpm build && node evals/run.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

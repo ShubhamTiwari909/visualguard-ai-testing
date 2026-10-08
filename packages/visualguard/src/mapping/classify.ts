@@ -2,6 +2,7 @@ import type { DomSnapshot } from "../capture/dom-snapshot.js";
 import type { DiffResult, Finding, RegionResult, Status } from "../core/types.js";
 import { describeDeltas } from "./describe.js";
 import { mapRegion } from "./deltas.js";
+import { textContrast } from "./contrast.js";
 import { area, DomIndex, intersection, shiftBox } from "./dom.js";
 import { matchTrees, type TreeMatch } from "./match.js";
 
@@ -100,6 +101,11 @@ export function classifyJob(input: ClassifyInput): ClassifyOutput {
         }
       }
     }
+    // Text that became hard to read, or got cut off.
+    for (const message of readabilityProblems(production, staging, match, regions)) {
+      findings.push(finding("regression", message));
+      status = "regression";
+    }
     // New overlaps between elements that changed and their neighbours.
     for (const message of newOverlaps(production, staging, match, regions, diff.shift)) {
       findings.push(finding("regression", message));
@@ -190,6 +196,49 @@ function newOverlaps(
       messages.push(`${staging.label(a.i)} now overlaps ${staging.label(b.i)}`);
       if (messages.length >= 3) return messages;
     }
+  }
+  return messages;
+}
+
+/** Minimum contrast for text (WCAG AA for large text); below it, text is hard to read. */
+const MIN_CONTRAST = 3;
+
+/**
+ * Text in the changed regions whose contrast dropped below 3:1, or that is newly cut off by an
+ * overflow-hidden box.
+ */
+function readabilityProblems(
+  production: DomIndex,
+  staging: DomIndex,
+  match: TreeMatch,
+  regions: RegionResult[],
+): string[] {
+  const messages: string[] = [];
+  const seen = new Set<number>();
+  for (const node of staging.nodes) {
+    if (!node.text || seen.has(node.i)) continue;
+    const box = staging.box(node.i);
+    if (!regions.some((region) => intersection(box, region.box) > 0)) continue;
+    const before = match.backward.get(node.i);
+    if (before === undefined) continue;
+    seen.add(node.i);
+
+    if (node.clip && !production.node(before).clip) {
+      messages.push(`Text is cut off in ${staging.label(node.i)}`);
+    }
+    const contrastAfter = textContrast(staging, node.i);
+    const contrastBefore = textContrast(production, before);
+    if (
+      contrastAfter !== undefined &&
+      contrastBefore !== undefined &&
+      contrastAfter < MIN_CONTRAST &&
+      contrastAfter < contrastBefore - 0.5
+    ) {
+      messages.push(
+        `Low contrast: ${staging.label(node.i)} is ${contrastAfter.toFixed(1)}:1 (was ${contrastBefore.toFixed(1)}:1)`,
+      );
+    }
+    if (messages.length >= 3) break;
   }
   return messages;
 }

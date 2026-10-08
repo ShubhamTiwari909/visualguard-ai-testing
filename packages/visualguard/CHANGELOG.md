@@ -1,5 +1,11 @@
 # visualguard
 
+## 0.3.0
+
+### Minor Changes
+
+- Add AI analysis. Gemini (`@google/genai`, structured output) and Ollama (local, JSON-schema `format`) providers classify each changed page as regression, intentional, content or noise, explain it and suggest a fix. The AI can raise or lower a heuristic "review" but never downgrades a hard failure; answers are cached, `ai.maxCallsPerRun` caps calls, and AI errors fall back to heuristics. New `visualguard analyze` re-runs AI on an existing run; `test` gains `--provider`, `--model` and `--no-ai`; `doctor` checks the model. New heuristics flag low text contrast and cut-off text. Adds an eval runner (`pnpm eval`) over 41 labelled fixture cases.
+
 ## 0.2.0
 
 ### Minor Changes
