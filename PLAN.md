@@ -5,13 +5,54 @@
 
 |                  |                                                                                                  |
 | ---------------- | ------------------------------------------------------------------------------------------------ |
-| **Status**       | Planning                                                                                         |
+| **Status**       | Phases 0–8 built, Phase 9 partly done; package at 0.7.0 (not published). See the status section below |
 | **Package name** | `visualguard` (not taken on npm as of 2026-10-08, so reserve it early)                           |
 | **Stack**        | TypeScript · Node ≥ 22 · Playwright · pixelmatch · Gemini (`@google/genai`) · Ollama             |
 | **Shape**        | One published npm package. The pnpm workspace also holds examples, fixtures, evals and docs      |
 | **Last updated** | 2026-10-08                                                                                       |
 
 ---
+
+## Implementation status (2026-10-08)
+
+Phases 0–8 are built and committed, and Phase 9 is partly done. The package is at **0.7.0** and
+not published to npm.
+
+| Phase | Status | Version | Notes |
+| ----- | ------ | ------- | ----- |
+| 0 Foundation | Done | — | The npm name isn't reserved yet: that needs your npm account |
+| 1 Capture & diff | Done | — | Determinism checked 10× per OS in CI; stable on nextjs.org |
+| 2 Setup & zero-config | Done | 0.1.0 | `init` was checked through a real pseudo-terminal |
+| 3 HTML report | Done | 0.2.0 | Accessibility is checked with axe (no serious or critical violations, light and dark), instead of Lighthouse |
+| 4 DOM mapping & heuristics | Done | 0.2.0 | Every fixture's explanation names the right element and property |
+| 5 AI analysis | Built; not measured live | 0.3.0 | There was no `GEMINI_API_KEY` or Ollama here. Providers are tested against fake Gemini/Ollama servers. Heuristics-only baseline: regression precision 100%, recall 65% |
+| 6 CI & GitHub | Done | 0.4.0 | PR comment tested against a fake GitHub API |
+| 7 Interactive fix | Done | 0.5.0 | `examples/nextjs`: three seeded regressions fixed and verified at 0 differing pixels |
+| 8 Auto fix, watch, baselines | Done | 0.6.0 | `--auto --pr` tested with a local bare origin and a fake GitHub API |
+| 9 Hardening | Partly done | 0.7.0 | Done: Playwright fixture, GitHub Action, `auth`, custom reporters. Not done: Firefox/WebKit testing, the odiff engine, the docs site, OpenAI/Anthropic providers |
+
+**Where the implementation differs from this plan:**
+
+- **Build tool:** tsup instead of tsdown, because tsdown 0.23 needs Node ≥ 22.18 and this machine has 22.14.
+- **Config loading:** jiti plus Node's `util.parseEnv` instead of c12, which means fewer dependencies.
+- **One browser context per capture.** Playwright's clock belongs to the context, so pausing it for one page froze any other page sharing that context.
+- **Clock pausing for JavaScript animations.** CSS overrides can't stop them, so each capture pauses the page clock before the screenshot (§7).
+- **Scrollbar hiding.** The `::-webkit-scrollbar` rule is dropped because it made full-page shots unstable; scrollbars are hidden through CDP instead.
+- **Report location.** The report is `index.html` at the root of each run directory, so upload the whole run directory as the artifact.
+- **Additions beyond the plan:**
+  - low-contrast and cut-off-text heuristics
+  - class-list restoration as a deterministic fixer (Tailwind colours compute to `oklch`)
+  - lab/oklch colours shown as hex
+  - a `comment` command separate from `test`
+  - accepted changes keyed by the hashes of both screenshots
+- **Example ports:** the Next.js example uses ports 3100/3101, because 3000/3001 are often taken.
+
+**Still needed for 1.0:**
+
+- **Live AI evals:** `pnpm eval -- --provider gemini` with a key, against the target of regression precision ≥ 0.85 and recall ≥ 0.90.
+- **Real-world adoption:** two real projects running it in CI.
+- **Publishing:** publish to npm (set up trusted publishing for the Release workflow).
+- **Schemas:** freeze the config and manifest schemas.
 
 ## Contents
 

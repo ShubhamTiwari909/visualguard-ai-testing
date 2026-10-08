@@ -1,5 +1,6 @@
 import type { Browser, Page } from "playwright";
 import type { ResolvedConfig } from "../config/resolve.js";
+import type { CaptureHookContext } from "../config/schema.js";
 import { errorMessage } from "../core/errors.js";
 import type { Env, HealthSignals, JobSpec, Size } from "../core/types.js";
 import { pngSize, sleep } from "../core/util.js";
@@ -98,7 +99,7 @@ async function captureOnce(
   page: Page,
   { config, job, env, afterScreenshot }: CaptureRequest,
 ): Promise<Omit<CaptureOutcome, "attempts" | "durationMs">> {
-  const { stabilize, screenshot } = config;
+  const { stabilize } = config;
   const url = job.urls[env];
   const health: HealthSignals = { consoleErrors: [], failedRequests: [], brokenImages: [] };
 
@@ -133,6 +134,41 @@ async function captureOnce(
   health.status = response?.status();
   health.finalURL = page.url();
 
+  const shot = await stabilizeAndShoot(page, {
+    config,
+    job,
+    health,
+    network,
+    clock: stabilize.pauseClock ? { base: clockBase, installedAt } : undefined,
+    hookContext,
+  });
+
+  await afterScreenshot?.(page);
+  return { ...shot, health };
+}
+
+export interface ShootContext {
+  config: ResolvedConfig;
+  job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide">;
+  /** Filled in with broken images and overflow. */
+  health: HealthSignals;
+  /** Present when the tracker was attached before navigation. */
+  network?: NetworkTracker;
+  /** Present when the page clock was installed before navigation, so it can be paused. */
+  clock?: { base: number; installedAt: number };
+  hookContext: CaptureHookContext;
+}
+
+/**
+ * Stabilises a loaded page and takes the screenshot (PLAN.md §7): stabilisation CSS, fonts,
+ * lazy content, images, network, hooks, media and clock, then a stability loop. Also used by the
+ * Playwright fixture on pages a test has already navigated.
+ */
+export async function stabilizeAndShoot(
+  page: Page,
+  { config, job, health, network, clock, hookContext }: ShootContext,
+): Promise<{ png: Buffer; size: Size; truncated: boolean; unstable: boolean }> {
+  const { stabilize, screenshot } = config;
   const hide = [
     ...(stabilize.hideDefaults ? DEFAULT_HIDE_SELECTORS : []),
     ...stabilize.hide,
@@ -146,10 +182,15 @@ async function captureOnce(
   if (stabilize.waitForFonts) await waitForFonts(page);
   if (stabilize.scrollToLoad) await scrollThrough(page, screenshot.maxHeight);
   await waitForImages(page);
-  await network.waitForQuiet(stabilize.networkQuietMs, stabilize.networkQuietTimeoutMs);
+  if (network)
+    await network.waitForQuiet(stabilize.networkQuietMs, stabilize.networkQuietTimeoutMs);
+  else
+    await page
+      .waitForLoadState("networkidle", { timeout: stabilize.networkQuietTimeoutMs })
+      .catch(() => {});
   await config.hooks.beforeCapture?.(hookContext);
   if (stabilize.pauseMedia) await pauseMedia(page);
-  if (stabilize.pauseClock) await pauseClock(page, clockBase, installedAt);
+  if (clock) await pauseClock(page, clock.base, clock.installedAt);
 
   const metrics = await readPageMetrics(page);
   health.brokenImages = metrics.brokenImages;
@@ -194,8 +235,7 @@ async function captureOnce(
   // shots; that is not a moving page.
   if (unstable && countChangedPixels(previous, png) <= STABLE_PIXEL_TOLERANCE) unstable = false;
 
-  await afterScreenshot?.(page);
-  return { png, size: pngSize(png), truncated, unstable, health };
+  return { png, size: pngSize(png), truncated, unstable };
 }
 
 /**

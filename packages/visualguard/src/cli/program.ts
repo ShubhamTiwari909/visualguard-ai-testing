@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { VERSION } from "../core/version.js";
 import { registerAcceptCommand } from "./commands/accept.js";
 import { registerAnalyzeCommand } from "./commands/analyze.js";
+import { registerAuthCommand } from "./commands/auth.js";
 import { registerCommentCommand } from "./commands/comment.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerFixCommand } from "./commands/fix.js";
@@ -46,5 +47,6 @@ Examples:
   registerCommentCommand(program);
   registerFixCommand(program);
   registerWatchCommand(program);
+  registerAuthCommand(program);
   return program;
 }

@@ -46,6 +46,7 @@ npx visualguard https://example.com/pricing https://staging.example.com/pricing
 | `visualguard comment`         | Posts or updates the sticky PR comment (CI; `--link`, `--dry-run`)    |
 | `visualguard fix [routes]`    | Proposes, applies and visually verifies fixes (asks first)            |
 | `visualguard watch [routes]`  | Re-tests changed routes against your dev server on save               |
+| `visualguard auth <env>`      | Logs in once in a browser and saves the session                       |
 | `visualguard report`          | Opens the HTML report for the latest run (`--run <id>`, `--no-serve`) |
 
 Useful `test` flags:
@@ -231,9 +232,58 @@ or the "Accept change" button in `visualguard report`) records the exact screens
 `visualguard.accepted.json`. Commit it: those pages pass as "accepted" until either side changes
 again.
 
+**GitHub Action.** `action/` in the repository wraps all of this in one step
+(`uses: <owner>/visualguard/action@v1`); see its README.
+
 **Other integrations.** `--junit <path>` writes JUnit XML for CI test dashboards. `report.webhook`
 (or `VISUALGUARD_WEBHOOK_URL`) POSTs a JSON summary after each run, for n8n, Slack workflows or
 Zapier.
+
+## Inside Playwright tests
+
+Already have Playwright tests that log in and click around? Check the page they leave you on:
+
+```ts
+import { expect, test } from "visualguard/playwright";
+
+test("checkout summary", async ({ page, visualguard }) => {
+  await page.goto("/checkout");
+  await page.getByRole("button", { name: "Apply coupon" }).click();
+  await visualguard.check(page, { name: "after-coupon" });
+});
+```
+
+`check` stabilises the page, captures the same path on `baseURL.production` (or compares with a
+baseline in `visualguard/baselines/playwright/` when there's no production URL; `--update-snapshots`
+refreshes them), explains the difference, attaches the screenshots to the Playwright report, and
+fails the test per `failOn` (default `regression`). Options: `name`, `mask`, `hide`, `waitFor`,
+`failOn`; configure with `test.use({ visualguardOptions: { config, configPath, failOn } })`.
+
+## Logged-in pages
+
+```bash
+npx visualguard auth staging        # log in in the browser window, press Enter
+```
+
+saves the session to `.visualguard/auth/staging.json`; add
+`environments: { staging: { storageState: ".visualguard/auth/staging.json" } }` to the config.
+`--until-url '**/dashboard'` saves automatically once the login lands, for scripted logins.
+
+## Custom reporters
+
+```ts
+reporters: [
+  {
+    name: "dashboard",
+    async onRunEnd(manifest) {
+      await fetch("https://dashboard.example.com/visual", { method: "POST", body: JSON.stringify(manifest.summary) });
+    },
+  },
+],
+```
+
+Reporters get every run event (`onEvent`) and the final manifest (`onRunEnd`). The same
+`createRun(config, { reporters })` API is available from `import { createRun } from "visualguard"`.
 
 ## How captures stay stable
 

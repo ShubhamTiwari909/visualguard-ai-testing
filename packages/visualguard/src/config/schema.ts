@@ -80,6 +80,17 @@ const hookSchema = z.custom<CaptureHook>((value) => typeof value === "function",
   message: "expected a function",
 });
 
+/** A custom reporter (see `Reporter` in the API): an object with a name and event callbacks. */
+const reporterSchema = z.custom<import("../core/run.js").Reporter>(
+  (value) =>
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { name?: unknown }).name === "string" &&
+    (typeof (value as { onEvent?: unknown }).onEvent === "function" ||
+      typeof (value as { onRunEnd?: unknown }).onRunEnd === "function"),
+  { message: "expected a reporter: { name, onEvent?(event), onRunEnd?(manifest, context) }" },
+);
+
 /**
  * The full config schema. Everything is optional for users; defaults are filled in here.
  * Nested objects use `.prefault({})` so their own defaults are applied (zod 4 semantics).
@@ -260,6 +271,9 @@ export const configSchema = z.object({
     .prefault({}),
 
   concurrency: z.number().int().min(1).max(32).optional(),
+
+  /** Extra reporters, e.g. to send results to your own dashboard (PLAN.md §19, plugin API). */
+  reporters: z.array(reporterSchema).default([]),
 
   hooks: z
     .object({

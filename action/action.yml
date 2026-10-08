@@ -1,0 +1,91 @@
+name: VisualGuard
+description: Visual regression testing with explanations, a report artifact and a sticky PR comment.
+author: VisualGuard contributors
+branding:
+  icon: eye
+  color: blue
+
+inputs:
+  working-directory:
+    description: Directory with visualguard.config.ts (your project root).
+    default: "."
+  args:
+    description: Extra arguments for `visualguard test`, e.g. "--only /pricing".
+    default: ""
+  fail-on:
+    description: What fails the job — regression, review or any.
+    default: regression
+  staging-url:
+    description: Staging or preview URL for this run (overrides baseURL.staging).
+    default: ""
+  gemini-api-key:
+    description: GEMINI_API_KEY for AI analysis (leave empty for heuristics only).
+    default: ""
+  comment:
+    description: Post or update the sticky comment on the pull request.
+    default: "true"
+  github-token:
+    description: Token for the PR comment (needs pull-requests write).
+    default: ${{ github.token }}
+  exec:
+    description: How to run binaries from your project — npx, pnpm exec, yarn or bunx.
+    default: npx
+
+outputs:
+  report-url:
+    description: URL of the uploaded report artifact.
+    value: ${{ steps.upload.outputs.artifact-url }}
+  outcome:
+    description: success or failure of the visual test.
+    value: ${{ steps.test.outcome }}
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: visualguard-playwright-${{ runner.os }}-${{ hashFiles(format('{0}/**/package.json', inputs.working-directory)) }}
+
+    - name: Install Chromium
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: ${{ inputs.exec }} playwright install --with-deps chromium
+
+    - name: Visual regression test
+      id: test
+      shell: bash
+      continue-on-error: true
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GEMINI_API_KEY: ${{ inputs.gemini-api-key }}
+        VISUALGUARD_STAGING_URL: ${{ inputs.staging-url }}
+      run: |
+        if [ -z "$VISUALGUARD_STAGING_URL" ]; then unset VISUALGUARD_STAGING_URL; fi
+        if [ -z "$GEMINI_API_KEY" ]; then unset GEMINI_API_KEY; fi
+        ${{ inputs.exec }} visualguard test --ci --fail-on "${{ inputs.fail-on }}" --junit visualguard-junit.xml ${{ inputs.args }}
+
+    - name: Upload the report
+      id: upload
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: visualguard-report
+        path: ${{ inputs.working-directory }}/.visualguard/runs/
+        if-no-files-found: ignore
+
+    - name: Comment on the pull request
+      if: always() && inputs.comment == 'true' && github.event_name != 'push'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: ${{ inputs.exec }} visualguard comment --link "${{ steps.upload.outputs.artifact-url }}" || echo "::warning::VisualGuard could not comment on the pull request."
+
+    - name: Fail on visual regressions
+      if: steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "::error::VisualGuard found visual changes at or above '${{ inputs.fail-on }}'. See the job summary and the report artifact."
+        exit 1

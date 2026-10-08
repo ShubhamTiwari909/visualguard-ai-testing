@@ -157,3 +157,31 @@ describe("init --yes and doctor", () => {
     });
   });
 });
+
+describe("auth and custom reporters", () => {
+  it("saves a browser session as storageState", async () => {
+    const { runAuth } = await import("../src/cli/commands/auth.js");
+    const site = await startFixtureServer("production");
+    const out = join(mkdtempSync(join(tmpdir(), "vg-auth-")), "staging.json");
+    try {
+      const saved = await runAuth("staging", {
+        url: `${site.url}/identical`,
+        out,
+        untilUrl: "**/identical",
+        headless: true,
+      });
+      expect(saved).toBe(out);
+      expect(JSON.parse(readFileSync(out, "utf8"))).toMatchObject({ cookies: [], origins: [] });
+      await expect(runAuth("qa", { url: site.url })).rejects.toThrow(/Unknown environment/);
+    } finally {
+      await site.close();
+    }
+  }, 60_000);
+
+  it("accepts reporter objects in the config and rejects anything else", async () => {
+    const { parseConfig } = await import("../src/config/load.js");
+    const reporter = { name: "dashboard", onRunEnd: () => {} };
+    expect(parseConfig({ reporters: [reporter] }).reporters).toEqual([reporter]);
+    expect(() => parseConfig({ reporters: [{ name: "broken" }] })).toThrow(/expected a reporter/);
+  });
+});

@@ -134,6 +134,7 @@ export function standardReporters(
   ];
   if (config.report.html) reporters.push(htmlReporter());
   if (flags.json) reporters.push(jsonReporter());
+  reporters.push(...config.reporters);
   const junit = flags.junit ?? config.report.junit;
   if (junit)
     reporters.push(junitReporter(resolve(config.cwd, junit), flags.failOn ?? "regression"));

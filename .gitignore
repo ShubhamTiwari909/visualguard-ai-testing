@@ -19,3 +19,6 @@ next-env.d.ts
 # Eval output (results/ is committed)
 evals/.output/
 *.tsbuildinfo
+
+# Playwright fixture test output
+.pw-output/

@@ -1,5 +1,11 @@
 # visualguard
 
+## 0.7.0
+
+### Minor Changes
+
+- Add `visualguard/playwright`: a `visualguard` fixture for Playwright Test (`await visualguard.check(page)`) that compares the page with production or a baseline, explains differences, attaches screenshots and fails the test per `failOn`. Add `visualguard auth <env>` to save a logged-in session as storageState, `reporters` in the config for custom reporters, and a composite GitHub Action in `action/`.
+
 ## 0.6.0
 
 ### Minor Changes

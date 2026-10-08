@@ -10,16 +10,18 @@ export default defineConfig({
     index: "src/index.ts",
     cli: "src/cli/main.ts",
     "diff-worker": "src/diff/worker.ts",
+    playwright: "src/playwright/index.ts",
   },
   format: ["esm"],
   target: "node22",
   platform: "node",
-  dts: { entry: { index: "src/index.ts" } },
+  dts: { entry: { index: "src/index.ts", playwright: "src/playwright/index.ts" } },
   sourcemap: true,
-  clean: true,
+  // Tests rebuild while other tests read dist/report-app, so they skip the clean step.
+  clean: !process.env.TSUP_NO_CLEAN,
   splitting: true,
   // Playwright is an optional peer dependency, loaded lazily at runtime.
-  external: ["playwright"],
+  external: ["playwright", "@playwright/test"],
   define: {
     __VISUALGUARD_VERSION__: JSON.stringify(pkg.version),
   },
