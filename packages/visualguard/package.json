@@ -32,20 +32,23 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && vite build --config report-app/vite.config.ts --logLevel warn",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p report-app",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:report": "vite build --config report-app/vite.config.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",
     "commander": "^15.0.0",
     "jiti": "^2.7.0",
+    "open": "^11.0.4",
     "p-limit": "^7.3.3",
     "picocolors": "^1.1.1",
     "pixelmatch": "^8.0.0",
     "pngjs": "^7.0.0",
+    "sirv": "^3.0.2",
     "zod": "^4.6.5"
   },
   "peerDependencies": {
@@ -57,11 +60,19 @@
     }
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.15.0",
     "@types/pngjs": "^6.0.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "playwright": "1.64.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
     "tsup": "^8.5.1",
     "typescript": "5.9.3",
+    "vite": "^8.3.3",
     "vitest": "^5.0.3"
   }
 }

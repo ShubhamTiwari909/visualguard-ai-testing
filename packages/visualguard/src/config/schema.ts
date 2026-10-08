@@ -189,6 +189,15 @@ export const configSchema = z.object({
     })
     .prefault({}),
 
+  report: z
+    .object({
+      /** Write a self-contained HTML report (index.html) into every run directory. */
+      html: z.boolean().default(true),
+      /** Where the report is published, for links in PR comments. */
+      publicURL: urlSchema.optional(),
+    })
+    .prefault({}),
+
   output: z
     .object({
       dir: z.string().default(".visualguard"),

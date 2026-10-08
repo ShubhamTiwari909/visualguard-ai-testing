@@ -2,7 +2,13 @@ import { InvalidArgumentError } from "commander";
 import pc from "picocolors";
 import { loadConfig, loadEnvFiles } from "../config/load.js";
 import { resolveConfig, type ConfigOverrides, type ResolvedConfig } from "../config/resolve.js";
+import { join, relative } from "node:path";
 import { ConfigError, ExitCode, VisualGuardError, errorMessage } from "../core/errors.js";
+import type { Reporter } from "../core/run.js";
+import type { RunManifest } from "../core/types.js";
+import { htmlReporter, reportPath } from "../reporters/html.js";
+import { jsonReporter } from "../reporters/json.js";
+import { terminalReporter } from "../reporters/terminal.js";
 
 export const collect = (value: string, previous: string[] = []): string[] => [...previous, value];
 
@@ -86,4 +92,40 @@ export function reportError(
     stream.write(`  ${colors.dim("Set VISUALGUARD_DEBUG=1 to see the stack trace.")}\n`);
   }
   return ExitCode.Failed;
+}
+
+export interface OutputFlags {
+  ci?: boolean;
+  json?: boolean;
+}
+
+/** Terminal (to stderr with --json), HTML report and optional JSON reporters. */
+export function standardReporters(
+  config: ResolvedConfig,
+  flags: OutputFlags,
+  extraSteps?: (manifest: RunManifest) => Array<[string, string]>,
+): Reporter[] {
+  const stream = flags.json ? process.stderr : process.stdout;
+  const plain = usePlainOutput(flags.ci, stream as NodeJS.WriteStream);
+  const reporters: Reporter[] = [
+    terminalReporter({
+      stream,
+      plain,
+      nextSteps: (manifest) => {
+        const steps: Array<[string, string]> = [];
+        if (config.report.html) {
+          steps.push([
+            "Report",
+            plain
+              ? relative(process.cwd(), reportPath(join(config.outputDir, "runs", manifest.id)))
+              : "npx visualguard report",
+          ]);
+        }
+        return [...steps, ...(extraSteps?.(manifest) ?? [])];
+      },
+    }),
+  ];
+  if (config.report.html) reporters.push(htmlReporter());
+  if (flags.json) reporters.push(jsonReporter());
+  return reporters;
 }

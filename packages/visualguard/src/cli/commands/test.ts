@@ -6,14 +6,12 @@ import { createRun, type Reporter } from "../../core/run.js";
 import { exitCodeFor, FAIL_ON_VALUES } from "../../core/status.js";
 import type { FailOn } from "../../core/types.js";
 import { pluralize } from "../../core/util.js";
-import { jsonReporter } from "../../reporters/json.js";
-import { terminalReporter } from "../../reporters/terminal.js";
 import {
   collect,
   loadResolvedConfig,
   parsePositiveInt,
   requireCompareURLs,
-  usePlainOutput,
+  standardReporters,
   type ConfigFlags,
 } from "../shared.js";
 
@@ -71,15 +69,7 @@ export async function runTestCommand(
     return 0;
   }
 
-  const humanStream = flags.json ? process.stderr : process.stdout;
-  const allReporters: Reporter[] = [
-    terminalReporter({
-      stream: humanStream,
-      plain: usePlainOutput(flags.ci, humanStream as NodeJS.WriteStream),
-    }),
-    ...reporters,
-  ];
-  if (flags.json) allReporters.push(jsonReporter());
+  const allReporters: Reporter[] = [...standardReporters(config, flags), ...reporters];
 
   const { manifest } = await createRun(config, {
     failOn: flags.failOn,

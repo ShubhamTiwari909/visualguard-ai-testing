@@ -3,16 +3,14 @@ import type { Command } from "commander";
 import { Option } from "commander";
 import type { RouteInput } from "../../config/schema.js";
 import { ConfigError } from "../../core/errors.js";
-import { createRun, type Reporter } from "../../core/run.js";
+import { createRun } from "../../core/run.js";
 import { exitCodeFor, FAIL_ON_VALUES } from "../../core/status.js";
 import type { FailOn, RunManifest } from "../../core/types.js";
-import { jsonReporter } from "../../reporters/json.js";
-import { terminalReporter } from "../../reporters/terminal.js";
 import {
   collect,
   loadResolvedConfig,
   parsePositiveInt,
-  usePlainOutput,
+  standardReporters,
   type ConfigFlags,
 } from "../shared.js";
 
@@ -103,15 +101,9 @@ export async function runZeroConfig(urls: string[], flags: ZeroConfigFlags): Pro
     routes,
   });
 
-  const humanStream = flags.json ? process.stderr : process.stdout;
-  const reporters: Reporter[] = [
-    terminalReporter({
-      stream: humanStream,
-      plain: usePlainOutput(flags.ci, humanStream as NodeJS.WriteStream),
-      nextSteps: (manifest) => nextSteps(manifest, Boolean(config.configPath)),
-    }),
-  ];
-  if (flags.json) reporters.push(jsonReporter());
+  const reporters = standardReporters(config, flags, (manifest) =>
+    nextSteps(manifest, Boolean(config.configPath)),
+  );
 
   const host = targets[0]!.host.replace(/[^a-z0-9.-]+/gi, "_");
   const { manifest } = await createRun(config, {
