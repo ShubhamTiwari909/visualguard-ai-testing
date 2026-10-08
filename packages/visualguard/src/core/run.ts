@@ -13,6 +13,7 @@ import type { AIProvider } from "../ai/provider.js";
 import type { ResolvedConfig } from "../config/resolve.js";
 import { createDiffRunner, type DiffRunner } from "../diff/runner.js";
 import { pngSize } from "./util.js";
+import { applyAccepted, readAccepted } from "./accepted.js";
 import { ConfigError, errorMessage } from "./errors.js";
 import { applyFindings, healthFindings } from "./findings.js";
 import { RunEmitter, type RunEvent } from "./events.js";
@@ -159,6 +160,7 @@ export class Run extends RunEmitter {
     const diffRunner = createDiffRunner(Math.max(1, Math.min(4, cpus().length - 1)));
     let results: JobResult[];
 
+    const accepted = readAccepted(config.acceptedPath);
     try {
       const captureLimit = pLimit(config.concurrency);
       const aiLimit = pLimit(config.ai.concurrency);
@@ -168,6 +170,7 @@ export class Run extends RunEmitter {
           let result = await captureLimit(() =>
             this.runJob(job, run.dir, browser, diffRunner, liveEnvs),
           );
+          result = applyAccepted(result, run.dir, accepted);
           if (session && needsAnalysis(result)) {
             result = await aiLimit(() => session.analyze(result, run.dir, mode));
           }

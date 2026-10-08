@@ -196,6 +196,12 @@ export const configSchema = z.object({
       html: z.boolean().default(true),
       /** Where the report is published, for links in PR comments. */
       publicURL: urlSchema.optional(),
+      /** Write a JUnit XML file here (relative to the project), for CI test dashboards. */
+      junit: z.string().optional(),
+      /** Append a Markdown summary to $GITHUB_STEP_SUMMARY when it is set. */
+      githubSummary: z.boolean().default(true),
+      /** POST a JSON summary here after each run (n8n, Slack workflows, Zapier…). */
+      webhook: urlSchema.optional(),
     })
     .prefault({}),
 
@@ -203,6 +209,8 @@ export const configSchema = z.object({
     .object({
       dir: z.string().default(".visualguard"),
       keepRuns: z.number().int().positive().default(10),
+      /** Changes accepted as intentional; commit this file. */
+      acceptedFile: z.string().default("visualguard.accepted.json"),
     })
     .prefault({}),
 

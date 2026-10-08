@@ -22,6 +22,7 @@ export interface TestFlags extends ConfigFlags {
   ai?: boolean;
   ci?: boolean;
   json?: boolean;
+  junit?: string;
   debug?: boolean;
   list?: boolean;
 }
@@ -53,6 +54,7 @@ export function registerTestCommand(program: Command): void {
     )
     .option("--ci", "no prompts, colours or spinners")
     .option("--json", "print the manifest JSON to stdout")
+    .option("--junit <path>", "write a JUnit XML report")
     .option("--debug", "save Playwright traces")
     .option("--list", "print the resolved URL pairs and exit without capturing")
     .action(async (flags: TestFlags) => {

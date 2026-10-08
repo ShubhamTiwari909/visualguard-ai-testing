@@ -35,14 +35,16 @@ npx visualguard https://example.com/pricing https://staging.example.com/pricing
 
 ## Commands
 
-| Command                    | What it does                                                          |
-| -------------------------- | --------------------------------------------------------------------- |
-| `visualguard <url> [url2]` | Zero-config scan of one site, or comparison of two                    |
-| `visualguard init`         | Interactive setup; writes `visualguard.config.ts`                     |
-| `visualguard doctor`       | Checks Node, Playwright, the browser, the config and the URLs         |
-| `visualguard test`         | Captures production and staging, diffs every route, reports           |
-| `visualguard analyze`      | Re-runs AI analysis on a run (`--provider`, `--model`, `--no-cache`)  |
-| `visualguard report`       | Opens the HTML report for the latest run (`--run <id>`, `--no-serve`) |
+| Command                       | What it does                                                          |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `visualguard <url> [url2]`    | Zero-config scan of one site, or comparison of two                    |
+| `visualguard init`            | Interactive setup; writes `visualguard.config.ts`                     |
+| `visualguard doctor`          | Checks Node, Playwright, the browser, the config and the URLs         |
+| `visualguard test`            | Captures production and staging, diffs every route, reports           |
+| `visualguard analyze`         | Re-runs AI analysis on a run (`--provider`, `--model`, `--no-cache`)  |
+| `visualguard accept [routes]` | Accepts changes as intentional (`--all`, `--viewport`, `--note`)      |
+| `visualguard comment`         | Posts or updates the sticky PR comment (CI; `--link`, `--dry-run`)    |
+| `visualguard report`          | Opens the HTML report for the latest run (`--run <id>`, `--no-serve`) |
 
 Useful `test` flags:
 
@@ -128,6 +130,47 @@ by their inputs, `ai.maxCallsPerRun` caps spending, and any AI error falls back 
 
 On Google's free (unpaid) tier, submitted content may be used to improve Google products; that
 includes screenshots of unreleased pages. Use Ollama or a paid key for confidential work.
+
+## CI and pull requests
+
+`npx visualguard init` can write `.github/workflows/visualguard.yml` for you. It:
+
+1. runs `visualguard test --ci --junit visualguard-junit.xml`,
+2. uploads `.visualguard/runs/` as an artifact (the report opens straight from it),
+3. runs `visualguard comment --link <artifact-url>` to post one sticky comment on the PR, updated
+   on every push,
+4. fails the job afterwards if there are regressions.
+
+In GitHub Actions the run also writes a Markdown summary to the job page (no token needed). The
+workflow needs `pull-requests: write`. On pull requests from forks `GITHUB_TOKEN` is read-only, so
+post the comment from a separate `workflow_run` workflow.
+
+**Preview deployments.** If each PR gets a preview URL (Vercel, Netlify…), trigger on
+`deployment_status` and pass the URL as staging:
+
+```yaml
+on:
+  deployment_status:
+jobs:
+  visualguard:
+    if: github.event.deployment_status.state == 'success'
+    # …same steps as the generated workflow, with:
+    env:
+      VISUALGUARD_STAGING_URL: ${{ github.event.deployment_status.environment_url }}
+```
+
+`visualguard comment` finds the PR from the commit when the event has no PR number. For protected
+previews, add the bypass header in the config: `environments: { staging: { headers: {
+"x-vercel-protection-bypass": process.env.VERCEL_BYPASS_SECRET ?? "" } } }`.
+
+**Intentional changes.** `npx visualguard accept /pricing` (or `--all` for everything marked review,
+or the "Accept change" button in `visualguard report`) records the exact screenshots in
+`visualguard.accepted.json`. Commit it: those pages pass as "accepted" until either side changes
+again.
+
+**Other integrations.** `--junit <path>` writes JUnit XML for CI test dashboards. `report.webhook`
+(or `VISUALGUARD_WEBHOOK_URL`) POSTs a JSON summary after each run, for n8n, Slack workflows or
+Zapier.
 
 ## How captures stay stable
 

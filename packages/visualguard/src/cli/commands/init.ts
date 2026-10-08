@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import * as p from "@clack/prompts";
 import { Option, type Command } from "commander";
 import pc from "picocolors";
@@ -17,6 +17,7 @@ import {
   type InitAnswers,
   type ViewportPreset,
 } from "../../setup/config-template.js";
+import { renderWorkflow } from "../../setup/workflow-template.js";
 import {
   addDevDependencyCommand,
   addPackageScript,
@@ -34,6 +35,8 @@ export interface InitFlags {
   staging?: string;
   ai?: AIProviderName;
   force?: boolean;
+  /** Write .github/workflows/visualguard.yml (asked interactively). */
+  workflow?: boolean;
 }
 
 export interface InitResult {
@@ -53,6 +56,7 @@ export function registerInitCommand(program: Command): void {
     .option("--staging <url>", "staging or preview URL")
     .addOption(new Option("--ai <provider>", "AI provider").choices(["gemini", "ollama", "none"]))
     .option("--force", "overwrite an existing config file")
+    .option("--workflow", "also write .github/workflows/visualguard.yml")
     .action(async (flags: InitFlags) => {
       await runInit(process.cwd(), flags);
     });
@@ -275,6 +279,20 @@ export async function runInit(cwd: string, flags: InitFlags): Promise<InitResult
   }
   if (interactive && ai === "ollama") await describeOllama();
 
+  // CI workflow
+  const workflowPath = join(cwd, ".github", "workflows", "visualguard.yml");
+  let workflow = Boolean(flags.workflow);
+  if (interactive && flags.workflow === undefined) {
+    workflow = cancelled(
+      await p.confirm({
+        message: existsSync(workflowPath)
+          ? "Replace .github/workflows/visualguard.yml?"
+          : "Add a GitHub Actions workflow (PR comment, report artifact)?",
+        initialValue: !existsSync(workflowPath),
+      }),
+    );
+  }
+
   // Write files
   const answers: InitAnswers = { production, staging, routes, dynamicRoutes, viewports, ai };
   const configPath = existing ?? join(cwd, CONFIG_FILE_NAMES[0]);
@@ -287,12 +305,22 @@ export async function runInit(cwd: string, flags: InitFlags): Promise<InitResult
     created.push(".env.local (GEMINI_API_KEY)");
   }
   const scriptAdded = addPackageScript(cwd, "visual", "visualguard test");
+  if (workflow && (!existsSync(workflowPath) || interactive || flags.force)) {
+    mkdirSync(dirname(workflowPath), { recursive: true });
+    writeFileSync(workflowPath, renderWorkflow(project.packageManager, { ai: ai === "gemini" }));
+    created.push(relative(cwd, workflowPath));
+  }
 
   if (interactive) {
     p.log.success(`Created ${relative(cwd, configPath)}`);
     if (ignored.length > 0) p.log.success(`Added ${ignored.join(", ")} to .gitignore`);
     if (geminiKey) p.log.success("Saved GEMINI_API_KEY to .env.local");
     if (scriptAdded) p.log.success(`Added "visual": "visualguard test" to package.json scripts`);
+    if (created.some((file) => file.endsWith("visualguard.yml"))) {
+      p.log.success(
+        `Created ${relative(cwd, workflowPath)}${ai === "gemini" ? " (add GEMINI_API_KEY to the repository secrets)" : ""}`,
+      );
+    }
     await ensurePlaywright(cwd, project);
     p.outro(`Run ${pc.cyan("npx visualguard test")} to begin.`);
   }

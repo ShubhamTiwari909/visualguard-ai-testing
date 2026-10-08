@@ -1,5 +1,11 @@
 # visualguard
 
+## 0.4.0
+
+### Minor Changes
+
+- CI and GitHub integration: `visualguard accept` records intentional changes in `visualguard.accepted.json` (matching screenshots then pass as "accepted"), with an "Accept change" button in the served report; `visualguard comment` posts or updates one sticky PR comment (finds the PR from the commit for `deployment_status` events); a Markdown job summary is written to `$GITHUB_STEP_SUMMARY`; `--junit <path>` writes JUnit XML; `report.webhook` posts a JSON summary; `init --workflow` writes a GitHub Actions workflow for the project's package manager.
+
 ## 0.3.0
 
 ### Minor Changes

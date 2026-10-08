@@ -2,10 +2,11 @@ import { InvalidArgumentError, Option, type Command } from "commander";
 import pc from "picocolors";
 import { loadConfig, loadEnvFiles } from "../config/load.js";
 import { resolveConfig, type ConfigOverrides, type ResolvedConfig } from "../config/resolve.js";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { ConfigError, ExitCode, VisualGuardError, errorMessage } from "../core/errors.js";
 import type { Reporter } from "../core/run.js";
-import type { RunManifest } from "../core/types.js";
+import type { FailOn, RunManifest } from "../core/types.js";
+import { githubSummaryReporter, junitReporter, webhookReporter } from "../reporters/ci.js";
 import { htmlReporter, reportPath } from "../reporters/html.js";
 import { jsonReporter } from "../reporters/json.js";
 import { terminalReporter } from "../reporters/terminal.js";
@@ -101,6 +102,8 @@ export function reportError(
 export interface OutputFlags {
   ci?: boolean;
   json?: boolean;
+  junit?: string;
+  failOn?: FailOn;
 }
 
 /** Terminal (to stderr with --json), HTML report and optional JSON reporters. */
@@ -131,6 +134,21 @@ export function standardReporters(
   ];
   if (config.report.html) reporters.push(htmlReporter());
   if (flags.json) reporters.push(jsonReporter());
+  const junit = flags.junit ?? config.report.junit;
+  if (junit)
+    reporters.push(junitReporter(resolve(config.cwd, junit), flags.failOn ?? "regression"));
+  if (config.report.githubSummary && process.env.GITHUB_STEP_SUMMARY) {
+    reporters.push(githubSummaryReporter(process.env.GITHUB_STEP_SUMMARY, config.report.publicURL));
+  }
+  const webhook = process.env.VISUALGUARD_WEBHOOK_URL ?? config.report.webhook;
+  if (webhook) {
+    reporters.push(
+      webhookReporter(webhook, {
+        reportURL: config.report.publicURL,
+        warn: (message) => process.stderr.write(`  ⚠ ${message}\n`),
+      }),
+    );
+  }
   return reporters;
 }
 

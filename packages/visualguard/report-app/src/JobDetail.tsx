@@ -345,6 +345,12 @@ export function JobDetail(props: JobDetailProps) {
           {props.actions && <div className="ml-auto flex gap-2">{props.actions}</div>}
         </div>
         {summary && <p className="text-sm text-slate-700 dark:text-slate-300">{summary}</p>}
+        {job.acceptedBy && (
+          <p className="text-xs text-teal-800 dark:text-teal-300">
+            Accepted {new Date(job.acceptedBy.at).toLocaleString()}
+            {job.acceptedBy.note ? `: ${job.acceptedBy.note}` : ""}
+          </p>
+        )}
         <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
           {(["production", "staging"] as const)
             .filter(

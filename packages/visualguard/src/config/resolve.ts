@@ -26,6 +26,8 @@ export interface ResolvedConfig extends ParsedConfig {
   configPath?: string;
   /** Absolute path of `output.dir`. */
   outputDir: string;
+  /** Absolute path of `output.acceptedFile`. */
+  acceptedPath: string;
   only: string[];
   concurrency: number;
 }
@@ -121,6 +123,7 @@ export function resolveConfig(
     cwd: options.cwd,
     configPath: options.configPath,
     outputDir: resolve(options.cwd, config.output.dir),
+    acceptedPath: resolve(options.cwd, config.output.acceptedFile),
     only: overrides.only ?? [],
     concurrency: overrides.concurrency ?? config.concurrency ?? defaultConcurrency(),
   };

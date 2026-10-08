@@ -1,9 +1,11 @@
-import { relative } from "node:path";
+import { basename, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Command } from "commander";
 import open from "open";
 import pc from "picocolors";
+import type { ResolvedConfig } from "../../config/resolve.js";
 import { findRun, readManifest } from "../../core/runs.js";
+import { acceptChanges } from "./accept.js";
 import { writeReport } from "../../reporters/html.js";
 import { startReportServer, type ApiHandler } from "../../server/report-server.js";
 import { isCI, loadResolvedConfig, parsePositiveInt } from "../shared.js";
@@ -16,8 +18,24 @@ export interface ReportFlags {
   serve: boolean;
 }
 
-/** Actions the served report can trigger; later phases register more. */
-export const reportActions: Record<string, (runDir: string) => ApiHandler> = {};
+/** Actions the served report can trigger (POST /api/<name>). */
+export const reportActions: Record<
+  string,
+  (context: { runDir: string; config: ResolvedConfig }) => ApiHandler
+> = {
+  accept:
+    ({ config, runDir }) =>
+    (body) => {
+      const { jobId, note } = body as { jobId?: unknown; note?: unknown };
+      if (typeof jobId !== "string") throw new Error("jobId is required");
+      const result = acceptChanges(config, {
+        runId: basename(runDir),
+        jobIds: [jobId],
+        note: typeof note === "string" ? note : undefined,
+      });
+      return { accepted: result.added.map((item) => item.job) };
+    },
+};
 
 export function registerReportCommand(program: Command): void {
   program
@@ -46,7 +64,7 @@ export async function runReportCommand(flags: ReportFlags): Promise<void> {
   }
 
   const api = Object.fromEntries(
-    Object.entries(reportActions).map(([name, create]) => [name, create(dir)]),
+    Object.entries(reportActions).map(([name, create]) => [name, create({ runDir: dir, config })]),
   );
   const server = await startReportServer({ runDir: dir, port: flags.port, api });
   process.stdout.write(

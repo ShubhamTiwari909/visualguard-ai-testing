@@ -20,6 +20,7 @@ export interface ZeroConfigFlags extends Omit<ConfigFlags, "production" | "stagi
   ai?: boolean;
   ci?: boolean;
   json?: boolean;
+  junit?: string;
   debug?: boolean;
 }
 
@@ -82,6 +83,7 @@ export function registerZeroConfigCommand(program: Command): void {
     )
     .option("--ci", "no prompts, colours or spinners")
     .option("--json", "print the manifest JSON to stdout")
+    .option("--junit <path>", "write a JUnit XML report")
     .option("--debug", "save Playwright traces");
   addAIOptions(program).action(async (urls: string[], flags: ZeroConfigFlags) => {
     if (urls.length === 0) program.help();

@@ -11,6 +11,7 @@ import {
   type ReportData,
   type Status,
 } from "./data";
+import { JobActions } from "./actions";
 import { JobDetail } from "./JobDetail";
 import { Kbd, StatusIcon } from "./ui";
 
@@ -312,6 +313,7 @@ export function App({ data }: { data: ReportData }) {
               onToggleSize={() => setActualSize((value) => !value)}
               focusedRegion={focusedRegion}
               onFocusRegion={focusRegion}
+              actions={<JobActions job={selected} />}
             />
           ) : (
             <p className="text-sm text-slate-500">This run has no jobs.</p>
