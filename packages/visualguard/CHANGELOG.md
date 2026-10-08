@@ -1,5 +1,12 @@
 # visualguard
 
+## 0.2.0
+
+### Minor Changes
+
+- Explain differences without AI: every capture now records a compact DOM snapshot; changed regions are mapped to the elements under them and to style, text, position and added/removed-element changes, described in plain language ("Alignment changed: align-items center → flex-start on div.actions"). Layout shifts are detected and reported as one root cause, removed controls and new overlaps are regressions, and tiny changes with no DOM change are treated as rendering noise. Captures are steadier: scrollbars are hidden through CDP and a few re-rasterised pixels no longer count as a moving page.
+- 18bcadb: Add the HTML report: every run writes a self-contained `index.html` (works from `file://`, CI artifacts and any static host) with a job list, side-by-side / slider / onion-skin / diff views, region overlays and crops, findings, page health, keyboard shortcuts and a dark theme. `visualguard report` serves the latest run (or `--run <id>`) on localhost with a token-protected action API; `--no-serve` prints the file path.
+
 ## 0.1.0
 
 ### Minor Changes

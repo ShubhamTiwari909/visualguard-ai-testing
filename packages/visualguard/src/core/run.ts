@@ -5,6 +5,8 @@ import pLimit from "p-limit";
 import type { Browser } from "playwright";
 import { launchBrowser, playwrightVersion } from "../capture/browser.js";
 import { capturePage } from "../capture/capture.js";
+import { captureDomSnapshot, type DomSnapshot } from "../capture/dom-snapshot.js";
+import { classifyJob } from "../mapping/classify.js";
 import type { ResolvedConfig } from "../config/resolve.js";
 import { createDiffRunner, type DiffRunner } from "../diff/runner.js";
 import { pngSize } from "./util.js";
@@ -210,18 +212,26 @@ export class Run extends RunEmitter {
     // Capture production then staging back to back to keep time skew small.
     for (const env of liveEnvs) {
       try {
+        let dom: DomSnapshot | undefined;
         const outcome = await capturePage({
           browser,
           config: this.config,
           job,
           env,
           tracePath: this.options.debug ? join(jobDir, `trace.${env}.zip`) : undefined,
+          afterScreenshot: async (page) => {
+            // A failed DOM snapshot only costs the explanation, never the capture.
+            dom = await captureDomSnapshot(page).catch(() => undefined);
+          },
         });
         const imagePath = join(jobDir, `${env}.png`);
         writeFileSync(imagePath, outcome.png);
+        const domPath = join(jobDir, `${env}.dom.json`);
+        if (dom) writeFileSync(domPath, JSON.stringify(dom));
         const capture: CaptureResult = {
           source: "live",
           image: rel(imagePath),
+          dom: dom ? rel(domPath) : undefined,
           size: outcome.size,
           truncated: outcome.truncated || undefined,
           unstable: outcome.unstable || undefined,
@@ -245,11 +255,7 @@ export class Run extends RunEmitter {
         result.captures.production = this.loadBaseline(baselinePath, jobDir, rel);
       }
       if (this.options.updateBaselines && baselinePath) {
-        this.saveBaseline(
-          baselinePath,
-          join(runDir, result.captures.staging!.image),
-          result.captures.staging!,
-        );
+        this.saveBaseline(baselinePath, runDir, result.captures.staging!);
       }
     }
 
@@ -282,9 +288,11 @@ export class Run extends RunEmitter {
         diffPixels: diff.diffPixels,
         diffRatio: diff.diffRatio,
         image: diff.image ? rel(diff.image) : undefined,
+        shift: diff.shift,
       };
       result.regions = diff.regions.map((region, id) => ({
         id,
+        kind: region.kind === "shift" ? "shift" : undefined,
         box: region.box,
         diffPixels: region.diffPixels,
         crops: {
@@ -295,11 +303,30 @@ export class Run extends RunEmitter {
         elements: [],
         deltas: [],
       }));
-      result.findings = findings.length > 0 ? findings : undefined;
-      result.status = applyFindings(diff.passed ? "pass" : "review", findings);
     } catch (error) {
       result.error = { stage: "diff", message: errorMessage(error) };
+      return finish();
     }
+
+    let visualStatus: "pass" | "review" | "regression" = "pass";
+    if (result.diff.diffPixels > 0 && result.regions.length > 0) {
+      try {
+        const classified = classifyJob({
+          diff: result.diff,
+          regions: result.regions,
+          production: readDom(runDir, result.captures.production),
+          staging: readDom(runDir, result.captures.staging),
+        });
+        result.regions = classified.regions;
+        findings.unshift(...classified.findings);
+        visualStatus = classified.status;
+      } catch (error) {
+        result.error = { stage: "mapping", message: errorMessage(error) };
+        visualStatus = "review";
+      }
+    }
+    result.findings = findings.length > 0 ? findings : undefined;
+    result.status = applyFindings(visualStatus, findings);
     return finish();
   }
 
@@ -312,9 +339,13 @@ export class Run extends RunEmitter {
     const target = join(jobDir, "production.png");
     copyFileSync(baselinePath, target);
     const healthPath = baselinePath.replace(/\.png$/, ".health.json");
+    const domPath = baselinePath.replace(/\.png$/, ".dom.json");
+    const domTarget = join(jobDir, "production.dom.json");
+    if (existsSync(domPath)) copyFileSync(domPath, domTarget);
     return {
       source: "baseline",
       image: rel(target),
+      dom: existsSync(domPath) ? rel(domTarget) : undefined,
       size: pngSize(readFileSync(target)),
       durationMs: 0,
       attempts: 0,
@@ -324,13 +355,24 @@ export class Run extends RunEmitter {
     };
   }
 
-  private saveBaseline(baselinePath: string, imagePath: string, capture: CaptureResult): void {
+  private saveBaseline(baselinePath: string, runDir: string, capture: CaptureResult): void {
     mkdirSync(join(baselinePath, ".."), { recursive: true });
-    copyFileSync(imagePath, baselinePath);
+    copyFileSync(join(runDir, capture.image), baselinePath);
+    if (capture.dom)
+      copyFileSync(join(runDir, capture.dom), baselinePath.replace(/\.png$/, ".dom.json"));
     writeFileSync(
       baselinePath.replace(/\.png$/, ".health.json"),
       `${JSON.stringify(capture.health, null, 2)}\n`,
     );
+  }
+}
+
+function readDom(runDir: string, capture: CaptureResult | undefined): DomSnapshot | undefined {
+  if (!capture?.dom) return undefined;
+  try {
+    return JSON.parse(readFileSync(join(runDir, capture.dom), "utf8")) as DomSnapshot;
+  } catch {
+    return undefined;
   }
 }
 

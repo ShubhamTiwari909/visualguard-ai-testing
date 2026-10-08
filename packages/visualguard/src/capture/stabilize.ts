@@ -26,9 +26,10 @@ export function stabilizationCSS(options: {
   hide: readonly string[];
 }): string {
   const rules: string[] = [
-    // Hide scrollbars so classic and overlay scrollbars render the same.
+    // Hide scrollbars. Chromium also hides them through CDP (see hideScrollbars); the
+    // ::-webkit-scrollbar rule is left out on purpose because it makes full-page screenshots
+    // of overflowing pages unstable.
     "html { scrollbar-width: none !important; }",
-    "::-webkit-scrollbar { display: none !important; }",
     "* { caret-color: transparent !important; }",
   ];
   if (options.disableAnimations) {
@@ -140,6 +141,17 @@ export async function pauseMedia(page: Page): Promise<void> {
       }
     })
     .catch(() => {});
+}
+
+/** Hides classic and overlay scrollbars in Chromium, which CSS alone does not do reliably. */
+export async function hideScrollbars(page: Page, browserName: string): Promise<void> {
+  if (browserName !== "chromium") return;
+  try {
+    const session = await page.context().newCDPSession(page);
+    await session.send("Emulation.setScrollbarsHidden", { hidden: true });
+  } catch {
+    // Not available in this browser build; the CSS fallback still applies.
+  }
 }
 
 export interface PageMetrics {

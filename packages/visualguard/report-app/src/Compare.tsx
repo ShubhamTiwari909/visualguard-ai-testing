@@ -248,7 +248,15 @@ export function Compare({
     );
   }
   return (
-    <Canvas job={job} actualSize={actualSize} label="Differences (red)">
+    <Canvas
+      job={job}
+      actualSize={actualSize}
+      label={
+        job.diff.shift
+          ? "Differences (red) · inserted or removed content (orange)"
+          : "Differences (red)"
+      }
+    >
       <Screenshot
         job={job}
         src={job.diff.image}

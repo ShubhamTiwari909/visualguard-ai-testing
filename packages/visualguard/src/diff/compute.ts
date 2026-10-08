@@ -4,6 +4,7 @@ import type { Box, Env, Size } from "../core/types.js";
 import { pixelmatchEngine, renderDiffImage } from "./compare.js";
 import { cropImage, padBox, padImage, readPNG, writePNG } from "./image.js";
 import { extractRegions } from "./regions.js";
+import { detectShift } from "./shift.js";
 
 export interface DiffOptions {
   threshold: number;
@@ -14,6 +15,8 @@ export interface DiffOptions {
   regionCellSize: number;
   regionMergeDistance: number;
   regionPadding: number;
+  /** Look for a vertical layout shift and report the inserted/removed band separately. */
+  detectShift: boolean;
 }
 
 export interface DiffJobInput {
@@ -25,6 +28,8 @@ export interface DiffJobInput {
 }
 
 export interface DiffJobRegion {
+  /** "shift" for the inserted or removed band of a layout shift. */
+  kind: "pixels" | "shift";
   box: Box;
   diffPixels: number;
   /** Absolute paths. */
@@ -40,6 +45,7 @@ export interface DiffJobOutput {
   diffRatio: number;
   /** Absolute path, only written when the job did not pass. */
   image?: string;
+  shift?: { fromY: number; deltaY: number };
   regions: DiffJobRegion[];
   durationMs: number;
 }
@@ -86,15 +92,43 @@ export function computeDiff(input: DiffJobInput): DiffJobOutput {
   if (passed) return { ...output, durationMs: Date.now() - started };
 
   mkdirSync(input.outDir, { recursive: true });
-  const diffImage = renderDiffImage(b, mask);
+
+  // A layout shift explains most of a diff with one band; regions then come from what is left.
+  let regionMask = mask;
+  let band: Box | undefined;
+  if (input.options.detectShift) {
+    const shift = detectShift(a, b, input.options, mask);
+    if (shift?.explainsBelow) {
+      output.shift = { fromY: shift.fromY, deltaY: shift.deltaY };
+      regionMask = shift.residualMask;
+      band = {
+        x: 0,
+        y: shift.fromY,
+        width,
+        height: Math.min(Math.abs(shift.deltaY), height - shift.fromY),
+      };
+    }
+  }
+
+  const diffImage = renderDiffImage(b, regionMask, band);
   output.image = join(input.outDir, "diff.png");
   writePNG(output.image, diffImage);
 
-  const regions = extractRegions(mask, width, height, {
+  const pixelRegions = extractRegions(regionMask, width, height, {
     cellSize: input.options.regionCellSize,
     mergeDistance: input.options.regionMergeDistance,
-    maxRegions: input.options.maxRegions,
+    maxRegions: band ? input.options.maxRegions - 1 : input.options.maxRegions,
   });
+  const regions: Array<{ kind: DiffJobRegion["kind"]; box: Box; diffPixels: number }> = [
+    ...(band ? [{ kind: "shift" as const, box: band, diffPixels: band.width * band.height }] : []),
+    ...pixelRegions.map((region) => ({ kind: "pixels" as const, ...region })),
+  ];
+
+  // Production crops come from where the content was before it moved.
+  const productionBox = (box: Box): Box =>
+    output.shift && box.y >= output.shift.fromY + Math.max(0, output.shift.deltaY)
+      ? { ...box, y: Math.max(0, box.y - output.shift.deltaY) }
+      : box;
 
   if (regions.length > 0) mkdirSync(join(input.outDir, "regions"), { recursive: true });
   output.regions = regions.map((region, index) => {
@@ -104,10 +138,13 @@ export function computeDiff(input: DiffJobInput): DiffJobOutput {
       staging: join(input.outDir, "regions", `${index}.staging.png`),
       diff: join(input.outDir, "regions", `${index}.diff.png`),
     };
-    writePNG(crops.production, cropImage(a, cropBox));
+    writePNG(
+      crops.production,
+      cropImage(a, padBox(productionBox(region.box), input.options.regionPadding, width, height)),
+    );
     writePNG(crops.staging, cropImage(b, cropBox));
     writePNG(crops.diff, cropImage(diffImage, cropBox));
-    return { box: region.box, diffPixels: region.diffPixels, crops };
+    return { kind: region.kind, box: region.box, diffPixels: region.diffPixels, crops };
   });
 
   return { ...output, durationMs: Date.now() - started };

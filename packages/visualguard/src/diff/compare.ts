@@ -1,4 +1,5 @@
 import pixelmatch from "pixelmatch";
+import type { Box } from "../core/types.js";
 import { createImage, type RGBAImage } from "./image.js";
 
 export interface CompareOptions {
@@ -51,10 +52,23 @@ export const pixelmatchEngine: DiffEngine = {
   },
 };
 
-/** A dimmed greyscale copy of `base` with differing pixels drawn in red. */
-export function renderDiffImage(base: RGBAImage, mask: Uint8Array): RGBAImage {
+/**
+ * A dimmed greyscale copy of `base` with differing pixels drawn in red. A layout-shift `band`
+ * (inserted or removed content) is tinted orange.
+ */
+export function renderDiffImage(base: RGBAImage, mask: Uint8Array, band?: Box): RGBAImage {
   const out = createImage(base.width, base.height);
+  const bandStart = band ? band.y * base.width : -1;
+  const bandEnd = band ? (band.y + band.height) * base.width : -1;
   for (let i = 0, p = 0; p < mask.length; i += 4, p++) {
+    if (p >= bandStart && p < bandEnd && !mask[p]) {
+      const grey = 0.299 * base.data[i]! + 0.587 * base.data[i + 1]! + 0.114 * base.data[i + 2]!;
+      out.data[i] = 255;
+      out.data[i + 1] = 140 + grey * 0.35;
+      out.data[i + 2] = grey * 0.3;
+      out.data[i + 3] = 255;
+      continue;
+    }
     if (mask[p]) {
       out.data[i] = 255;
       out.data[i + 1] = 0;

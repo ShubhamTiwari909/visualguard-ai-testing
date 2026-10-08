@@ -172,6 +172,7 @@ export const configSchema = z.object({
       regionCellSize: z.number().int().min(4).max(64).default(16),
       regionMergeDistance: z.number().int().min(0).default(32),
       regionPadding: z.number().int().min(0).default(24),
+      detectShift: z.boolean().default(true),
     })
     .prefault({}),
 

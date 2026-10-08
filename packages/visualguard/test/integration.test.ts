@@ -76,10 +76,9 @@ describe("test pipeline on the fixture site", () => {
     expect(box.height).toBeLessThan(100);
 
     const missing = manifest.jobs.find((job) => job.route === "/missing-image")!;
-    expect(missing.findings?.[0]).toMatchObject({
-      severity: "regression",
-      message: "Broken image: /product-v2.svg",
-    });
+    expect(missing.findings).toContainEqual(
+      expect.objectContaining({ severity: "regression", message: "Broken image: /product-v2.svg" }),
+    );
     expect(missing.captures.staging!.health.brokenImages[0]).toContain("/product-v2.svg");
     expect(missing.captures.staging!.health.failedRequests.join()).toContain("404");
 

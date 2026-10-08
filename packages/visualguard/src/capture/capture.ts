@@ -3,9 +3,11 @@ import type { ResolvedConfig } from "../config/resolve.js";
 import { errorMessage } from "../core/errors.js";
 import type { Env, HealthSignals, JobSpec, Size } from "../core/types.js";
 import { pngSize, sleep } from "../core/util.js";
+import { decodePNG } from "../diff/image.js";
 import { createContext } from "./browser.js";
 import {
   DEFAULT_HIDE_SELECTORS,
+  hideScrollbars,
   NetworkTracker,
   pauseMedia,
   readPageMetrics,
@@ -37,6 +39,25 @@ export interface CaptureOutcome {
 }
 
 const MASK_COLOR = "#FF00FF";
+const STABLE_PIXEL_TOLERANCE = 10;
+
+function countChangedPixels(a: Buffer, b: Buffer): number {
+  const imageA = decodePNG(a);
+  const imageB = decodePNG(b);
+  if (imageA.width !== imageB.width || imageA.height !== imageB.height)
+    return Number.POSITIVE_INFINITY;
+  let changed = 0;
+  for (let i = 0; i < imageA.data.length; i += 4) {
+    if (
+      imageA.data[i] !== imageB.data[i] ||
+      imageA.data[i + 1] !== imageB.data[i + 1] ||
+      imageA.data[i + 2] !== imageB.data[i + 2]
+    ) {
+      changed++;
+    }
+  }
+  return changed;
+}
 
 /**
  * Captures one page with retries. Throws the last error if every attempt fails.
@@ -56,6 +77,7 @@ export async function capturePage(request: CaptureRequest): Promise<CaptureOutco
     if (request.tracePath) await context.tracing.start({ screenshots: true, snapshots: true });
     try {
       const page = await context.newPage();
+      await hideScrollbars(page, request.config.browser.name);
       const outcome = await captureOnce(page, request);
       return { ...outcome, attempts: attempt, durationMs: Date.now() - started };
     } catch (error) {
@@ -131,11 +153,11 @@ async function captureOnce(
 
   const metrics = await readPageMetrics(page);
   health.brokenImages = metrics.brokenImages;
-  if (metrics.documentWidth > metrics.viewportWidth) {
-    health.horizontalOverflow = {
-      documentWidth: metrics.documentWidth,
-      viewportWidth: metrics.viewportWidth,
-    };
+  // Compare with the configured width: mobile emulation widens the layout viewport to fit
+  // overflowing content, so window.innerWidth can hide the overflow.
+  const viewportWidth = config.viewports[job.viewport]?.width ?? metrics.viewportWidth;
+  if (metrics.documentWidth > viewportWidth + 1) {
+    health.horizontalOverflow = { documentWidth: metrics.documentWidth, viewportWidth };
   }
 
   const truncated = screenshot.fullPage && metrics.documentHeight > screenshot.maxHeight;
@@ -156,16 +178,21 @@ async function captureOnce(
 
   // Stability loop: keep shooting until two consecutive screenshots match.
   let png = await shoot();
+  let previous = png;
   let unstable = true;
   for (let attempt = 1; attempt < stabilize.stabilityAttempts + 1; attempt++) {
     await sleep(stabilize.stabilityIntervalMs);
     const next = await shoot();
-    if (next.equals(png)) {
+    previous = png;
+    png = next;
+    if (next.equals(previous)) {
       unstable = false;
       break;
     }
-    png = next;
   }
+  // Chromium sometimes re-rasterises a few anti-aliased pixels outside the viewport between
+  // shots; that is not a moving page.
+  if (unstable && countChangedPixels(previous, png) <= STABLE_PIXEL_TOLERANCE) unstable = false;
 
   await afterScreenshot?.(page);
   return { png, size: pngSize(png), truncated, unstable, health };

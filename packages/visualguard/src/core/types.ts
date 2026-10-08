@@ -114,6 +114,8 @@ export type Delta = StyleDelta | TextDelta | BoxDelta | PresenceDelta;
 
 export interface RegionResult {
   id: number;
+  /** "shift" marks the inserted or removed band of a layout shift. */
+  kind?: "pixels" | "shift";
   box: Box;
   diffPixels: number;
   /** Crops relative to the run directory. */

@@ -14,6 +14,7 @@ const options: DiffOptions = {
   regionCellSize: 16,
   regionMergeDistance: 32,
   regionPadding: 8,
+  detectShift: true,
 };
 
 function fillRect(

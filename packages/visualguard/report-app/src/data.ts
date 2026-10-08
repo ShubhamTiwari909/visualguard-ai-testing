@@ -86,7 +86,8 @@ export function jobSummary(job: JobResult): string {
   if (job.analysis) return job.analysis.title;
   const finding =
     job.findings?.find((item) => item.severity === job.status) ??
-    job.findings?.find((item) => item.severity !== "info");
+    job.findings?.find((item) => item.severity !== "info") ??
+    job.findings?.find((item) => item.source === "heuristic");
   if (finding) return finding.message;
   if (!job.diff) return job.captures.production ? "" : "New snapshot";
   if (job.diff.diffPixels === 0) return "Identical";
