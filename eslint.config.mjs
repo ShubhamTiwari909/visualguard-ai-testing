@@ -11,6 +11,7 @@ export default tseslint.config(
       "**/.next/**",
       "**/.visualguard/**",
       "fixtures/site/**",
+      "**/next-env.d.ts",
     ],
   },
   js.configs.recommended,

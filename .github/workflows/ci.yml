@@ -50,3 +50,20 @@ jobs:
           # Capture every fixture page 10× and require zero differences (PLAN.md §17).
           VG_DETERMINISM_RUNS: "10"
       - run: node scripts/pack-smoke.mjs
+
+  example-nextjs:
+    # Builds examples/nextjs, seeds regressions, and checks `visualguard fix` repairs them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter visualguard exec playwright install --with-deps chromium
+      - run: pnpm build
+      - run: pnpm --filter visualguard exec vitest run test/nextjs-example.test.ts
+        env:
+          VG_E2E_NEXT: "1"

@@ -138,6 +138,11 @@ export function detectShift(
     if (a.hash[y] === b.hash[y]) inPlace++;
   }
   if (atDelta <= inPlace) return undefined;
+  // …and the bottom of the page moved too. Content that moved inside a fixed-height box leaves
+  // everything after the box in place.
+  let lastRow = height - 1;
+  while (lastRow > fromY && !a.informative[lastRow]) lastRow--;
+  if (a.hash[lastRow] === b.hash[lastRow] || !aligned(lastRow)) return undefined;
 
   // Residual differences: above fromY unshifted, below it realigned; in staging coordinates.
   const residualMask = new Uint8Array(width * height);

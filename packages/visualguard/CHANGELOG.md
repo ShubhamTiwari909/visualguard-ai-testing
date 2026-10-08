@@ -1,5 +1,11 @@
 # visualguard
 
+## 0.5.0
+
+### Minor Changes
+
+- Add `visualguard fix`: ranks the likely source files, proposes an edit (restoring production's utility classes or CSS values without AI, or search/replace edits from the AI provider after asking for consent), shows the diff and asks before applying, then runs `fix.verify.commands`, re-captures the page on the local dev server and keeps the change only if it matches production; otherwise it reverts and retries. Needs `fix.enabled: true` and a clean git tree. Also: lab/oklch colours are shown as hex, layout-shift detection ignores content moving inside fixed-height boxes, and an `examples/nextjs` app demonstrates the loop.
+
 ## 0.4.0
 
 ### Minor Changes

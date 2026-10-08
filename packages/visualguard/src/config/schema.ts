@@ -214,6 +214,39 @@ export const configSchema = z.object({
     })
     .prefault({}),
 
+  fix: z
+    .object({
+      /** `visualguard fix` refuses to run unless this is true. */
+      enabled: z.boolean().default(false),
+      requireConfirmation: z.boolean().default(true),
+      /** Only files matching these globs (relative to the project) are read or edited. */
+      include: z
+        .array(z.string())
+        .default(["src/**", "app/**", "pages/**", "components/**", "styles/**", "lib/**"]),
+      /** Files changed since this git ref rank first as likely causes, e.g. "origin/main". */
+      compareRef: z.string().optional(),
+      verify: z
+        .object({
+          /** Dev server for visual verification. Without it, fixes are applied but unverified. */
+          server: z
+            .object({
+              /** Started by VisualGuard; omit to use a server that's already running. */
+              command: z.string().optional(),
+              url: urlSchema,
+              readyTimeoutMs: z.number().int().positive().default(60_000),
+            })
+            .optional(),
+          /** Run after each edit, e.g. "pnpm tsc --noEmit"; any failure reverts the edit. */
+          commands: z.array(z.string()).default([]),
+          commandTimeoutMs: z.number().int().positive().default(300_000),
+        })
+        .prefault({}),
+      maxAttempts: z.number().int().min(1).max(5).default(2),
+      /** Consent to send source excerpts to the AI provider without asking (needed for --auto). */
+      allowSourceUpload: z.boolean().default(false),
+    })
+    .prefault({}),
+
   concurrency: z.number().int().min(1).max(32).optional(),
 
   hooks: z

@@ -194,6 +194,10 @@ describe("describeDeltas", () => {
     expect(formatValue("rgb(37, 99, 235)")).toBe("#2563eb");
     expect(formatValue("rgba(0, 0, 0, 0.5)")).toBe("#000000 @ 0.5");
     expect(formatValue("179.516px 12px")).toBe("179.5px 12px");
+    // Tailwind v4 colours as Chrome computes them (blue-600, violet-600).
+    expect(formatValue("oklch(0.546 0.245 262.881)")).toBe("#155dfc");
+    expect(formatValue("lab(41.088 68.9966 -91.995)")).toMatch(/^#7[0-9a-f]2[0-9a-f]f[0-9a-f]$/);
+    expect(formatValue("oklch(0.5 0.1 200 / 0.5)")).toMatch(/^#[0-9a-f]{6} @ 0\.5$/);
   });
 
   it("groups four equal padding sides", () => {

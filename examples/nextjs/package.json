@@ -1,0 +1,28 @@
+{
+  "name": "visualguard-example-nextjs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3100",
+    "build": "next build",
+    "start": "next start -p 3101",
+    "seed": "node scripts/seed-regressions.mjs",
+    "unseed": "node scripts/seed-regressions.mjs --undo",
+    "visual": "visualguard test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "^22.15.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "visualguard": "workspace:*"
+  }
+}

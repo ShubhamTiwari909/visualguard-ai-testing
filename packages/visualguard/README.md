@@ -44,6 +44,7 @@ npx visualguard https://example.com/pricing https://staging.example.com/pricing
 | `visualguard analyze`         | Re-runs AI analysis on a run (`--provider`, `--model`, `--no-cache`)  |
 | `visualguard accept [routes]` | Accepts changes as intentional (`--all`, `--viewport`, `--note`)      |
 | `visualguard comment`         | Posts or updates the sticky PR comment (CI; `--link`, `--dry-run`)    |
+| `visualguard fix [routes]`    | Proposes, applies and visually verifies fixes (asks first)            |
 | `visualguard report`          | Opens the HTML report for the latest run (`--run <id>`, `--no-serve`) |
 
 Useful `test` flags:
@@ -130,6 +131,37 @@ by their inputs, `ai.maxCallsPerRun` caps spending, and any AI error falls back 
 
 On Google's free (unpaid) tier, submitted content may be used to improve Google products; that
 includes screenshots of unreleased pages. Use Ollama or a paid key for confidential work.
+
+## Fixing regressions
+
+```ts
+fix: {
+  enabled: true,                       // off by default
+  include: ["app/**", "components/**"],
+  verify: {
+    server: { command: "pnpm dev", url: "http://localhost:3000" },
+    commands: ["pnpm exec tsc --noEmit"],
+  },
+},
+```
+
+`npx visualguard fix` (add `--include-review` to also try changes marked review) works through
+the regressions in the latest run:
+
+1. **Find the source.** Files are ranked by what changed since `fix.compareRef`, the route's
+   page and its imports, test ids, class lists and visible text.
+2. **Propose an edit.** Common cases need no AI: if an element's utility classes changed,
+   production's classes are restored; if a CSS declaration changed, production's value is put
+   back. Otherwise the AI proposes search/replace edits, after asking once before any source
+   code is sent.
+3. **Show the diff and ask** before changing anything.
+4. **Verify.** Your commands run, the page is captured again on the local dev server, and it must
+   match production. If it doesn't, the edit is reverted and retried with the reason, up to
+   `fix.maxAttempts`.
+
+`fix` needs a git repository with a clean working tree (or `--allow-dirty`), and never touches
+lockfiles, `.env` files or config files. The `examples/nextjs` app in the repository walks
+through the whole loop.
 
 ## CI and pull requests
 

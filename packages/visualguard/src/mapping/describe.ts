@@ -1,9 +1,79 @@
 import type { Delta, StyleDelta } from "../core/types.js";
 import { LAYOUT_PROPERTIES } from "./deltas.js";
 
-/** rgb(37, 99, 235) → #2563eb; rgba with alpha keeps the alpha. Other values pass through. */
+const toHex = (channels: number[]) =>
+  `#${channels
+    .map((channel) =>
+      Math.round(Math.min(255, Math.max(0, channel)))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+
+/** Linear-light sRGB (0–1) → gamma-encoded 0–255. */
+const encode = (linear: number) =>
+  255 *
+  (linear <= 0.0031308 ? 12.92 * linear : 1.055 * Math.pow(Math.max(0, linear), 1 / 2.4) - 0.055);
+
+/** OKLab → sRGB (Björn Ottosson's matrices). */
+function oklabToRGB(l: number, a: number, b: number): number[] {
+  const l_ = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m_ = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s_ = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [
+    4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_,
+    -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_,
+    -0.0041960863 * l_ - 0.7034186147 * m_ + 1.707614701 * s_,
+  ].map(encode);
+}
+
+/** CIE Lab (D50, as CSS uses it) → sRGB via XYZ and Bradford adaptation to D65. */
+function labToRGB(l: number, a: number, b: number): number[] {
+  const fy = (l + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  const inverse = (t: number) => (t ** 3 > 216 / 24389 ? t ** 3 : (116 * t - 16) / (24389 / 27));
+  const [x, y, z] = [
+    0.96422 * inverse(fx),
+    1 * (l > 8 ? fy ** 3 : l / (24389 / 27)),
+    0.82521 * inverse(fz),
+  ] as const;
+  const [x65, y65, z65] = [
+    0.9554734527 * x - 0.0230985369 * y + 0.0632593086 * z,
+    -0.0283697594 * x + 1.009995458 * y + 0.021041399 * z,
+    0.0123140017 * x - 0.0205076964 * y + 1.3303659366 * z,
+  ];
+  return [
+    3.2409699419 * x65 - 1.5373831776 * y65 - 0.4986107603 * z65,
+    -0.9692436363 * x65 + 1.8759675015 * y65 + 0.0415550574 * z65,
+    0.0556300797 * x65 - 0.2039769589 * y65 + 1.0569715142 * z65,
+  ].map(encode);
+}
+
+const number = (value: string) =>
+  value.endsWith("%") ? Number.parseFloat(value) / 100 : Number.parseFloat(value);
+
+/**
+ * Makes computed CSS values readable: rgb()/lab()/oklch()/oklab() colours become hex (with any
+ * alpha kept), and long decimals are rounded. Other values pass through.
+ */
 export function formatValue(value: string): string {
   return value
+    .replace(/\b(oklch|oklab|lab)\(\s*([^)]+)\)/g, (match, space: string, body: string) => {
+      const [channels, alpha] = body.split("/").map((part) => part.trim());
+      const [p1, p2, p3] = (channels ?? "").split(/\s+/);
+      if (p1 === undefined || p2 === undefined || p3 === undefined) return match;
+      let rgb: number[];
+      if (space === "lab")
+        rgb = labToRGB(number(p1) * (p1.endsWith("%") ? 100 : 1), number(p2), number(p3));
+      else if (space === "oklab") rgb = oklabToRGB(number(p1), number(p2), number(p3));
+      else {
+        const hue = (Number.parseFloat(p3) * Math.PI) / 180;
+        rgb = oklabToRGB(number(p1), number(p2) * Math.cos(hue), number(p2) * Math.sin(hue));
+      }
+      if (rgb.some((channel) => Number.isNaN(channel))) return match;
+      return alpha && number(alpha) !== 1 ? `${toHex(rgb)} @ ${alpha}` : toHex(rgb);
+    })
     .replace(
       /(\d+\.\d{2,})px/g,
       (_match, number: string) => `${Number(Number(number).toFixed(1))}px`,

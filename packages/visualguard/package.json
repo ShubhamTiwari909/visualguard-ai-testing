@@ -1,6 +1,6 @@
 {
   "name": "visualguard",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "AI visual regression agent: compare production and staging, explain every visual difference, and fix regressions.",
   "keywords": [
     "visual regression",
@@ -43,6 +43,7 @@
     "@clack/prompts": "^1.8.1",
     "@google/genai": "^2.28.0",
     "commander": "^15.0.0",
+    "diff": "^9.0.0",
     "jiti": "^2.7.0",
     "open": "^11.0.4",
     "p-limit": "^7.3.3",
