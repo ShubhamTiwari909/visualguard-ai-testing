@@ -1,5 +1,11 @@
 # visualguard
 
+## 1.1.1
+
+### Patch Changes
+
+- 6e918a5: Link the npm page to the GitHub repository and getting started guide; add badges and a demo GIF to the README.
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "visualguard",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "AI visual regression agent: compare production and staging, explain every visual difference, and fix regressions.",
   "keywords": [
     "visual regression",
