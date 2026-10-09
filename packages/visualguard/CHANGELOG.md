@@ -1,5 +1,18 @@
 # visualguard
 
+## 2.0.0
+
+### Major Changes
+
+- feat: add CONTRIBUTING.md, update PLAN.md, and enhance README.md; release 1.1.0
+- fd3c5fc: Strengthen visual acceptance, fix verification, baseline provenance, AI request caching/budgets, Playwright fixture integration and shard completeness.
+
+  Migration: missing baselines now fail by default; explicitly update snapshots or opt into `baseline.missing: "create"`. Legacy CLI baselines require regeneration or an explicit `baseline.legacy: "allow"`; fixture baseline IDs include project/rendering identity. Automatic fixing requires `fix.verify.server`. Shards outside GitHub Actions require a shared execution group, and legacy/incomplete/incompatible shard inputs are rejected. See the reliability migration guide for details.
+
+### Patch Changes
+
+- 6e918a5: Link the npm page to the GitHub repository and getting started guide; add badges and a demo GIF to the README.
+
 ## 1.1.0
 
 ### Minor Changes
