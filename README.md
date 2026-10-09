@@ -1,7 +1,13 @@
 # VisualGuard
 
+[![npm version](https://img.shields.io/npm/v/visualguard)](https://www.npmjs.com/package/visualguard) [![CI](https://github.com/ShubhamTiwari909/visualguard-ai-testing/actions/workflows/ci.yml/badge.svg)](https://github.com/ShubhamTiwari909/visualguard-ai-testing/actions/workflows/ci.yml) [![license](https://img.shields.io/npm/l/visualguard)](LICENSE) [![node](https://img.shields.io/node/v/visualguard)](https://nodejs.org) [![downloads](https://img.shields.io/npm/dm/visualguard)](https://www.npmjs.com/package/visualguard)
+
 AI visual regression agent, shipped as an npm CLI. VisualGuard compares production against staging,
 explains every visual difference (with or without AI), and can fix regressions and verify the fix.
+
+![VisualGuard run in the terminal, then the HTML report: a regression, a colour change with ignored dynamic content, and an explained alignment change](docs/assets/demo.gif)
+
+New here? Read the [getting started guide](docs/getting-started.md).
 
 ```bash
 npm install -D visualguard playwright

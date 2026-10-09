@@ -23,7 +23,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - uses: <owner>/visualguard/action@v1
+      - uses: ShubhamTiwari909/visualguard-ai-testing/action@v1
         with:
           gemini-api-key: ${{ secrets.GEMINI_API_KEY }} # optional
           # staging-url: ${{ vars.STAGING_URL }}

@@ -12,6 +12,15 @@
     "cli"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShubhamTiwari909/visualguard-ai-testing.git",
+    "directory": "packages/visualguard"
+  },
+  "homepage": "https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/getting-started.md",
+  "bugs": {
+    "url": "https://github.com/ShubhamTiwari909/visualguard-ai-testing/issues"
+  },
   "type": "module",
   "bin": {
     "visualguard": "./dist/cli.js"

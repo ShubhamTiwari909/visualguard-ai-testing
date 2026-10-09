@@ -1,7 +1,13 @@
 # VisualGuard
 
+[![npm version](https://img.shields.io/npm/v/visualguard)](https://www.npmjs.com/package/visualguard) [![CI](https://github.com/ShubhamTiwari909/visualguard-ai-testing/actions/workflows/ci.yml/badge.svg)](https://github.com/ShubhamTiwari909/visualguard-ai-testing/actions/workflows/ci.yml) [![license](https://img.shields.io/npm/l/visualguard)](LICENSE) [![node](https://img.shields.io/node/v/visualguard)](https://nodejs.org) [![downloads](https://img.shields.io/npm/dm/visualguard)](https://www.npmjs.com/package/visualguard)
+
 Visual regression testing for websites, as a CLI. VisualGuard captures the same pages on production
 and staging with Playwright, diffs them pixel by pixel, and tells you what changed and where.
+
+![VisualGuard run in the terminal, then the HTML report: a regression, a colour change with ignored dynamic content, and an explained alignment change](https://raw.githubusercontent.com/ShubhamTiwari909/visualguard-ai-testing/main/docs/assets/demo.gif)
+
+New here? Read the [getting started guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/getting-started.md).
 
 ```bash
 npm install -D visualguard playwright
@@ -286,7 +292,7 @@ steps:
 Jobs are sorted and dealt out round-robin, so every machine computes the same split.
 
 **GitHub Action.** `action/` in the repository wraps all of this in one step
-(`uses: <owner>/visualguard/action@v1`); see its README.
+(`uses: ShubhamTiwari909/visualguard-ai-testing/action@v1`); see its README.
 
 **Other integrations.** `--junit <path>` writes JUnit XML for CI test dashboards. `report.webhook`
 (or `VISUALGUARD_WEBHOOK_URL`) POSTs a JSON summary after each run, for n8n, Slack or Zapier; its

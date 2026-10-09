@@ -17,13 +17,15 @@
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
     "test:pack": "pnpm build && node scripts/pack-smoke.mjs",
-    "eval": "pnpm build && node evals/run.mjs"
+    "eval": "pnpm build && node evals/run.mjs",
+    "demo:gif": "pnpm build && node scripts/demo-gif.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.15.0",
     "eslint": "^10.12.0",
+    "gifenc": "^1.0.3",
     "globals": "^17.13.0",
     "prettier": "^3.9.9",
     "typescript": "5.9.3",
