@@ -54,9 +54,15 @@ export const pixelmatchEngine: DiffEngine = {
 
 /**
  * A dimmed greyscale copy of `base` with differing pixels drawn in red. A layout-shift `band`
- * (inserted or removed content) is tinted orange.
+ * (inserted or removed content) is tinted orange, and `ignored` areas (they change on every
+ * load) blue.
  */
-export function renderDiffImage(base: RGBAImage, mask: Uint8Array, band?: Box): RGBAImage {
+export function renderDiffImage(
+  base: RGBAImage,
+  mask: Uint8Array,
+  band?: Box,
+  ignored?: readonly Box[],
+): RGBAImage {
   const out = createImage(base.width, base.height);
   const bandStart = band ? band.y * base.width : -1;
   const bandEnd = band ? (band.y + band.height) * base.width : -1;
@@ -81,6 +87,18 @@ export function renderDiffImage(base: RGBAImage, mask: Uint8Array, band?: Box): 
       out.data[i + 2] = dimmed;
     }
     out.data[i + 3] = 255;
+  }
+  for (const box of ignored ?? []) {
+    const x1 = Math.min(base.width, box.x + box.width);
+    const y1 = Math.min(base.height, box.y + box.height);
+    for (let y = Math.max(0, box.y); y < y1; y++) {
+      for (let x = Math.max(0, box.x); x < x1; x++) {
+        const i = (y * base.width + x) * 4;
+        out.data[i] = out.data[i]! * 0.6 + 59 * 0.4;
+        out.data[i + 1] = out.data[i + 1]! * 0.6 + 130 * 0.4;
+        out.data[i + 2] = out.data[i + 2]! * 0.6 + 246 * 0.4;
+      }
+    }
   }
   return out;
 }

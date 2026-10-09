@@ -4,12 +4,13 @@ import { ConfigError } from "../../core/errors.js";
 import pc from "picocolors";
 import type { ResolvedConfig } from "../../config/resolve.js";
 import { planJobs } from "../../core/jobs.js";
-import { createRun, type Reporter } from "../../core/run.js";
+import { createRun, parseShard, type Reporter, type Shard } from "../../core/run.js";
 import { exitCodeFor, FAIL_ON_VALUES } from "../../core/status.js";
 import type { FailOn } from "../../core/types.js";
 import { pluralize } from "../../core/util.js";
 import {
   addAIOptions,
+  addCheckOptions,
   collect,
   loadResolvedConfig,
   parsePositiveInt,
@@ -29,10 +30,11 @@ export interface TestFlags extends ConfigFlags {
   list?: boolean;
   /** Baseline mode: save this run's screenshots as the new baselines. */
   updateBaselines?: boolean;
+  shard?: Shard;
 }
 
 export function addConfigOptions(command: Command): Command {
-  return command
+  command
     .option("-c, --config <path>", "config file path")
     .option("--production <url>", "override the production base URL")
     .option("--staging <url>", "override the staging base URL, e.g. http://localhost:3000")
@@ -44,6 +46,7 @@ export function addConfigOptions(command: Command): Command {
     .option("--only <glob>", 'filter routes, e.g. --only "/blog/**"; repeatable', collect)
     .option("--viewport <name>", "run only this viewport; repeatable", collect)
     .option("--concurrency <n>", "pages captured in parallel", parsePositiveInt);
+  return addCheckOptions(command);
 }
 
 export function registerTestCommand(program: Command): void {
@@ -62,6 +65,11 @@ export function registerTestCommand(program: Command): void {
     .option("--debug", "save Playwright traces")
     .option("--list", "print the resolved URL pairs and exit without capturing")
     .option("--update-baselines", "baseline mode: save this run's screenshots as the baselines")
+    .option(
+      "--shard <i/n>",
+      "run one part of the jobs, e.g. 1/4; combine the parts with `visualguard merge`",
+      parseShard,
+    )
     .action(async (flags: TestFlags) => {
       process.exitCode = await runTestCommand(flags);
     });
@@ -106,6 +114,7 @@ export async function runTestCommand(
     debug: flags.debug,
     ai: flags.ai === false ? false : undefined,
     reporters: allReporters,
+    shard: flags.shard,
   }).start();
   return exitCodeFor(manifest, flags.failOn);
 }

@@ -12,6 +12,9 @@ export type RunEvent =
       routeCount: number;
       warnings: string[];
       ai?: { provider: string; model: string };
+      shard?: { index: number; total: number };
+      /** Set when shard results are merged (`visualguard merge`). */
+      mergedShards?: number;
     }
   | { type: "job:start"; job: JobSpec }
   | { type: "job:captured"; job: JobSpec; env: Env; capture: CaptureResult }

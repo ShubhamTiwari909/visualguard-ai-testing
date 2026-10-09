@@ -40,6 +40,40 @@ export interface HealthSignals {
   brokenImages: string[];
   /** Document is wider than the viewport. */
   horizontalOverflow?: { documentWidth: number; viewportWidth: number };
+  /** axe-core violations (`checks.accessibility`). */
+  accessibility?: A11yViolation[];
+  /** Load metrics (`checks.performance`). */
+  performance?: PerfMetrics;
+  /** Checks that couldn't run, e.g. "accessibility: axe-core did not finish in time". */
+  checkErrors?: string[];
+}
+
+export type A11yImpact = "minor" | "moderate" | "serious" | "critical";
+
+export interface A11yViolation {
+  /** axe rule id, e.g. "color-contrast". */
+  id: string;
+  impact: A11yImpact;
+  help: string;
+  helpUrl: string;
+  /** Elements that fail the rule. */
+  count: number;
+  /** Selectors of the first few. */
+  targets: string[];
+}
+
+export interface PerfMetrics {
+  ttfbMs?: number;
+  fcpMs?: number;
+  lcpMs?: number;
+  /** Cumulative layout shift during load. */
+  cls: number;
+  loadMs?: number;
+  requests: number;
+  /** Bytes transferred, in KB (responses the page may measure). */
+  transferKB: number;
+  jsKB: number;
+  domNodes: number;
 }
 
 export interface CaptureResult {
@@ -69,6 +103,11 @@ export interface DiffResult {
   image?: string;
   /** Layout shift detected: content below `fromY` moved by `deltaY` pixels. */
   shift?: { fromY: number; deltaY: number };
+  /**
+   * Areas that differed between two loads of the same page and were left out of the diff
+   * (`diff.noiseMap`). `skipped` says why they weren't, when they weren't.
+   */
+  noise?: { env: Env; boxes: Box[]; ignoredPixels: number; skipped?: string };
 }
 
 export interface ElementMatch {
@@ -165,7 +204,8 @@ export interface JobResult {
   analysis?: Analysis;
   /** Status from the pixel diff, heuristics and health checks, before AI analysis. */
   baseStatus?: Status;
-  acceptedBy?: { hash: string; at: string; note?: string };
+  /** `match` says whether the screenshots were identical or the same change was found again. */
+  acceptedBy?: { hash: string; at: string; note?: string; match?: "exact" | "similar" };
   error?: { stage: "capture" | "diff" | "mapping" | "ai"; message: string };
   durationMs: number;
 }
@@ -176,7 +216,11 @@ export interface RunManifest {
   number: number;
   startedAt: string;
   durationMs: number;
-  mode: "compare" | "baseline" | "scan";
+  mode: "compare" | "baseline" | "scan" | "monitor";
+  /** This run tested one shard of the jobs (`--shard`). */
+  shard?: { index: number; total: number };
+  /** Runs combined by `visualguard merge`. */
+  mergedFrom?: string[];
   tool: { version: string; playwright?: string; node: string; browser?: string };
   config: {
     baseURL: Partial<Record<Env, string>>;
@@ -185,6 +229,12 @@ export interface RunManifest {
     failOn: FailOn;
   };
   summary: Record<Status, number>;
-  usage?: { aiCalls: number; inputTokens: number; outputTokens: number };
+  usage?: {
+    aiCalls: number;
+    inputTokens: number;
+    /** Includes thinking tokens. */
+    outputTokens: number;
+    thinkingTokens?: number;
+  };
   jobs: JobResult[];
 }

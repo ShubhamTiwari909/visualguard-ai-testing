@@ -46,6 +46,8 @@ describe("test with AI", () => {
     config = testConfig({
       baseURL: { production: production.url, staging: staging.url },
       routes: ["/identical", "/alignment", "/text-change", "/spacing", "/missing-image"],
+      // Analyze the known regression too, to check the model can't downgrade it.
+      ai: { analyze: "all" },
     });
     ({ manifest, runDir } = await createRun(config, { ai: provider() }).start());
   }, 120_000);
@@ -63,6 +65,18 @@ describe("test with AI", () => {
     expect(job("/missing-image").analysis?.classification).toBe("noise");
     expect(job("/missing-image").status).toBe("regression");
   });
+
+  it("by default skips pages the heuristics already marked as regressions", async () => {
+    const defaults = testConfig({
+      baseURL: { production: production.url, staging: staging.url },
+      routes: ["/alignment", "/missing-image"],
+    });
+    const { manifest: run } = await createRun(defaults, { ai: provider() }).start();
+    const missing = run.jobs.find((candidate) => candidate.route === "/missing-image")!;
+    expect(missing.status).toBe("regression");
+    expect(missing.analysis).toBeUndefined();
+    expect(run.usage!.aiCalls).toBe(1);
+  }, 120_000);
 
   it("records provider, model and usage in the manifest", () => {
     expect(manifest.config.ai).toEqual({ provider: "mock", model: "mock-1" });

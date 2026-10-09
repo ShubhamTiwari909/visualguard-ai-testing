@@ -47,11 +47,14 @@ export function sortJobs(jobs: JobResult[]): JobResult[] {
   );
 }
 
-/** Labels for the two sides: production/staging, or baseline/current in scan and baseline modes. */
+/**
+ * Labels for the two sides: production/staging, baseline/current in scan and baseline modes, and
+ * previous/current in monitor mode.
+ */
 export function envLabels(manifest: RunManifest): Record<Env, string> {
-  return manifest.mode === "compare"
-    ? { production: "Production", staging: "Staging" }
-    : { production: "Baseline", staging: "Current" };
+  if (manifest.mode === "compare") return { production: "Production", staging: "Staging" };
+  if (manifest.mode === "monitor") return { production: "Previous", staging: "Current" };
+  return { production: "Baseline", staging: "Current" };
 }
 
 /** The canvas both screenshots are compared on (the larger of the two). */

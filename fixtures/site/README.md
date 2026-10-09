@@ -9,6 +9,10 @@ serves `/name` from `name.html` and replaces `{{origin}}` in `.xml` and `.txt` f
 | `/` `/identical` `/pricing` `/checkout` | none                                        | pass                                     |
 | `/animated`                             | none (infinite animation + transition)      | pass                                     |
 | `/dynamic`                              | random price (masked) and clock (frozen)    | pass                                     |
+| `/dynamic-change`                       | random price (not masked) + CTA colour      | review: only the CTA (noise map)         |
+| `/a11y`                                 | image `alt` and button label removed        | pass (with `--a11y`: review)             |
+| `/heavy`                                | 60 KB script added, same pixels             | pass (with `--perf`: review)             |
+| `/marked-dynamic`                       | random text marked `data-visualguard-ignore` | pass                                    |
 | `/text-change`                          | CTA copy "Start free trial" → "Start trial" | review: text change on the CTA           |
 | `/color-change`                         | CTA background colour                       | review: background-color on the CTA      |
 | `/alignment`                            | `align-items: center` → `flex-start`        | review: align-items on `div.actions`     |

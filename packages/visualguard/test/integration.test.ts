@@ -116,6 +116,55 @@ describe("test pipeline on the fixture site", () => {
   }, 120_000);
 });
 
+describe("dynamic content", () => {
+  it("ignores areas that change on every load (noise map) and marked elements", async () => {
+    const config = testConfig({
+      baseURL: { production: production.url, staging: staging.url },
+      routes: ["/dynamic", "/dynamic-change", "/marked-dynamic"],
+    });
+    const { manifest, runDir } = await createRun(config).start();
+    expect(statuses(manifest)).toEqual({
+      "/dynamic desktop": "pass",
+      "/dynamic-change desktop": "review",
+      "/marked-dynamic desktop": "pass",
+    });
+
+    const dynamic = manifest.jobs.find((job) => job.route === "/dynamic")!;
+    expect(dynamic.diff!.noise).toMatchObject({ env: "production" });
+    expect(dynamic.diff!.noise!.boxes.length).toBeGreaterThan(0);
+    expect(dynamic.findings).toContainEqual(
+      expect.objectContaining({
+        severity: "info",
+        message: expect.stringMatching(/^Ignored 1 area/),
+      }),
+    );
+    // The second capture is only kept for --debug.
+    expect(existsSync(join(runDir, "jobs", dynamic.id, "production.again.png"))).toBe(false);
+
+    // The real change is still found, and only the real change.
+    const changed = manifest.jobs.find((job) => job.route === "/dynamic-change")!;
+    expect(changed.regions).toHaveLength(1);
+    expect(changed.regions[0]!.deltas).toContainEqual(
+      expect.objectContaining({ kind: "style", property: "background-color" }),
+    );
+
+    // Marked elements never differ, so no second capture was needed.
+    const marked = manifest.jobs.find((job) => job.route === "/marked-dynamic")!;
+    expect(marked.diff!.diffPixels).toBe(0);
+    expect(marked.diff!.noise).toBeUndefined();
+  });
+
+  it("flags dynamic content when the noise map is off", async () => {
+    const config = testConfig({
+      baseURL: { production: production.url, staging: staging.url },
+      routes: ["/dynamic"],
+      diff: { noiseMap: false },
+    });
+    const { manifest } = await createRun(config).start();
+    expect(manifest.jobs[0]!.status).toBe("review");
+  });
+});
+
 describe("determinism", () => {
   const runs = Number.parseInt(process.env.VG_DETERMINISM_RUNS ?? "2", 10);
 

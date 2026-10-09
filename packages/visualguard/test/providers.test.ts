@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { AIError } from "../src/ai/provider.js";
-import { GeminiProvider } from "../src/ai/providers/gemini.js";
+import { GeminiProvider, retryDelayMs } from "../src/ai/providers/gemini.js";
 import { OllamaProvider } from "../src/ai/providers/ollama.js";
 
 interface Received {
@@ -86,6 +86,123 @@ describe("GeminiProvider", () => {
     expect(config.responseMimeType).toBe("application/json");
     expect(config.responseJsonSchema).toMatchObject({ type: "object" });
     expect(JSON.stringify(request.body.contents)).toContain(png.toString("base64"));
+    // Defaults: little thinking and medium image detail.
+    expect(config.thinkingConfig).toEqual({ thinkingLevel: "LOW" });
+    expect(config.mediaResolution).toBe("MEDIA_RESOLUTION_MEDIUM");
+  });
+
+  it("counts thinking tokens as output", async () => {
+    const { url } = await fake(() => ({
+      body: {
+        candidates: [
+          {
+            content: {
+              role: "model",
+              parts: [{ text: '{"classification":"noise","confidence":1}' }],
+            },
+          },
+        ],
+        usageMetadata: { promptTokenCount: 900, candidatesTokenCount: 50, thoughtsTokenCount: 700 },
+      },
+    }));
+    const provider = new GeminiProvider({ apiKey: "k", baseUrl: url, retryAttempts: 1 });
+    const result = await provider.generate({ system: "", parts: [], schema });
+    expect(result.usage).toEqual({ inputTokens: 900, outputTokens: 750, thinkingTokens: 700 });
+  });
+
+  it("falls back to a thinking budget, then to no thinking setting, when the model refuses", async () => {
+    const { url, received } = await fake((request) => {
+      const config = request.body.generationConfig as { thinkingConfig?: Record<string, unknown> };
+      if (config.thinkingConfig)
+        return {
+          status: 400,
+          body: {
+            error: { code: 400, message: "Thinking is not supported", status: "INVALID_ARGUMENT" },
+          },
+        };
+      return {
+        body: {
+          candidates: [
+            {
+              content: {
+                role: "model",
+                parts: [{ text: '{"classification":"noise","confidence":1}' }],
+              },
+            },
+          ],
+        },
+      };
+    });
+    const provider = new GeminiProvider({
+      apiKey: "k",
+      baseUrl: url,
+      thinking: "off",
+      retryAttempts: 1,
+    });
+    await provider.generate({ system: "", parts: [], schema });
+    const configs = received.map(
+      (request) => (request.body.generationConfig as { thinkingConfig?: unknown }).thinkingConfig,
+    );
+    expect(configs).toEqual([{ thinkingLevel: "MINIMAL" }, { thinkingBudget: 0 }, undefined]);
+    // The provider remembers what worked.
+    await provider.generate({ system: "", parts: [], schema });
+    expect(received).toHaveLength(4);
+  });
+
+  it("fails at once when the daily quota is used up", async () => {
+    const message =
+      "You exceeded your current quota. Quota exceeded for metric: generate_content_free_tier_requests, limit: 20, model: gemini-3.8-flash. Please retry in 17h39m37.1s. GenerateRequestsPerDayPerProjectPerModel-FreeTier";
+    const { url, received } = await fake(() => ({
+      status: 429,
+      body: { error: { code: 429, message, status: "RESOURCE_EXHAUSTED" } },
+    }));
+    const provider = new GeminiProvider({ apiKey: "k", baseUrl: url, retryAttempts: 4 });
+    const error = (await provider
+      .generate({ system: "", parts: [], schema })
+      .catch((caught: unknown) => caught)) as AIError;
+    expect(error.message).toBe("Gemini quota used up for gemini-3.8-flash; it resets in 17h 40m");
+    expect(error.stopsRun).toBe(true);
+    expect(received).toHaveLength(1);
+  });
+
+  it("retries short rate limits after the suggested delay", async () => {
+    let calls = 0;
+    const { url } = await fake(() =>
+      ++calls === 1
+        ? {
+            status: 429,
+            body: {
+              error: {
+                code: 429,
+                message: 'Rate limited {"retryDelay":"0s"}',
+                status: "RESOURCE_EXHAUSTED",
+              },
+            },
+          }
+        : {
+            body: {
+              candidates: [
+                {
+                  content: {
+                    role: "model",
+                    parts: [{ text: '{"classification":"noise","confidence":1}' }],
+                  },
+                },
+              ],
+            },
+          },
+    );
+    const provider = new GeminiProvider({ apiKey: "k", baseUrl: url, retryAttempts: 3 });
+    const result = await provider.generate({ system: "", parts: [], schema });
+    expect(result.data.classification).toBe("noise");
+    expect(calls).toBe(2);
+  });
+
+  it("reads retry delays from 429 messages", () => {
+    expect(retryDelayMs('{"retryDelay":"63577s"}')).toBe(63_577_000);
+    expect(retryDelayMs("Please retry in 1h2m3s.")).toBe(3_723_000);
+    expect(retryDelayMs("Please retry in 17.5s")).toBe(17_500);
+    expect(retryDelayMs("nothing here")).toBeUndefined();
   });
 
   it("explains rate limits and bad keys", async () => {

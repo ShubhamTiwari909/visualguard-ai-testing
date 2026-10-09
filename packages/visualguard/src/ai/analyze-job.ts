@@ -4,7 +4,7 @@ import type { DomSnapshot } from "../capture/dom-snapshot.js";
 import { errorMessage } from "../core/errors.js";
 import type { Analysis, Finding, JobResult, RunManifest, Status } from "../core/types.js";
 import { AnalysisCache, cacheKey } from "./cache.js";
-import type { AIProvider, Usage } from "./provider.js";
+import { AIError, addUsage, type AIProvider, type Usage } from "./provider.js";
 import { analyzeVisualDiff, PROMPT_VERSION } from "./tasks/analyze-diff.js";
 
 export interface AnalysisSettings {
@@ -18,6 +18,8 @@ export class AnalysisSession {
   calls = 0;
   readonly usage: Usage = { inputTokens: 0, outputTokens: 0 };
   private readonly cache: AnalysisCache | undefined;
+  /** Set when the provider can't answer for the rest of the run (quota, bad key). */
+  private stopped: string | undefined;
 
   constructor(
     readonly provider: AIProvider,
@@ -48,6 +50,7 @@ export class AnalysisSession {
     let result = this.cache?.get(key);
     const cached = Boolean(result);
     if (!result) {
+      if (this.stopped) return addFinding(updated, base, `AI skipped: ${this.stopped}`);
       if (this.budgetLeft <= 0) {
         return addFinding(
           updated,
@@ -64,10 +67,10 @@ export class AnalysisSession {
           maxRegions: this.settings.maxRegionsPerJob,
           knownSelectors: knownSelectors(job, runDir),
         });
-        this.usage.inputTokens += result.usage.inputTokens;
-        this.usage.outputTokens += result.usage.outputTokens;
+        addUsage(this.usage, result.usage);
         this.cache?.set(key, result);
       } catch (error) {
+        if (error instanceof AIError && error.stopsRun) this.stopped = error.message;
         // AI failures never fail the run: the heuristic status stands.
         return addFinding(updated, base, `AI analysis failed: ${errorMessage(error)}`);
       }
@@ -88,8 +91,12 @@ export class AnalysisSession {
   }
 }
 
-/** Jobs that differ and have something to show the model. */
-export function needsAnalysis(job: JobResult): boolean {
+/**
+ * Jobs that differ and have something to show the model. With `scope: "uncertain"`, jobs the
+ * heuristics already marked as regressions are skipped: the model can't change that status.
+ */
+export function needsAnalysis(job: JobResult, scope: "uncertain" | "all" = "all"): boolean {
+  if (scope === "uncertain" && (job.baseStatus ?? job.status) === "regression") return false;
   return (
     !job.error &&
     (job.baseStatus ?? job.status) !== "pass" &&
@@ -124,7 +131,7 @@ export function statusWithAnalysis(
   }
 }
 
-const AI_FINDING = /^AI (analysis failed|budget reached)/;
+const AI_FINDING = /^AI (analysis failed|budget reached|skipped)/;
 
 function withoutAIFindings(findings: Finding[] | undefined): Finding[] | undefined {
   const kept = findings?.filter((finding) => !AI_FINDING.test(finding.message));

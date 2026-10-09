@@ -13,7 +13,16 @@ export interface GenerateRequest<T> {
 
 export interface Usage {
   inputTokens: number;
+  /** Includes thinking tokens, which are billed as output. */
   outputTokens: number;
+  /** Tokens the model spent reasoning (part of outputTokens). */
+  thinkingTokens?: number;
+}
+
+export function addUsage(total: Usage, more: Usage): void {
+  total.inputTokens += more.inputTokens;
+  total.outputTokens += more.outputTokens;
+  if (more.thinkingTokens) total.thinkingTokens = (total.thinkingTokens ?? 0) + more.thinkingTokens;
 }
 
 export interface GenerateResult<T> {
@@ -35,15 +44,21 @@ export interface AIProvider {
 export class AIError extends Error {
   readonly retryable: boolean;
   readonly status: number | undefined;
+  /**
+   * The provider won't answer any request in this run (bad key, unknown model, daily quota
+   * used up), so the remaining jobs shouldn't try.
+   */
+  readonly stopsRun: boolean;
 
   constructor(
     message: string,
-    options: { retryable?: boolean; status?: number; cause?: unknown } = {},
+    options: { retryable?: boolean; status?: number; stopsRun?: boolean; cause?: unknown } = {},
   ) {
     super(message, { cause: options.cause });
     this.name = "AIError";
     this.retryable = options.retryable ?? false;
     this.status = options.status;
+    this.stopsRun = options.stopsRun ?? false;
   }
 }
 
@@ -107,8 +122,7 @@ export abstract class BaseProvider implements AIProvider {
         repair: problem,
         signal: request.signal,
       });
-      usage.inputTokens += completion.usage.inputTokens;
-      usage.outputTokens += completion.usage.outputTokens;
+      addUsage(usage, completion.usage);
       try {
         const parsed = request.schema.safeParse(extractJSON(completion.text));
         if (parsed.success) return { data: parsed.data, usage };

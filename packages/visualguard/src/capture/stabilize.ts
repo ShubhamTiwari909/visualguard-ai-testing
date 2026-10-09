@@ -21,6 +21,15 @@ export const DEFAULT_HIDE_SELECTORS = [
   "#launcher[title*='Zendesk']",
 ];
 
+/**
+ * Developers mark dynamic elements in their own markup: `data-visualguard-ignore` masks the
+ * element (it keeps its size, painted in a solid colour on both sides) and
+ * `data-visualguard-ignore="hide"` hides it.
+ */
+export const IGNORE_MASK_SELECTOR =
+  '[data-visualguard-ignore]:not([data-visualguard-ignore="hide"])';
+export const IGNORE_HIDE_SELECTOR = '[data-visualguard-ignore="hide"]';
+
 export function stabilizationCSS(options: {
   disableAnimations: boolean;
   hide: readonly string[];

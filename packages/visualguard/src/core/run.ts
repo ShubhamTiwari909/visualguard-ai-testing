@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { join, relative } from "node:path";
 import pLimit from "p-limit";
@@ -24,7 +24,9 @@ import { summarize } from "./status.js";
 import {
   ENVS,
   type CaptureResult,
+  type DiffResult,
   type Env,
+  type Finding,
   type FailOn,
   type JobResult,
   type JobSpec,
@@ -52,8 +54,16 @@ export interface RunOptions {
   mode?: RunManifest["mode"];
   /** Snapshot directory for baseline and scan modes. */
   baselineDir?: string;
-  /** Overwrite the stored snapshots with this run's captures. */
-  updateBaselines?: boolean;
+  /**
+   * Overwrite the stored snapshots with this run's captures. "unless-regression" (monitor mode)
+   * keeps the old snapshot for pages that regressed, so they're reported again next time.
+   */
+  updateBaselines?: boolean | "unless-regression";
+  /**
+   * Compare health signals (broken images, HTTP errors…) with the stored snapshot's, so only new
+   * problems are reported (monitor mode).
+   */
+  baselineHealth?: boolean;
   /** Route limit when routes are discovered. */
   discoveryLimit?: number;
   /** AI provider for this run; `false` disables AI. Defaults to the configured provider. */
@@ -67,6 +77,8 @@ export interface RunOptions {
   env?: NodeJS.ProcessEnv;
   /** Skip the up-front request to each base URL. */
   skipReachabilityCheck?: boolean;
+  /** Run only this part of the jobs, e.g. { index: 1, total: 4 } (`--shard 1/4`). */
+  shard?: Shard;
 }
 
 export interface RunOutcome {
@@ -103,7 +115,14 @@ export class Run extends RunEmitter {
     }
     const liveEnvs: readonly Env[] = mode === "compare" ? ENVS : ["staging"];
     const plan = await planJobs(config, { discoveryLimit: this.options.discoveryLimit });
-    const { jobs } = plan;
+    const { shard } = this.options;
+    const jobs = shard ? shardJobs(plan.jobs, shard) : plan.jobs;
+    if (jobs.length === 0 && shard && plan.jobs.length > 0) {
+      throw new ConfigError(
+        `Shard ${shard.index}/${shard.total} has no jobs: there are only ${plan.jobs.length}`,
+        { hint: "Use fewer shards." },
+      );
+    }
     if (jobs.length === 0) {
       throw new ConfigError("No routes to test", {
         hint:
@@ -154,6 +173,7 @@ export class Run extends RunEmitter {
       routeCount: plan.routes.length,
       warnings,
       ai: provider ? { provider: provider.name, model: provider.model } : undefined,
+      shard,
     });
 
     const browser = await launchBrowser(config);
@@ -170,8 +190,8 @@ export class Run extends RunEmitter {
           let result = await captureLimit(() =>
             this.runJob(job, run.dir, browser, diffRunner, liveEnvs),
           );
-          result = applyAccepted(result, run.dir, accepted);
-          if (session && needsAnalysis(result)) {
+          result = applyAccepted(result, run.dir, accepted, config.output.acceptMatch);
+          if (session && needsAnalysis(result, config.ai.analyze)) {
             result = await aiLimit(() => session.analyze(result, run.dir, mode));
           }
           this.emitAll({ type: "job:end", job: result });
@@ -183,6 +203,15 @@ export class Run extends RunEmitter {
       await diffRunner.close();
     }
 
+    // Monitor mode rolls the snapshots forward once the final (post-AI) status is known.
+    if (this.options.updateBaselines === "unless-regression" && this.options.baselineDir) {
+      for (const result of results) {
+        const capture = result.captures.staging;
+        if (!capture || result.status === "regression" || result.status === "error") continue;
+        this.saveBaseline(join(this.options.baselineDir, `${result.id}.png`), run.dir, capture);
+      }
+    }
+
     const manifest: RunManifest = {
       schemaVersion: 1,
       id: run.id,
@@ -190,6 +219,7 @@ export class Run extends RunEmitter {
       startedAt: run.startedAt.toISOString(),
       durationMs: Date.now() - run.startedAt.getTime(),
       mode,
+      shard,
       tool: {
         version: VERSION,
         playwright: playwrightVersion(),
@@ -213,6 +243,7 @@ export class Run extends RunEmitter {
             aiCalls: session.calls,
             inputTokens: session.usage.inputTokens,
             outputTokens: session.usage.outputTokens,
+            thinkingTokens: session.usage.thinkingTokens,
           }
         : undefined,
       jobs: results,
@@ -302,12 +333,15 @@ export class Run extends RunEmitter {
       if (baselinePath && existsSync(baselinePath)) {
         result.captures.production = this.loadBaseline(baselinePath, jobDir, rel);
       }
-      if (this.options.updateBaselines && baselinePath) {
+      if (this.options.updateBaselines === true && baselinePath) {
         this.saveBaseline(baselinePath, runDir, result.captures.staging!);
       }
     }
 
-    const findings = healthFindings(result.captures);
+    const findings = healthFindings(result.captures, {
+      baselineHealth: this.options.baselineHealth,
+      checks: this.config.checks,
+    });
     if (!result.captures.production) {
       // Nothing to compare against yet: the status comes from health checks alone.
       findings.push({
@@ -323,12 +357,34 @@ export class Run extends RunEmitter {
     }
 
     try {
-      const diff = await diffRunner.run({
+      const diffInput = {
         productionPath: join(runDir, result.captures.production!.image),
         stagingPath: join(runDir, result.captures.staging!.image),
         outDir: jobDir,
         options: this.config.diff,
-      });
+      };
+      let diff = await diffRunner.run(diffInput);
+      // The page differs: load it once more to find areas that change on every load.
+      const noiseEnv = liveEnvs[0]!;
+      if (!diff.passed && this.config.diff.noiseMap) {
+        const againPath = join(jobDir, `${noiseEnv}.again.png`);
+        const again = await capturePage({
+          browser,
+          config: this.config,
+          job,
+          env: noiseEnv,
+          checks: false,
+        }).catch(() => undefined);
+        if (again) {
+          writeFileSync(againPath, again.png);
+          const dom = result.captures[noiseEnv]?.dom;
+          diff = await diffRunner.run({
+            ...diffInput,
+            noise: { env: noiseEnv, againPath, domPath: dom ? join(runDir, dom) : undefined },
+          });
+          if (!this.options.debug) rmSync(againPath, { force: true });
+        }
+      }
       result.diff = {
         width: diff.width,
         height: diff.height,
@@ -337,7 +393,10 @@ export class Run extends RunEmitter {
         diffRatio: diff.diffRatio,
         image: diff.image ? rel(diff.image) : undefined,
         shift: diff.shift,
+        noise: diff.noise && { env: noiseEnv, ...diff.noise },
       };
+      const noiseFinding = describeNoise(result.diff.noise, liveEnvs.length > 1);
+      if (noiseFinding) findings.push(noiseFinding);
       result.regions = diff.regions.map((region, id) => ({
         id,
         kind: region.kind === "shift" ? "shift" : undefined,
@@ -415,6 +474,24 @@ export class Run extends RunEmitter {
   }
 }
 
+function describeNoise(noise: DiffResult["noise"], nameEnv: boolean): Finding | undefined {
+  if (!noise) return undefined;
+  if (noise.skipped) {
+    return {
+      severity: "info",
+      message: `Noise map not applied: ${noise.skipped}`,
+      source: "heuristic",
+    };
+  }
+  if (noise.ignoredPixels === 0) return undefined;
+  const areas = noise.boxes.length;
+  return {
+    severity: "info",
+    message: `Ignored ${areas} area${areas > 1 ? "s" : ""} that change${areas > 1 ? "" : "s"} on every load${nameEnv ? ` of ${noise.env}` : ""} (${noise.ignoredPixels.toLocaleString("en-US")} px)`,
+    source: "heuristic",
+  };
+}
+
 function readDom(runDir: string, capture: CaptureResult | undefined): DomSnapshot | undefined {
   if (!capture?.dom) return undefined;
   try {
@@ -426,6 +503,32 @@ function readDom(runDir: string, capture: CaptureResult | undefined): DomSnapsho
 
 function nonEmptyHeaders(headers: Record<string, string> | undefined): Record<string, string> {
   return Object.fromEntries(Object.entries(headers ?? {}).filter(([, value]) => value !== ""));
+}
+
+export interface Shard {
+  /** 1-based. */
+  index: number;
+  total: number;
+}
+
+/**
+ * The jobs for one shard: sorted by id and dealt out round-robin, so every machine computes the
+ * same split from the same job list and the shards stay balanced.
+ */
+export function shardJobs<T extends { id: string }>(jobs: readonly T[], shard: Shard): T[] {
+  return [...jobs]
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .filter((_, position) => position % shard.total === shard.index - 1);
+}
+
+export function parseShard(value: string): Shard {
+  const match = value.trim().match(/^(\d+)\s*\/\s*(\d+)$/);
+  const index = Number(match?.[1]);
+  const total = Number(match?.[2]);
+  if (!match || total < 1 || index < 1 || index > total) {
+    throw new ConfigError(`--shard must look like 1/4 (got "${value}")`);
+  }
+  return { index, total };
 }
 
 export function createRun(config: ResolvedConfig, options?: RunOptions): Run {

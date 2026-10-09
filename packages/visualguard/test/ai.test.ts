@@ -149,6 +149,30 @@ describe("AnalysisSession", () => {
     expect(skipped.findings!.at(-1)!.message).toMatch(/AI budget reached/);
   });
 
+  it("stops calling the provider after a quota or key error", async () => {
+    const { job, runDir } = fixtureJob();
+    const provider = new MockProvider(
+      () => new AIError("Gemini quota used up; it resets in 17h 39m", { stopsRun: true }),
+    );
+    const session = new AnalysisSession(provider, { ...settings, maxCallsPerRun: 10 });
+    const first = await session.analyze(job, runDir, "compare");
+    const second = await session.analyze(job, runDir, "compare");
+    expect(first.findings!.at(-1)!.message).toMatch(/AI analysis failed: Gemini quota used up/);
+    expect(second.findings!.at(-1)!.message).toBe(
+      "AI skipped: Gemini quota used up; it resets in 17h 39m",
+    );
+    expect(second.status).toBe("review");
+    expect(provider.requests).toHaveLength(1);
+  });
+
+  it("skips jobs the heuristics already marked as regressions unless asked for all", () => {
+    const { job } = fixtureJob();
+    const regression = { ...job, status: "regression" as const, baseStatus: "regression" as const };
+    expect(needsAnalysis(regression, "uncertain")).toBe(false);
+    expect(needsAnalysis(regression, "all")).toBe(true);
+    expect(needsAnalysis(job, "uncertain")).toBe(true);
+  });
+
   it("re-analysis starts from the base status, not the previous AI status", async () => {
     const { job, runDir } = fixtureJob();
     const asRegression = await new AnalysisSession(

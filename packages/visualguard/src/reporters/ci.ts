@@ -98,8 +98,26 @@ export function webhookReporter(
   return {
     name: "webhook",
     async onRunEnd(manifest) {
+      const { summary } = manifest;
+      const problems = manifest.jobs.filter(
+        (job) => job.status === "regression" || job.status === "error" || job.status === "review",
+      );
+      const site = manifest.config.baseURL.staging ?? manifest.config.baseURL.production ?? "";
       const body = {
         tool: "visualguard",
+        // A one-line summary, so Slack incoming webhooks can take the payload as is.
+        text: [
+          `VisualGuard ${manifest.mode === "monitor" ? "monitor" : "run"} #${manifest.number} on ${site}: ${summary.regression} regression${summary.regression === 1 ? "" : "s"}, ${summary.review} to review, ${summary.pass + summary.accepted} passed${summary.error ? `, ${summary.error} errors` : ""}.`,
+          ...problems
+            .slice(0, 5)
+            .map(
+              (job) =>
+                `• ${job.status} ${job.route} (${job.viewport})${job.analysis?.title ? `: ${job.analysis.title}` : ""}`,
+            ),
+          options.reportURL ? `Report: ${options.reportURL}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
         run: {
           id: manifest.id,
           number: manifest.number,

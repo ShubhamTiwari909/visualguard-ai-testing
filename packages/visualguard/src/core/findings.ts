@@ -1,4 +1,13 @@
-import type { CaptureResult, Env, Finding, FindingSeverity, Status } from "./types.js";
+import type { ParsedConfig } from "../config/schema.js";
+import type {
+  A11yImpact,
+  CaptureResult,
+  Env,
+  Finding,
+  FindingSeverity,
+  HealthSignals,
+  Status,
+} from "./types.js";
 
 const RANK: Record<Status, number> = { pass: 0, accepted: 0, review: 1, regression: 2, error: 3 };
 
@@ -26,10 +35,16 @@ function shortURL(url: string): string {
  * against, only problems that are new on staging count; without one (scan mode), any problem
  * is worth a review.
  */
-export function healthFindings(captures: Partial<Record<Env, CaptureResult>>): Finding[] {
+export function healthFindings(
+  captures: Partial<Record<Env, CaptureResult>>,
+  options: { baselineHealth?: boolean; checks?: ParsedConfig["checks"] } = {},
+): Finding[] {
   const staging = captures.staging?.health;
   if (!staging) return [];
-  const reference = captures.production?.source === "live" ? captures.production.health : undefined;
+  const reference =
+    captures.production?.source === "live" || (options.baselineHealth && captures.production)
+      ? captures.production!.health
+      : undefined;
   const findings: Finding[] = [];
   const add = (severity: FindingSeverity, message: string) =>
     findings.push({ severity, message, source: "health" });
@@ -73,6 +88,102 @@ export function healthFindings(captures: Partial<Record<Env, CaptureResult>>): F
 
   if (captures.staging?.unstable || captures.production?.unstable) {
     add("info", "The page kept changing between screenshots; mask or hide animated areas.");
+  }
+
+  if (options.checks) {
+    findings.push(
+      ...accessibilityFindings(staging, captures.production?.health, options.checks.accessibility),
+      ...performanceFindings(staging, reference, options.checks.performance),
+    );
+  }
+  for (const error of staging.checkErrors ?? []) add("info", `Check failed: ${error}`);
+  return findings;
+}
+
+const IMPACT_RANK: Record<A11yImpact, number> = { minor: 0, moderate: 1, serious: 2, critical: 3 };
+
+/**
+ * New accessibility violations: rules that fail on more elements than on the reference. Without
+ * reference results (no production capture, or a snapshot taken before the check was on), the
+ * violations are listed as info, so turning the check on doesn't fail every page at once.
+ */
+export function accessibilityFindings(
+  current: HealthSignals,
+  reference: HealthSignals | undefined,
+  settings: ParsedConfig["checks"]["accessibility"],
+): Finding[] {
+  if (!settings.enabled || !current.accessibility) return [];
+  const relevant = current.accessibility.filter(
+    (violation) => IMPACT_RANK[violation.impact] >= IMPACT_RANK[settings.minImpact],
+  );
+  if (!reference?.accessibility) {
+    if (relevant.length === 0) return [];
+    const elements = relevant.reduce((sum, violation) => sum + violation.count, 0);
+    return [
+      {
+        severity: "info",
+        source: "health",
+        message: `Accessibility: ${relevant.length} rule${relevant.length > 1 ? "s" : ""} failing on ${elements} element${elements > 1 ? "s" : ""} (${relevant.map((violation) => violation.id).join(", ")}); nothing to compare with yet`,
+      },
+    ];
+  }
+  const before = new Map(reference.accessibility.map((violation) => [violation.id, violation]));
+  return relevant.flatMap((violation): Finding[] => {
+    const previous = before.get(violation.id);
+    const added = violation.count - (previous?.count ?? 0);
+    if (added <= 0) return [];
+    const known = new Set(previous?.targets ?? []);
+    const targets = violation.targets.filter((target) => !known.has(target)).slice(0, 3);
+    return [
+      {
+        severity: settings.severity,
+        source: "health",
+        message: `Accessibility (${violation.impact}): ${violation.help} — ${added} new element${added > 1 ? "s" : ""}${targets.length > 0 ? `: ${targets.join(", ")}` : ""} [${violation.id}]`,
+      },
+    ];
+  });
+}
+
+function formatKB(kb: number): string {
+  return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
+}
+
+const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+
+/** Load metrics that got worse than the reference by more than the configured margins. */
+export function performanceFindings(
+  current: HealthSignals,
+  reference: HealthSignals | undefined,
+  settings: ParsedConfig["checks"]["performance"],
+): Finding[] {
+  const now = current.performance;
+  const before = reference?.performance;
+  if (!settings.enabled || !now || !before) return [];
+  const findings: Finding[] = [];
+  const add = (message: string) =>
+    findings.push({ severity: settings.severity, source: "health", message });
+
+  if (
+    now.lcpMs !== undefined &&
+    before.lcpMs !== undefined &&
+    now.lcpMs - before.lcpMs > settings.lcpIncreaseMs
+  ) {
+    add(`Slower load: LCP ${seconds(before.lcpMs)} → ${seconds(now.lcpMs)}`);
+  }
+  if (now.cls - before.cls > settings.clsIncrease) {
+    add(`More layout shift while loading: CLS ${before.cls} → ${now.cls}`);
+  }
+  const grew = (after: number, earlier: number) =>
+    after - earlier > settings.weightIncreaseKB &&
+    after > earlier * (1 + settings.weightIncreasePercent / 100);
+  if (grew(now.transferKB, before.transferKB)) {
+    const percent = Math.round((now.transferKB / Math.max(1, before.transferKB) - 1) * 100);
+    add(
+      `Heavier page: ${formatKB(before.transferKB)} → ${formatKB(now.transferKB)} (+${percent}%)`,
+    );
+  }
+  if (grew(now.jsKB, before.jsKB)) {
+    add(`More JavaScript: ${formatKB(before.jsKB)} → ${formatKB(now.jsKB)}`);
   }
   return findings;
 }

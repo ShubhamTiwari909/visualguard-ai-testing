@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accessibility</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; line-height: 1.5; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid #e2e8f0; }
+  header .logo { font-size: 20px; }
+  nav a { margin-left: 16px; color: #334155; text-decoration: none; font-size: 14px; }
+  main { padding: 32px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 36px; margin: 0 0 16px; }
+  p { margin: 0 0 16px; color: #475569; }
+  .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .btn { display: inline-block; padding: 12px 20px; border-radius: 8px; background: #2563eb; color: #ffffff; font-weight: 600; text-decoration: none; }
+  .actions { display: flex; align-items: center; justify-content: space-between; height: 96px; padding: 0 24px; background: #f8fafc; border-radius: 12px; }
+  .total { font-size: 28px; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  footer { padding: 32px; text-align: center; color: #94a3b8; font-size: 13px; border-top: 1px solid #e2e8f0; margin-top: 48px; }
+</style>
+</head>
+<body>
+<header><strong class="logo">Acme</strong><nav><a href="/">Home</a><a href="/identical">Identical</a><a href="/pricing">Pricing</a><a href="/checkout">Checkout</a></nav></header>
+<main>
+<section class="card hero" data-testid="hero">
+  <h1>Ship UI without surprises</h1>
+  <p>Accessibility problems that don't change a single pixel.</p>
+  <img src="/product.svg" alt="Product screenshot" width="120" height="80">
+  <button type="button" aria-label="Close" style="width:40px;height:40px;border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="#0f172a" stroke-width="2"/></svg>
+  </button>
+</section>
+</main>
+<footer>Acme Inc. · VisualGuard fixture</footer>
+</body>
+</html>

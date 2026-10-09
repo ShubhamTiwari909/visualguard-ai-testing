@@ -6,9 +6,12 @@ import type { Env, HealthSignals, JobSpec, Size } from "../core/types.js";
 import { pngSize, sleep } from "../core/util.js";
 import { decodePNG } from "../diff/image.js";
 import { createContext } from "./browser.js";
+import { preservePerformanceTimeline, readPerformance, runAccessibilityCheck } from "./checks.js";
 import {
   DEFAULT_HIDE_SELECTORS,
   hideScrollbars,
+  IGNORE_HIDE_SELECTOR,
+  IGNORE_MASK_SELECTOR,
   NetworkTracker,
   pauseMedia,
   readPageMetrics,
@@ -27,6 +30,8 @@ export interface CaptureRequest {
   afterScreenshot?: (page: Page) => Promise<void>;
   /** Save a Playwright trace of the final attempt here. */
   tracePath?: string;
+  /** Run the configured accessibility and performance checks (default true). */
+  checks?: boolean;
 }
 
 export interface CaptureOutcome {
@@ -97,7 +102,7 @@ export async function capturePage(request: CaptureRequest): Promise<CaptureOutco
 
 async function captureOnce(
   page: Page,
-  { config, job, env, afterScreenshot }: CaptureRequest,
+  { config, job, env, afterScreenshot, checks = true }: CaptureRequest,
 ): Promise<Omit<CaptureOutcome, "attempts" | "durationMs">> {
   const { stabilize } = config;
   const url = job.urls[env];
@@ -124,6 +129,7 @@ async function captureOnce(
   // The clock's internal time starts at `clockBase` and then follows real time.
   const clockBase = stabilize.freezeTime ? new Date(stabilize.freezeTime).getTime() : Date.now();
   const installedAt = Date.now();
+  if (checks && config.checks.performance.enabled) await preservePerformanceTimeline(page);
   if (stabilize.pauseClock || stabilize.freezeTime) {
     await page.clock.install({ time: clockBase });
   }
@@ -133,6 +139,16 @@ async function captureOnce(
   const response = await page.goto(url, { waitUntil: "load" });
   health.status = response?.status();
   health.finalURL = page.url();
+
+  // Load metrics are read before stabilisation changes the page (hidden banners, scrolling).
+  if (checks && config.checks.performance.enabled) {
+    await network.waitForQuiet(stabilize.networkQuietMs, stabilize.networkQuietTimeoutMs);
+    try {
+      health.performance = await readPerformance(page);
+    } catch (error) {
+      (health.checkErrors ??= []).push(`performance: ${errorMessage(error)}`);
+    }
+  }
 
   const shot = await stabilizeAndShoot(page, {
     config,
@@ -144,6 +160,18 @@ async function captureOnce(
   });
 
   await afterScreenshot?.(page);
+
+  if (checks && config.checks.accessibility.enabled) {
+    // axe schedules work with timers, which the paused clock would hold forever.
+    if (stabilize.pauseClock) await page.clock.resume().catch(() => {});
+    try {
+      health.accessibility = await runAccessibilityCheck(page, {
+        tags: config.checks.accessibility.tags,
+      });
+    } catch (error) {
+      (health.checkErrors ??= []).push(`accessibility: ${errorMessage(error)}`);
+    }
+  }
   return { ...shot, health };
 }
 
@@ -171,6 +199,7 @@ export async function stabilizeAndShoot(
   const { stabilize, screenshot } = config;
   const hide = [
     ...(stabilize.hideDefaults ? DEFAULT_HIDE_SELECTORS : []),
+    IGNORE_HIDE_SELECTOR,
     ...stabilize.hide,
     ...job.hide,
   ];
@@ -202,7 +231,9 @@ export async function stabilizeAndShoot(
   }
 
   const truncated = screenshot.fullPage && metrics.documentHeight > screenshot.maxHeight;
-  const mask = [...stabilize.mask, ...job.mask].map((selector) => page.locator(selector));
+  const mask = [IGNORE_MASK_SELECTOR, ...stabilize.mask, ...job.mask].map((selector) =>
+    page.locator(selector),
+  );
   const shoot = () =>
     page.screenshot({
       type: "png",

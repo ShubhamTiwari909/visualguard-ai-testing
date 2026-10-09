@@ -1,5 +1,19 @@
 # visualguard
 
+## 1.1.0
+
+### Minor Changes
+
+- Fewer false positives, cheaper AI, monitoring and extra checks:
+
+  - Noise map: pages that differ are loaded twice and areas that change on every load are ignored.
+  - `data-visualguard-ignore` masks (or hides) elements marked in your markup.
+  - Accepted changes match re-renders of the same change (`output.acceptMatch: "similar"`).
+  - `test --shard i/n` and `visualguard merge` split large sites across CI machines.
+  - `visualguard monitor` compares production with its previous capture; `--workflow` writes a nightly workflow.
+  - `checks.accessibility` and `checks.performance` (`--a11y`, `--perf`) report new axe violations and slower or heavier pages.
+  - Gemini: low thinking and medium image detail by default, thinking tokens counted, daily quota errors fail fast, and pages already marked as regressions skip the model (`ai.analyze`).
+
 ## 1.0.0
 
 ### Major Changes

@@ -5,11 +5,11 @@
 
 |                  |                                                                                                  |
 | ---------------- | ------------------------------------------------------------------------------------------------ |
-| **Status**       | Phases 0–8 built, Phase 9 partly done; package at 0.7.0 (not published). See the status section below |
-| **Package name** | `visualguard` (not taken on npm as of 2026-10-08, so reserve it early)                           |
+| **Status**       | Phases 0–8 and 10 built, Phase 9 partly done; 1.0.0 published to npm, 1.1.0 pending. See the status section below |
+| **Package name** | `visualguard` (published 2026-10-08)                                                             |
 | **Stack**        | TypeScript · Node ≥ 22 · Playwright · pixelmatch · Gemini (`@google/genai`) · Ollama             |
 | **Shape**        | One published npm package. The pnpm workspace also holds examples, fixtures, evals and docs      |
-| **Last updated** | 2026-10-08                                                                                       |
+| **Last updated** | 2026-10-09                                                                                       |
 
 ---
 
@@ -30,6 +30,25 @@ not published to npm.
 | 7 Interactive fix | Done | 0.5.0 | `examples/nextjs`: three seeded regressions fixed and verified at 0 differing pixels |
 | 8 Auto fix, watch, baselines | Done | 0.6.0 | `--auto --pr` tested with a local bare origin and a fake GitHub API |
 | 9 Hardening | Partly done | 0.7.0 | Done: Playwright fixture, GitHub Action, `auth`, custom reporters. Not done: Firefox/WebKit testing, the odiff engine, the docs site, OpenAI/Anthropic providers |
+| 10 Fewer false positives, cheaper AI, monitoring | Done | 1.1.0 | See "Phase 10" below |
+
+### Phase 10 (2026-10-09): after the first real-project run
+
+Driven by the first real use (examples/nextjs runs 10–12 with Gemini): AI was ~90% of run time,
+and Gemini called seeded regressions "deliberate" because it only sees pixels.
+
+| Change | What it does |
+| ------ | ------------ |
+| AI cost and speed | `ai.thinking` (default `low`; thinking level for Gemini 3, budget for 2.5, fallback when refused), `ai.imageDetail` (default `medium` media resolution), `ai.analyze: "uncertain"` skips pages already marked regressions, `ai.concurrency` 2 → 4. Thinking tokens are counted as output. Daily-quota 429s and bad keys fail at once and stop AI for the rest of the run (the SDK retried 4× per page). Not yet measured live: the free-tier quota (20 requests/day) was used up |
+| Noise map | When a page differs, the reference side is captured again; areas that differ between the two loads are grown to their DOM element and left out of the diff (blue in the diff image). Skipped above `diff.noiseMapMaxRatio` (25%) |
+| `data-visualguard-ignore` | Masks (or with `="hide"` hides) marked elements in every capture path, including the Playwright fixture |
+| Similar acceptance | Accepted entries store a change fingerprint (DOM deltas, region boxes and pixel counts, shift, size); `output.acceptMatch: "similar"` (default) accepts the same change after a re-render. Never hides new health regressions |
+| `--shard i/n` + `merge` | Round-robin split by sorted job id; `visualguard merge` copies the shard runs into one run and replays it through the reporters |
+| `visualguard monitor` | Live site vs its previous capture; snapshots roll forward except regressions; health compared with the stored snapshot; `--workflow` writes a nightly GitHub Actions workflow using the Actions cache; webhook payload has a Slack-ready `text` |
+| `checks.accessibility` / `checks.performance` | axe-core and performance-timeline metrics on both sides; only new violations and worse metrics are reported (review by default). The real `performance.getEntriesByType` is saved before Playwright's fake clock replaces it |
+
+Next: measure the AI changes live once the quota resets, and give the AI the PR's intent (title,
+description, changed files) so it can tell deliberate changes from accidental ones.
 
 **Where the implementation differs from this plan:**
 

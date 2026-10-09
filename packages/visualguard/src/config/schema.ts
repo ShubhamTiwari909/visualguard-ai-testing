@@ -91,6 +91,37 @@ const reporterSchema = z.custom<import("../core/run.js").Reporter>(
   { message: "expected a reporter: { name, onEvent?(event), onRunEnd?(manifest, context) }" },
 );
 
+const accessibilityCheckSchema = z.object({
+  enabled: z.boolean().default(true),
+  /** Only violations at or above this impact are reported. */
+  minImpact: z.enum(["minor", "moderate", "serious", "critical"]).default("serious"),
+  /** axe-core rule tags to run. */
+  tags: z.array(z.string()).default(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]),
+  /** How a new violation counts: "review", or "regression" to fail the run. */
+  severity: z.enum(["review", "regression"]).default("review"),
+});
+
+const performanceCheckSchema = z.object({
+  enabled: z.boolean().default(true),
+  /** Flag the page when LCP is this much slower than the reference. */
+  lcpIncreaseMs: z.number().min(0).default(1000),
+  /** …or CLS is this much higher. */
+  clsIncrease: z.number().min(0).default(0.1),
+  /** …or the page or its JavaScript grew by both this share and this many KB. */
+  weightIncreasePercent: z.number().min(0).default(20),
+  weightIncreaseKB: z.number().min(0).default(100),
+  severity: z.enum(["review", "regression"]).default("review"),
+});
+
+/** `true`/`false` or an options object (which turns the check on). */
+const checkSchema = <T extends z.ZodObject>(schema: T) =>
+  z
+    .union([z.boolean(), schema])
+    .default(false)
+    .transform((value): z.output<T> =>
+      typeof value === "boolean" ? schema.parse({ enabled: value }) : (value as z.output<T>),
+    );
+
 /**
  * The full config schema. Everything is optional for users; defaults are filled in here.
  * Nested objects use `.prefault({})` so their own defaults are applied (zod 4 semantics).
@@ -196,6 +227,14 @@ export const configSchema = z.object({
       regionMergeDistance: z.number().int().min(0).default(32),
       regionPadding: z.number().int().min(0).default(24),
       detectShift: z.boolean().default(true),
+      /**
+       * When a page differs, load the reference side a second time and ignore whatever differs
+       * between the two loads (carousels, timestamps, ads, random content). Costs one extra
+       * capture, only for pages that differ.
+       */
+      noiseMap: z.boolean().default(true),
+      /** Don't apply the noise map when it covers more than this share of the page. */
+      noiseMapMaxRatio: z.number().min(0).max(1).default(0.25),
     })
     .prefault({}),
 
@@ -206,7 +245,16 @@ export const configSchema = z.object({
       model: z.string().min(1).optional(),
       /** Upper bound on AI calls per run; remaining jobs fall back to heuristics. */
       maxCallsPerRun: z.number().int().min(0).default(30),
-      concurrency: z.number().int().min(1).max(8).default(2),
+      concurrency: z.number().int().min(1).max(8).default(4),
+      /**
+       * "uncertain" skips the model for jobs the heuristics already marked as regressions, since
+       * the model can't change that status. "all" analyzes them too, for the explanation.
+       */
+      analyze: z.enum(["uncertain", "all"]).default("uncertain"),
+      /** Gemini: how much the model reasons before answering. Most of a call's time and cost. */
+      thinking: z.enum(["off", "low", "default"]).default("low"),
+      /** Gemini: tokens spent per image ("high" is ~4× "medium"). */
+      imageDetail: z.enum(["low", "medium", "high"]).default("medium"),
       /** "noise" results at or above this confidence become `pass`. */
       noiseConfidence: z.number().min(0).max(1).default(0.8),
       maxRegionsPerJob: z.number().int().min(1).max(10).default(3),
@@ -234,6 +282,12 @@ export const configSchema = z.object({
       keepRuns: z.number().int().positive().default(10),
       /** Changes accepted as intentional; commit this file. */
       acceptedFile: z.string().default("visualguard.accepted.json"),
+      /**
+       * "similar" also accepts a job when it shows the same change as an accepted one (same DOM
+       * changes, regions in the same places), so anti-aliasing doesn't undo an acceptance.
+       * "exact" requires byte-identical screenshots.
+       */
+      acceptMatch: z.enum(["exact", "similar"]).default("similar"),
     })
     .prefault({}),
 
@@ -267,6 +321,35 @@ export const configSchema = z.object({
       maxAttempts: z.number().int().min(1).max(5).default(2),
       /** Consent to send source excerpts to the AI provider without asking (needed for --auto). */
       allowSourceUpload: z.boolean().default(false),
+    })
+    .prefault({}),
+
+  /**
+   * Extra checks on every live capture, both sides, so only new problems are reported. Off by
+   * default; `--a11y` and `--perf` turn them on for one run.
+   */
+  checks: z
+    .object({
+      /** New axe-core accessibility violations. */
+      accessibility: checkSchema(accessibilityCheckSchema),
+      /**
+       * Slower LCP, more layout shift, heavier pages. Compare like with like: a dev server against
+       * a production build always looks slower.
+       */
+      performance: checkSchema(performanceCheckSchema),
+    })
+    .prefault({}),
+
+  /** `visualguard monitor`: production compared with its own previous capture (nightly). */
+  monitor: z
+    .object({
+      /** Where the previous captures are kept; persist it between runs (CI cache). */
+      dir: z.string().default(".visualguard/monitor"),
+      /**
+       * "unless-regression": pages that regressed keep their old snapshot, so they're reported
+       * again until fixed or reset. "always": every run becomes the next run's reference.
+       */
+      update: z.enum(["unless-regression", "always"]).default("unless-regression"),
     })
     .prefault({}),
 

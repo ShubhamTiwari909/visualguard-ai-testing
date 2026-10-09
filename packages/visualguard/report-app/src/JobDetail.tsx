@@ -270,6 +270,10 @@ function Regions({
   );
 }
 
+function formatKB(kb: number): string {
+  return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
+}
+
 function Health({ job, labels }: { job: JobResult; labels: Record<Env, string> }) {
   const sides = (["production", "staging"] as const).filter((env) => job.captures[env]);
   return (
@@ -303,7 +307,60 @@ function Health({ job, labels }: { job: JobResult; labels: Record<Env, string> }
                 <dd>{health.failedRequests.length}</dd>
                 <dt className="text-slate-500 dark:text-slate-400">Broken images</dt>
                 <dd>{health.brokenImages.length}</dd>
+                {health.performance && (
+                  <>
+                    <dt className="text-slate-500 dark:text-slate-400">Load</dt>
+                    <dd>
+                      {[
+                        health.performance.lcpMs !== undefined
+                          ? `LCP ${formatDuration(health.performance.lcpMs)}`
+                          : "",
+                        `CLS ${health.performance.cls}`,
+                        health.performance.ttfbMs !== undefined
+                          ? `TTFB ${formatDuration(health.performance.ttfbMs)}`
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </dd>
+                    <dt className="text-slate-500 dark:text-slate-400">Weight</dt>
+                    <dd>
+                      {formatKB(health.performance.transferKB)} · JS{" "}
+                      {formatKB(health.performance.jsKB)} · {health.performance.requests} requests ·{" "}
+                      {health.performance.domNodes} elements
+                    </dd>
+                  </>
+                )}
+                {health.accessibility && (
+                  <>
+                    <dt className="text-slate-500 dark:text-slate-400">Accessibility</dt>
+                    <dd>
+                      {health.accessibility.length === 0
+                        ? "no violations"
+                        : `${health.accessibility.length} rule${health.accessibility.length > 1 ? "s" : ""} failing`}
+                    </dd>
+                  </>
+                )}
               </dl>
+              {health.accessibility && health.accessibility.length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-xs">
+                  {health.accessibility.map((violation) => (
+                    <li key={violation.id}>
+                      <a
+                        href={violation.helpUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline decoration-dotted underline-offset-2"
+                      >
+                        {violation.id}
+                      </a>{" "}
+                      <span className="text-slate-500 dark:text-slate-400">
+                        ({violation.impact}, {violation.count}) {violation.help}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {[...health.consoleErrors, ...health.failedRequests, ...health.brokenImages].length >
                 0 && (
                 <ul className="mt-2 max-h-40 space-y-0.5 overflow-auto font-mono text-[11px] text-slate-600 dark:text-slate-300">
@@ -348,6 +405,7 @@ export function JobDetail(props: JobDetailProps) {
         {job.acceptedBy && (
           <p className="text-xs text-teal-800 dark:text-teal-300">
             Accepted {new Date(job.acceptedBy.at).toLocaleString()}
+            {job.acceptedBy.match === "similar" ? " (same change, re-rendered)" : ""}
             {job.acceptedBy.note ? `: ${job.acceptedBy.note}` : ""}
           </p>
         )}

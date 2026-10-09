@@ -105,9 +105,19 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
           write();
           for (const warning of event.warnings) write(colors.yellow(`  ⚠ ${warning}`));
           const viewportCount = Object.keys(event.viewports).length;
-          write(
-            `Scanning ${pluralize(event.routeCount, "route")} × ${pluralize(viewportCount, "viewport")}${plain ? "..." : "…"}`,
-          );
+          if (event.mergedShards) {
+            write(
+              `Merged ${pluralize(event.mergedShards, "shard")} · ${pluralize(event.jobs.length, "job")}`,
+            );
+          } else if (event.shard) {
+            write(
+              `Shard ${event.shard.index}/${event.shard.total}: ${pluralize(event.jobs.length, "job")} of ${pluralize(event.routeCount, "route")} × ${pluralize(viewportCount, "viewport")}${plain ? "..." : "…"}`,
+            );
+          } else {
+            write(
+              `Scanning ${pluralize(event.routeCount, "route")} × ${pluralize(viewportCount, "viewport")}${plain ? "..." : "…"}`,
+            );
+          }
           write();
           break;
         }
@@ -160,7 +170,7 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
               tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}k` : String(tokens);
             write(
               colors.dim(
-                `  AI: ${manifest.config.ai.model} · ${pluralize(manifest.usage.aiCalls, "call")} · ${k(manifest.usage.inputTokens)} tokens in / ${k(manifest.usage.outputTokens)} out`,
+                `  AI: ${manifest.config.ai.model} · ${pluralize(manifest.usage.aiCalls, "call")} · ${k(manifest.usage.inputTokens)} tokens in / ${k(manifest.usage.outputTokens)} out${manifest.usage.thinkingTokens ? ` (${k(manifest.usage.thinkingTokens)} thinking)` : ""}`,
               ),
             );
           }

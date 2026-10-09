@@ -8,6 +8,7 @@ import { exitCodeFor, FAIL_ON_VALUES } from "../../core/status.js";
 import type { FailOn, RunManifest } from "../../core/types.js";
 import {
   addAIOptions,
+  addCheckOptions,
   collect,
   loadResolvedConfig,
   parsePositiveInt,
@@ -85,7 +86,7 @@ export function registerZeroConfigCommand(program: Command): void {
     .option("--json", "print the manifest JSON to stdout")
     .option("--junit <path>", "write a JUnit XML report")
     .option("--debug", "save Playwright traces");
-  addAIOptions(program).action(async (urls: string[], flags: ZeroConfigFlags) => {
+  addAIOptions(addCheckOptions(program)).action(async (urls: string[], flags: ZeroConfigFlags) => {
     if (urls.length === 0) program.help();
     process.exitCode = await runZeroConfig(urls, flags);
   });

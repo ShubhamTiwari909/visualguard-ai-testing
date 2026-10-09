@@ -98,3 +98,81 @@ export function renderWorkflow(manager: PackageManager, options: { ai: boolean }
   ];
   return lines.join("\n");
 }
+
+/**
+ * `.github/workflows/visualguard-monitor.yml`: a scheduled run of `visualguard monitor`. The
+ * previous captures live in the Actions cache: each run restores the newest one and saves its own.
+ */
+export function renderMonitorWorkflow(
+  manager: PackageManager,
+  options: { schedule: string; url?: string },
+): string {
+  const steps = MANAGERS[manager];
+  const lines = [
+    "name: VisualGuard monitor",
+    "",
+    "on:",
+    "  schedule:",
+    `    - cron: "${options.schedule}"`,
+    "  workflow_dispatch:",
+    "",
+    "permissions:",
+    "  contents: read",
+    "",
+    "jobs:",
+    "  monitor:",
+    "    runs-on: ubuntu-latest",
+    "    steps:",
+    "      - uses: actions/checkout@v4",
+    ...steps.setup,
+    "      - uses: actions/setup-node@v4",
+    "        with:",
+    "          node-version: 22",
+    ...(steps.cache ? [`          cache: ${steps.cache}`] : []),
+    `      - run: ${steps.install}`,
+    "",
+    "      - name: Cache Playwright browsers",
+    "        uses: actions/cache@v4",
+    "        with:",
+    "          path: ~/.cache/ms-playwright",
+    `          key: playwright-\${{ runner.os }}-\${{ hashFiles('${steps.lockfile}') }}`,
+    `      - run: ${steps.exec} playwright install --with-deps chromium`,
+    "",
+    "      - name: Restore the previous captures",
+    "        uses: actions/cache/restore@v4",
+    "        with:",
+    "          path: .visualguard/monitor",
+    "          key: visualguard-monitor-${{ github.run_id }}",
+    "          restore-keys: visualguard-monitor-",
+    "",
+    "      - name: Compare with the previous captures",
+    "        id: monitor",
+    "        continue-on-error: true",
+    `        run: ${steps.exec} visualguard monitor${options.url ? ` ${options.url}` : ""} --ci`,
+    "        env:",
+    "          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}",
+    "          # Slack incoming webhook, n8n, Zapier…: gets a summary when the run ends.",
+    "          VISUALGUARD_WEBHOOK_URL: ${{ secrets.VISUALGUARD_WEBHOOK_URL }}",
+    "",
+    "      - name: Save the captures for the next run",
+    "        if: always()",
+    "        uses: actions/cache/save@v4",
+    "        with:",
+    "          path: .visualguard/monitor",
+    "          key: visualguard-monitor-${{ github.run_id }}",
+    "",
+    "      - name: Upload the report",
+    "        if: always()",
+    "        uses: actions/upload-artifact@v4",
+    "        with:",
+    "          name: visualguard-monitor-report",
+    "          path: .visualguard/runs/",
+    "          if-no-files-found: ignore",
+    "",
+    "      - name: Fail on regressions",
+    "        if: steps.monitor.outcome == 'failure'",
+    "        run: exit 1",
+    "",
+  ];
+  return lines.join("\n");
+}

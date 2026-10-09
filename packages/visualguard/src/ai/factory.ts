@@ -16,7 +16,8 @@ export interface ProviderResult {
  * heuristics and says why (PLAN.md §2, principle 2).
  */
 export function createProvider(
-  ai: Pick<ParsedConfig["ai"], "provider" | "model">,
+  ai: Pick<ParsedConfig["ai"], "provider" | "model"> &
+    Partial<Pick<ParsedConfig["ai"], "thinking" | "imageDetail">>,
   env: NodeJS.ProcessEnv = process.env,
 ): ProviderResult {
   switch (ai.provider) {
@@ -32,6 +33,8 @@ export function createProvider(
           apiKey,
           model: ai.model,
           baseUrl: env.VISUALGUARD_GEMINI_BASE_URL,
+          thinking: ai.thinking,
+          imageDetail: ai.imageDetail,
         }),
       };
     }

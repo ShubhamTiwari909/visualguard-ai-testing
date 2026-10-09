@@ -1,8 +1,9 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Box, Env, Size } from "../core/types.js";
 import { pixelmatchEngine, renderDiffImage } from "./compare.js";
 import { cropImage, padBox, padImage, readPNG, writePNG } from "./image.js";
+import { clearBoxes, noiseMap } from "./noise.js";
 import { extractRegions } from "./regions.js";
 import { detectShift } from "./shift.js";
 
@@ -17,6 +18,8 @@ export interface DiffOptions {
   regionPadding: number;
   /** Look for a vertical layout shift and report the inserted/removed band separately. */
   detectShift: boolean;
+  /** Skip the noise map when it covers more than this share of the page. */
+  noiseMapMaxRatio?: number;
 }
 
 export interface DiffJobInput {
@@ -25,6 +28,18 @@ export interface DiffJobInput {
   /** Job directory; `diff.png` and `regions/*.png` are written here. */
   outDir: string;
   options: DiffOptions;
+  /**
+   * A second capture of one side (`noise.env`). Areas that differ between the two captures change
+   * on every load and are left out of the diff.
+   */
+  noise?: { env: Env; againPath: string; domPath?: string };
+}
+
+export interface DiffNoise {
+  boxes: Box[];
+  /** Differing pixels inside the boxes, left out of `diffPixels`. */
+  ignoredPixels: number;
+  skipped?: string;
 }
 
 export interface DiffJobRegion {
@@ -46,8 +61,20 @@ export interface DiffJobOutput {
   /** Absolute path, only written when the job did not pass. */
   image?: string;
   shift?: { fromY: number; deltaY: number };
+  noise?: DiffNoise;
   regions: DiffJobRegion[];
   durationMs: number;
+}
+
+function elementBoxes(domPath: string): Array<[number, number, number, number]> {
+  try {
+    const snapshot = JSON.parse(readFileSync(domPath, "utf8")) as {
+      nodes: Array<{ box: [number, number, number, number] }>;
+    };
+    return snapshot.nodes.map((node) => node.box);
+  } catch {
+    return [];
+  }
 }
 
 export function passesGate(diffPixels: number, diffRatio: number, options: DiffOptions): boolean {
@@ -73,7 +100,24 @@ export function computeDiff(input: DiffJobInput): DiffJobOutput {
 
   const a = padImage(production, width, height);
   const b = padImage(staging, width, height);
-  const { diffPixels, mask } = pixelmatchEngine.compare(a, b, input.options);
+  const compared = pixelmatchEngine.compare(a, b, input.options);
+  const { mask } = compared;
+  let { diffPixels } = compared;
+
+  let noise: DiffNoise | undefined;
+  if (input.noise && diffPixels > 0) {
+    const map = noiseMap(
+      input.noise.env === "production" ? production : staging,
+      readPNG(input.noise.againPath),
+      { ...input.options, maxRatio: input.options.noiseMapMaxRatio ?? 0.25 },
+      input.noise.domPath ? elementBoxes(input.noise.domPath) : [],
+    );
+    noise = { boxes: map.boxes, ignoredPixels: 0, skipped: map.skipped };
+    if (!map.skipped && map.boxes.length > 0) {
+      noise.ignoredPixels = clearBoxes(mask, map.boxes, width, height);
+      diffPixels -= noise.ignoredPixels;
+    }
+  }
   const diffRatio = diffPixels / (width * height);
   const passed = passesGate(diffPixels, diffRatio, input.options);
 
@@ -84,6 +128,7 @@ export function computeDiff(input: DiffJobInput): DiffJobOutput {
     sizeMismatch,
     diffPixels,
     diffRatio,
+    noise,
     regions: [],
     durationMs: 0,
   };
@@ -110,7 +155,12 @@ export function computeDiff(input: DiffJobInput): DiffJobOutput {
     }
   }
 
-  const diffImage = renderDiffImage(b, regionMask, band);
+  const diffImage = renderDiffImage(
+    b,
+    regionMask,
+    band,
+    noise && !noise.skipped ? noise.boxes : undefined,
+  );
   output.image = join(input.outDir, "diff.png");
   writePNG(output.image, diffImage);
 

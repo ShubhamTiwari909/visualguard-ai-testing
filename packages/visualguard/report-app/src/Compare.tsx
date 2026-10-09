@@ -251,11 +251,13 @@ export function Compare({
     <Canvas
       job={job}
       actualSize={actualSize}
-      label={
-        job.diff.shift
-          ? "Differences (red) · inserted or removed content (orange)"
-          : "Differences (red)"
-      }
+      label={[
+        "Differences (red)",
+        job.diff.shift ? "inserted or removed content (orange)" : "",
+        job.diff.noise?.ignoredPixels ? "ignored: changes on every load (blue)" : "",
+      ]
+        .filter(Boolean)
+        .join(" · ")}
     >
       <Screenshot
         job={job}

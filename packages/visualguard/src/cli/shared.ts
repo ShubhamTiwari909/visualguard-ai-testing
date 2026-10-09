@@ -43,6 +43,9 @@ export interface ConfigFlags {
   concurrency?: number;
   provider?: "gemini" | "ollama" | "none";
   model?: string;
+  /** `--a11y` / `--perf`: turn the checks on for this run. */
+  a11y?: boolean;
+  perf?: boolean;
 }
 
 /** Loads .env files and the config, then applies CLI overrides. */
@@ -53,6 +56,8 @@ export async function loadResolvedConfig(
   const cwd = process.cwd();
   loadEnvFiles(cwd);
   const { config, configPath } = await loadConfig({ cwd, configPath: flags.config });
+  if (flags.a11y) config.checks.accessibility.enabled = true;
+  if (flags.perf) config.checks.performance.enabled = true;
   return resolveConfig(config, {
     cwd,
     configPath,
@@ -151,6 +156,13 @@ export function standardReporters(
     );
   }
   return reporters;
+}
+
+/** `--a11y` and `--perf`. */
+export function addCheckOptions(command: Command): Command {
+  return command
+    .option("--a11y", "also report new accessibility violations (axe-core)")
+    .option("--perf", "also report slower loads, more layout shift and heavier pages");
 }
 
 /** `--provider`, `--model` and `--no-ai`. */

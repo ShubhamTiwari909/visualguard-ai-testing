@@ -114,6 +114,8 @@ export async function reanalyzeRun(
       aiCalls: previous.aiCalls + session.calls,
       inputTokens: previous.inputTokens + session.usage.inputTokens,
       outputTokens: previous.outputTokens + session.usage.outputTokens,
+      thinkingTokens:
+        (previous.thinkingTokens ?? 0) + (session.usage.thinkingTokens ?? 0) || undefined,
     },
   };
   writeManifest(dir, updated);
