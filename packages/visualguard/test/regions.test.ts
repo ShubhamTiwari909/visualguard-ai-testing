@@ -1,6 +1,20 @@
+/**
+ * @file Tests changed-cell region extraction, sorting, transitive merging and caps.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { describe, expect, it } from "vitest";
 import { extractRegions, mergeNearby } from "../src/diff/regions.js";
 
+/**
+ * Build a one-byte-per-pixel mask and mark the supplied rectangles changed. Row-major indexes
+ * let region extraction tests use known connected shapes.
+ */
 function maskWith(
   width: number,
   height: number,

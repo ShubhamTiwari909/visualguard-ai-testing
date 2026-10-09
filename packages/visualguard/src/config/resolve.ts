@@ -1,3 +1,15 @@
+/**
+ * @file Resolves CLI > environment > config precedence and absolute output paths; validates
+ * selected settings.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { cpus } from "node:os";
 import { resolve } from "node:path";
 import { ConfigError } from "../core/errors.js";
@@ -5,20 +17,30 @@ import type { Env } from "../core/types.js";
 import { normalizeBaseURL } from "./urls.js";
 import type { ParsedConfig, RouteInput } from "./schema.js";
 
-/** Values from CLI flags and positional arguments. They win over env vars and the config file. */
+/**
+ * Values from CLI flags and positional arguments. They win over env vars and the config file.
+ */
 export interface ConfigOverrides {
   browser?: ParsedConfig["browser"]["name"];
   outputDir?: string;
   production?: string;
   staging?: string;
-  /** `--route` values (or routes from positional URLs): replace the configured routes. */
+  /**
+   * `--route` values (or routes from positional URLs): replace the configured routes.
+   */
   routes?: RouteInput[];
-  /** `--only` globs: filter the route list. */
+  /**
+   * `--only` globs: filter the route list.
+   */
   only?: string[];
-  /** `--viewport` names: run only these viewports. */
+  /**
+   * `--viewport` names: run only these viewports.
+   */
   viewports?: string[];
   concurrency?: number;
-  /** `--provider` / `--model`. */
+  /**
+   * `--provider` / `--model`.
+   */
   aiProvider?: "gemini" | "ollama" | "none";
   aiModel?: string;
 }
@@ -26,9 +48,13 @@ export interface ConfigOverrides {
 export interface ResolvedConfig extends ParsedConfig {
   cwd: string;
   configPath?: string;
-  /** Absolute path of `output.dir`. */
+  /**
+   * Absolute path of `output.dir`.
+   */
   outputDir: string;
-  /** Absolute path of `output.acceptedFile`. */
+  /**
+   * Absolute path of `output.acceptedFile`.
+   */
   acceptedPath: string;
   only: string[];
   concurrency: number;
@@ -39,6 +65,10 @@ export const ENV_VARS = {
   staging: "VISUALGUARD_STAGING_URL",
 } as const satisfies Record<Env, string>;
 
+/**
+ * Choose one environment URL by override, environment variable and config precedence. Validate
+ * a present value before returning it so downstream URL construction has a usable base.
+ */
 function pickBaseURL(
   env: Env,
   overrides: ConfigOverrides,
@@ -52,11 +82,21 @@ function pickBaseURL(
   return value;
 }
 
+/**
+ * Choose a capture concurrency between one and four based on available CPUs. The upper bound
+ * keeps the default from opening too many expensive browser pages.
+ */
 export function defaultConcurrency(): number {
   return Math.max(1, Math.min(4, cpus().length));
 }
 
-/** Applies precedence: CLI flags → env vars → config file → defaults (PLAN.md §6.2). */
+/**
+ * Applies precedence: CLI flags → env vars → config file → defaults (PLAN.md §6.2).
+ *
+ * Apply overrides, environment values and defaults to produce the runtime configuration.
+ * Resolve filesystem paths and feature settings here so capture/diff modules do not repeat
+ * precedence logic.
+ */
 export function resolveConfig(
   config: ParsedConfig,
   options: {

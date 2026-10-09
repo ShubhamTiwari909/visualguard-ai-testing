@@ -1,40 +1,91 @@
+/**
+ * @file Serializes relevant visible DOM structure, selectors, text, computed styles and
+ * bounding boxes for later explanation.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Page } from "playwright";
 
 /**
  * A compact DOM snapshot taken right after the screenshot (PLAN.md §9.1). Computed styles are
- * stored once per unique combination in `styles` and referenced by index, which keeps
- * snapshots small: most elements share their styles with many others.
+ * stored once per unique combination in `styles` and referenced by index, which keeps snapshots
+ * small: most elements share their styles with many others.
+ */
+/**
+ * A compact captured element. Short field names reduce snapshot JSON size: i/p/s are indexes,
+ * not nested objects; box is measured in page pixels.
  */
 export interface DomNode {
-  /** Index of this node in `nodes`. */
+  /**
+   * Index of this node in `nodes`.
+   */
   i: number;
-  /** Parent index, -1 for the root. */
+  /**
+   * Parent index, -1 for the root.
+   */
   p: number;
   tag: string;
-  /** Human-readable selector for reports. */
+  /**
+   * Human-readable selector for reports.
+   */
   sel: string;
-  /** data-testid (or data-test / data-cy) or a stable-looking id. */
+  /**
+   * data-testid (or data-test / data-cy) or a stable-looking id.
+   */
   key?: string;
+  /**
+   * Captured class-list text, used as a source-location clue rather than a stable identity.
+   */
   cls?: string;
-  /** The element's own text (direct text nodes only). */
+  /**
+   * The element's own text (direct text nodes only).
+   */
   text?: string;
-  /** aria-label, alt or title. */
+  /**
+   * aria-label, alt or title.
+   */
   name?: string;
   role?: string;
-  /** data-component hint. */
+  /**
+   * data-component hint.
+   */
   comp?: string;
+  /**
+   * Resolved media URL when the element exposes one.
+   */
   src?: string;
+  /**
+   * An image finished loading but has no decoded width.
+   */
   broken?: boolean;
-  /** Content is wider or taller than the box and the overflow is hidden: text is cut off. */
+  /**
+   * Content is wider or taller than the box and the overflow is hidden: text is cut off.
+   */
   clip?: boolean;
-  /** [x, y, width, height] in page coordinates. */
+  /**
+   * [x, y, width, height] in page coordinates.
+   */
   box: [number, number, number, number];
-  /** Index into `styles`. */
+  /**
+   * Index into `styles`.
+   */
   s: number;
-  /** Number of element children recorded. */
+  /**
+   * Number of element children recorded.
+   */
   n: number;
 }
 
+/**
+ * A flat DOM tree plus shared style records. nodes[i] must be the node whose i equals that
+ * position; p=-1 marks the root and s references styles[s].
+ */
 export interface DomSnapshot {
   version: 1;
   url: string;
@@ -44,7 +95,9 @@ export interface DomSnapshot {
   truncated: boolean;
 }
 
-/** Computed style properties worth comparing (layout, spacing, typography, colour, effects). */
+/**
+ * Computed style properties worth comparing (layout, spacing, typography, colour, effects).
+ */
 export const STYLE_PROPERTIES = [
   "display",
   "position",
@@ -118,7 +171,13 @@ interface CollectArgs {
   props: readonly string[];
 }
 
-/** Runs in the page. Must be self-contained: it is serialised and evaluated in the browser. */
+/**
+ * Runs in the page. Must be self-contained: it is serialised and evaluated in the browser.
+ *
+ * Walk the browser DOM and build a compact snapshot of nodes, geometry and selected computed
+ * styles. This entire function and its nested helpers are serialized into the page; they cannot
+ * access imported Node.js helpers.
+ */
 function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version"> {
   const SKIP = new Set([
     "SCRIPT",
@@ -138,18 +197,38 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
   const scrollY = window.scrollY;
   let truncated = false;
 
+  /**
+   * Escape a selector fragment with the browser's CSS.escape when available. The fallback keeps
+   * the original value for browsers without that API.
+   */
   const escape = (value: string) => (window.CSS?.escape ? window.CSS.escape(value) : value);
+  /**
+   * Read a recognized testing attribute in priority order. The nullish coalescing operator ??
+   * tries the next attribute when the preceding lookup returns null.
+   */
   const testIdOf = (el: Element) =>
     el.getAttribute("data-testid") ??
     el.getAttribute("data-test") ??
     el.getAttribute("data-cy") ??
     undefined;
   // Generated ids (React useId, UUIDs, long numbers) are not stable between builds.
+  /**
+   * Reject empty IDs and common generated/hash-like IDs. This heuristic favors identifiers
+   * likely to stay the same between the two captures.
+   */
   const stableId = (id: string) => id !== "" && !/^:|^[a-f0-9-]{16,}$|\d{4,}/i.test(id);
   // Skip hashed class names from CSS-in-JS; keep utility and BEM classes.
+  /**
+   * Reject long or generated-looking CSS class names when building readable selectors.
+   * Stable-looking classes make matching less sensitive to build-specific hashes.
+   */
   const stableClass = (name: string) =>
     name.length < 40 && !/^(css|sc|jsx|emotion|e|tw)-[a-z0-9]{4,}$/i.test(name);
 
+  /**
+   * Build one selector segment from the element's tag and up to two stable classes. Array.from
+   * converts the DOM class collection into an array so filter/map can be used.
+   */
   const segment = (el: Element) => {
     const classes = Array.from(el.classList)
       .filter(stableClass)
@@ -159,6 +238,11 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
     return `${el.tagName.toLowerCase()}${classes}`;
   };
 
+  /**
+   * Choose a short selector using a test identifier, stable ID or a bounded ancestor chain.
+   * This is an evidence label for matching/reporting, not a guarantee that every arbitrary page
+   * selector is unique.
+   */
   const selectorFor = (el: Element): string => {
     const testId = testIdOf(el);
     if (testId) return `[data-testid="${testId}"]`;
@@ -181,6 +265,10 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
     return parts.join(" > ");
   };
 
+  /**
+   * Visit one element, record visible evidence and recurse into children and open shadow roots.
+   * Store the parent index in the flat node array and stop at maxNodes to bound snapshot size.
+   */
   const visit = (el: Element, parentIndex: number) => {
     if (nodes.length >= maxNodes) {
       truncated = true;
@@ -274,6 +362,10 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
   };
 }
 
+/**
+ * Pass the self-contained collector and allowed style names into page.evaluate. Wrap the
+ * browser result with a version so saved snapshots can be read consistently.
+ */
 export async function captureDomSnapshot(page: Page, maxNodes = 4_000): Promise<DomSnapshot> {
   const result = await page.evaluate(collect, { maxNodes, props: STYLE_PROPERTIES });
   return { version: 1, ...result };

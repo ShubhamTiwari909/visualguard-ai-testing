@@ -1,3 +1,14 @@
+/**
+ * @file Tests configured accessibility/performance capture and threshold-based independent
+ * findings.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config/load.js";
 import { accessibilityFindings, performanceFindings } from "../src/core/findings.js";
@@ -19,6 +30,10 @@ afterAll(async () => {
   await staging?.close();
 });
 
+/**
+ * Build a route-to-status lookup from manifest jobs using Object.fromEntries. Assertions can
+ * then name a route directly without depending on job array order.
+ */
 const statuses = (manifest: RunManifest) =>
   Object.fromEntries(manifest.jobs.map((job) => [job.route, job.status]));
 
@@ -81,6 +96,10 @@ describe("accessibility and performance checks", () => {
 
 describe("check findings", () => {
   const settings = parseConfig({ checks: { accessibility: true, performance: true } }).checks;
+  /**
+   * Build a compact axe-style violation with a controlled rule ID, affected count and targets.
+   * The fixed serious impact makes threshold comparisons predictable.
+   */
   const violation = (id: string, count: number, targets: string[]) => ({
     id,
     impact: "serious" as const,
@@ -89,6 +108,10 @@ describe("check findings", () => {
     count,
     targets,
   });
+  /**
+   * Create empty health evidence and apply explicit overrides afterward. Object spread lets
+   * each test introduce only the problem it needs.
+   */
   const health = (extra: Partial<HealthSignals>): HealthSignals => ({
     consoleErrors: [],
     failedRequests: [],
@@ -122,6 +145,10 @@ describe("check findings", () => {
   });
 
   it("flags slower, shiftier and heavier pages beyond the margins", () => {
+    /**
+     * Create representative performance measurements with optional overrides. Tests adjust one
+     * metric at a time without repeatedly constructing the full object.
+     */
     const metrics = (extra: Partial<PerfMetrics>): PerfMetrics => ({
       lcpMs: 1200,
       cls: 0.01,

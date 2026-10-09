@@ -1,3 +1,15 @@
+/**
+ * @file Maps a pixel region to matched elements and generates style, text, box and presence
+ * deltas.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Box, Delta, ElementMatch, Env, StyleDelta } from "../core/types.js";
 import { area, intersection, shiftBox, type DomIndex } from "./dom.js";
 import type { TreeMatch } from "./match.js";
@@ -14,7 +26,9 @@ export interface RegionMapping {
   deltas: Delta[];
 }
 
-/** Inherited properties: a change on a parent shows up on every descendant. */
+/**
+ * Inherited properties: a change on a parent shows up on every descendant.
+ */
 const INHERITED = new Set([
   "color",
   "font-family",
@@ -35,7 +49,9 @@ const INHERITED = new Set([
  */
 const DERIVED = new Set(["width", "height", "grid-template-columns", "grid-template-rows"]);
 
-/** Properties that position or space things; their changes explain moved children. */
+/**
+ * Properties that position or space things; their changes explain moved children.
+ */
 export const LAYOUT_PROPERTIES = new Set([
   "display",
   "position",
@@ -70,6 +86,10 @@ export const LAYOUT_PROPERTIES = new Set([
 const MAX_DELTAS = 16;
 const MOVE_TOLERANCE = 1;
 
+/**
+ * Compare computed styles for a matched element pair and filter duplicate/inherited or derived
+ * explanations. Prefer direct style evidence over movement caused by a parent or text change.
+ */
 function styleDeltas(
   context: MappingContext,
   a: number,
@@ -109,6 +129,10 @@ function styleDeltas(
   return filtered.filter((delta) => delta.property === "width" || delta.property === "height");
 }
 
+/**
+ * Check x/y/width/height differences against a small movement tolerance. Tiny subpixel
+ * variations should not become a reported geometry change.
+ */
 function moved(a: Box, b: Box): boolean {
   return (
     Math.abs(a.x - b.x) > MOVE_TOLERANCE ||
@@ -118,7 +142,12 @@ function moved(a: Box, b: Box): boolean {
   );
 }
 
-/** Nodes worth inspecting for a region: they overlap it and are not page-sized containers. */
+/**
+ * Nodes worth inspecting for a region: they overlap it and are not page-sized containers.
+ *
+ * Choose DOM nodes that overlap the region without being overwhelmingly large containers. An
+ * optional coordinate adjustment handles production elements affected by a detected shift.
+ */
 function candidates(dom: DomIndex, region: Box, adjust: (box: Box) => Box): number[] {
   const regionArea = Math.max(1, area(region));
   const result: number[] = [];
@@ -135,6 +164,10 @@ function candidates(dom: DomIndex, region: Box, adjust: (box: Box) => Box): numb
 
 const DELTA_PRIORITY: Record<Delta["kind"], number> = { presence: 0, text: 1, style: 2, box: 3 };
 
+/**
+ * Rank layout properties before ordinary styles and derived styles. Lower numbers sort first so
+ * the most useful cause appears before its consequences.
+ */
 function stylePriority(delta: Delta): number {
   if (delta.kind !== "style") return 0;
   return LAYOUT_PROPERTIES.has(delta.property) ? 0 : DERIVED.has(delta.property) ? 2 : 1;
@@ -143,11 +176,18 @@ function stylePriority(delta: Delta): number {
 /**
  * Maps one changed region to the elements under it and what changed about them (PLAN.md §9.2):
  * added/removed elements, text, computed styles and position/size.
+ *
+ * Associate a changed image region with matched or added/removed DOM elements and their deltas.
+ * Deduplicate evidence and bound the result for reports and AI prompts.
  */
 export function mapRegion(context: MappingContext, region: Box): RegionMapping {
   const { production, staging, match, shift } = context;
   const deltas: Delta[] = [];
   const seen = new Set<string>();
+  /**
+   * Append a delta only when its serialized content has not already been seen. A Set prevents
+   * the same evidence from being reported through several overlapping nodes.
+   */
   const push = (delta: Delta) => {
     const key = JSON.stringify(delta);
     if (seen.has(key)) return;
@@ -159,6 +199,10 @@ export function mapRegion(context: MappingContext, region: Box): RegionMapping {
   const productionNodes = candidates(production, region, (box) => shiftBox(box, shift));
   const inspected = new Set<number>();
 
+  /**
+   * Inspect one matched production/staging node pair only once. Record supported text, style
+   * and meaningful box changes, returning whether the pair explains a change.
+   */
   const inspectPair = (a: number, b: number) => {
     if (inspected.has(b)) return;
     inspected.add(b);
@@ -237,7 +281,12 @@ export function mapRegion(context: MappingContext, region: Box): RegionMapping {
   };
 }
 
-/** The elements that best describe a region: small, mostly inside it, and covering it. */
+/**
+ * The elements that best describe a region: small, mostly inside it, and covering it.
+ *
+ * Choose a few elements whose boxes best cover and fit inside this region. Include their
+ * environment, selectors and counterpart information for navigation and explanation.
+ */
 function regionElements(
   context: MappingContext,
   region: Box,
@@ -246,6 +295,10 @@ function regionElements(
 ): ElementMatch[] {
   const regionArea = Math.max(1, area(region));
   const scored: Array<{ env: Env; index: number; score: number }> = [];
+  /**
+   * Multiply region coverage by element coverage to favor a useful fit. Math.max guards
+   * denominators against zero-sized boxes.
+   */
   const score = (box: Box) => {
     const overlap = intersection(box, region);
     return (overlap / regionArea) * (overlap / Math.max(1, area(box)));

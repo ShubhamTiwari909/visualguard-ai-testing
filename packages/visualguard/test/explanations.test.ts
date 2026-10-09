@@ -1,3 +1,14 @@
+/**
+ * @file Tests end-to-end human explanations for text, colour, layout/spacing and deterministic
+ * failures.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createRun } from "../src/core/run.js";
 import type { JobResult, RunManifest } from "../src/core/types.js";
@@ -43,8 +54,16 @@ afterAll(async () => {
   await staging?.close();
 });
 
+/**
+ * Find a fixture result for both route and viewport. A route can have several jobs, so
+ * selecting the viewport is necessary for precise assertions.
+ */
 const job = (route: string, viewport = "desktop"): JobResult =>
   manifest.jobs.find((candidate) => candidate.route === route && candidate.viewport === viewport)!;
+/**
+ * Extract a selected job's finding messages, using an empty list when none exist. This focuses
+ * explanation assertions on readable output.
+ */
 const messages = (route: string, viewport = "desktop") =>
   (job(route, viewport).findings ?? []).map((f) => f.message);
 

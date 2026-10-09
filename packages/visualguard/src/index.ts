@@ -1,3 +1,14 @@
+/**
+ * @file Public API barrel: exports configuration/run/status helpers, reporters and types; does
+ * not start a run.
+ *
+ * This is the public library entry point. Export statements expose selected helpers/types to
+ * package consumers; importing this module does not itself start capture. Internal relative
+ * imports use .js extensions because the published output is JavaScript.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 export { VERSION } from "./core/version.js";
 
 // Configuration

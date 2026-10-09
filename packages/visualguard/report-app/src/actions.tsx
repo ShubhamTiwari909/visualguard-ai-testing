@@ -1,10 +1,30 @@
+/**
+ * @file Accept/fix UI; calls local token-protected APIs, previews proposal diffs and displays
+ * apply/verification results.
+ *
+ * This module runs in the report viewer's browser. React components return JSX (the markup-like
+ * syntax); state changes request a new render, while effects synchronize browser APIs and clean
+ * up listeners.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { useRef, useState } from "react";
 import { serverInfo, type JobResult } from "./data";
 import { CopyButton } from "./ui";
 
+/**
+ * Quote a value for a command a developer can copy into a shell. Embedded single quotes need
+ * special escaping so a route or path remains one argument.
+ */
 const quoteArg = (value: string) =>
   /^[\w/.-]+$/.test(value) ? value : `'${value.replace(/'/g, "'\\''")}'`;
 
+/**
+ * Send a JSON request to the local report server and include its action token. Await the
+ * response and surface server errors to the UI instead of treating every HTTP response as a
+ * success.
+ */
 async function callAPI<T>(name: string, body: unknown): Promise<T> {
   const server = serverInfo()!;
   const response = await fetch(`./api/${name}`, {
@@ -29,7 +49,12 @@ interface Proposal {
 const buttonClass =
   "rounded-md px-2.5 py-1 text-xs font-semibold disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2";
 
-/** "Generate fix": propose → show the diff → apply and verify only when confirmed. */
+/**
+ * "Generate fix": propose → show the diff → apply and verify only when confirmed.
+ *
+ * Manage the report's propose/preview/apply repair flow. React state records progress and
+ * errors so the developer can inspect an edit before the server writes it.
+ */
 function FixButton({ job }: { job: JobResult }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<"idle" | "proposing" | "proposed" | "applying" | "done">(
@@ -38,6 +63,10 @@ function FixButton({ job }: { job: JobResult }) {
   const [proposal, setProposal] = useState<Proposal>();
   const [result, setResult] = useState<{ ok: boolean; message: string }>();
 
+  /**
+   * Request a repair proposal for the current job and store it for preview. This step gathers
+   * proposed edits; applying and verifying them is a separate action.
+   */
   const propose = async () => {
     setState("proposing");
     setResult(undefined);
@@ -53,6 +82,10 @@ function FixButton({ job }: { job: JobResult }) {
     }
   };
 
+  /**
+   * Send the reviewed proposal to the server for application and verification. Update the
+   * component state with the result or a readable error.
+   */
   const apply = async () => {
     setState("applying");
     try {
@@ -157,6 +190,9 @@ function FixButton({ job }: { job: JobResult }) {
 /**
  * Served by `visualguard report`: "Accept change" and (with fix.enabled) "Generate fix" through
  * the local API. Static reports can't change files, so they offer the CLI command instead.
+ *
+ * Render available acceptance and repair actions for a job. A static HTML report can show
+ * commands, while a running local server can perform interactive actions.
  */
 export function JobActions({ job }: { job: JobResult }) {
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
@@ -171,6 +207,10 @@ export function JobActions({ job }: { job: JobResult }) {
   const command = `npx visualguard accept ${quoteArg(job.route)} --viewport ${quoteArg(job.viewport)}`;
   if (!server) return <CopyButton text={command} label="Copy accept command" />;
 
+  /**
+   * Ask the report server to record this job's current differences as accepted. Wait for the
+   * operation before reporting success to the user.
+   */
   const accept = async () => {
     setState("busy");
     try {

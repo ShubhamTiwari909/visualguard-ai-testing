@@ -1,3 +1,14 @@
+/**
+ * @file Tests DOM tree matching, moved/keyed elements, inherited styles and region-to-delta
+ * explanations.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { describe, expect, it } from "vitest";
 import { classifyJob } from "../src/mapping/classify.js";
 import { mapRegion } from "../src/mapping/deltas.js";
@@ -7,12 +18,20 @@ import { matchTrees } from "../src/mapping/match.js";
 import type { RegionResult } from "../src/core/types.js";
 import { snapshot, type NodeSpec } from "./helpers/dom.js";
 
+/**
+ * Wrap supplied node specs in a body-sized synthetic page. This provides consistent geometry
+ * and a common root for tree matching.
+ */
 const page = (children: NodeSpec[]): NodeSpec => ({
   tag: "body",
   box: [0, 0, 1000, 800],
   children,
 });
 
+/**
+ * Build indexed snapshots and their forward/backward matches for a mapping test. An optional
+ * shift lets assertions verify coordinate adjustment.
+ */
 function context(
   production: NodeSpec,
   staging: NodeSpec,
@@ -101,6 +120,10 @@ describe("mapRegion", () => {
   });
 
   it("finds the container layout change behind moved children", () => {
+    /**
+     * Create a stable-keyed link at a chosen y coordinate. Moving this one controlled child
+     * exercises matching across layout changes.
+     */
     const child = (y: number) => ({
       tag: "a",
       key: "testid:pay",
@@ -231,6 +254,10 @@ describe("describeDeltas", () => {
 });
 
 describe("classifyJob", () => {
+  /**
+   * Build an empty changed-region record around the supplied box. Mapping code fills its
+   * element and delta evidence during the test.
+   */
   const region = (box: RegionResult["box"]): RegionResult => ({
     id: 0,
     box,

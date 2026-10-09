@@ -1,3 +1,14 @@
+/**
+ * @file Tests URL joining/validation and single/catch-all/optional dynamic route parameter
+ * expansion.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { describe, expect, it } from "vitest";
 import {
   applyParams,

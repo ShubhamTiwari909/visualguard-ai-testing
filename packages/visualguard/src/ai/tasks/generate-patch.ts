@@ -1,3 +1,15 @@
+/**
+ * @file Defines patch prompt/schema and builds requests from screenshot/DOM evidence, source
+ * excerpts and retry feedback.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { join } from "node:path";
 import { z } from "zod";
 import type { JobResult } from "../../core/types.js";
@@ -43,11 +55,17 @@ export interface PatchInput {
   job: JobResult;
   runDir: string;
   files: Array<{ path: string; excerpt: string; reasons: string[] }>;
-  /** What went wrong with the previous attempt, if any. */
+  /**
+   * What went wrong with the previous attempt, if any.
+   */
   feedback?: string;
   previous?: Edit[];
 }
 
+/**
+ * Describe the regression and its DOM evidence as prompt text. Include any existing AI
+ * explanation so the patch generator has the same context the developer reviewed.
+ */
 function describeJob(job: JobResult): string {
   const lines = [`Route: ${job.route}   Viewport: ${job.viewport}`];
   if (job.analysis) {
@@ -78,6 +96,10 @@ function describeJob(job: JobResult): string {
   return lines.join("\n");
 }
 
+/**
+ * Assemble regression evidence, allowed source excerpts and previous-attempt feedback into a
+ * patch prompt. Add comparison images only when the provider can accept them.
+ */
 export function buildPatchParts(provider: AIProvider, input: PatchInput): Part[] {
   const parts: Part[] = [{ type: "text", text: describeJob(input.job) }];
   const region = input.job.regions.find((candidate) => candidate.crops);
@@ -126,6 +148,10 @@ export interface PatchOutput {
   usage: Usage;
 }
 
+/**
+ * Ask the provider for structured search/replace edits and normalize leading ./ in file paths.
+ * A proposed patch is data at this stage; validation and writing happen in the fixer.
+ */
 export async function generatePatch(provider: AIProvider, input: PatchInput): Promise<PatchOutput> {
   const { data, usage } = await provider.generate({
     system: PATCH_SYSTEM_PROMPT,

@@ -1,3 +1,14 @@
+/**
+ * @file Tests edits, deterministic CSS/class repairs, source location, command/server checks
+ * and interactive fixing.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { execFileSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
@@ -15,6 +26,10 @@ import type { JobResult } from "../src/core/types.js";
 import { FIXTURE_ROOT, startFixtureServer, type FixtureServer } from "./helpers/fixture-server.js";
 import { MockProvider } from "./helpers/mock-provider.js";
 
+/**
+ * Create a disposable source tree from path/content entries. Keep repair writes away from the
+ * checked-out repository.
+ */
 function project(files: Record<string, string>): string {
   const dir = mkdtempSync(join(tmpdir(), "vg-fix-"));
   for (const [path, content] of Object.entries(files)) {
@@ -24,6 +39,10 @@ function project(files: Record<string, string>): string {
   return dir;
 }
 
+/**
+ * Create empty source-location clues and overlay the evidence relevant to a test. This makes
+ * the tested ranking/edit condition explicit.
+ */
 const clues = (overrides: Partial<Clues>): Clues => ({
   testIds: [],
   ids: [],
@@ -88,6 +107,10 @@ describe("edits", () => {
 });
 
 describe("heuristicEdits", () => {
+  /**
+   * Build a typed style delta with selector, property and reference/current values. The literal
+   * kind identifies its shape to TypeScript.
+   */
   const style = (selector: string, property: string, production: string, staging: string) => ({
     kind: "style" as const,
     selector,
@@ -214,6 +237,10 @@ describe("fix end to end (local server, production fixture)", () => {
     dir = mkdtempSync(join(tmpdir(), "vg-fix-e2e-"));
     cpSync(join(FIXTURE_ROOT, "staging"), join(dir, "site"), { recursive: true });
     writeFileSync(join(dir, ".gitignore"), ".visualguard/\n");
+    /**
+     * Run Git inside the temporary fixture repository. Process failures throw so test setup
+     * cannot continue with an invalid Git state.
+     */
     const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "pipe" });
     git("init", "-q");
     git("-c", "user.email=test@example.com", "-c", "user.name=Test", "add", ".");
@@ -222,6 +249,10 @@ describe("fix end to end (local server, production fixture)", () => {
 
   afterAll(() => production?.close());
 
+  /**
+   * Resolve a repair config for the fixture server/workspace with controlled verification
+   * settings. Supplying an empty environment prevents shell variables from changing the test.
+   */
   const configFor = () =>
     resolveConfig(
       parseConfig({
@@ -260,11 +291,21 @@ describe("fix end to end (local server, production fixture)", () => {
 
     const confirmed: string[] = [];
     const callbacks: FixCallbacks = {
+      /**
+       * Record which proposal was reviewed and approve it for this fixture. The test checks the
+       * selected proposal source as well as the final repair.
+       */
       confirm: async (proposal) => {
         confirmed.push(`${proposal.job.route}:${proposal.source}`);
         return true;
       },
+      /**
+       * Grant source-upload consent for this fixture, allowing its mock-provider repair path.
+       */
       consent: async () => true,
+      /**
+       * Ignore progress messages in this test; assertions inspect structured outcomes instead.
+       */
       progress: () => {},
     };
     const provider = new MockProvider((request) => {
@@ -303,6 +344,10 @@ describe("fix end to end (local server, production fixture)", () => {
       "/text-change:ai",
     ]);
 
+    /**
+     * Read one generated fixture source file as text for an assertion. Resolve it beneath the
+     * disposable site directory.
+     */
     const read = (name: string) => readFileSync(join(dir, "site", name), "utf8");
     expect(read("alignment.html")).toContain(".checkout-summary .actions { align-items: center; }");
     expect(read("color-change.html")).toContain(".hero .btn { background: #2563eb; }");
@@ -314,8 +359,17 @@ describe("fix end to end (local server, production fixture)", () => {
   it("refuses to run on a dirty tree or when fixing is off", async () => {
     const config = configFor();
     const callbacks: FixCallbacks = {
+      /**
+       * Approve this test proposal so the assertion reaches application and verification.
+       */
       confirm: async () => true,
+      /**
+       * Grant source-upload consent for this fixture, allowing its mock-provider repair path.
+       */
       consent: async () => true,
+      /**
+       * Ignore progress messages in this test; assertions inspect structured outcomes instead.
+       */
       progress: () => {},
     };
     await expect(

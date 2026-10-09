@@ -1,3 +1,14 @@
+/**
+ * @file Tests static/served report rendering, embedded-data safety, screenshot loading,
+ * navigation and accessibility.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -38,6 +49,10 @@ afterAll(async () => {
   await staging?.close();
 });
 
+/**
+ * Open a report in a fresh browser context, collect page errors and wait for the main heading.
+ * Returning the page and errors lets each UI test inspect both rendering and script failures.
+ */
 async function openReport(url: string): Promise<{ page: Page; errors: string[] }> {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
@@ -136,7 +151,13 @@ describe("served report", () => {
     const received: unknown[] = [];
     const server = await startReportServer({
       runDir,
-      api: { echo: (body) => (received.push(body), { ok: true }) },
+      api: {
+        /**
+         * Record the received API body and return a successful test response. The comma
+         * expression evaluates recording first, then returns the response object.
+         */
+        echo: (body) => (received.push(body), { ok: true }),
+      },
     });
     try {
       const html = await (await fetch(server.url)).text();

@@ -1,3 +1,14 @@
+/**
+ * @file Records the real CLI/report fixture workflow and encodes the frames into the README
+ * demo GIF.
+ *
+ * This is a repository-support script run by Node.js, outside the published package API.
+ * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
+ * helpers below before invoking a script that starts processes or writes artifacts.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 // Records the README demo GIF (docs/assets/demo.gif): a real `visualguard test` run against the
 // fixture site, played back in a terminal, followed by three views of the HTML report.
 //
@@ -39,7 +50,9 @@ const PROMPT_MS = 600;
 const LINE_MS = 120;
 const TERMINAL_HOLD_MS = 2000;
 
-/** Report scenes: hash route, hold time, and an optional element to scroll to the top. */
+/**
+ * Report scenes: hash route, hold time, and an optional element to scroll to the top.
+ */
 const SCENES = [
   { hash: "#/jobs/hidden__desktop", holdMs: 2500 },
   // The diff image starts below the fold; scroll the view switcher up so the red and blue show.
@@ -50,13 +63,21 @@ const SCENES = [
 const execFileAsync = promisify(execFile);
 
 /**
- * Runs `visualguard test --ci` against both fixture servers in a temp project and returns
- * { stdout, reportPath, cleanup }. The CLI runs asynchronously so the in-process servers can answer.
+ * Runs `visualguard test --ci` against both fixture servers in a temp project and returns {
+ * stdout, reportPath, cleanup }. The CLI runs asynchronously so the in-process servers can
+ * answer.
+ *
+ * Run the built CLI against temporary fixture servers and return its real output/report. Keep
+ * resources until the recording finishes, then expose cleanup for the caller.
  */
 async function runVisualGuard() {
   const production = await startFixtureServer("production", 0);
   const staging = await startFixtureServer("staging", 0);
   const work = realpathSync(mkdtempSync(join(tmpdir(), "visualguard-demo-")));
+  /**
+   * Close both fixture servers and delete temporary demo artifacts. The same helper is used
+   * after success and when demo setup throws.
+   */
   const cleanup = async () => {
     await Promise.all([production.close(), staging.close()]);
     rmSync(work, { recursive: true, force: true });
@@ -93,7 +114,12 @@ async function runVisualGuard() {
   }
 }
 
-/** Strips ANSI codes and machine paths so only `.visualguard/...` relative paths remain. */
+/**
+ * Strips ANSI codes and machine paths so only `.visualguard/...` relative paths remain.
+ *
+ * Strip terminal color codes and temporary absolute paths from captured CLI output. Normalize
+ * the final whitespace before splitting it into display lines.
+ */
 function cleanOutput(stdout, work) {
   return stdout
     .replace(/\x1b\[[0-9;]*m/g, "") // eslint-disable-line no-control-regex
@@ -103,19 +129,33 @@ function cleanOutput(stdout, work) {
     .split("\n");
 }
 
+/**
+ * Escape HTML-significant characters before terminal text is inserted into the recording page.
+ * Captured output should render as text rather than become markup.
+ */
 const escapeHtml = (text) =>
   text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
 const STATUS_COLOURS = { PASS: "#4ade80", REVIEW: "#fbbf24", REGRESSION: "#f87171" };
 
-/** One terminal line as HTML, with the status words coloured. */
+/**
+ * One terminal line as HTML, with the status words coloured.
+ *
+ * Escape one terminal line, then highlight recognized result words. The replacement callback
+ * supplies the color associated with each matched status.
+ */
 const lineHtml = (line) =>
   escapeHtml(line).replace(
     /\b(PASS|REVIEW|REGRESSION)\b/g,
     (word) => `<span style="color:${STATUS_COLOURS[word]};font-weight:600">${word}</span>`,
   );
 
-/** The terminal page; every line starts hidden and the recorder reveals them one by one. */
+/**
+ * The terminal page; every line starts hidden and the recorder reveals them one by one.
+ *
+ * Build the browser page used to record a terminal-style animation. Start lines hidden so
+ * recordTerminal can reveal them one at a time.
+ */
 function terminalHtml(lines) {
   const body = lines.map((line) => `<div class="line">${lineHtml(line) || " "}</div>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><style>
@@ -140,13 +180,23 @@ function terminalHtml(lines) {
   </body></html>`;
 }
 
-/** Screenshot of the current page as raw RGBA pixels. */
+/**
+ * Screenshot of the current page as raw RGBA pixels.
+ *
+ * Screenshot the recording page and decode its PNG into raw RGBA bytes. GIF encoding consumes
+ * pixel bytes rather than PNG-compressed data.
+ */
 async function grab(page) {
   const png = PNG.sync.read(await page.screenshot({ type: "png" }));
   return new Uint8Array(png.data.buffer, png.data.byteOffset, png.data.length);
 }
 
-/** Records the terminal: the prompt, then one frame per output line (blank lines ride along). */
+/**
+ * Records the terminal: the prompt, then one frame per output line (blank lines ride along).
+ *
+ * Reveal terminal lines in sequence and capture frames with their display delays. Hold the
+ * final state longer so the demo remains readable.
+ */
 async function recordTerminal(page, lines) {
   await page.setContent(terminalHtml(lines));
   const frames = [{ rgba: await grab(page), delay: PROMPT_MS, terminal: true }];
@@ -165,7 +215,12 @@ async function recordTerminal(page, lines) {
   return frames;
 }
 
-/** Opens a report route and waits until the app has rendered and every image has loaded. */
+/**
+ * Opens a report route and waits until the app has rendered and every image has loaded.
+ *
+ * Navigate to a report scene, wait for layout/image readiness and capture its frame. Starting
+ * from a blank page prevents prior scene scroll state from leaking into the recording.
+ */
 async function recordScene(page, reportUrl, scene) {
   // A hash change alone keeps the previous scene's scroll position, so start from a blank page.
   await page.goto("about:blank");
@@ -188,7 +243,12 @@ async function recordScene(page, reportUrl, scene) {
   return { rgba: await grab(page), delay: scene.holdMs };
 }
 
-/** Merges consecutive identical frames into one with the summed delay. */
+/**
+ * Merges consecutive identical frames into one with the summed delay.
+ *
+ * Combine consecutive identical pixel frames by adding their delays. This reduces encoded size
+ * without changing how long the same view is shown.
+ */
 function mergeDuplicates(frames) {
   const merged = [];
   for (const frame of frames) {
@@ -202,7 +262,12 @@ function mergeDuplicates(frames) {
   return merged;
 }
 
-/** Encodes frames as a looping GIF, quantising each frame to its own palette. */
+/**
+ * Encodes frames as a looping GIF, quantising each frame to its own palette.
+ *
+ * Quantize RGBA frames into GIF palettes and write each frame with its delay. The first frame
+ * sets repeat behavior, then finish finalizes the encoded bytes.
+ */
 function encode(frames, colours) {
   const gif = GIFEncoder();
   frames.forEach((frame, index) => {
@@ -221,6 +286,9 @@ function encode(frames, colours) {
 /**
  * Drops every other mid-animation terminal frame, giving its time to the frame before it so the
  * total duration stays the same.
+ *
+ * Drop alternating terminal frames while preserving their duration on the preceding frame. This
+ * size-reduction fallback keeps the animation timing intact.
  */
 function thinTerminal(frames) {
   const thinned = [];

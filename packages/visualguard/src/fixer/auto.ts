@@ -1,3 +1,15 @@
+/**
+ * @file Automatic Git workflow: enforce visual verification, create isolated worktree/branch,
+ * commit verified edits and optionally push/open PR.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { spawnSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -22,15 +34,23 @@ export interface AutoFixOptions {
   viewports?: string[];
   includeReview?: boolean;
   provider?: AIProvider;
-  /** Work on a new branch in the current checkout instead of a separate worktree (CI). */
+  /**
+   * Work on a new branch in the current checkout instead of a separate worktree (CI).
+   */
   inPlace?: boolean;
-  /** Push the branch and open a pull request. */
+  /**
+   * Push the branch and open a pull request.
+   */
   pr?: boolean;
-  /** Base branch for the PR (default: the current branch). */
+  /**
+   * Base branch for the PR (default: the current branch).
+   */
   base?: string;
   branch?: string;
   keepWorktree?: boolean;
-  /** Use the GitHub REST API even when the `gh` CLI is available. */
+  /**
+   * Use the GitHub REST API even when the `gh` CLI is available.
+   */
   preferAPI?: boolean;
   env?: NodeJS.ProcessEnv;
   progress?: (message: string) => void;
@@ -44,7 +64,13 @@ export interface AutoFixResult {
   pr?: { url: string; number?: number };
 }
 
-/** Links the main checkout's node_modules into the worktree so builds and dev servers work. */
+/**
+ * Links the main checkout's node_modules into the worktree so builds and dev servers work.
+ *
+ * Link installed dependencies from the main checkout into an isolated repair worktree. Walk
+ * relevant project ancestors so monorepo dependency locations remain available without
+ * reinstalling.
+ */
 function linkNodeModules(repoRoot: string, worktree: string, projectDir: string): void {
   const dirs = new Set<string>();
   for (let dir = projectDir; ; dir = dirname(dir)) {
@@ -61,6 +87,10 @@ function linkNodeModules(repoRoot: string, worktree: string, projectDir: string)
   }
 }
 
+/**
+ * Test whether a path is a symbolic link using lstat, which inspects the link itself. Return
+ * false for a missing or inaccessible path.
+ */
 function isLink(path: string): boolean {
   try {
     return lstatSync(path).isSymbolicLink();
@@ -69,16 +99,29 @@ function isLink(path: string): boolean {
   }
 }
 
+/**
+ * Require a successful Git/process result and return its stdout. Throw an EnvironmentError with
+ * captured diagnostic output when the prerequisite operation fails.
+ */
 function must(result: ReturnType<typeof git>, what: string): string {
   if (!result.ok) throw new EnvironmentError(`${what} failed: ${result.stderr || result.stdout}`);
   return result.stdout;
 }
 
-/** owner/repo from the origin remote (GitHub SSH or HTTPS URLs). */
+/**
+ * owner/repo from the origin remote (GitHub SSH or HTTPS URLs).
+ *
+ * Extract owner/repository from a recognized GitHub SSH or HTTPS origin URL. Optional chaining
+ * returns undefined when the remote does not match.
+ */
 export function repoFromRemote(remote: string): string | undefined {
   return remote.match(/github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/)?.[1];
 }
 
+/**
+ * Build Markdown describing verified repair outcomes and the source run. Only verified fixes
+ * are presented as applied changes.
+ */
 function pullRequestBody(outcomes: FixOutcome[], runNumber: number): string {
   const applied = outcomes.filter((outcome) => outcome.result === "fixed");
   const lines = [
@@ -111,15 +154,23 @@ function pullRequestBody(outcomes: FixOutcome[], runNumber: number): string {
   return lines.join("\n");
 }
 
+/**
+ * Check whether GitHub CLI can authenticate in the supplied working directory/environment.
+ * Inspect the process status instead of parsing its display text.
+ */
 function ghAvailable(cwd: string, env: NodeJS.ProcessEnv): boolean {
   const result = spawnSync("gh", ["auth", "status"], { cwd, env, encoding: "utf8" });
   return result.status === 0;
 }
 
 /**
- * Non-interactive fixing (PLAN.md §13.1, `fix --auto`): fixes run in a separate git worktree on a
- * new branch, so the current checkout is untouched; verified changes are committed, and with
+ * Non-interactive fixing (PLAN.md §13.1, `fix --auto`): fixes run in a separate git worktree on
+ * a new branch, so the current checkout is untouched; verified changes are committed, and with
  * `pr` the branch is pushed and a pull request opened.
+ *
+ * Create an isolated repair branch/worktree, apply verified fixes and optionally
+ * commit/push/open a PR. Coordinate dependency links, Git operations and cleanup so the
+ * workflow can report its concrete result.
  */
 export async function autoFix(
   config: ResolvedConfig,
@@ -168,6 +219,11 @@ export async function autoFix(
     progress(`Working in ${relative(config.cwd, workdir) || "."} on branch ${branch}`);
   }
 
+  /**
+   * Remove temporary repair workspace state according to retention options and outcome. This
+   * helper can also restore the original checkout and remove the temporary branch when
+   * requested.
+   */
   const cleanup = (removeBranch: boolean) => {
     if (worktree && !options.keepWorktree) {
       git(repoRoot, ["worktree", "remove", "--force", worktree]);
@@ -193,8 +249,19 @@ export async function autoFix(
       allowDirty: !options.inPlace,
       freshServer: Boolean(worktree),
       callbacks: {
+        /**
+         * Approve validated proposals in the explicitly automatic repair workflow. Verification
+         * still decides whether edits are retained.
+         */
         confirm: async () => true,
+        /**
+         * Decline an interactive source-upload prompt in automatic mode. AI upload therefore
+         * requires prior consent or explicit configuration.
+         */
         consent: async () => false,
+        /**
+         * Prefix each repair progress message with route and viewport before forwarding it.
+         */
         progress: (job, message) => progress(`${job.route} ${job.viewport}: ${message}`),
       },
     });

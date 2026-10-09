@@ -1,3 +1,14 @@
+/**
+ * @file Pixelmatch engine adapter plus rendering of the visual difference image.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import pixelmatch from "pixelmatch";
 import type { Box } from "../core/types.js";
 import { createImage, type RGBAImage } from "./image.js";
@@ -9,11 +20,15 @@ export interface CompareOptions {
 
 export interface CompareResult {
   diffPixels: number;
-  /** One byte per pixel, 1 where the images differ. */
+  /**
+   * One byte per pixel, 1 where the images differ.
+   */
   mask: Uint8Array;
 }
 
-/** Pluggable diff engine (PLAN.md §5.6). */
+/**
+ * Pluggable diff engine (PLAN.md §5.6).
+ */
 export interface DiffEngine {
   name: string;
   compare(a: RGBAImage, b: RGBAImage, options: CompareOptions): CompareResult;
@@ -24,6 +39,11 @@ const AA_COLOR: [number, number, number] = [255, 255, 0];
 
 export const pixelmatchEngine: DiffEngine = {
   name: "pixelmatch",
+  /**
+   * Compare equal-sized RGBA images using the configured pixel/color threshold and anti-alias
+   * policy. Return a changed-pixel count and a one-byte-per-pixel mask used by later region
+   * extraction.
+   */
   compare(a, b, options) {
     if (a.width !== b.width || a.height !== b.height) {
       throw new Error("compare() needs images of the same size; normalise them first");
@@ -56,6 +76,9 @@ export const pixelmatchEngine: DiffEngine = {
  * A dimmed greyscale copy of `base` with differing pixels drawn in red. A layout-shift `band`
  * (inserted or removed content) is tinted orange, and `ignored` areas (they change on every
  * load) blue.
+ *
+ * Create a dimmed grayscale screenshot with red changes, an orange shift band and blue ignored
+ * areas. The mask indexes pixels, while image bytes use four-channel offsets.
  */
 export function renderDiffImage(
   base: RGBAImage,

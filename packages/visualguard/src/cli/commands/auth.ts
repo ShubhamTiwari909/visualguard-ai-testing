@@ -1,3 +1,14 @@
+/**
+ * @file Opens an authenticated browser workflow and persists an environment's storage state.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdirSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { dirname, relative, resolve } from "node:path";
@@ -12,11 +23,18 @@ export interface AuthFlags {
   config?: string;
   url?: string;
   out?: string;
-  /** Save automatically once the page URL matches this glob (scripted logins). */
+  /**
+   * Save automatically once the page URL matches this glob (scripted logins).
+   */
   untilUrl?: string;
   headless?: boolean;
 }
 
+/**
+ * Register the auth command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerAuthCommand(program: Command): void {
   program
     .command("auth")
@@ -38,6 +56,10 @@ export function registerAuthCommand(program: Command): void {
  * Opens a visible browser at the environment's URL; after you log in, saves cookies and storage
  * as Playwright storageState, which `environments.<env>.storageState` then uses for every
  * capture (PLAN.md §7.2).
+ *
+ * Open a visible browser for manual login, then save its cookies and storage as a Playwright
+ * storageState file. Later isolated capture contexts load that file to reproduce the
+ * authenticated session.
  */
 export async function runAuth(envName: string, flags: AuthFlags): Promise<string> {
   if (envName !== "production" && envName !== "staging") {

@@ -1,3 +1,15 @@
+/**
+ * @file Produces deterministic search/replace repairs for unambiguous class-list and CSS-value
+ * changes.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { StyleDelta } from "../core/types.js";
 import { countOccurrences, type Edit } from "./edits.js";
 import type { SourceFile } from "./files.js";
@@ -6,7 +18,8 @@ import type { Clues } from "./locate.js";
 /**
  * Fixes that need no AI: when a computed style changed and the source sets that property in an
  * obvious place, put production's value back. Handles CSS declarations and Tailwind utility
- * classes for common layout, spacing and colour properties. Anything ambiguous is left to the AI.
+ * classes for common layout, spacing and colour properties. Anything ambiguous is left to the
+ * AI.
  */
 
 const TAILWIND_KEYWORDS: Record<string, Record<string, string>> = {
@@ -75,7 +88,12 @@ const SPACING_PREFIX: Record<string, string> = {
   "column-gap": "gap-x",
 };
 
-/** 24px → "6", 2px → "0.5", 0px → "0"; undefined when not on the Tailwind spacing scale. */
+/**
+ * 24px → "6", 2px → "0.5", 0px → "0"; undefined when not on the Tailwind spacing scale.
+ *
+ * Convert supported pixel spacing into Tailwind's quarter-rem scale token. Only half-step units
+ * are accepted; return undefined when a value cannot be represented by this heuristic.
+ */
 function spacingScale(value: string): string | undefined {
   const match = value.match(/^(-?\d+(?:\.\d+)?)px$/);
   if (!match) return undefined;
@@ -84,13 +102,22 @@ function spacingScale(value: string): string | undefined {
   return Number.isInteger(units * 2) ? String(Math.abs(units)) : undefined;
 }
 
+/**
+ * Convert supported opaque rgb/rgba text into a six-digit hexadecimal color. Translucent colors
+ * are rejected because dropping alpha would change their meaning.
+ */
 function hex(value: string): string | undefined {
   const match = value.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)/);
   if (!match || (match[4] !== undefined && match[4] !== "1")) return undefined;
   return `#${[match[1], match[2], match[3]].map((part) => Number(part).toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** Ways a computed value may be written in a stylesheet. */
+/**
+ * Ways a computed value may be written in a stylesheet.
+ *
+ * List recognized stylesheet spellings of a computed value, including hex case and shorthand. A
+ * Set prevents duplicate search candidates.
+ */
 function sourceForms(value: string): string[] {
   const forms = new Set([value]);
   const asHex = hex(value);
@@ -102,7 +129,12 @@ function sourceForms(value: string): string[] {
   return [...forms];
 }
 
-/** Converts production's computed value into the notation the source already uses. */
+/**
+ * Converts production's computed value into the notation the source already uses.
+ *
+ * Write the desired computed value using the source's existing hex notation when possible.
+ * Preserve uppercase preference so the repair avoids unnecessary style churn.
+ */
 function inSameNotation(written: string, computed: string): string {
   if (written.startsWith("#")) {
     const asHex = hex(computed);
@@ -111,15 +143,27 @@ function inSameNotation(written: string, computed: string): string {
   return computed;
 }
 
+/**
+ * Escape regex metacharacters in literal source text. The escaped value can be embedded in a
+ * search pattern without changing its syntax.
+ */
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Shorthands that set a computed longhand. */
+/**
+ * Shorthands that set a computed longhand.
+ */
 const CSS_ALIASES: Record<string, string[]> = {
   "background-color": ["background-color", "background"],
   "border-top-color": ["border-top-color", "border-color", "border"],
 };
 
-/** `property: value` in CSS, scoped to rules whose selector mentions one of the element's classes. */
+/**
+ * `property: value` in CSS, scoped to rules whose selector mentions one of the element's
+ * classes.
+ *
+ * Find a uniquely supported CSS declaration scoped by the element's classes and propose
+ * restoring its reference value. Return no edit when ownership/matching is ambiguous.
+ */
 function cssEdit(delta: StyleDelta, files: SourceFile[], classTokens: string[]): Edit | undefined {
   const matches: Array<{
     file: SourceFile;
@@ -168,6 +212,10 @@ function cssEdit(delta: StyleDelta, files: SourceFile[], classTokens: string[]):
   };
 }
 
+/**
+ * Map a supported computed CSS property/value to a Tailwind utility token. Handle keyword
+ * mappings and signed spacing values, returning undefined for unsupported forms.
+ */
 function tailwindToken(property: string, value: string): string | undefined {
   const keyword = TAILWIND_KEYWORDS[property]?.[value];
   if (keyword) return keyword;
@@ -177,7 +225,12 @@ function tailwindToken(property: string, value: string): string | undefined {
   return undefined;
 }
 
-/** Swaps a Tailwind class on the element's class list, found verbatim in the source. */
+/**
+ * Swaps a Tailwind class on the element's class list, found verbatim in the source.
+ *
+ * Propose a unique literal class-list replacement for supported Tailwind style changes. Group
+ * compatible padding/margin sides and preserve unrelated class tokens.
+ */
 function tailwindEdit(
   deltas: StyleDelta[],
   files: SourceFile[],
@@ -231,7 +284,13 @@ function tailwindEdit(
   };
 }
 
-/** Four equal padding/margin sides become one `padding`/`margin` change (how CSS usually says it). */
+/**
+ * Four equal padding/margin sides become one `padding`/`margin` change (how CSS usually says
+ * it).
+ *
+ * Combine four equivalent side deltas into one padding/margin delta. Work on a copy so original
+ * captured evidence remains unchanged.
+ */
 function withShorthands(deltas: StyleDelta[]): StyleDelta[] {
   const result = [...deltas];
   for (const base of ["padding", "margin"]) {
@@ -254,6 +313,9 @@ function withShorthands(deltas: StyleDelta[]): StyleDelta[] {
 /**
  * When an element's class attribute changed, put production's classes back where the staging
  * class string is written verbatim. Small changes only, so unrelated elements aren't rewritten.
+ *
+ * Restore small class-list differences when the exact staging string has a unique source owner.
+ * Limit the number of token changes so broad class rewrites are not guessed.
  */
 function classListEdits(clues: Clues, files: SourceFile[]): Edit[] {
   const edits: Edit[] = [];
@@ -277,7 +339,12 @@ function classListEdits(clues: Clues, files: SourceFile[]): Edit[] {
   return edits;
 }
 
-/** Deterministic edits for the job's style changes, or [] when a model is needed. */
+/**
+ * Deterministic edits for the job's style changes, or [] when a model is needed.
+ *
+ * Select deterministic class-list, Tailwind or CSS repairs supported by the captured clues.
+ * Return an empty list when the evidence is insufficient, allowing the caller to try AI.
+ */
 export function heuristicEdits(clues: Clues, files: SourceFile[]): Edit[] {
   const fromClasses = classListEdits(clues, files);
   if (fromClasses.length > 0) return fromClasses;

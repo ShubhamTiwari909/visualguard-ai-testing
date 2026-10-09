@@ -1,12 +1,28 @@
+/**
+ * @file Groups changed pixel cells into nearby/merged bounding regions and limits/sorts the
+ * result.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Box } from "../core/types.js";
 
 export interface RegionOptions {
   cellSize: number;
   mergeDistance: number;
   maxRegions: number;
-  /** A cell counts as changed when it has at least this many differing pixels. */
+  /**
+   * A cell counts as changed when it has at least this many differing pixels.
+   */
   minCellPixels?: number;
-  /** Regions with fewer differing pixels are dropped. */
+  /**
+   * Regions with fewer differing pixels are dropped.
+   */
   minRegionPixels?: number;
 }
 
@@ -18,6 +34,10 @@ export interface Region {
 /**
  * Groups differing pixels into regions (PLAN.md §8.1 step 5): bucket the mask into a grid,
  * label 8-connected changed cells, merge nearby boxes, drop tiny ones, keep the largest.
+ *
+ * Group changed pixels into grid cells, join neighboring changed cells and produce bounded
+ * rectangles. Filter tiny regions and keep the largest so reports and AI prompts stay
+ * manageable.
  */
 export function extractRegions(
   mask: Uint8Array,
@@ -112,12 +132,20 @@ export function extractRegions(
     .slice(0, options.maxRegions);
 }
 
+/**
+ * Measure the largest horizontal/vertical separation between rectangles. Overlapping intervals
+ * have a gap of zero on that axis.
+ */
 function gap(a: Box, b: Box): number {
   const dx = Math.max(0, Math.max(a.x, b.x) - Math.min(a.x + a.width, b.x + b.width));
   const dy = Math.max(0, Math.max(a.y, b.y) - Math.min(a.y + a.height, b.y + b.height));
   return Math.max(dx, dy);
 }
 
+/**
+ * Return the smallest rectangle that encloses both inputs. This creates new geometry without
+ * changing either input box.
+ */
 function union(a: Box, b: Box): Box {
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);
@@ -129,7 +157,13 @@ function union(a: Box, b: Box): Box {
   };
 }
 
-/** Repeatedly merges regions closer than `distance` until nothing changes. */
+/**
+ * Repeatedly merges regions closer than `distance` until nothing changes.
+ *
+ * Repeatedly combine regions within the allowed gap until no pair merges. Copy the input
+ * regions first and restart after a merge because the enlarged rectangle may reach another
+ * neighbor.
+ */
 export function mergeNearby(regions: Region[], distance: number): Region[] {
   const result = regions.map((region) => ({ ...region, box: { ...region.box } }));
   let merged = true;

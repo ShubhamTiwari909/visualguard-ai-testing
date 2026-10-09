@@ -1,3 +1,14 @@
+/**
+ * @file Selected job's capture/region/DOM/finding/AI/health details and connections to
+ * comparison views and actions.
+ *
+ * This module runs in the report viewer's browser. React components return JSX (the markup-like
+ * syntax); state changes request a new render, while effects synchronize browser APIs and clean
+ * up listeners.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { ReactNode } from "react";
 import { Compare, COMPARE_MODES, type CompareMode } from "./Compare";
 import {
@@ -33,6 +44,10 @@ const SEVERITY_STYLE: Record<Finding["severity"], string> = {
   info: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
 };
 
+/**
+ * Render structured findings and their severity for one job. Each entry is evidence produced by
+ * a check or classifier, rather than just a raw changed-pixel count.
+ */
 function Findings({ findings }: { findings: Finding[] }) {
   return (
     <section aria-labelledby="findings-title">
@@ -52,6 +67,10 @@ function Findings({ findings }: { findings: Finding[] }) {
   );
 }
 
+/**
+ * Render the optional AI explanation, evidence and suggested fix. Returning no content when
+ * analysis is absent lets heuristic-only reports use the same page.
+ */
 function Analysis({ job }: { job: JobResult }) {
   const analysis = job.analysis!;
   return (
@@ -147,6 +166,10 @@ function Analysis({ job }: { job: JobResult }) {
   );
 }
 
+/**
+ * Turn one DOM difference into a table row. The kind field selects the relevant data shape: a
+ * CSS value, text, bounding box or added/removed element.
+ */
 function DeltaRow({ delta }: { delta: Delta }) {
   const cell = "px-2 py-1 align-top";
   const code = "font-mono text-xs";
@@ -172,6 +195,10 @@ function DeltaRow({ delta }: { delta: Delta }) {
         </tr>
       );
     case "box": {
+      /**
+       * Format a bounding box as its x/y position followed by width and height. This is display
+       * text; it does not alter the screenshot coordinates.
+       */
       const format = (box: typeof delta.production) =>
         `${box.x},${box.y} ${box.width}×${box.height}`;
       return (
@@ -195,6 +222,10 @@ function DeltaRow({ delta }: { delta: Delta }) {
   }
 }
 
+/**
+ * List each changed region with crops, matching elements and DOM differences. The focus
+ * callback asks the comparison panel to scroll to the corresponding rectangle.
+ */
 function Regions({
   job,
   labels,
@@ -287,10 +318,18 @@ function Regions({
   );
 }
 
+/**
+ * Format a numeric kilobyte measurement as KB or MB for the health panel. Larger values use MB
+ * to keep the label short.
+ */
 function formatKB(kb: number): string {
   return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
 }
 
+/**
+ * Present the health, accessibility and performance evidence collected during capture.
+ * Production and staging measurements share a table so changes can be compared directly.
+ */
 function Health({ job, labels }: { job: JobResult; labels: Record<Env, string> }) {
   const sides = (["production", "staging"] as const).filter((env) => job.captures[env]);
   return (
@@ -398,6 +437,11 @@ function Health({ job, labels }: { job: JobResult; labels: Record<Env, string> }
   );
 }
 
+/**
+ * Assemble the selected job's summary, findings, AI analysis and region details. Its props are
+ * supplied by the report shell; this component presents that data rather than starting a new
+ * test run.
+ */
 export function JobDetail(props: JobDetailProps) {
   const { job, manifest, mode } = props;
   const labels = envLabels(manifest);

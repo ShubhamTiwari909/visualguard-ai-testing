@@ -1,7 +1,21 @@
+/**
+ * @file Tests differential health findings, scan policy and severity escalation.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { describe, expect, it } from "vitest";
 import { applyFindings, healthFindings } from "../src/core/findings.js";
 import type { CaptureResult, HealthSignals } from "../src/core/types.js";
 
+/**
+ * Build the minimum capture shape with empty health defaults and chosen overrides. Tests can
+ * compare a single health signal without running Playwright.
+ */
 const capture = (
   health: Partial<HealthSignals>,
   source: "live" | "baseline" = "live",

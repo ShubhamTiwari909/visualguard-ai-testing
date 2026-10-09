@@ -1,3 +1,14 @@
+/**
+ * @file Renders comparison and scheduled monitor GitHub workflow YAML.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { PackageManager } from "./project.js";
 
 interface ManagerSteps {
@@ -33,8 +44,11 @@ const MANAGERS: Record<PackageManager, ManagerSteps> = {
 };
 
 /**
- * `.github/workflows/visualguard.yml` (PLAN.md Appendix C): test, upload the run as an artifact,
- * then post or update the PR comment with a link to it, and fail only after that.
+ * `.github/workflows/visualguard.yml` (PLAN.md Appendix C): test, upload the run as an
+ * artifact, then post or update the PR comment with a link to it, and fail only after that.
+ *
+ * Generate a GitHub Actions workflow that tests, uploads artifacts and updates the PR comment
+ * before reporting failure. Use the selected package manager's install/run commands.
  */
 export function renderWorkflow(manager: PackageManager, options: { ai: boolean }): string {
   const steps = MANAGERS[manager];
@@ -101,7 +115,11 @@ export function renderWorkflow(manager: PackageManager, options: { ai: boolean }
 
 /**
  * `.github/workflows/visualguard-monitor.yml`: a scheduled run of `visualguard monitor`. The
- * previous captures live in the Actions cache: each run restores the newest one and saves its own.
+ * previous captures live in the Actions cache: each run restores the newest one and saves its
+ * own.
+ *
+ * Generate a scheduled monitor workflow with cached baseline restoration and saving. Keep
+ * notification/report steps available even when the comparison reports a problem.
  */
 export function renderMonitorWorkflow(
   manager: PackageManager,

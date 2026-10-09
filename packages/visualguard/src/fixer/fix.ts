@@ -1,3 +1,15 @@
+/**
+ * @file Repair coordinator: choose jobs, obtain proposals/consent, confirm/apply/verify/retry,
+ * record artifacts and verify final batch scope.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { AIProvider } from "../ai/provider.js";
@@ -37,14 +49,20 @@ export interface FixOutcome {
   message: string;
   edits: Edit[];
   attempts: number;
-  /** Diff of the applied change (fixed or unverified). */
+  /**
+   * Diff of the applied change (fixed or unverified).
+   */
   diff?: string;
 }
 
 export interface FixCallbacks {
-  /** Return false to skip this proposal. Not called when confirmation is off. */
+  /**
+   * Return false to skip this proposal. Not called when confirmation is off.
+   */
   confirm(proposal: Proposal): Promise<boolean>;
-  /** Asked once before source excerpts are first sent to an AI provider. */
+  /**
+   * Asked once before source excerpts are first sent to an AI provider.
+   */
   consent(files: string[], provider: AIProvider): Promise<boolean>;
   progress(job: JobResult, message: string): void;
 }
@@ -53,22 +71,38 @@ export interface FixOptions {
   runId?: string;
   routes?: string[];
   viewports?: string[];
-  /** Also try jobs marked review (default: regressions only). */
+  /**
+   * Also try jobs marked review (default: regressions only).
+   */
   includeReview?: boolean;
   allowDirty?: boolean;
-  /** Skip the confirmation prompt. */
+  /**
+   * Skip the confirmation prompt.
+   */
   yes?: boolean;
   provider?: AIProvider;
   signal?: AbortSignal;
   callbacks: FixCallbacks;
-  /** Project directory to edit; defaults to config.cwd (a worktree in --auto mode). */
+  /**
+   * Project directory to edit; defaults to config.cwd (a worktree in --auto mode).
+   */
   workdir?: string;
-  /** In a worktree, the dev server must be started here, not reused from the main checkout. */
+  /**
+   * In a worktree, the dev server must be started here, not reused from the main checkout.
+   */
   freshServer?: boolean;
 }
 
+/**
+ * Return the provider-consent JSON path under this project's output directory. Consent is local
+ * workspace metadata used by the repair flow.
+ */
 const consentPath = (config: ResolvedConfig) => join(config.outputDir, "consent.json");
 
+/**
+ * Check explicit source-upload configuration or saved consent for this provider name. Missing
+ * or invalid consent records return false.
+ */
 export function hasConsent(config: ResolvedConfig, provider: AIProvider): boolean {
   if (config.fix.allowSourceUpload) return true;
   if (!existsSync(consentPath(config))) return false;
@@ -82,6 +116,10 @@ export function hasConsent(config: ResolvedConfig, provider: AIProvider): boolea
   }
 }
 
+/**
+ * Add the provider to the saved consent set and persist the grant timestamp. A Set preserves
+ * prior providers while preventing duplicate names.
+ */
 export function recordConsent(config: ResolvedConfig, provider: AIProvider): void {
   const path = consentPath(config);
   const providers = new Set<string>([provider.name]);
@@ -102,7 +140,12 @@ export function recordConsent(config: ResolvedConfig, provider: AIProvider): voi
   );
 }
 
-/** Jobs from a run that `fix` should work on. */
+/**
+ * Jobs from a run that `fix` should work on.
+ *
+ * Filter jobs by repairable verdict, evidence and optional route/viewport selection. Review
+ * jobs are included only when the caller opts into that scope.
+ */
 export function selectFixableJobs(
   jobs: JobResult[],
   options: Pick<FixOptions, "routes" | "viewports" | "includeReview">,
@@ -117,6 +160,10 @@ export function selectFixableJobs(
   );
 }
 
+/**
+ * Require enabled fixing and an acceptable workspace state before proposing changes.
+ * Dirty-source policy is checked here so subsequent writes follow the requested protection.
+ */
 export function assertCanFix(config: ResolvedConfig, workdir: string, allowDirty = false): void {
   if (!config.fix.enabled) {
     throw new ConfigError("Fixing is turned off.", {
@@ -137,7 +184,9 @@ export function assertCanFix(config: ResolvedConfig, workdir: string, allowDirty
   }
 }
 
-/** Everything the fixer knows about one job's source. */
+/**
+ * Everything the fixer knows about one job's source.
+ */
 export interface FixWorkspace {
   job: JobResult;
   workdir: string;
@@ -147,6 +196,10 @@ export interface FixWorkspace {
   candidates: Candidate[];
 }
 
+/**
+ * Collect allowed files, captured clues and ranked source candidates for one job. Return this
+ * context without writing source, ready for deterministic or AI proposal generation.
+ */
 export function prepareWorkspace(
   config: ResolvedConfig,
   job: JobResult,
@@ -170,8 +223,12 @@ export type ProposeResult =
   | { kind: "stop"; result: FixResult; message: string };
 
 /**
- * One proposal: the deterministic patch when allowed and possible, otherwise the AI's. Edits are
- * validated against the files before they are returned.
+ * One proposal: the deterministic patch when allowed and possible, otherwise the AI's. Edits
+ * are validated against the files before they are returned.
+ *
+ * Try a permitted deterministic repair first, otherwise request an AI patch after source-upload
+ * consent. Validate candidate edits and return either a reviewable proposal or an explicit stop
+ * outcome.
  */
 export async function proposeEdits(
   config: ResolvedConfig,
@@ -187,6 +244,10 @@ export async function proposeEdits(
   },
 ): Promise<ProposeResult> {
   const { job, workdir, candidates } = workspace;
+  /**
+   * Package validated edits with a readable diff, attempt number and original source snapshots.
+   * The snapshots allow application to detect files changed since proposal preparation.
+   */
   const make = (edits: Edit[], source: Proposal["source"], summary: string): ProposeResult => ({
     kind: "proposal",
     proposal: {
@@ -277,6 +338,9 @@ export type VerifyResult = (
 /**
  * Applies edits, runs the verify commands, then re-captures the page on the dev server and
  * compares it with production. Anything short of a match reverts the edits.
+ *
+ * Apply a proposal, run configured verification commands and compare a fresh local capture
+ * against the reference. Restore originals when verification fails, throws or is cancelled.
  */
 export async function applyAndVerify(
   config: ResolvedConfig,
@@ -390,6 +454,9 @@ export async function applyAndVerify(
  * The fix loop (PLAN.md §13.2): locate source → propose edits (deterministic first, then AI) →
  * validate → confirm → apply → run commands → re-capture on the local server and compare with
  * production → keep, or revert and retry with feedback.
+ *
+ * Coordinate source location, proposal review and bounded repair attempts for selected jobs.
+ * Share usage/server resources across attempts and stop managed servers in finally.
  */
 export async function fixRegressions(
   config: ResolvedConfig,
@@ -511,6 +578,10 @@ export async function fixRegressions(
   return outcomes;
 }
 
+/**
+ * Attempt one job's repair, feeding failed verification evidence into subsequent proposals.
+ * Keep only verified changes and return a structured outcome with attempts/edits.
+ */
 async function fixJob(
   config: ResolvedConfig,
   workspace: FixWorkspace,
@@ -518,6 +589,10 @@ async function fixJob(
   server: DevServer | undefined,
 ): Promise<FixOutcome> {
   const { job } = workspace;
+  /**
+   * Forward a repair progress message with its job identity to the caller's callback. This
+   * closure supplies the job so individual steps only need to provide text.
+   */
   const progress = (message: string) => options.callbacks.progress(job, message);
   if (workspace.candidates.length === 0) {
     return {

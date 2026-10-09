@@ -1,3 +1,14 @@
+/**
+ * @file Browser entry: reads embedded report data and mounts the React App or a missing-data
+ * message.
+ *
+ * This module runs in the report viewer's browser. React components return JSX (the markup-like
+ * syntax); state changes request a new render, while effects synchronize browser APIs and clean
+ * up listeners.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";

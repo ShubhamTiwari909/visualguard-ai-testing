@@ -1,3 +1,14 @@
+/**
+ * @file Tests capture pipeline/statuses, errors, retention, dynamic content and deterministic
+ * stability on fixture pages.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -21,6 +32,10 @@ afterAll(async () => {
   await staging?.close();
 });
 
+/**
+ * Build a route-and-viewport-to-status lookup from the run. Including both values distinguishes
+ * jobs for the same route at different screen sizes.
+ */
 const statuses = (manifest: RunManifest) =>
   Object.fromEntries(manifest.jobs.map((job) => [`${job.route} ${job.viewport}`, job.status]));
 

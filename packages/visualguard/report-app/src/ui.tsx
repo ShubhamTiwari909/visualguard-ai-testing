@@ -1,3 +1,14 @@
+/**
+ * @file Reusable report controls: status badges/icons, pills, sections, keyboard hints,
+ * segmented controls and copy actions.
+ *
+ * This module runs in the report viewer's browser. React components return JSX (the markup-like
+ * syntax); state changes request a new render, while effects synchronize browser APIs and clean
+ * up listeners.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { ReactNode } from "react";
 import { STATUS_LABEL, type Status } from "./data";
 
@@ -21,6 +32,10 @@ const STATUS_ICON_COLOR: Record<Status, string> = {
   error: "text-red-700 dark:text-red-400",
 };
 
+/**
+ * Render the visual symbol associated with a job status. The caller supplies the status; this
+ * component does not classify jobs.
+ */
 export function StatusIcon({
   status,
   className = "size-4",
@@ -80,6 +95,10 @@ export function StatusIcon({
   }
 }
 
+/**
+ * Show a status label with its matching icon and colors. Using one component keeps status
+ * styling consistent across the report.
+ */
 export function StatusBadge({ status }: { status: Status }) {
   return (
     <span
@@ -91,6 +110,10 @@ export function StatusBadge({ status }: { status: Status }) {
   );
 }
 
+/**
+ * Render a compact label around the supplied React children. Children are the text or elements
+ * placed between the component's opening and closing tags.
+ */
 export function Pill({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <span
@@ -101,6 +124,10 @@ export function Pill({ children, className = "" }: { children: ReactNode; classN
   );
 }
 
+/**
+ * Render a consistently styled heading and pass through its accessibility identifier. Other
+ * elements can refer to that identifier with aria-labelledby.
+ */
 export function SectionTitle({ children, id }: { children: ReactNode; id?: string }) {
   return (
     <h3
@@ -112,6 +139,10 @@ export function SectionTitle({ children, id }: { children: ReactNode; id?: strin
   );
 }
 
+/**
+ * Display a keyboard key or shortcut in the report's shared keycap style. This is a visual
+ * hint, not a keyboard event listener.
+ */
 export function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd className="rounded border border-slate-300 bg-slate-50 px-1 font-mono text-[11px] text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -120,6 +151,10 @@ export function Kbd({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Render mutually exclusive choices and call onChange with the selected value. The parent owns
+ * the value, which makes this a controlled React component.
+ */
 export function SegmentedControl<T extends string>({
   label,
   value,
@@ -158,6 +193,10 @@ export function SegmentedControl<T extends string>({
   );
 }
 
+/**
+ * Copy the supplied text through the browser clipboard API and show temporary feedback.
+ * Component state handles the feedback without changing the original text.
+ */
 export function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   return (
     <button
