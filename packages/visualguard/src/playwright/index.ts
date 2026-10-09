@@ -1,20 +1,39 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, relative } from "node:path";
 import { test as base, expect, type Page, type TestInfo } from "@playwright/test";
 import { capturePage, stabilizeAndShoot } from "../capture/capture.js";
-import { captureDomSnapshot, type DomSnapshot } from "../capture/dom-snapshot.js";
+import { captureDomSnapshot } from "../capture/dom-snapshot.js";
 import { loadConfig, loadEnvFiles, parseConfig } from "../config/load.js";
 import { resolveConfig, type ResolvedConfig } from "../config/resolve.js";
 import type { VisualGuardConfig } from "../config/schema.js";
 import { routeSlug } from "../config/urls.js";
-import { applyFindings, healthFindings } from "../core/findings.js";
+import { classifyComparison } from "../core/comparison.js";
+import { applyAccepted, readAccepted } from "../core/accepted.js";
+import { AnalysisSession, needsAnalysis } from "../ai/analyze-job.js";
+import { createProvider } from "../ai/factory.js";
+import {
+  assertBaselineCompatible,
+  capturePolicy,
+  fingerprint,
+  renderingIdentity,
+  writeBaselineMetadata,
+} from "../core/provenance.js";
+import { instrumentHealth } from "../capture/health.js";
+import {
+  preservePerformanceTimeline,
+  readPerformance,
+  runAccessibilityCheck,
+} from "../capture/checks.js";
 import { isFailing } from "../core/status.js";
 import type { CaptureResult, FailOn, HealthSignals, JobResult, JobSpec } from "../core/types.js";
 import { pngSize } from "../core/util.js";
 import { computeDiff } from "../diff/compute.js";
-import { classifyJob } from "../mapping/classify.js";
+
+const pageHealth = new WeakMap<Page, HealthSignals>();
 
 export interface VisualGuardOptions {
+  /** Instrument the test-owned page before navigation. */
+  collectHealth?: boolean;
   /** Path to a config file (default: visualguard.config.* in the working directory). */
   configPath?: string;
   /** Inline config, merged over the file. */
@@ -24,6 +43,8 @@ export interface VisualGuardOptions {
 }
 
 export interface CheckOptions {
+  /** Bring a fresh production page to the same interactive state as the test page. */
+  referenceSetup?: (page: Page) => Promise<void>;
   /** Name for this check, unique within the test (default "page"). */
   name?: string;
   waitFor?: string;
@@ -38,10 +59,6 @@ export interface VisualGuardFixture {
    * a stored baseline when there's no production URL. Fails the test per `failOn`.
    */
   check(page: Page, options?: CheckOptions): Promise<JobResult>;
-}
-
-function readDom(path: string): DomSnapshot | undefined {
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as DomSnapshot) : undefined;
 }
 
 function productionURL(config: ResolvedConfig, current: URL): string {
@@ -61,15 +78,30 @@ async function check(
   options: CheckOptions,
   defaults: VisualGuardOptions,
   testInfo: TestInfo,
+  session?: AnalysisSession,
 ): Promise<JobResult> {
   const size = page.viewportSize() ?? { width: 1280, height: 720 };
   const config: ResolvedConfig = {
     ...baseConfig,
-    viewports: { playwright: { width: size.width, height: size.height } },
+    browser: {
+      ...baseConfig.browser,
+      name: testInfo.project.use.browserName ?? "chromium",
+      locale: testInfo.project.use.locale ?? baseConfig.browser.locale,
+      timezoneId: testInfo.project.use.timezoneId ?? baseConfig.browser.timezoneId,
+      colorScheme: testInfo.project.use.colorScheme ?? baseConfig.browser.colorScheme,
+    },
+    viewports: {
+      playwright: {
+        ...size,
+        deviceScaleFactor: testInfo.project.use.deviceScaleFactor ?? 1,
+        isMobile: testInfo.project.use.isMobile,
+        hasTouch: testInfo.project.use.hasTouch,
+      },
+    },
   };
   const name = options.name ?? "page";
   const current = new URL(page.url());
-  const id = `${routeSlug(testInfo.titlePath.slice(1).join(" ").replace(/\s+/g, "-"))}__${routeSlug(`/${name}`)}`;
+  const id = `${routeSlug(testInfo.titlePath.slice(1).join(" ").replace(/\s+/g, "-"))}__${routeSlug(`/${name}`)}-${fingerprint({ file: relative(config.cwd, testInfo.file), title: testInfo.titlePath, name, project: testInfo.project.name, browser: config.browser.name, viewport: config.viewports.playwright }).slice(0, 12)}`;
   const dir = testInfo.outputPath("visualguard", routeSlug(`/${name}`));
   mkdirSync(dir, { recursive: true });
 
@@ -88,7 +120,9 @@ async function check(
   };
 
   // The current page, as the test left it.
-  const health: HealthSignals = { consoleErrors: [], failedRequests: [], brokenImages: [] };
+  const health: HealthSignals = structuredClone(
+    pageHealth.get(page) ?? { consoleErrors: [], failedRequests: [], brokenImages: [] },
+  );
   const hookContext = {
     page,
     env: "staging" as const,
@@ -97,14 +131,34 @@ async function check(
     viewport: job.viewport,
   };
   const started = Date.now();
+  if (config.checks.performance.enabled) {
+    try {
+      health.performance = await readPerformance(page);
+    } catch (error) {
+      (health.checkErrors ??= []).push(`performance: ${String(error)}`);
+    }
+  }
   const shot = await stabilizeAndShoot(page, { config, job, health, hookContext });
+  if (config.checks.accessibility.enabled) {
+    try {
+      health.accessibility = await runAccessibilityCheck(page, {
+        tags: config.checks.accessibility.tags,
+      });
+    } catch (error) {
+      (health.checkErrors ??= []).push(`accessibility: ${String(error)}`);
+    }
+  }
+  const rel = (path: string) => relative(dir, path).split("\\").join("/");
   const stagingPath = join(dir, "staging.png");
   writeFileSync(stagingPath, shot.png);
   writeFileSync(join(dir, "staging.dom.json"), JSON.stringify(await captureDomSnapshot(page)));
   const captures: JobResult["captures"] = {
     staging: {
       source: "live",
-      image: stagingPath,
+      image: "staging.png",
+      dom: "staging.dom.json",
+      unstable: shot.unstable,
+      truncated: shot.truncated,
       size: shot.size,
       durationMs: Date.now() - started,
       attempts: 1,
@@ -115,51 +169,67 @@ async function check(
   // The reference: production, or a stored baseline.
   const productionPath = join(dir, "production.png");
   const baselineDir = resolve(config.cwd, config.baseline.dir, "playwright");
+  const identity = renderingIdentity(config, job, testInfo.project.name);
   const baselinePath = join(baselineDir, `${id}.png`);
   const updating =
     testInfo.config.updateSnapshots === "all" ||
     testInfo.config.updateSnapshots === "changed" ||
     Boolean(process.env.VISUALGUARD_UPDATE_BASELINES);
-  if (config.baseURL.production) {
+  const captureReference = async (saveDom = true) => {
     const browser = page.context().browser();
-    if (!browser)
-      throw new Error("visualguard.check needs a browser-backed page (not a persistent context).");
-    let dom: DomSnapshot | undefined;
-    const outcome = await capturePage({
+    if (!browser) throw new Error("visualguard.check needs a browser-backed page.");
+    return capturePage({
       browser,
       config,
       job,
       env: "production",
-      afterScreenshot: async (productionPage) => {
-        dom = await captureDomSnapshot(productionPage).catch(() => undefined);
+      setup: options.referenceSetup,
+      afterScreenshot: async (reference) => {
+        if (!saveDom) return;
+        await captureDomSnapshot(reference)
+          .then((dom) => writeFileSync(join(dir, "production.dom.json"), JSON.stringify(dom)))
+          .catch(() => {});
       },
     });
+  };
+  if (config.baseURL.production) {
+    const outcome = await captureReference();
     writeFileSync(productionPath, outcome.png);
-    if (dom) writeFileSync(join(dir, "production.dom.json"), JSON.stringify(dom));
     captures.production = {
       source: "live",
-      image: productionPath,
+      image: "production.png",
+      dom: existsSync(join(dir, "production.dom.json")) ? "production.dom.json" : undefined,
       size: outcome.size,
       durationMs: outcome.durationMs,
       attempts: outcome.attempts,
       health: outcome.health,
     } satisfies CaptureResult;
   } else if (existsSync(baselinePath) && !updating) {
+    assertBaselineCompatible(baselinePath, identity, config.baseline.legacy);
     copyFileSync(baselinePath, productionPath);
     if (existsSync(baselinePath.replace(/\.png$/, ".dom.json"))) {
       copyFileSync(baselinePath.replace(/\.png$/, ".dom.json"), join(dir, "production.dom.json"));
     }
     captures.production = {
       source: "baseline",
-      image: productionPath,
+      image: "production.png",
+      dom: existsSync(join(dir, "production.dom.json")) ? "production.dom.json" : undefined,
       size: pngSize(readFileSync(productionPath)),
       durationMs: 0,
       attempts: 0,
-      health: { consoleErrors: [], failedRequests: [], brokenImages: [] },
+      health: existsSync(baselinePath.replace(/\.png$/, ".health.json"))
+        ? JSON.parse(readFileSync(baselinePath.replace(/\.png$/, ".health.json"), "utf8"))
+        : { consoleErrors: [], failedRequests: [], brokenImages: [] },
     };
   } else {
+    if (!updating && config.baseline.missing === "error")
+      throw new Error(
+        `Missing baseline ${baselinePath}; update snapshots explicitly or set baseline.missing: "create".`,
+      );
     mkdirSync(baselineDir, { recursive: true });
     copyFileSync(stagingPath, baselinePath);
+    writeBaselineMetadata(baselinePath, identity, config.cwd);
+    writeFileSync(baselinePath.replace(/\.png$/, ".health.json"), JSON.stringify(health));
     copyFileSync(join(dir, "staging.dom.json"), baselinePath.replace(/\.png$/, ".dom.json"));
     testInfo.annotations.push({
       type: "visualguard",
@@ -178,9 +248,22 @@ async function check(
     };
   }
 
-  const diff = computeDiff({ productionPath, stagingPath, outDir: dir, options: config.diff });
-  const result: JobResult = {
+  let diff = computeDiff({ productionPath, stagingPath, outDir: dir, options: config.diff });
+  if (!diff.passed && config.diff.noiseMap && config.baseURL.production) {
+    const again = await captureReference(false);
+    const againPath = join(dir, "production.again.png");
+    writeFileSync(againPath, again.png);
+    diff = computeDiff({
+      productionPath,
+      stagingPath,
+      outDir: dir,
+      options: config.diff,
+      noise: { env: "production", againPath, domPath: join(dir, "production.dom.json") },
+    });
+  }
+  let result: JobResult = {
     id,
+    capturePolicy: capturePolicy(config, job),
     route: job.route,
     name,
     viewport: job.viewport,
@@ -193,7 +276,8 @@ async function check(
       sizeMismatch: diff.sizeMismatch,
       diffPixels: diff.diffPixels,
       diffRatio: diff.diffRatio,
-      image: diff.image,
+      image: diff.image ? rel(diff.image) : undefined,
+      noise: diff.noise ? { env: "production", ...diff.noise } : undefined,
       shift: diff.shift,
     },
     regions: diff.regions.map((region, index) => ({
@@ -201,29 +285,30 @@ async function check(
       kind: region.kind === "shift" ? "shift" : undefined,
       box: region.box,
       diffPixels: region.diffPixels,
-      crops: region.crops,
+      crops: {
+        production: rel(region.crops.production),
+        staging: rel(region.crops.staging),
+        diff: rel(region.crops.diff),
+      },
       elements: [],
       deltas: [],
     })),
     durationMs: 0,
   };
-  const findings = healthFindings(captures);
-  let visual: "pass" | "review" | "regression" = diff.passed ? "pass" : "review";
-  if (!diff.passed) {
-    const classified = classifyJob({
-      diff: result.diff!,
-      regions: result.regions,
-      production: readDom(join(dir, "production.dom.json")),
-      staging: readDom(join(dir, "staging.dom.json")),
-    });
-    result.regions = classified.regions;
-    findings.unshift(...classified.findings);
-    visual = classified.status;
-  }
-  result.findings = findings.length > 0 ? findings : undefined;
-  result.status = applyFindings(visual, findings);
+  result = classifyComparison(result, dir, config.checks, true);
+  result = applyAccepted(result, dir, readAccepted(config.acceptedPath), config.output.acceptMatch);
+  if (session && needsAnalysis(result, config.ai.analyze))
+    result = await session.analyze(result, dir, config.baseURL.production ? "compare" : "baseline");
   result.durationMs = Date.now() - started;
 
+  writeFileSync(
+    join(dir, "result.json"),
+    JSON.stringify({ ...result, usage: session?.budget.snapshot() }, null, 2),
+  );
+  await testInfo.attach(`visualguard ${name}: result`, {
+    path: join(dir, "result.json"),
+    contentType: "application/json",
+  });
   await testInfo.attach(`visualguard ${name}: production`, {
     path: productionPath,
     contentType: "image/png",
@@ -275,10 +360,27 @@ export const test = base.extend<{
       : loaded.config;
     await use(resolveConfig(merged, { cwd, configPath: loaded.configPath }));
   },
+  page: async ({ page, visualguardConfig, visualguardOptions }, use) => {
+    const instrumentation = visualguardOptions.collectHealth ? instrumentHealth(page) : undefined;
+    if (instrumentation) pageHealth.set(page, instrumentation.health);
+    if (visualguardConfig.checks.performance.enabled) await preservePerformanceTimeline(page);
+    try {
+      await use(page);
+    } finally {
+      instrumentation?.dispose();
+      pageHealth.delete(page);
+    }
+  },
   visualguard: async ({ visualguardConfig, visualguardOptions }, use, testInfo) => {
+    const { provider } = createProvider(visualguardConfig.ai);
+    const session = provider
+      ? new AnalysisSession(provider, visualguardConfig.ai, {
+          cacheDir: join(visualguardConfig.outputDir, "cache", "ai"),
+        })
+      : undefined;
     await use({
       check: (page, options = {}) =>
-        check(visualguardConfig, page, options, visualguardOptions, testInfo),
+        check(visualguardConfig, page, options, visualguardOptions, testInfo, session),
     });
   },
 });

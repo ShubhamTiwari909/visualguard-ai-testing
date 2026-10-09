@@ -10,6 +10,7 @@ export interface MergeFlags {
   ci?: boolean;
   json?: boolean;
   junit?: string;
+  allowPartial?: boolean;
 }
 
 export function registerMergeCommand(program: Command): void {
@@ -26,6 +27,10 @@ export function registerMergeCommand(program: Command): void {
         .choices(FAIL_ON_VALUES as string[])
         .default("regression"),
     )
+    .option(
+      "--allow-partial",
+      "emit an incomplete report when shards or jobs are missing (nonzero exit)",
+    )
     .option("--ci", "no colours")
     .option("--json", "print the merged manifest JSON to stdout")
     .option("--junit <path>", "write a JUnit XML report")
@@ -37,7 +42,8 @@ export function registerMergeCommand(program: Command): void {
 export async function runMergeCommand(paths: string[], flags: MergeFlags): Promise<number> {
   const config = await loadResolvedConfig(flags);
   const { manifest } = await mergeRuns(config, paths, {
+    allowPartial: flags.allowPartial,
     reporters: standardReporters(config, flags),
   });
-  return exitCodeFor(manifest, flags.failOn);
+  return manifest.incomplete ? 1 : exitCodeFor(manifest, flags.failOn);
 }

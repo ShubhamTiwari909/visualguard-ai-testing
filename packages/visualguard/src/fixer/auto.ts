@@ -80,9 +80,7 @@ export function repoFromRemote(remote: string): string | undefined {
 }
 
 function pullRequestBody(outcomes: FixOutcome[], runNumber: number): string {
-  const applied = outcomes.filter(
-    (outcome) => outcome.result === "fixed" || outcome.result === "unverified",
-  );
+  const applied = outcomes.filter((outcome) => outcome.result === "fixed");
   const lines = [
     "## 🤖 VisualGuard fixes",
     "",
@@ -96,12 +94,6 @@ function pullRequestBody(outcomes: FixOutcome[], runNumber: number): string {
     ),
     "",
   ];
-  if (applied.some((outcome) => outcome.result === "unverified")) {
-    lines.push(
-      "> Some changes are unverified: set `fix.verify.server` so VisualGuard can check them visually.",
-      "",
-    );
-  }
   for (const outcome of applied) {
     if (!outcome.diff) continue;
     lines.push(
@@ -140,6 +132,11 @@ export async function autoFix(
   // git reports resolved paths (e.g. /private/var on macOS), so compare against the real cwd.
   const projectDir = realpathSync(config.cwd);
   assertCanFix(config, config.cwd, !options.inPlace);
+  if (!config.fix.verify.server) {
+    throw new ConfigError("Automatic fixing requires fix.verify.server for visual verification.", {
+      hint: "Configure a local verification server before using --auto.",
+    });
+  }
   if (options.provider && !hasConsent(config, options.provider)) {
     throw new ConfigError(`Sending source code to ${options.provider.name} hasn't been allowed.`, {
       hint: "Run `visualguard fix` once in a terminal and allow it, or set fix.allowSourceUpload: true.",
@@ -206,9 +203,7 @@ export async function autoFix(
     throw error;
   }
 
-  const applied = outcomes.filter(
-    (outcome) => outcome.result === "fixed" || outcome.result === "unverified",
-  );
+  const applied = outcomes.filter((outcome) => outcome.result === "fixed");
   if (applied.length === 0) {
     cleanup(true);
     return { outcomes };

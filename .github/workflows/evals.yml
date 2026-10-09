@@ -1,7 +1,9 @@
 name: Evals
 
-# Manual: measures AI classification quality on the labelled fixture pages (evals/README.md).
+# Bounded weekly/manual live AI evaluation; no provider credentials needed for PR tests.
 on:
+  schedule:
+    - cron: "0 4 * * 1"
   workflow_dispatch:
     inputs:
       provider:
@@ -29,10 +31,24 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter visualguard exec playwright install --with-deps chromium
-      - name: Run evals
-        run: pnpm eval -- --provider "${{ inputs.provider }}" ${{ inputs.model && format('--model "{0}"', inputs.model) || '' }}
+      - run: pnpm build
+      - name: Run bounded evals
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VG_EVAL_PROVIDER: ${{ inputs.provider || 'gemini' }}
+          VG_EVAL_MODEL: ${{ inputs.model }}
+        run: |
+          if [ "$VG_EVAL_PROVIDER" = gemini ] && [ -z "$GEMINI_API_KEY" ]; then
+            echo "Gemini key unavailable; running the heuristic baseline."
+            VG_EVAL_PROVIDER=none
+          fi
+          model_args=()
+          if [ -n "$VG_EVAL_MODEL" ]; then model_args=(--model "$VG_EVAL_MODEL"); fi
+          if [ "$VG_EVAL_PROVIDER" = gemini ]; then
+            node evals/run.mjs --provider gemini "${model_args[@]}" --all-ai --min-regression-recall 0.9 --min-regression-precision 0.85
+          else
+            node evals/run.mjs --provider none --min-regression-recall 0.6 --min-regression-precision 0.85
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

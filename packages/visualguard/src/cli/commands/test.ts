@@ -31,11 +31,16 @@ export interface TestFlags extends ConfigFlags {
   /** Baseline mode: save this run's screenshots as the new baselines. */
   updateBaselines?: boolean;
   shard?: Shard;
+  runGroup?: string;
 }
 
 export function addConfigOptions(command: Command): Command {
   command
     .option("-c, --config <path>", "config file path")
+    .addOption(
+      new Option("--browser <name>", "browser engine").choices(["chromium", "firefox", "webkit"]),
+    )
+    .option("--output-dir <path>", "run artifact directory")
     .option("--production <url>", "override the production base URL")
     .option("--staging <url>", "override the staging base URL, e.g. http://localhost:3000")
     .option(
@@ -64,6 +69,7 @@ export function registerTestCommand(program: Command): void {
     .option("--junit <path>", "write a JUnit XML report")
     .option("--debug", "save Playwright traces")
     .option("--list", "print the resolved URL pairs and exit without capturing")
+    .option("--run-group <id>", "shared identity for all shards of one execution")
     .option("--update-baselines", "baseline mode: save this run's screenshots as the baselines")
     .option(
       "--shard <i/n>",
@@ -115,6 +121,7 @@ export async function runTestCommand(
     ai: flags.ai === false ? false : undefined,
     reporters: allReporters,
     shard: flags.shard,
+    runGroup: flags.runGroup,
   }).start();
   return exitCodeFor(manifest, flags.failOn);
 }

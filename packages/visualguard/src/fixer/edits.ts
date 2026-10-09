@@ -77,7 +77,7 @@ export function previewEdits(
       before: readFileSync(join(cwd, path), "utf8"),
       after: "",
     };
-    const base = current.after || current.before;
+    const base = result.has(path) ? current.after : current.before;
     result.set(path, {
       before: current.before,
       after: base.replace(edit.search, () => edit.replace),
@@ -87,17 +87,55 @@ export function previewEdits(
 }
 
 /** Writes the edits; returns the original contents so they can be restored. */
-export function applyEdits(cwd: string, edits: Edit[]): Map<string, string> {
+export function applyEdits(
+  cwd: string,
+  edits: Edit[],
+  expected?: ReadonlyMap<string, string>,
+): Map<string, string> {
+  for (const edit of edits) {
+    const path = edit.file.replace(/^\.\//, "");
+    if (expected?.has(path) && readFileSync(join(cwd, path), "utf8") !== expected.get(path))
+      throw new Error(`${path} changed since the proposal; generate a new proposal.`);
+  }
+  const preview = previewEdits(cwd, edits);
   const originals = new Map<string, string>();
-  for (const [path, { before, after }] of previewEdits(cwd, edits)) {
-    originals.set(path, before);
-    writeFileSync(join(cwd, path), after);
+  try {
+    for (const [path, { before, after }] of preview) {
+      originals.set(path, before);
+      writeFileSync(join(cwd, path), after);
+    }
+  } catch (error) {
+    const failures: unknown[] = [error];
+    for (const [path, content] of originals) {
+      try {
+        writeFileSync(join(cwd, path), content);
+      } catch (rollback) {
+        failures.push(rollback);
+      }
+    }
+    throw new AggregateError(
+      failures,
+      "Applying edits failed; rollback attempted for every file.",
+      { cause: error },
+    );
   }
   return originals;
 }
 
 export function revertEdits(cwd: string, originals: Map<string, string>): void {
-  for (const [path, content] of originals) writeFileSync(join(cwd, path), content);
+  const failures: unknown[] = [];
+  for (const [path, content] of originals) {
+    try {
+      writeFileSync(join(cwd, path), content);
+    } catch (error) {
+      failures.push(error);
+    }
+  }
+  if (failures.length)
+    throw new AggregateError(
+      failures,
+      "Some files could not be restored; recover from the saved proposal or Git.",
+    );
 }
 
 /** A unified diff of the edits, for showing before applying. */

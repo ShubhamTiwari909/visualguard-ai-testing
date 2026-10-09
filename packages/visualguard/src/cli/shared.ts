@@ -34,6 +34,8 @@ export function usePlainOutput(
 }
 
 export interface ConfigFlags {
+  browser?: ConfigOverrides["browser"];
+  outputDir?: string;
   config?: string;
   production?: string;
   staging?: string;
@@ -62,6 +64,8 @@ export async function loadResolvedConfig(
     cwd,
     configPath,
     overrides: {
+      browser: flags.browser,
+      outputDir: flags.outputDir,
       production: flags.production,
       staging: flags.staging,
       routes: flags.route,

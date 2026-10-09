@@ -3,11 +3,28 @@ import { join } from "node:path";
 import type { DomSnapshot } from "../capture/dom-snapshot.js";
 import { errorMessage } from "../core/errors.js";
 import type { Analysis, Finding, JobResult, RunManifest, Status } from "../core/types.js";
-import { AnalysisCache, cacheKey } from "./cache.js";
-import { AIError, addUsage, type AIProvider, type Usage } from "./provider.js";
-import { analyzeVisualDiff, PROMPT_VERSION } from "./tasks/analyze-diff.js";
+import { AnalysisCache, requestCacheKey } from "./cache.js";
+import { AIError, jsonSchemaFor, type AIProvider } from "./provider.js";
+import {
+  analyzeVisualDiff,
+  buildParts,
+  PROMPT_VERSION,
+  SYSTEM_PROMPT,
+  VisualAnalysisSchema,
+} from "./tasks/analyze-diff.js";
+
+import { AIBudget, budgetedProvider } from "./budget.js";
 
 export interface AnalysisSettings {
+  maxGenerationAttempts?: number;
+  maxNetworkAttempts?: number;
+  maxTokens?: number;
+  timeoutMs?: number;
+  cacheTTLHours?: number;
+  thinking?: string;
+  imageDetail?: string;
+  advisory?: boolean;
+  intent?: { title: string; description?: string; changedFiles: string[] };
   maxRegionsPerJob: number;
   noiseConfidence: number;
   maxCallsPerRun: number;
@@ -16,7 +33,10 @@ export interface AnalysisSettings {
 /** Shared across a run: provider, cache, call budget and token usage. */
 export class AnalysisSession {
   calls = 0;
-  readonly usage: Usage = { inputTokens: 0, outputTokens: 0 };
+  readonly budget: AIBudget;
+  get usage() {
+    return this.budget.usage;
+  }
   private readonly cache: AnalysisCache | undefined;
   /** Set when the provider can't answer for the rest of the run (quota, bad key). */
   private stopped: string | undefined;
@@ -24,9 +44,12 @@ export class AnalysisSession {
   constructor(
     readonly provider: AIProvider,
     readonly settings: AnalysisSettings,
-    options: { cacheDir?: string } = {},
+    options: { cacheDir?: string; signal?: AbortSignal } = {},
   ) {
-    this.cache = options.cacheDir ? new AnalysisCache(options.cacheDir) : undefined;
+    this.budget = new AIBudget(settings, options.signal);
+    this.cache = options.cacheDir
+      ? new AnalysisCache(options.cacheDir, (settings.cacheTTLHours ?? 24) * 3_600_000)
+      : undefined;
   }
 
   get budgetLeft(): number {
@@ -40,11 +63,34 @@ export class AnalysisSession {
       baseStatus: base,
       findings: withoutAIFindings(job.findings),
     };
-    const key = cacheKey(job, runDir, {
+    const input = {
+      job,
+      runDir,
+      mode,
+      maxRegions: this.settings.maxRegionsPerJob,
+      knownSelectors: knownSelectors(job, runDir),
+      intent: this.settings.intent,
+      signal: this.budget.signal,
+    };
+    let parts: ReturnType<typeof buildParts>;
+    try {
+      parts = buildParts(this.provider, input);
+    } catch (error) {
+      return addFinding(
+        updated,
+        base,
+        `AI analysis failed: could not prepare images: ${errorMessage(error)}`,
+      );
+    }
+    const key = requestCacheKey({
       provider: this.provider.name,
       model: this.provider.model,
       promptVersion: PROMPT_VERSION,
-      maxRegions: this.settings.maxRegionsPerJob,
+      system: SYSTEM_PROMPT,
+      schema: jsonSchemaFor(VisualAnalysisSchema),
+      settings: { thinking: this.settings.thinking, imageDetail: this.settings.imageDetail },
+      parts,
+      knownSelectors: [...input.knownSelectors].sort(),
     });
 
     let result = this.cache?.get(key);
@@ -60,14 +106,10 @@ export class AnalysisSession {
       }
       this.calls++;
       try {
-        result = await analyzeVisualDiff(this.provider, {
-          job,
-          runDir,
-          mode,
-          maxRegions: this.settings.maxRegionsPerJob,
-          knownSelectors: knownSelectors(job, runDir),
+        result = await analyzeVisualDiff(budgetedProvider(this.provider, this.budget), {
+          ...input,
+          parts,
         });
-        addUsage(this.usage, result.usage);
         this.cache?.set(key, result);
       } catch (error) {
         if (error instanceof AIError && error.stopsRun) this.stopped = error.message;
@@ -82,6 +124,7 @@ export class AnalysisSession {
       model: this.provider.model,
       promptVersion: PROMPT_VERSION,
       cached,
+      intent: this.settings.intent,
     };
     return {
       ...updated,
@@ -114,12 +157,14 @@ export function statusWithAnalysis(
   base: Status,
   findings: readonly Finding[],
   analysis: Pick<Analysis, "classification" | "confidence">,
-  settings: Pick<AnalysisSettings, "noiseConfidence">,
+  settings: Pick<AnalysisSettings, "noiseConfidence" | "advisory">,
 ): Status {
   if (base === "error" || base === "accepted") return base;
   const hardFailure =
     base === "regression" || findings.some((finding) => finding.severity === "regression");
   if (hardFailure) return "regression";
+  if (settings.advisory) return base;
+  const independentReview = findings.some((f) => f.source === "health" && f.severity === "review");
   switch (analysis.classification) {
     case "regression":
       return "regression";
@@ -127,7 +172,9 @@ export function statusWithAnalysis(
     case "content":
       return "review";
     case "noise":
-      return analysis.confidence >= settings.noiseConfidence ? "pass" : "review";
+      return !independentReview && analysis.confidence >= settings.noiseConfidence
+        ? "pass"
+        : "review";
   }
 }
 

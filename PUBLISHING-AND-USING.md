@@ -254,4 +254,3 @@ Store `GEMINI_API_KEY` as a repository secret, not as plain text in the workflow
 
 For pull-request reporting, the repository's composite action can be used after installing the
 project dependencies. See [`action/README.md`](action/README.md) for its inputs and outputs.
-

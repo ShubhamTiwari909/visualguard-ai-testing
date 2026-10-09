@@ -26,3 +26,16 @@ regression precision ≥ 0.85 and recall ≥ 0.90 on the default Gemini model.
 
 Without AI, statuses stand in for classes (regression → regression, review → intentional,
 pass → noise), so heuristics can never score on `content`.
+
+## Evaluation contract and gates
+
+Applicability comes from labels, never from the detector result. An unexpected `pass` stays in the denominator; a missing/errored capture is scored as an error. Results separate hybrid policy precision/recall/false-green rate from model-only classification accuracy, and include sample size, fallback count, dataset/prompt versions, and confidence calibration bins.
+
+After building, run deterministic quality gates with:
+
+```sh
+node evals/run.mjs --provider none --min-regression-recall 0.6 --min-regression-precision 0.85
+node evals/run.mjs --provider gemini --all-ai --min-regression-recall 0.9 --min-regression-precision 0.85
+```
+
+Heuristic gates run in PR CI. Gemini evaluation runs weekly/manually when a secret is available; otherwise that workflow runs the heuristic baseline. The targets are thresholds to test, not a claim of measured live model performance. All applicable cases remain scored even when AI is skipped or a budget is reached. Confidence bins expose calibration and should guide changes to `noiseConfidence`; do not equate self-reported confidence with probability.

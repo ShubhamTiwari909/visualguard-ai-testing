@@ -20,7 +20,10 @@ describe("baseline mode", () => {
   it("saves baselines with --update-baselines and compares later runs against them", async () => {
     const routes = ["/identical", "/alignment", "/hidden"];
     const site = (url: string) =>
-      testConfig({ mode: "baseline", routes }, { production: url, staging: url });
+      testConfig(
+        { mode: "baseline", routes, baseline: { missing: "create" } },
+        { production: url, staging: url },
+      );
     const first = site(production.url);
     const baselineDir = resolve(first.cwd, first.baseline.dir);
 
@@ -35,6 +38,7 @@ describe("baseline mode", () => {
       ["alignment__desktop", "hidden__desktop", "identical__desktop"].flatMap((id) => [
         `${id}.dom.json`,
         `${id}.health.json`,
+        `${id}.meta.json`,
         `${id}.png`,
       ]),
     );

@@ -1,3 +1,4 @@
+import { restoreRunUsage, persistRunUsage } from "../../ai/budget.js";
 import { join } from "node:path";
 import { Option, type Command } from "commander";
 import pLimit from "p-limit";
@@ -84,6 +85,7 @@ export async function reanalyzeRun(
   const session = new AnalysisSession(options.provider, config.ai, {
     cacheDir: options.useCache === false ? undefined : join(config.outputDir, "cache", "ai"),
   });
+  restoreRunUsage(session.budget, dir, manifest.usage);
   const targets = manifest.jobs.filter(
     (job) => needsAnalysis(job) && (!options.only?.length || matchesAny(job.route, options.only)),
   );
@@ -112,12 +114,14 @@ export async function reanalyzeRun(
     },
     usage: {
       aiCalls: previous.aiCalls + session.calls,
-      inputTokens: previous.inputTokens + session.usage.inputTokens,
-      outputTokens: previous.outputTokens + session.usage.outputTokens,
-      thinkingTokens:
-        (previous.thinkingTokens ?? 0) + (session.usage.thinkingTokens ?? 0) || undefined,
+      generationAttempts: session.budget.generationAttempts,
+      networkAttempts: session.budget.networkAttempts,
+      inputTokens: session.usage.inputTokens,
+      outputTokens: session.usage.outputTokens,
+      thinkingTokens: session.usage.thinkingTokens || undefined,
     },
   };
+  persistRunUsage(session.budget, dir);
   writeManifest(dir, updated);
   recordRun(config.outputDir, updated, config.output.keepRuns);
   if (config.report.html) writeReport(dir, updated);

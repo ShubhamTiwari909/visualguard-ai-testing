@@ -167,6 +167,8 @@ export interface RegionResult {
 export type Classification = "regression" | "intentional" | "content" | "noise";
 
 export interface Analysis {
+  modelVersion?: string;
+  intent?: { title: string; description?: string; changedFiles: string[] };
   classification: Classification;
   confidence: number;
   title: string;
@@ -190,6 +192,8 @@ export interface Finding {
 }
 
 export interface JobResult {
+  /** Capture settings retained for faithful repair replay; credentials and hooks stay in config. */
+  capturePolicy?: import("./provenance.js").CapturePolicy;
   id: string;
   route: string;
   name: string;
@@ -211,6 +215,13 @@ export interface JobResult {
 }
 
 export interface RunManifest {
+  provenance?: {
+    group: string;
+    fingerprint: string;
+    sourceRevision?: string;
+    expectedJobs: string[];
+  };
+  incomplete?: boolean;
   schemaVersion: 1;
   id: string;
   number: number;
@@ -231,6 +242,8 @@ export interface RunManifest {
   summary: Record<Status, number>;
   usage?: {
     aiCalls: number;
+    generationAttempts?: number;
+    networkAttempts?: number;
     inputTokens: number;
     /** Includes thinking tokens. */
     outputTokens: number;

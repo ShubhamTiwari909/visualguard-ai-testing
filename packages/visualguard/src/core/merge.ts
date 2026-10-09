@@ -43,7 +43,12 @@ function latestRuns(runs: string): string[] {
   const picked = new Map<number, string>();
   for (const { dir, manifest } of candidates) {
     const other = manifest.shard;
-    if (other?.total === shard.total && !picked.has(other.index)) picked.set(other.index, dir);
+    if (
+      other?.total === shard.total &&
+      manifest.provenance?.group === latest.manifest.provenance?.group &&
+      !picked.has(other.index)
+    )
+      picked.set(other.index, dir);
   }
   return [...picked.entries()].sort(([a], [b]) => a - b).map(([, dir]) => dir);
 }
@@ -51,6 +56,7 @@ function latestRuns(runs: string): string[] {
 export interface MergeOptions {
   reporters?: Reporter[];
   env?: NodeJS.ProcessEnv;
+  allowPartial?: boolean;
 }
 
 /**
@@ -73,6 +79,39 @@ export async function mergeRuns(
   if (modes.size > 1) {
     throw new ConfigError(`Can't merge runs of different modes: ${[...modes].join(", ")}`);
   }
+
+  const firstInput = manifests[0]!.manifest;
+  const identity = firstInput.provenance;
+  if (!identity)
+    throw new ConfigError("Cannot merge legacy runs without provenance; rerun the shards.");
+  for (const { manifest } of manifests) {
+    if (
+      !manifest.shard ||
+      !manifest.provenance ||
+      manifest.provenance.group !== identity.group ||
+      manifest.provenance.fingerprint !== identity.fingerprint ||
+      manifest.provenance.sourceRevision !== identity.sourceRevision ||
+      JSON.stringify(manifest.provenance.expectedJobs) !== JSON.stringify(identity.expectedJobs) ||
+      manifest.shard.total !== firstInput.shard?.total
+    )
+      throw new ConfigError(
+        "Cannot merge incompatible runs (group, revision, configuration or shard count differs).",
+      );
+  }
+  const indices = manifests.map(({ manifest }) => manifest.shard!.index);
+  if (new Set(indices).size !== indices.length)
+    throw new ConfigError("Duplicate shard indices in merge inputs.");
+  const ids = manifests.flatMap(({ manifest }) => manifest.jobs.map((j) => j.id));
+  if (new Set(ids).size !== ids.length) throw new ConfigError("Duplicate job IDs in merge inputs.");
+  if (ids.some((id) => !identity.expectedJobs.includes(id)))
+    throw new ConfigError("Unexpected jobs in shard inputs.");
+  const incomplete =
+    indices.length !== firstInput.shard!.total ||
+    identity.expectedJobs.some((id) => !ids.includes(id));
+  if (incomplete && !options.allowPartial)
+    throw new ConfigError(
+      "Incomplete shard set or missing jobs; pass --allow-partial to produce an explicitly incomplete report.",
+    );
 
   const run = createRunDir(config.outputDir, options.env);
   const jobs: JobResult[] = [];
@@ -105,10 +144,13 @@ export async function mergeRuns(
     startedAt,
     durationMs: Math.max(...manifests.map(({ manifest }) => manifest.durationMs)),
     shard: undefined,
+    incomplete: incomplete || undefined,
     mergedFrom: manifests.map(({ manifest }) => manifest.id),
     summary: summarize(jobs),
     usage: manifests.some(({ manifest }) => manifest.usage)
       ? {
+          generationAttempts: sum((u) => u.generationAttempts),
+          networkAttempts: sum((u) => u.networkAttempts),
           aiCalls: sum((usage) => usage.aiCalls),
           inputTokens: sum((usage) => usage.inputTokens),
           outputTokens: sum((usage) => usage.outputTokens),

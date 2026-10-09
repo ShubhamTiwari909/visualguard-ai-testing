@@ -27,6 +27,6 @@ describe("visualguard/playwright fixture", () => {
       },
     );
     expect(run.status, `${run.stdout}\n${run.stderr}`).toBe(0);
-    expect(run.stdout).toMatch(/4 passed/);
+    expect(run.stdout).toMatch(/6 passed/);
   }, 240_000);
 });

@@ -21,8 +21,11 @@ export function isFailing(status: Status, failOn: FailOn): boolean {
   return FAILING[failOn].includes(status);
 }
 
-export function exitCodeFor(manifest: Pick<RunManifest, "summary">, failOn: FailOn): ExitCode {
-  return FAILING[failOn].some((status) => manifest.summary[status] > 0)
+export function exitCodeFor(
+  manifest: Pick<RunManifest, "summary" | "incomplete">,
+  failOn: FailOn,
+): ExitCode {
+  return manifest.incomplete || FAILING[failOn].some((status) => manifest.summary[status] > 0)
     ? ExitCode.Failed
     : ExitCode.Ok;
 }

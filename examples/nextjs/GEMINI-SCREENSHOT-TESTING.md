@@ -153,4 +153,3 @@ node ../../packages/visualguard/dist/cli.js test --provider gemini
 ```
 
 Avoid this form on shared machines because shell history or process inspection may expose the key.
-

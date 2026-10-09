@@ -1,5 +1,5 @@
 {
-  "$comment": "Expected classification per fixture route. A string applies to every viewport; an object can label viewports separately. Routes whose pages don't differ at a viewport are skipped.",
+  "$comment": "Expected classification per fixture route. A string applies to every viewport; an object can label viewports separately. Applicability is declared here; unexpected passes are scored, never skipped.",
   "/text-change": "intentional",
   "/color-change": "intentional",
   "/font-size": "intentional",

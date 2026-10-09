@@ -1,6 +1,6 @@
 export function CheckoutSummary({ total }: { total: string }) {
   return (
-    <div className="checkout-summary mt-8 flex h-24 items-center justify-between rounded-xl bg-slate-50 px-6">
+    <div className="checkout-summary mt-8 flex h-24 items-start justify-between rounded-xl bg-slate-50 px-6">
       <span className="text-2xl font-bold">{total}</span>
       <a
         href="/pay"

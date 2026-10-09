@@ -6,7 +6,7 @@ import type { Browser } from "playwright";
 import { launchBrowser, playwrightVersion } from "../capture/browser.js";
 import { capturePage } from "../capture/capture.js";
 import { captureDomSnapshot, type DomSnapshot } from "../capture/dom-snapshot.js";
-import { classifyJob } from "../mapping/classify.js";
+import { classifyComparison } from "./comparison.js";
 import { AnalysisSession, needsAnalysis } from "../ai/analyze-job.js";
 import { createProvider } from "../ai/factory.js";
 import type { AIProvider } from "../ai/provider.js";
@@ -33,6 +33,14 @@ import {
   type RunManifest,
 } from "./types.js";
 import { VERSION } from "./version.js";
+import {
+  assertBaselineCompatible,
+  capturePolicy,
+  fingerprint,
+  renderingIdentity,
+  sourceRevision,
+  writeBaselineMetadata,
+} from "./provenance.js";
 
 export interface ReporterContext {
   runDir: string;
@@ -47,6 +55,11 @@ export interface Reporter {
 }
 
 export interface RunOptions {
+  runGroup?: string;
+  signal?: AbortSignal;
+  /** Replay original jobs against immutable reference artifacts (fix verification). */
+  jobs?: JobSpec[];
+  references?: Record<string, { runDir: string; capture: CaptureResult }>;
   /**
    * "compare" captures production and staging live. "baseline" and "scan" capture staging live
    * and compare it with a stored snapshot from `baselineDir` (PLAN.md §14.2).
@@ -113,10 +126,47 @@ export class Run extends RunEmitter {
     if (mode !== "compare" && !this.options.baselineDir) {
       throw new ConfigError(`${mode} mode needs a baseline directory`);
     }
-    const liveEnvs: readonly Env[] = mode === "compare" ? ENVS : ["staging"];
-    const plan = await planJobs(config, { discoveryLimit: this.options.discoveryLimit });
+    const liveEnvs: readonly Env[] =
+      mode === "compare" && !this.options.references ? ENVS : ["staging"];
+    const plan = this.options.jobs
+      ? {
+          jobs: this.options.jobs,
+          routes: this.options.jobs.map((j) => j.route),
+          warnings: [] as string[],
+        }
+      : await planJobs(config, { discoveryLimit: this.options.discoveryLimit });
+    this.options.signal?.throwIfAborted();
     const { shard } = this.options;
     const jobs = shard ? shardJobs(plan.jobs, shard) : plan.jobs;
+    const vars = this.options.env ?? process.env;
+    const group =
+      this.options.runGroup ??
+      vars.VISUALGUARD_RUN_GROUP ??
+      (vars.GITHUB_RUN_ID ? `${vars.GITHUB_RUN_ID}-${vars.GITHUB_RUN_ATTEMPT ?? "1"}` : undefined);
+    if (shard && !group)
+      throw new ConfigError(
+        "Sharded runs require --run-group or VISUALGUARD_RUN_GROUP (automatic in GitHub Actions).",
+      );
+    const provenance = {
+      group: group ?? "",
+      sourceRevision: sourceRevision(config.cwd),
+      expectedJobs: plan.jobs.map((j) => j.id).sort(),
+      fingerprint: fingerprint({
+        jobs: [...plan.jobs].sort((a, b) => a.id.localeCompare(b.id)),
+        browser: config.browser,
+        viewports: config.viewports,
+        stabilize: config.stabilize,
+        screenshot: config.screenshot,
+        diff: config.diff,
+        checks: config.checks,
+        ai: config.ai,
+        environments: config.environments,
+        platform: process.platform,
+        playwright: playwrightVersion(),
+        mode,
+        baselineDir: Boolean(this.options.baselineDir),
+      }),
+    };
     if (jobs.length === 0 && shard && plan.jobs.length > 0) {
       throw new ConfigError(
         `Shard ${shard.index}/${shard.total} has no jobs: there are only ${plan.jobs.length}`,
@@ -156,6 +206,7 @@ export class Run extends RunEmitter {
     }
     const session = provider
       ? new AnalysisSession(provider, config.ai, {
+          signal: this.options.signal,
           cacheDir:
             this.options.aiCache === false ? undefined : join(config.outputDir, "cache", "ai"),
         })
@@ -181,24 +232,32 @@ export class Run extends RunEmitter {
     let results: JobResult[];
 
     const accepted = readAccepted(config.acceptedPath);
+    const onAbort = () => {
+      void browser.close().catch(() => {});
+    };
+    this.options.signal?.addEventListener("abort", onAbort, { once: true });
     try {
       const captureLimit = pLimit(config.concurrency);
       const aiLimit = pLimit(config.ai.concurrency);
       results = await Promise.all(
         jobs.map(async (job) => {
           // AI calls get their own limit so captures keep going while the model thinks.
+          this.options.signal?.throwIfAborted();
           let result = await captureLimit(() =>
             this.runJob(job, run.dir, browser, diffRunner, liveEnvs),
           );
+          this.options.signal?.throwIfAborted();
           result = applyAccepted(result, run.dir, accepted, config.output.acceptMatch);
           if (session && needsAnalysis(result, config.ai.analyze)) {
             result = await aiLimit(() => session.analyze(result, run.dir, mode));
           }
+          this.options.signal?.throwIfAborted();
           this.emitAll({ type: "job:end", job: result });
           return result;
         }),
       );
     } finally {
+      this.options.signal?.removeEventListener("abort", onAbort);
       await browser.close().catch(() => {});
       await diffRunner.close();
     }
@@ -208,12 +267,18 @@ export class Run extends RunEmitter {
       for (const result of results) {
         const capture = result.captures.staging;
         if (!capture || result.status === "regression" || result.status === "error") continue;
-        this.saveBaseline(join(this.options.baselineDir, `${result.id}.png`), run.dir, capture);
+        this.saveBaseline(
+          join(this.options.baselineDir, `${result.id}.png`),
+          run.dir,
+          capture,
+          result,
+        );
       }
     }
 
     const manifest: RunManifest = {
       schemaVersion: 1,
+      provenance: { ...provenance, group: provenance.group || run.id },
       id: run.id,
       number: run.number,
       startedAt: run.startedAt.toISOString(),
@@ -241,6 +306,8 @@ export class Run extends RunEmitter {
       usage: session
         ? {
             aiCalls: session.calls,
+            generationAttempts: session.budget.generationAttempts,
+            networkAttempts: session.budget.networkAttempts,
             inputTokens: session.usage.inputTokens,
             outputTokens: session.usage.outputTokens,
             thinkingTokens: session.usage.thinkingTokens,
@@ -273,6 +340,7 @@ export class Run extends RunEmitter {
 
     const result: JobResult = {
       id: job.id,
+      capturePolicy: capturePolicy(this.config, job),
       route: job.route,
       name: job.name,
       viewport: job.viewport,
@@ -331,13 +399,48 @@ export class Run extends RunEmitter {
       : undefined;
     if (!liveEnvs.includes("production")) {
       if (baselinePath && existsSync(baselinePath)) {
-        result.captures.production = this.loadBaseline(baselinePath, jobDir, rel);
+        try {
+          assertBaselineCompatible(
+            baselinePath,
+            renderingIdentity(this.config, job),
+            this.config.baseline.legacy,
+          );
+          result.captures.production = this.loadBaseline(baselinePath, jobDir, rel);
+        } catch (error) {
+          if (this.options.updateBaselines !== true) throw error;
+          // Explicit updates migrate legacy/incompatible references rather than comparing
+          // different rendering environments.
+        }
       }
       if (this.options.updateBaselines === true && baselinePath) {
-        this.saveBaseline(baselinePath, runDir, result.captures.staging!);
+        this.saveBaseline(baselinePath, runDir, result.captures.staging!, job);
       }
     }
 
+    const reference = this.options.references?.[job.id];
+    if (reference) {
+      const image = join(jobDir, "production.png");
+      copyFileSync(join(reference.runDir, reference.capture.image), image);
+      const dom = reference.capture.dom ? join(jobDir, "production.dom.json") : undefined;
+      if (dom) copyFileSync(join(reference.runDir, reference.capture.dom!), dom);
+      result.captures.production = {
+        ...reference.capture,
+        source: "baseline",
+        image: rel(image),
+        dom: dom ? rel(dom) : undefined,
+      };
+    }
+    if (
+      !result.captures.production &&
+      !this.options.updateBaselines &&
+      this.config.baseline.missing === "error"
+    ) {
+      result.error = {
+        stage: "capture",
+        message: "No baseline yet; run with --update-baselines to save one",
+      };
+      return finish();
+    }
     const findings = healthFindings(result.captures, {
       baselineHealth: this.options.baselineHealth,
       checks: this.config.checks,
@@ -415,25 +518,20 @@ export class Run extends RunEmitter {
       return finish();
     }
 
-    let visualStatus: "pass" | "review" | "regression" = "pass";
-    if (result.diff.diffPixels > 0 && result.regions.length > 0) {
-      try {
-        const classified = classifyJob({
-          diff: result.diff,
-          regions: result.regions,
-          production: readDom(runDir, result.captures.production),
-          staging: readDom(runDir, result.captures.staging),
-        });
-        result.regions = classified.regions;
-        findings.unshift(...classified.findings);
-        visualStatus = classified.status;
-      } catch (error) {
-        result.error = { stage: "mapping", message: errorMessage(error) };
-        visualStatus = "review";
-      }
+    try {
+      const classified = classifyComparison(
+        { ...result, findings: findings.filter((f) => f.source !== "health") },
+        runDir,
+        this.config.checks,
+        this.options.baselineHealth,
+      );
+      result.regions = classified.regions;
+      result.findings = classified.findings;
+      result.status = classified.status;
+    } catch (error) {
+      result.error = { stage: "mapping", message: errorMessage(error) };
+      result.status = "error";
     }
-    result.findings = findings.length > 0 ? findings : undefined;
-    result.status = applyFindings(visualStatus, findings);
     return finish();
   }
 
@@ -462,9 +560,29 @@ export class Run extends RunEmitter {
     };
   }
 
-  private saveBaseline(baselinePath: string, runDir: string, capture: CaptureResult): void {
+  private saveBaseline(
+    baselinePath: string,
+    runDir: string,
+    capture: CaptureResult,
+    job: Pick<JobSpec, "viewport"> & {
+      waitFor?: string;
+      mask?: string[];
+      hide?: string[];
+      capturePolicy?: JobResult["capturePolicy"];
+    },
+  ): void {
     mkdirSync(join(baselinePath, ".."), { recursive: true });
     copyFileSync(join(runDir, capture.image), baselinePath);
+    writeBaselineMetadata(
+      baselinePath,
+      renderingIdentity(this.config, {
+        viewport: job.viewport,
+        waitFor: job.waitFor ?? job.capturePolicy?.waitFor,
+        mask: job.mask ?? job.capturePolicy?.mask ?? [],
+        hide: job.hide ?? job.capturePolicy?.hide ?? [],
+      }),
+      this.config.cwd,
+    );
     if (capture.dom)
       copyFileSync(join(runDir, capture.dom), baselinePath.replace(/\.png$/, ".dom.json"));
     writeFileSync(
@@ -490,15 +608,6 @@ function describeNoise(noise: DiffResult["noise"], nameEnv: boolean): Finding | 
     message: `Ignored ${areas} area${areas > 1 ? "s" : ""} that change${areas > 1 ? "" : "s"} on every load${nameEnv ? ` of ${noise.env}` : ""} (${noise.ignoredPixels.toLocaleString("en-US")} px)`,
     source: "heuristic",
   };
-}
-
-function readDom(runDir: string, capture: CaptureResult | undefined): DomSnapshot | undefined {
-  if (!capture?.dom) return undefined;
-  try {
-    return JSON.parse(readFileSync(join(runDir, capture.dom), "utf8")) as DomSnapshot;
-  } catch {
-    return undefined;
-  }
 }
 
 function nonEmptyHeaders(headers: Record<string, string> | undefined): Record<string, string> {

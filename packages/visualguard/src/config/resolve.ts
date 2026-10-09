@@ -7,6 +7,8 @@ import type { ParsedConfig, RouteInput } from "./schema.js";
 
 /** Values from CLI flags and positional arguments. They win over env vars and the config file. */
 export interface ConfigOverrides {
+  browser?: ParsedConfig["browser"]["name"];
+  outputDir?: string;
   production?: string;
   staging?: string;
   /** `--route` values (or routes from positional URLs): replace the configured routes. */
@@ -114,15 +116,21 @@ export function resolveConfig(
     model: overrides.aiModel ?? (provider === config.ai.provider ? config.ai.model : undefined),
   };
 
+  const browserName = overrides.browser ?? vars.VISUALGUARD_BROWSER ?? config.browser.name;
+  if (!["chromium", "firefox", "webkit"].includes(browserName))
+    throw new ConfigError("VISUALGUARD_BROWSER must be chromium, firefox or webkit.");
+  const outputDir = overrides.outputDir ?? vars.VISUALGUARD_OUTPUT_DIR ?? config.output.dir;
   return {
     ...config,
+    browser: { ...config.browser, name: browserName as ParsedConfig["browser"]["name"] },
+    output: { ...config.output, dir: outputDir },
     ai,
     baseURL,
     routes,
     viewports,
     cwd: options.cwd,
     configPath: options.configPath,
-    outputDir: resolve(options.cwd, config.output.dir),
+    outputDir: resolve(options.cwd, outputDir),
     acceptedPath: resolve(options.cwd, config.output.acceptedFile),
     only: overrides.only ?? [],
     concurrency: overrides.concurrency ?? config.concurrency ?? defaultConcurrency(),

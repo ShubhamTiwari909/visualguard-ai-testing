@@ -118,6 +118,7 @@ export class GeminiProvider extends BaseProvider {
     if (request.repair) parts.push({ text: repairInstruction(request.repair) });
 
     for (let attempt = 1; ; attempt++) {
+      request.budget?.network();
       try {
         const response = await this.client.models.generateContent({
           model: this.model,
@@ -137,6 +138,7 @@ export class GeminiProvider extends BaseProvider {
         const usage = response.usageMetadata;
         const thinkingTokens = usage?.thoughtsTokenCount ?? 0;
         return {
+          modelVersion: response.modelVersion,
           text: response.text ?? "",
           usage: {
             inputTokens: usage?.promptTokenCount ?? 0,

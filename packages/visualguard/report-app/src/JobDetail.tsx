@@ -70,6 +70,23 @@ function Analysis({ job }: { job: JobResult }) {
       </div>
       <p className="font-medium">{analysis.title}</p>
       <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{analysis.summary}</p>
+      {analysis.modelVersion && (
+        <p className="mt-1 text-xs text-slate-500">Model revision: {analysis.modelVersion}</p>
+      )}
+      {analysis.intent && (
+        <details className="mt-2 text-sm">
+          <summary>Change context supplied for analysis</summary>
+          <p>{analysis.intent.title}</p>
+          <p>{analysis.intent.description}</p>
+          <ul>
+            {analysis.intent.changedFiles.map((file) => (
+              <li key={file}>
+                <code>{file}</code>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {analysis.likelyCause && (
         <p className="mt-2 text-sm">
           <span className="font-semibold">Likely cause: </span>

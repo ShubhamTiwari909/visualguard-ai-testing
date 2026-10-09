@@ -1,3 +1,4 @@
+import { AIBudget, budgetedProvider, restoreRunUsage, persistRunUsage } from "../../ai/budget.js";
 import { basename, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Command } from "commander";
@@ -10,6 +11,7 @@ import type { JobResult } from "../../core/types.js";
 import type { Edit } from "../../fixer/edits.js";
 import { validateEdits } from "../../fixer/edits.js";
 import { applyAndVerify, prepareWorkspace, proposeEdits } from "../../fixer/fix.js";
+import { fingerprint } from "../../core/provenance.js";
 import { changedSince } from "../../fixer/git.js";
 import { DevServer } from "../../fixer/verify.js";
 import { acceptChanges } from "./accept.js";
@@ -24,6 +26,10 @@ export interface ReportFlags {
   open: boolean;
   serve: boolean;
 }
+
+const proposals = new Map<string, { originals: Map<string, string>; createdAt: number }>();
+const applying = new Set<string>();
+const reportBudgets = new Map<string, AIBudget>();
 
 /** Actions the served report can trigger (POST /api/<name>). */
 export const reportActions: Record<
@@ -57,15 +63,29 @@ export const reportActions: Record<
       });
       if (workspace.candidates.length === 0)
         return { ok: false, message: "No source files matched this change (check fix.include)." };
+      let budget = reportBudgets.get(runDir);
+      if (!budget || budget.signal.aborted) {
+        budget = new AIBudget(config.ai);
+        restoreRunUsage(budget, runDir, readManifest(runDir).usage);
+        reportBudgets.set(runDir, budget);
+      }
+      const provider = createProvider(config.ai).provider;
       const proposed = await proposeEdits(config, workspace, {
         attempt: 1,
         useHeuristic: true,
-        provider: createProvider(config.ai).provider,
+        provider: provider ? budgetedProvider(provider, budget) : undefined,
         // Consent is given in the terminal (`visualguard fix`) or with fix.allowSourceUpload.
         consent: async () => false,
       });
+      persistRunUsage(budget, runDir);
       if (proposed.kind === "proposal") {
-        const { edits, diff, summary, source } = proposed.proposal;
+        const { edits, diff, summary, source, originals } = proposed.proposal;
+        for (const [key, value] of proposals)
+          if (Date.now() - value.createdAt > 3_600_000) proposals.delete(key);
+        proposals.set(fingerprint({ runDir, job: job.id, edits }), {
+          originals,
+          createdAt: Date.now(),
+        });
         return { ok: true, edits, diff, summary, source };
       }
       if (proposed.kind === "invalid")
@@ -91,11 +111,24 @@ export const reportActions: Record<
       if (!Array.isArray(edits)) throw new Error("edits are required");
       const problems = validateEdits(config.cwd, edits as Edit[], config.fix.include);
       if (problems.length > 0) return { ok: false, message: problems.join(" ") };
+      const key = fingerprint({ runDir, job: job.id, edits });
+      const proposal = proposals.get(key);
+      if (!proposal || Date.now() - proposal.createdAt > 3_600_000)
+        throw new Error("Proposal expired; generate a new proposal.");
+      if (applying.has(config.cwd))
+        throw new Error("Another fix is being applied; wait for verification to finish.");
+      applying.add(config.cwd);
+      proposals.delete(key);
       const server = config.fix.verify.server
         ? new DevServer(config.fix.verify.server, config.cwd)
         : undefined;
       try {
-        const result = await applyAndVerify(config, job, config.cwd, edits as Edit[], { server });
+        const result = await applyAndVerify(config, job, config.cwd, edits as Edit[], {
+          server,
+          runDir,
+          originals: proposal.originals,
+          scope: readManifest(runDir).jobs,
+        });
         if (result.kind === "done")
           return { ok: true, result: result.result, message: result.message };
         return {
@@ -103,6 +136,7 @@ export const reportActions: Record<
           message: result.kind === "retry" ? `Reverted: ${result.feedback}` : result.message,
         };
       } finally {
+        applying.delete(config.cwd);
         await server?.stop();
       }
     },

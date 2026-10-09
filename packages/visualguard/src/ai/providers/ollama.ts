@@ -52,6 +52,7 @@ export class OllamaProvider extends BaseProvider {
       .map((part) => part.data.toString("base64"));
 
     let response: Response;
+    request.budget?.network();
     try {
       response = await fetch(new URL("/api/chat", this.host), {
         method: "POST",
@@ -69,7 +70,9 @@ export class OllamaProvider extends BaseProvider {
               : []),
           ],
         }),
-        signal: request.signal ?? AbortSignal.timeout(this.timeoutMs),
+        signal: request.signal
+          ? AbortSignal.any([request.signal, AbortSignal.timeout(this.timeoutMs)])
+          : AbortSignal.timeout(this.timeoutMs),
       });
     } catch (error) {
       throw new AIError(`Ollama is not reachable at ${this.host}`, {

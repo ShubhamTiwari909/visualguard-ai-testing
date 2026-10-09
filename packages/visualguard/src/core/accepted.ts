@@ -158,6 +158,9 @@ export function applyAccepted(
   match: AcceptMatch = "similar",
 ): JobResult {
   if (job.status === "pass" || job.status === "error" || file.accepted.length === 0) return job;
+  // Acceptance covers visual changes, never independent health/check failures.
+  if (job.findings?.some((finding) => finding.source === "health" && finding.severity !== "info"))
+    return job;
   const candidates = file.accepted.filter((entry) => entry.job === job.id);
   if (candidates.length === 0) return job;
   const hash = screenshotHash(job, runDir);

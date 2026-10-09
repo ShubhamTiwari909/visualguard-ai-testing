@@ -39,6 +39,8 @@ npx visualguard https://example.com https://staging.example.com
 npx visualguard https://example.com/pricing https://staging.example.com/pricing
 ```
 
+See the [reliability and migration guide](../../docs/RELIABILITY-CHANGES.md) for baseline identity, strict missing-baseline policy, AI budgets, fixture capabilities and automatic-fix verification.
+
 ## Commands
 
 | Command                       | What it does                                                          |

@@ -49,7 +49,10 @@ describe("sharding", () => {
         baseURL: { production: production.url, staging: staging.url },
         routes,
       });
-      const { manifest, runDir } = await createRun(config, { shard: { index, total: 2 } }).start();
+      const { manifest, runDir } = await createRun(config, {
+        shard: { index, total: 2 },
+        runGroup: "shard-test",
+      }).start();
       expect(manifest.shard).toEqual({ index, total: 2 });
       expect(manifest.jobs).toHaveLength(2);
       shardRuns.push({ config, runDir });

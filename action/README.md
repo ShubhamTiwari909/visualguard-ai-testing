@@ -40,6 +40,17 @@ jobs:
 | `github-token`      | `${{ github.token }}` | Token for the comment                             |
 | `exec`              | `npx`                 | `npx`, `pnpm exec`, `yarn` or `bunx`              |
 
+Additional inputs:
+
+| Input              | Default                 | Meaning                                                                                              |
+| ------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `browser`          | `chromium`              | Installs and selects this browser, overriding project configuration                                  |
+| `output-directory` | `.visualguard`          | Run output relative to the working directory; overrides config and is also used for comments/uploads |
+| `artifact-name`    | `visualguard-report`    | Use a distinct name for matrix/shard jobs                                                            |
+| `junit-path`       | `visualguard-junit.xml` | JUnit output uploaded together with run artifacts                                                    |
+
+Set these inputs when using a nondefault browser or artifact path. `args` is intended for trusted workflow configuration.
+
 Outputs: `report-url` (the artifact) and `outcome`.
 
 For preview deployments, trigger on `deployment_status` and pass

@@ -17,7 +17,7 @@ export interface ProviderResult {
  */
 export function createProvider(
   ai: Pick<ParsedConfig["ai"], "provider" | "model"> &
-    Partial<Pick<ParsedConfig["ai"], "thinking" | "imageDetail">>,
+    Partial<Pick<ParsedConfig["ai"], "thinking" | "imageDetail" | "timeoutMs">>,
   env: NodeJS.ProcessEnv = process.env,
 ): ProviderResult {
   switch (ai.provider) {
@@ -33,6 +33,7 @@ export function createProvider(
           apiKey,
           model: ai.model,
           baseUrl: env.VISUALGUARD_GEMINI_BASE_URL,
+          timeoutMs: ai.timeoutMs,
           thinking: ai.thinking,
           imageDetail: ai.imageDetail,
         }),
@@ -43,6 +44,7 @@ export function createProvider(
         provider: new OllamaProvider({
           host: env.OLLAMA_HOST ?? DEFAULT_OLLAMA_HOST,
           model: ai.model,
+          timeoutMs: ai.timeoutMs,
         }),
       };
   }

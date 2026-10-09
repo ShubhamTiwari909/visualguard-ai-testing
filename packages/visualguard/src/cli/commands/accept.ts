@@ -5,6 +5,7 @@ import type { ResolvedConfig } from "../../config/resolve.js";
 import { matchesAny } from "../../config/glob.js";
 import {
   acceptJobs,
+  applyAccepted,
   readAccepted,
   writeAccepted,
   type AcceptedEntry,
@@ -82,17 +83,10 @@ export function acceptChanges(config: ResolvedConfig, options: AcceptOptions): A
   });
   writeAccepted(config.acceptedPath, file);
 
-  const acceptedIds = new Map(added.map((item) => [item.job, item]));
-  const jobs = manifest.jobs.map((job) => {
-    const item = acceptedIds.get(job.id);
-    return item
-      ? {
-          ...job,
-          status: "accepted" as const,
-          acceptedBy: { hash: item.hash, at: item.acceptedAt, note: item.note },
-        }
-      : job;
-  });
+  const acceptedIds = new Set(added.map((item) => item.job));
+  const jobs = manifest.jobs.map((job) =>
+    acceptedIds.has(job.id) ? applyAccepted(job, dir, file, "exact") : job,
+  );
   const updated: RunManifest = { ...manifest, jobs, summary: summarize(jobs) };
   writeManifest(dir, updated);
   recordRun(config.outputDir, updated, config.output.keepRuns);

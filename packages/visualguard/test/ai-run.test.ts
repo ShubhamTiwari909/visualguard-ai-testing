@@ -80,7 +80,13 @@ describe("test with AI", () => {
 
   it("records provider, model and usage in the manifest", () => {
     expect(manifest.config.ai).toEqual({ provider: "mock", model: "mock-1" });
-    expect(manifest.usage).toEqual({ aiCalls: 4, inputTokens: 400, outputTokens: 80 });
+    expect(manifest.usage).toMatchObject({
+      aiCalls: 4,
+      inputTokens: 400,
+      outputTokens: 80,
+      generationAttempts: 4,
+      networkAttempts: 0,
+    });
   });
 
   it("`analyze` re-runs the model on an existing run from the base statuses", async () => {

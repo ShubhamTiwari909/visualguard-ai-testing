@@ -13,7 +13,11 @@
 
 ---
 
-## Implementation status (2026-10-08)
+## Current implementation status (2026-10-09)
+
+The local package manifest declares 1.1.0. See [reliability changes](docs/RELIABILITY-CHANGES.md) for the F01–F12 implementation and migration notes. Publishing status must be confirmed through the release workflow/npm; the manifest alone is not proof of publication.
+
+## Historical implementation snapshot (2026-10-08)
 
 Phases 0–8 are built and committed, and Phase 9 is partly done. The package is at **0.7.0** and
 not published to npm.
@@ -66,7 +70,7 @@ description, changed files) so it can tell deliberate changes from accidental on
   - accepted changes keyed by the hashes of both screenshots
 - **Example ports:** the Next.js example uses ports 3100/3101, because 3000/3001 are often taken.
 
-**Still needed for 1.0:**
+**Historical 1.0 checklist (superseded by the current status and reliability guide):**
 
 - **Live AI evals:** `pnpm eval -- --provider gemini` with a key, against the target of regression precision ≥ 0.85 and recall ≥ 0.90.
 - **Real-world adoption:** two real projects running it in CI.

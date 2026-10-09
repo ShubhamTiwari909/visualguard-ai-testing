@@ -12,6 +12,8 @@ import { listSourceFiles, type SourceFile } from "./files.js";
 import { changedSince, dirtyFiles, gitRoot } from "./git.js";
 import { heuristicEdits } from "./heuristic-edits.js";
 import { collectClues, excerpt, locateSource, type Candidate, type Clues } from "./locate.js";
+import { AIBudget, budgetedProvider, restoreRunUsage, persistRunUsage } from "../ai/budget.js";
+import { sourceRevision } from "../core/provenance.js";
 import { DevServer, runCommands, verifyAgainstProduction } from "./verify.js";
 
 export interface Proposal {
@@ -22,6 +24,9 @@ export interface Proposal {
   summary: string;
   attempt: number;
   candidates: Candidate[];
+  usage?: import("../ai/provider.js").Usage;
+  confidence?: number;
+  originals: Map<string, string>;
 }
 
 export type FixResult = "fixed" | "unverified" | "rejected" | "failed" | "skipped";
@@ -54,6 +59,7 @@ export interface FixOptions {
   /** Skip the confirmation prompt. */
   yes?: boolean;
   provider?: AIProvider;
+  signal?: AbortSignal;
   callbacks: FixCallbacks;
   /** Project directory to edit; defaults to config.cwd (a worktree in --auto mode). */
   workdir?: string;
@@ -191,6 +197,7 @@ export async function proposeEdits(
       summary,
       attempt: options.attempt,
       candidates,
+      originals: new Map(workspace.files.map((file) => [file.path, file.content])),
     },
   });
 
@@ -244,17 +251,28 @@ export async function proposeEdits(
       previous: options.previous,
     });
     const problems = validateEdits(workdir, patch.edits, config.fix.include);
+    for (const edit of patch.edits)
+      if (!candidates.some((candidate) => candidate.path === edit.file))
+        problems.push(
+          `${edit.file} was not supplied to the model; edit only the shown source files.`,
+        );
     if (problems.length > 0) return { kind: "invalid", edits: patch.edits, problems };
-    return make(patch.edits, "ai", patch.summary);
+    const proposed = make(patch.edits, "ai", patch.summary);
+    if (proposed.kind === "proposal") {
+      proposed.proposal.usage = patch.usage;
+      proposed.proposal.confidence = patch.confidence;
+    }
+    return proposed;
   } catch (error) {
     return { kind: "stop", result: "failed", message: `AI patch failed: ${errorMessage(error)}` };
   }
 }
 
-export type VerifyResult =
+export type VerifyResult = (
   | { kind: "done"; result: "fixed" | "unverified"; message: string }
   | { kind: "retry"; feedback: string }
-  | { kind: "failed"; message: string };
+  | { kind: "failed"; message: string }
+) & { commands?: import("./verify.js").CommandResult[]; verificationDir?: string };
 
 /**
  * Applies edits, runs the verify commands, then re-captures the page on the dev server and
@@ -265,42 +283,94 @@ export async function applyAndVerify(
   job: JobResult,
   workdir: string,
   edits: Edit[],
-  options: { server?: DevServer; progress?: (message: string) => void },
+  options: {
+    server?: DevServer;
+    progress?: (message: string) => void;
+    runDir?: string;
+    originals?: ReadonlyMap<string, string>;
+    signal?: AbortSignal;
+    scope?: JobResult[];
+  },
 ): Promise<VerifyResult> {
   const progress = options.progress ?? (() => {});
-  const originals = applyEdits(workdir, edits);
-  progress(`Applied ${edits.length} edit${edits.length === 1 ? "" : "s"}`);
-
-  const commands = await runCommands(
-    config.fix.verify.commands,
-    workdir,
-    config.fix.verify.commandTimeoutMs,
-  );
-  for (const result of commands) progress(`${result.ok ? "✓" : "✖"} ${result.command}`);
-  const failedCommand = commands.find((result) => !result.ok);
-  if (failedCommand) {
-    revertEdits(workdir, originals);
-    return {
-      kind: "retry",
-      feedback: `\`${failedCommand.command}\` failed after the edit:\n${failedCommand.output}`,
-    };
-  }
-
-  if (!options.server) {
-    return {
-      kind: "done",
-      result: "unverified",
-      message: "Applied but not verified: set fix.verify.server to check it visually.",
-    };
+  options.signal?.throwIfAborted();
+  const problems = validateEdits(workdir, edits, config.fix.include);
+  if (problems.length) return { kind: "failed", message: problems.join(" ") };
+  let originals: Map<string, string>;
+  try {
+    originals = applyEdits(workdir, edits, options.originals);
+  } catch (error) {
+    return { kind: "failed", message: errorMessage(error) };
   }
   try {
-    await options.server.ensure();
+    progress(`Applied ${edits.length} edit${edits.length === 1 ? "" : "s"}`);
+
+    const commands = await runCommands(
+      config.fix.verify.commands,
+      workdir,
+      config.fix.verify.commandTimeoutMs,
+      options.signal,
+    );
+    options.signal?.throwIfAborted();
+    for (const result of commands) progress(`${result.ok ? "✓" : "✖"} ${result.command}`);
+    const failedCommand = commands.find((result) => !result.ok);
+    if (failedCommand) {
+      revertEdits(workdir, originals);
+      return {
+        kind: "retry",
+        feedback: `\`${failedCommand.command}\` failed after the edit:\n${failedCommand.output}`,
+      };
+    }
+
+    if (!options.server) {
+      return {
+        kind: "done",
+        commands,
+        result: "unverified",
+        message: "Applied but not verified: set fix.verify.server to check it visually.",
+      };
+    }
+    await options.server.ensure(options.signal);
     progress(`Re-capturing ${job.route} on ${options.server.url}`);
-    const verification = await verifyAgainstProduction(config, job, options.server.url);
+    const verification = await verifyAgainstProduction(
+      config,
+      job,
+      options.server.url,
+      options.runDir,
+      options.signal,
+    );
+    if (verification.resolved && options.scope) {
+      for (const original of options.scope) {
+        if (original.id === job.id) continue;
+        const reference =
+          original.route === job.route && original.status !== "accepted"
+            ? original.captures.production
+            : original.captures.staging;
+        if (!reference) throw new Error(`Missing scope reference: ${original.id}`);
+        const collateral = await verifyAgainstProduction(
+          config,
+          { ...original, captures: { ...original.captures, production: reference } },
+          options.server.url,
+          options.runDir,
+          options.signal,
+        );
+        if (!collateral.resolved) {
+          revertEdits(workdir, originals);
+          return {
+            kind: "retry",
+            feedback: `Collateral change on ${original.route} (${original.viewport}); reverted.`,
+            commands,
+            verificationDir: collateral.runDir,
+          };
+        }
+      }
+    }
     if (verification.resolved) {
       const pixels = verification.job.diff?.diffPixels ?? 0;
       return {
         kind: "done",
+        commands,
+        verificationDir: verification.runDir,
         result: "fixed",
         message: `${job.route} now matches production (${pixels} differing pixel${pixels === 1 ? "" : "s"})`,
       };
@@ -309,7 +379,7 @@ export async function applyAndVerify(
     const still = verification.job.findings?.find((item) => item.severity !== "info")?.message;
     const feedback = `After the edit the page still differs from production (${((verification.job.diff?.diffRatio ?? 0) * 100).toFixed(2)}% of pixels${still ? `; ${still}` : ""}).`;
     progress(`Still differs; reverted. ${feedback}`);
-    return { kind: "retry", feedback };
+    return { kind: "retry", feedback, commands, verificationDir: verification.runDir };
   } catch (error) {
     revertEdits(workdir, originals);
     return { kind: "failed", message: `Verification failed: ${errorMessage(error)}` };
@@ -340,19 +410,103 @@ export async function fixRegressions(
     ? new DevServer(config.fix.verify.server, workdir, { requireFresh: options.freshServer })
     : undefined;
   const outcomes: FixOutcome[] = [];
+  const budget = new AIBudget(config.ai, options.signal);
+  restoreRunUsage(budget, runDir, manifest.usage);
+  const fixOptions = {
+    ...options,
+    provider: options.provider ? budgetedProvider(options.provider, budget) : undefined,
+  };
+  const batchOriginals = new Map(
+    listSourceFiles(workdir, config.fix.include).map((file) => [file.path, file.content]),
+  );
+  const verificationRuns: string[] = [];
   try {
     for (const job of jobs) {
+      options.signal?.throwIfAborted();
       outcomes.push(
         await fixJob(
           config,
           prepareWorkspace(config, job, { workdir, runDir, changed }),
-          options,
+          fixOptions,
           server,
         ),
       );
     }
+    const fixed = new Set(outcomes.filter((o) => o.result === "fixed").map((o) => o.job.id));
+    const fixedRoutes = new Set(
+      outcomes.filter((o) => o.result === "fixed").map((o) => o.job.route),
+    );
+    if (server && fixed.size) {
+      // Conservative full original-run scope: unresolved/intentional pages must retain their
+      // pre-fix staging look, and repaired pages must retain the expected reference look.
+      for (const original of manifest.jobs) {
+        options.signal?.throwIfAborted();
+        const target =
+          fixed.has(original.id) ||
+          (fixedRoutes.has(original.route) && original.status !== "accepted");
+        const reference = target ? original.captures.production : original.captures.staging;
+        if (!reference) throw new Error(`Missing reference for final verification: ${original.id}`);
+        const check = await verifyAgainstProduction(
+          config,
+          { ...original, captures: { ...original.captures, production: reference } },
+          server.url,
+          runDir,
+          options.signal,
+        );
+        verificationRuns.push(check.runDir);
+        if (check.resolved && target) {
+          const already = outcomes.find((o) => o.job.id === original.id && o.result === "skipped");
+          if (already) {
+            already.result = "fixed";
+            already.message =
+              "Resolved by another edit in this batch and verified against the saved reference.";
+          }
+        }
+        if (!check.resolved) {
+          const edited = new Set(
+            outcomes
+              .filter((o) => o.result === "fixed")
+              .flatMap((o) => o.edits.map((e) => e.file.replace(/^\.\//, ""))),
+          );
+          revertEdits(workdir, new Map([...batchOriginals].filter(([path]) => edited.has(path))));
+          for (const outcome of outcomes)
+            if (outcome.result === "fixed") {
+              outcome.result = "failed";
+              outcome.message = `Batch verification failed on ${original.route} (${original.viewport}); all batch edits reverted.`;
+            }
+          break;
+        }
+      }
+    }
+  } catch (error) {
+    const edited = new Set(
+      outcomes
+        .filter((o) => o.result === "fixed" || o.result === "unverified")
+        .flatMap((o) => o.edits.map((e) => e.file.replace(/^\.\//, ""))),
+    );
+    revertEdits(workdir, new Map([...batchOriginals].filter(([path]) => edited.has(path))));
+    throw error;
   } finally {
-    await server?.stop();
+    try {
+      persistRunUsage(budget, runDir);
+      writeFileSync(
+        join(runDir, "fix-results.json"),
+        JSON.stringify(
+          {
+            version: 1,
+            sourceRevision: sourceRevision(workdir),
+            referenceRun: manifest.id,
+            usage: budget.snapshot(),
+            verificationRuns,
+            outcomes,
+          },
+          null,
+          2,
+        ),
+      );
+    } finally {
+      await server?.stop();
+    }
   }
   return outcomes;
 }
@@ -410,6 +564,20 @@ async function fixJob(
     }
 
     const { proposal } = proposed;
+    mkdirSync(join(workspace.runDir, "fixes"), { recursive: true });
+    writeFileSync(
+      join(workspace.runDir, "fixes", `${job.id}-${attempt}.json`),
+      JSON.stringify(
+        {
+          ...proposal,
+          originals: undefined,
+          sourceRevision: sourceRevision(workspace.workdir),
+          referenceRun: workspace.runDir,
+        },
+        null,
+        2,
+      ),
+    );
     if (
       config.fix.requireConfirmation &&
       !options.yes &&
@@ -426,7 +594,27 @@ async function fixJob(
     const verified = await applyAndVerify(config, job, workspace.workdir, proposal.edits, {
       server,
       progress,
+      runDir: workspace.runDir,
+      originals: proposal.originals,
+      signal: options.signal,
     });
+    try {
+      writeFileSync(
+        join(workspace.runDir, "fixes", `${job.id}-${attempt}.verification.json`),
+        JSON.stringify(verified, null, 2),
+      );
+    } catch (error) {
+      if (verified.kind === "done")
+        revertEdits(
+          workspace.workdir,
+          new Map(
+            [...proposal.originals].filter(([path]) =>
+              proposal.edits.some((edit) => edit.file.replace(/^\.\//, "") === path),
+            ),
+          ),
+        );
+      throw error;
+    }
     if (verified.kind === "done") {
       return {
         job,

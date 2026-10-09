@@ -22,6 +22,8 @@ import {
 } from "./stabilize.js";
 
 export interface CaptureRequest {
+  /** Replay a per-check interaction state on the reference page. */
+  setup?: (page: Page) => Promise<void>;
   browser: Browser;
   config: ResolvedConfig;
   job: JobSpec;
@@ -102,7 +104,7 @@ export async function capturePage(request: CaptureRequest): Promise<CaptureOutco
 
 async function captureOnce(
   page: Page,
-  { config, job, env, afterScreenshot, checks = true }: CaptureRequest,
+  { config, job, env, afterScreenshot, setup, checks = true }: CaptureRequest,
 ): Promise<Omit<CaptureOutcome, "attempts" | "durationMs">> {
   const { stabilize } = config;
   const url = job.urls[env];
@@ -139,6 +141,7 @@ async function captureOnce(
   const response = await page.goto(url, { waitUntil: "load" });
   health.status = response?.status();
   health.finalURL = page.url();
+  await setup?.(page);
 
   // Load metrics are read before stabilisation changes the page (hidden banners, scrolling).
   if (checks && config.checks.performance.enabled) {

@@ -136,6 +136,8 @@ export const configSchema = z.object({
     .object({
       /** Commit this directory (Git LFS works well for the images). */
       dir: z.string().default("visualguard/baselines"),
+      missing: z.enum(["error", "create"]).default("error"),
+      legacy: z.enum(["error", "allow"]).default("error"),
     })
     .prefault({}),
 
@@ -245,6 +247,19 @@ export const configSchema = z.object({
       model: z.string().min(1).optional(),
       /** Upper bound on AI calls per run; remaining jobs fall back to heuristics. */
       maxCallsPerRun: z.number().int().min(0).default(30),
+      maxGenerationAttempts: z.number().int().min(0).default(60),
+      maxNetworkAttempts: z.number().int().min(0).default(120),
+      maxTokens: z.number().int().positive().default(200_000),
+      timeoutMs: z.number().int().positive().default(120_000),
+      cacheTTLHours: z.number().positive().default(24),
+      advisory: z.boolean().default(false),
+      intent: z
+        .object({
+          title: z.string().max(200),
+          description: z.string().max(2000).optional(),
+          changedFiles: z.array(z.string().max(300)).max(50).default([]),
+        })
+        .optional(),
       concurrency: z.number().int().min(1).max(8).default(4),
       /**
        * "uncertain" skips the model for jobs the heuristics already marked as regressions, since

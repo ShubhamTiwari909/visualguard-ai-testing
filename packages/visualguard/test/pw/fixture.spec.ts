@@ -47,7 +47,7 @@ test.describe("without a production URL", () => {
         baseURL: { staging: STAGING },
         stabilize: { freezeTime: "2026-01-01T00:00:00Z", networkQuietMs: 100 },
         output: { dir: join(work, "out") },
-        baseline: { dir: join(work, "baselines") },
+        baseline: { dir: join(work, "baselines"), missing: "create" },
       },
     },
   });
@@ -58,5 +58,41 @@ test.describe("without a production URL", () => {
     expect((await visualguard.check(page, { name: "first" })).captures.production?.source).toBe(
       "baseline",
     );
+  });
+});
+
+test("replays a per-check reference state", async ({ page, visualguard }) => {
+  await page.goto(`${STAGING}/identical`);
+  await page.locator("h1").evaluate((node) => {
+    node.textContent = "Scenario state";
+  });
+  const result = await visualguard.check(page, {
+    referenceSetup: async (reference) => {
+      await reference.locator("h1").evaluate((node) => {
+        node.textContent = "Scenario state";
+      });
+    },
+  });
+  expect(result.status).toBe("pass");
+});
+
+test.describe("early event instrumentation", () => {
+  test.use({
+    visualguardOptions: {
+      collectHealth: true,
+      config: {
+        baseURL: { production: "http://127.0.0.1:4210", staging: STAGING },
+        stabilize: { networkQuietMs: 100 },
+      },
+    },
+  });
+  test("retains an error emitted before check", async ({ page, visualguard }) => {
+    await page.goto(`${STAGING}/identical`);
+    await page.evaluate(() => console.error("fixture-event-before-check"));
+    const result = await visualguard.check(page);
+    expect(result.captures.staging?.health.consoleErrors).toContain("fixture-event-before-check");
+    expect(
+      result.findings?.some((finding) => finding.message.includes("fixture-event-before-check")),
+    ).toBe(true);
   });
 });

@@ -155,6 +155,12 @@ export function App({ data }: { data: ReportData }) {
 
   return (
     <div className="flex h-full flex-col">
+      {manifest.incomplete && (
+        <div role="alert" className="bg-amber-100 p-3 text-amber-950">
+          Incomplete run: shards or expected jobs are missing. This report cannot establish a
+          passing result.
+        </div>
+      )}
       <header className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <div className="flex items-center gap-2">
@@ -203,6 +209,16 @@ export function App({ data }: { data: ReportData }) {
                   : `${manifest.config.ai.provider} ${manifest.config.ai.model ?? ""}`}
               </dd>
             </div>
+            {manifest.usage && (
+              <div className="text-xs text-slate-500">
+                <dt>AI work</dt>
+                <dd>
+                  {manifest.usage.aiCalls} analyses · {manifest.usage.generationAttempts ?? "?"}{" "}
+                  generations · {manifest.usage.networkAttempts ?? "?"} requests ·{" "}
+                  {manifest.usage.inputTokens} input / {manifest.usage.outputTokens} output tokens
+                </dd>
+              </div>
+            )}
           </dl>
           <button
             type="button"

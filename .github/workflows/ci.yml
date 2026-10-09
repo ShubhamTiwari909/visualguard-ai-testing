@@ -51,6 +51,43 @@ jobs:
           VG_DETERMINISM_RUNS: "10"
       - run: node scripts/pack-smoke.mjs
 
+  browser-smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter visualguard exec playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm --filter visualguard exec vitest run test/browser-smoke.test.ts
+        env:
+          VG_SMOKE_BROWSER: ${{ matrix.browser }}
+
+  heuristic-evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter visualguard exec playwright install --with-deps chromium
+      - run: pnpm build
+      - run: node evals/run.mjs --provider none --min-regression-recall 0.6 --min-regression-precision 0.85
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: heuristic-evals
+          path: evals/results/
+
   example-nextjs:
     # Builds examples/nextjs, seeds regressions, and checks `visualguard fix` repairs them.
     runs-on: ubuntu-latest

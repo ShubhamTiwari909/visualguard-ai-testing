@@ -9,6 +9,18 @@ inputs:
   working-directory:
     description: Directory with visualguard.config.ts (your project root).
     default: "."
+  browser:
+    description: Browser to install and run (chromium, firefox or webkit; overrides config).
+    default: chromium
+  output-directory:
+    description: Run output directory relative to working-directory (overrides config).
+    default: .visualguard
+  artifact-name:
+    description: Artifact name; use a distinct name for each matrix or shard.
+    default: visualguard-report
+  junit-path:
+    description: JUnit path relative to working-directory.
+    default: visualguard-junit.xml
   args:
     description: Extra arguments for `visualguard test`, e.g. "--only /pricing".
     default: ""
@@ -46,12 +58,16 @@ runs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: visualguard-playwright-${{ runner.os }}-${{ hashFiles(format('{0}/**/package.json', inputs.working-directory)) }}
+        key: visualguard-playwright-${{ runner.os }}-${{ inputs.browser }}-${{ hashFiles(format('{0}/**/package.json', inputs.working-directory)) }}
 
-    - name: Install Chromium
+    - name: Install configured browser
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: ${{ inputs.exec }} playwright install --with-deps chromium
+      env:
+        VG_ACTION_BROWSER: ${{ inputs.browser }}
+      run: |
+        case "$VG_ACTION_BROWSER" in chromium|firefox|webkit) ;; *) echo "Unsupported browser"; exit 1 ;; esac
+        ${{ inputs.exec }} playwright install --with-deps "$VG_ACTION_BROWSER"
 
     - name: Visual regression test
       id: test
@@ -59,20 +75,25 @@ runs:
       continue-on-error: true
       working-directory: ${{ inputs.working-directory }}
       env:
+        VISUALGUARD_BROWSER: ${{ inputs.browser }}
+        VISUALGUARD_OUTPUT_DIR: ${{ inputs.output-directory }}
+        VG_ACTION_JUNIT: ${{ inputs.junit-path }}
         GEMINI_API_KEY: ${{ inputs.gemini-api-key }}
         VISUALGUARD_STAGING_URL: ${{ inputs.staging-url }}
       run: |
         if [ -z "$VISUALGUARD_STAGING_URL" ]; then unset VISUALGUARD_STAGING_URL; fi
         if [ -z "$GEMINI_API_KEY" ]; then unset GEMINI_API_KEY; fi
-        ${{ inputs.exec }} visualguard test --ci --fail-on "${{ inputs.fail-on }}" --junit visualguard-junit.xml ${{ inputs.args }}
+        ${{ inputs.exec }} visualguard test --ci --fail-on "${{ inputs.fail-on }}" --junit "$VG_ACTION_JUNIT" ${{ inputs.args }}
 
     - name: Upload the report
       id: upload
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: visualguard-report
-        path: ${{ inputs.working-directory }}/.visualguard/runs/
+        name: ${{ inputs.artifact-name }}
+        path: |
+          ${{ inputs.working-directory }}/${{ inputs.output-directory }}/runs/
+          ${{ inputs.working-directory }}/${{ inputs.junit-path }}
         if-no-files-found: ignore
 
     - name: Comment on the pull request
@@ -80,6 +101,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
+        VISUALGUARD_OUTPUT_DIR: ${{ inputs.output-directory }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: ${{ inputs.exec }} visualguard comment --link "${{ steps.upload.outputs.artifact-url }}" || echo "::warning::VisualGuard could not comment on the pull request."
 

@@ -5,6 +5,7 @@ export type Part =
   | { type: "image"; data: Buffer; mimeType: "image/png" | "image/jpeg" | "image/webp" };
 
 export interface GenerateRequest<T> {
+  budget?: import("./budget.js").AIBudget;
   system: string;
   parts: Part[];
   schema: z.ZodType<T>;
@@ -26,6 +27,7 @@ export function addUsage(total: Usage, more: Usage): void {
 }
 
 export interface GenerateResult<T> {
+  modelVersion?: string;
   data: T;
   usage: Usage;
 }
@@ -35,6 +37,7 @@ export interface GenerateResult<T> {
  * schemas and validation live in the tasks, so they are shared by every provider.
  */
 export interface AIProvider {
+  readonly supportsBudget?: boolean;
   readonly name: string;
   readonly model: string;
   readonly capabilities: { vision: boolean; structuredOutput: boolean; maxImages: number };
@@ -64,6 +67,7 @@ export class AIError extends Error {
 
 /** A raw model call: returns the response text, expected to be JSON. */
 export interface CompletionRequest {
+  budget?: import("./budget.js").AIBudget;
   system: string;
   parts: Part[];
   jsonSchema: Record<string, unknown>;
@@ -73,6 +77,7 @@ export interface CompletionRequest {
 }
 
 export interface Completion {
+  modelVersion?: string;
   text: string;
   usage: Usage;
 }
@@ -103,6 +108,7 @@ export function extractJSON(text: string): unknown {
  * and one repair attempt when the answer doesn't match the schema (PLAN.md §10.6).
  */
 export abstract class BaseProvider implements AIProvider {
+  readonly supportsBudget = true;
   abstract readonly name: string;
   abstract readonly model: string;
   abstract readonly capabilities: AIProvider["capabilities"];
@@ -115,7 +121,9 @@ export abstract class BaseProvider implements AIProvider {
     let problem: string | undefined;
 
     for (let attempt = 0; attempt < 2; attempt++) {
+      request.budget?.generation();
       const completion = await this.complete({
+        budget: request.budget,
         system: request.system,
         parts: request.parts,
         jsonSchema,
@@ -123,9 +131,11 @@ export abstract class BaseProvider implements AIProvider {
         signal: request.signal,
       });
       addUsage(usage, completion.usage);
+      request.budget?.record(completion.usage);
       try {
         const parsed = request.schema.safeParse(extractJSON(completion.text));
-        if (parsed.success) return { data: parsed.data, usage };
+        if (parsed.success)
+          return { data: parsed.data, usage, modelVersion: completion.modelVersion };
         problem = parsed.error.issues
           .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
           .join("; ");
