@@ -1,7 +1,21 @@
+/**
+ * @file Browser-side stability helpers: CSS, network tracking, fonts, lazy-load scrolling,
+ * image readiness and media/page metrics.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Page, Request } from "playwright";
 import { sleep, withTimeout } from "../core/util.js";
 
-/** Common cookie-consent banners and chat widgets, hidden when `stabilize.hideDefaults` is on. */
+/**
+ * Common cookie-consent banners and chat widgets, hidden when `stabilize.hideDefaults` is on.
+ */
 export const DEFAULT_HIDE_SELECTORS = [
   "#onetrust-consent-sdk",
   "#onetrust-banner-sdk",
@@ -30,6 +44,10 @@ export const IGNORE_MASK_SELECTOR =
   '[data-visualguard-ignore]:not([data-visualguard-ignore="hide"])';
 export const IGNORE_HIDE_SELECTOR = '[data-visualguard-ignore="hide"]';
 
+/**
+ * Build CSS rules that reduce motion and hide configured elements while preserving their layout
+ * space. Joining the rules produces one stylesheet that can be injected before capture.
+ */
 export function stabilizationCSS(options: {
   disableAnimations: boolean;
   hide: readonly string[];
@@ -61,17 +79,27 @@ export function stabilizationCSS(options: {
 
 const UNTRACKED_RESOURCE_TYPES = new Set(["websocket", "eventsource"]);
 
-/** Tracks in-flight requests so we can wait for a quiet network window. */
+/**
+ * Tracks in-flight requests so we can wait for a quiet network window.
+ */
 export class NetworkTracker {
   private readonly inflight = new Set<Request>();
   private lastChange = Date.now();
 
+  /**
+   * Track relevant network requests in a Set and remember when the tracked set changes.
+   * Register finish/failure handlers so requests leave the set regardless of their outcome.
+   */
   constructor(page: Page) {
     page.on("request", (request) => {
       if (UNTRACKED_RESOURCE_TYPES.has(request.resourceType())) return;
       this.inflight.add(request);
       this.lastChange = Date.now();
     });
+    /**
+     * Remove a completed or failed request and update the quiet-period timestamp only if it was
+     * tracked. Set.delete returns whether an entry was actually removed.
+     */
     const done = (request: Request) => {
       if (this.inflight.delete(request)) this.lastChange = Date.now();
     };
@@ -80,8 +108,11 @@ export class NetworkTracker {
   }
 
   /**
-   * Waits until no request has been in flight for `quietMs`. Returns false if `timeoutMs` passes
-   * first (long-polling, analytics beacons), in which case the capture continues anyway.
+   * Waits until no request has been in flight for `quietMs`. Returns false if `timeoutMs`
+   * passes first (long-polling, analytics beacons), in which case the capture continues anyway.
+   *
+   * Poll until no tracked request has been active for the requested quiet period. Return false
+   * at the deadline so endless analytics or long polling cannot block capture forever.
    */
   async waitForQuiet(quietMs: number, timeoutMs: number): Promise<boolean> {
     const deadline = Date.now() + timeoutMs;
@@ -93,6 +124,10 @@ export class NetworkTracker {
   }
 }
 
+/**
+ * Wait for browser fonts to be ready, with a bounded fallback. Font completion is a browser
+ * Promise; withTimeout prevents it from holding the Node capture indefinitely.
+ */
 export async function waitForFonts(page: Page, timeoutMs = 5_000): Promise<void> {
   await withTimeout(
     page.evaluate(() => document.fonts?.ready.then(() => true)).catch(() => false),
@@ -101,7 +136,12 @@ export async function waitForFonts(page: Page, timeoutMs = 5_000): Promise<void>
   );
 }
 
-/** Scrolls through the page one viewport at a time so lazy content loads, then back to the top. */
+/**
+ * Scrolls through the page one viewport at a time so lazy content loads, then back to the top.
+ *
+ * Scroll down in viewport-sized steps to trigger lazy content, then return to the top. The
+ * evaluated callback runs in the browser and receives the height limit as an explicit argument.
+ */
 export async function scrollThrough(page: Page, maxHeight: number): Promise<void> {
   await page.evaluate(async (limitHeight) => {
     const step = Math.max(200, window.innerHeight);
@@ -114,6 +154,10 @@ export async function scrollThrough(page: Page, maxHeight: number): Promise<void
   }, maxHeight);
 }
 
+/**
+ * Wait for unfinished images to emit either load or error, subject to the outer timeout. An
+ * error also finishes the wait because a broken image will not later emit a successful load.
+ */
 export async function waitForImages(page: Page, timeoutMs = 5_000): Promise<void> {
   await withTimeout(
     page
@@ -136,7 +180,12 @@ export async function waitForImages(page: Page, timeoutMs = 5_000): Promise<void
   );
 }
 
-/** Pauses videos and SVG (SMIL) animations at their first frame. */
+/**
+ * Pauses videos and SVG (SMIL) animations at their first frame.
+ *
+ * Reset video and SVG animations to a stable first frame inside the page. Catch unsupported
+ * browser operations so optional stabilization does not abort capture.
+ */
 export async function pauseMedia(page: Page): Promise<void> {
   await page
     .evaluate(() => {
@@ -152,7 +201,12 @@ export async function pauseMedia(page: Page): Promise<void> {
     .catch(() => {});
 }
 
-/** Hides classic and overlay scrollbars in Chromium, which CSS alone does not do reliably. */
+/**
+ * Hides classic and overlay scrollbars in Chromium, which CSS alone does not do reliably.
+ *
+ * Use Chromium's debugging protocol to hide scrollbars that CSS alone may leave visible. Other
+ * engines skip this optional step and keep their CSS fallback.
+ */
 export async function hideScrollbars(page: Page, browserName: string): Promise<void> {
   if (browserName !== "chromium") return;
   try {
@@ -170,6 +224,10 @@ export interface PageMetrics {
   brokenImages: string[];
 }
 
+/**
+ * Measure document dimensions and identify loaded images with no decoded width. Run inside the
+ * browser because Node.js cannot directly inspect document.images or page geometry.
+ */
 export async function readPageMetrics(page: Page): Promise<PageMetrics> {
   return page.evaluate(() => {
     const root = document.documentElement;

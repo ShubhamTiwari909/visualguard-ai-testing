@@ -1,3 +1,15 @@
+/**
+ * @file Normalizes/joins base URLs, expands dynamic segments and creates safe slugs/stable
+ * short hashes.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { createHash } from "node:crypto";
 import type { Env } from "../core/types.js";
 import { ConfigError } from "../core/errors.js";
@@ -11,7 +23,12 @@ import type { RouteInput, RouteObject } from "./schema.js";
  * hash are kept.
  */
 
-/** Parses a base URL and makes its path end in "/" so it acts as a prefix. */
+/**
+ * Parses a base URL and makes its path end in "/" so it acts as a prefix.
+ *
+ * Validate an HTTP(S) base, remove its fragment and ensure its path ends in /. That trailing
+ * slash makes URL resolution preserve a configured application prefix.
+ */
 export function normalizeBaseURL(input: string): URL {
   let url: URL;
   try {
@@ -35,6 +52,10 @@ interface SplitRoute {
   hash: string;
 }
 
+/**
+ * Separate a route into pathname, query and fragment without treating it as a full URL. Split
+ * the fragment first so a ? inside it is not mistaken for a query.
+ */
 function splitRoute(route: string): SplitRoute {
   const hashIndex = route.indexOf("#");
   const hash = hashIndex >= 0 ? route.slice(hashIndex) : "";
@@ -50,8 +71,13 @@ function splitRoute(route: string): SplitRoute {
 /**
  * Joins a route onto a base URL.
  *
- * `new URL("/pricing", "https://example.com/app/")` would drop the "/app" prefix, so the route's
- * leading slash is stripped and it is resolved relative to the base (which ends in "/").
+ * `new URL("/pricing", "https://example.com/app/")` would drop the "/app" prefix, so the
+ * route's leading slash is stripped and it is resolved relative to the base (which ends in
+ * "/").
+ *
+ * Join a route to a base while preserving the base path prefix and merging query parameters.
+ * Remove the route's leading slash before URL resolution because an absolute slash would
+ * discard that prefix.
  */
 export function joinURL(base: string | URL, route: string): string {
   if (!route.startsWith("/")) {
@@ -77,11 +103,20 @@ export function joinURL(base: string | URL, route: string): string {
 
 const DYNAMIC_SEGMENT = /\[\[?(\.\.\.)?([^\]]+?)\]?\]/g;
 
+/**
+ * Detect a bracketed route parameter such as [slug]. This tells expansion whether concrete
+ * parameter values are required.
+ */
 export function isDynamicRoute(path: string): boolean {
   return /\[[^\]]+\]/.test(path);
 }
 
-/** Replaces `[slug]`, `[...slug]` and `[[...slug]]` segments with param values. */
+/**
+ * Replaces `[slug]`, `[...slug]` and `[[...slug]]` segments with param values.
+ *
+ * Replace route parameter segments with encoded values, including catch-all and optional
+ * catch-all forms. Normalize trailing slashes left by empty optional segments.
+ */
 export function applyParams(path: string, params: Record<string, string | string[]>): string {
   const result = path.replace(
     DYNAMIC_SEGMENT,
@@ -100,7 +135,12 @@ export function applyParams(path: string, params: Record<string, string | string
   return result.length > 1 ? result.replace(/\/+$/, "") || "/" : result;
 }
 
-/** Turns a route into a file-system and URL-safe slug: "/" -> "index", "/blog/a" -> "blog_a". */
+/**
+ * Turns a route into a file-system and URL-safe slug: "/" -> "index", "/blog/a" -> "blog_a".
+ *
+ * Create a bounded filesystem-friendly name for a route. Add a short hash for query/fragment
+ * variants so different page inputs do not share artifact filenames.
+ */
 export function routeSlug(route: string): string {
   const { path, query, hash } = splitRoute(route);
   const trimmed = path.replace(/^\/+|\/+$/g, "");
@@ -119,6 +159,10 @@ export function routeSlug(route: string): string {
   return slug;
 }
 
+/**
+ * Decode a URL segment when its percent encoding is valid. Return the original text on invalid
+ * encoding instead of aborting route naming.
+ */
 function decodeSafe(segment: string): string {
   try {
     return decodeURIComponent(segment);
@@ -127,12 +171,18 @@ function decodeSafe(segment: string): string {
   }
 }
 
+/**
+ * Hash a string and keep a short hexadecimal prefix for stable identifiers. This names
+ * artifacts; it is not used to authenticate requests.
+ */
 export function shortHash(value: string, length = 6): string {
   return createHash("sha1").update(value).digest("hex").slice(0, length);
 }
 
 export interface ExpandedRoute {
-  /** The route as shown to users, e.g. "/blog/hello-world". */
+  /**
+   * The route as shown to users, e.g. "/blog/hello-world".
+   */
   route: string;
   name: string;
   paths: Record<Env, string>;
@@ -143,16 +193,28 @@ export interface ExpandedRoute {
 
 export interface ExpandRoutesResult {
   routes: ExpandedRoute[];
-  /** Dynamic routes skipped because they have no params. */
+  /**
+   * Dynamic routes skipped because they have no params.
+   */
   skipped: string[];
 }
 
-/** Expands route inputs: normalises strings, applies params, drops duplicates. */
+/**
+ * Expands route inputs: normalises strings, applies params, drops duplicates.
+ *
+ * Normalize route inputs, expand supplied parameters and retain per-environment
+ * paths/masks/hides. Return unresolved dynamic paths separately so callers can explain what was
+ * skipped.
+ */
 export function expandRoutes(inputs: readonly RouteInput[]): ExpandRoutesResult {
   const routes: ExpandedRoute[] = [];
   const skipped: string[] = [];
   const seen = new Set<string>();
 
+  /**
+   * Add a route only when its production/staging path pair has not been seen. The separator
+   * keeps the two path values distinct in the deduplication key.
+   */
   const push = (route: ExpandedRoute) => {
     const key = `${route.paths.production}\u0000${route.paths.staging}`;
     if (seen.has(key)) return;

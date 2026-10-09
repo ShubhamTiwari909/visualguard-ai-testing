@@ -1,3 +1,14 @@
+/**
+ * @file Tests acceptance/report APIs, escaped Markdown, JUnit, webhook/job summary and GitHub
+ * integration output.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -49,6 +60,10 @@ afterAll(async () => {
   await staging?.close();
 });
 
+/**
+ * Build a route-to-status lookup from manifest jobs using Object.fromEntries. Assertions can
+ * then name a route directly without depending on job array order.
+ */
 const statuses = (run: RunManifest) =>
   Object.fromEntries(run.jobs.map((job) => [job.route, job.status]));
 
@@ -149,6 +164,10 @@ describe("GitHub integration", () => {
   let api: Server | undefined;
   afterEach(() => new Promise<void>((resolve) => (api ? api.close(() => resolve()) : resolve())));
 
+  /**
+   * Start a localhost GitHub API stand-in and record its calls/comments. This exercises
+   * request/update behavior without posting to an actual repository.
+   */
   async function fakeGitHub() {
     const comments: Array<{ id: number; body: string }> = [];
     const calls: string[] = [];
@@ -157,6 +176,10 @@ describe("GitHub integration", () => {
       request.on("data", (chunk) => (raw += chunk));
       request.on("end", () => {
         calls.push(`${request.method} ${request.url}`);
+        /**
+         * Send a JSON response with the supplied status from the fake API. End the response so
+         * the fetch caller knows its body is complete.
+         */
         const reply = (status: number, body: unknown) =>
           response
             .writeHead(status, { "content-type": "application/json" })

@@ -1,3 +1,15 @@
+/**
+ * @file Detects framework/package manager and updates gitignore, package scripts/env files;
+ * suggests install/exec commands.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -8,7 +20,9 @@ export type PackageManager = "pnpm" | "yarn" | "npm" | "bun";
 
 export interface ProjectInfo {
   framework: Framework;
-  /** Next.js router(s) in use. */
+  /**
+   * Next.js router(s) in use.
+   */
   router?: "app" | "pages" | "app+pages";
   packageManager: PackageManager;
   hasPackageJson: boolean;
@@ -28,6 +42,10 @@ interface PackageJson {
   devDependencies?: Record<string, string>;
 }
 
+/**
+ * Read a project package.json when it exists and parses. Return undefined for missing/broken
+ * data so detection can still use filesystem clues.
+ */
 function readPackageJson(cwd: string): PackageJson | undefined {
   const path = join(cwd, "package.json");
   if (!existsSync(path)) return undefined;
@@ -38,6 +56,10 @@ function readPackageJson(cwd: string): PackageJson | undefined {
   }
 }
 
+/**
+ * Choose a package manager from lockfiles, then the invoking user agent, then npm. Prefer
+ * concrete project files over a default assumption.
+ */
 export function detectPackageManager(
   cwd: string,
   env: NodeJS.ProcessEnv = process.env,
@@ -53,6 +75,10 @@ export function detectPackageManager(
   return "npm";
 }
 
+/**
+ * Resolve Playwright relative to the target project's package.json. createRequire uses that
+ * location so detection does not accidentally report this workspace's installation.
+ */
 export function installedPlaywrightVersion(cwd: string): string | undefined {
   try {
     const require = createRequire(join(cwd, "package.json"));
@@ -62,6 +88,10 @@ export function installedPlaywrightVersion(cwd: string): string | undefined {
   }
 }
 
+/**
+ * Combine dependency, directory and package-manager clues into setup metadata. The result
+ * guides prompts/templates without executing the application.
+ */
 export function detectProject(cwd: string): ProjectInfo {
   const pkg = readPackageJson(cwd);
   const deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
@@ -85,7 +115,12 @@ export function detectProject(cwd: string): ProjectInfo {
   };
 }
 
-/** e.g. `pnpm add -D playwright`. */
+/**
+ * e.g. `pnpm add -D playwright`.
+ *
+ * Return an executable and argument list for installing development dependencies with the
+ * chosen manager. Returning an array lets process callers avoid building a shell string.
+ */
 export function addDevDependencyCommand(manager: PackageManager, packages: string[]): string[] {
   switch (manager) {
     case "pnpm":
@@ -99,7 +134,12 @@ export function addDevDependencyCommand(manager: PackageManager, packages: strin
   }
 }
 
-/** e.g. `pnpm exec playwright install chromium`. */
+/**
+ * e.g. `pnpm exec playwright install chromium`.
+ *
+ * Return the package-manager-specific command for running an installed tool. Different managers
+ * use exec, npx or bunx conventions.
+ */
 export function execCommand(manager: PackageManager, command: string[]): string[] {
   switch (manager) {
     case "pnpm":
@@ -113,7 +153,12 @@ export function execCommand(manager: PackageManager, command: string[]): string[
   }
 }
 
-/** Appends missing entries to .gitignore. Returns the entries that were added. */
+/**
+ * Appends missing entries to .gitignore. Returns the entries that were added.
+ *
+ * Append only missing ignore entries and return what was added. Preserve existing content and
+ * account for a missing final newline.
+ */
 export function ensureGitignore(cwd: string, entries: string[]): string[] {
   const path = join(cwd, ".gitignore");
   const current = existsSync(path) ? readFileSync(path, "utf8") : "";
@@ -127,7 +172,12 @@ export function ensureGitignore(cwd: string, entries: string[]): string[] {
   return missing;
 }
 
-/** Adds a package.json script unless one with that name exists. Returns true if added. */
+/**
+ * Adds a package.json script unless one with that name exists. Returns true if added.
+ *
+ * Add a named package.json script only when the name is unused. Preserve detected indentation
+ * and report whether the file was changed.
+ */
 export function addPackageScript(cwd: string, name: string, command: string): boolean {
   const path = join(cwd, "package.json");
   if (!existsSync(path)) return false;
@@ -140,7 +190,12 @@ export function addPackageScript(cwd: string, name: string, command: string): bo
   return true;
 }
 
-/** Sets KEY=value in an env file, replacing an existing line for KEY. */
+/**
+ * Sets KEY=value in an env file, replacing an existing line for KEY.
+ *
+ * Replace or append one KEY=value line in an environment file. Escape the key for matching and
+ * preserve unrelated settings.
+ */
 export function setEnvVar(path: string, key: string, value: string): void {
   const current = existsSync(path) ? readFileSync(path, "utf8") : "";
   const line = `${key}=${value}`;

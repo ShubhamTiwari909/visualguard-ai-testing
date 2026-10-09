@@ -29,6 +29,7 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 - [Programmatic API and reporters](#programmatic-api-and-reporters)
 - [Command reference](#command-reference)
 - [Try the local example](#try-the-local-example)
+- [Package architecture](#package-architecture)
 - [Development and evaluation](#development-and-evaluation)
 - [Compatibility and troubleshooting](#compatibility-and-troubleshooting)
 
@@ -535,6 +536,74 @@ These class changes exercise deterministic repairs without a key. Plain `fix` le
 
 For a static demonstration, `node scripts/serve-fixtures.mjs` serves production on `:4100` and staging on `:4101`. In another terminal at the repository root, run `node packages/visualguard/dist/cli.js http://127.0.0.1:4100/alignment http://127.0.0.1:4101/alignment --no-ai` after building the package.
 
+## Package architecture
+
+The CLI enters through `src/cli/main.ts`, and `core/run.ts` coordinates the comparison pipeline. Paths in this section are relative to `packages/visualguard/`.
+
+### Entry points
+
+| Entry                                | Source file                                                             | What it does                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| CLI: `npx visualguard ...`           | [src/cli/main.ts](packages/visualguard/src/cli/main.ts)                 | Parses arguments through `cli/program.ts`, dispatches commands and handles process errors/exit codes. |
+| API: `import ... from "visualguard"` | [src/index.ts](packages/visualguard/src/index.ts)                       | Exports the public API; your application calls `createRun(...).start()` to execute it.                |
+| Playwright: `visualguard/playwright` | [src/playwright/index.ts](packages/visualguard/src/playwright/index.ts) | Extends Playwright fixtures and checks a test-owned page against production or baselines.             |
+| Diff worker                          | [src/diff/worker.ts](packages/visualguard/src/diff/worker.ts)           | Receives image tasks in the built worker pool and returns computed diffs.                             |
+| Report browser app                   | [report-app/src/main.tsx](packages/visualguard/report-app/src/main.tsx) | Reads embedded manifest data and mounts the React report.                                             |
+
+`package.json` maps CLI/import names to built entry files. `tsup.config.ts` builds the Node entries; `report-app/vite.config.ts` builds the browser report assets.
+
+### How the files work together
+
+This diagram shows work and data flow. It groups related files; it is not an exhaustive import graph.
+
+```mermaid
+flowchart TD
+    CLI["CLI entry: src/cli/main.ts"] --> Program["cli/program.ts"]
+    Program --> Commands["cli/commands/*"]
+    Commands --> Config["config/*: load, validate, resolve"]
+    Config --> Run["core/run.ts: orchestrate jobs"]
+    API["API entry: src/index.ts"] --> Run
+
+    Run --> Capture["capture/*: screenshots, DOM, health"]
+    Fixture["Fixture entry: src/playwright/index.ts"] --> Capture
+    Capture --> Diff["diff/runner.ts"]
+    Diff --> Worker["Worker entry: diff/worker.ts"]
+    Worker --> Compute["diff/compute.ts: pixels, noise, regions"]
+    Compute --> Policy["core/comparison.ts + mapping/*"]
+    Policy --> AI["ai/*: optional interpretation"]
+    AI --> Acceptance["core/accepted.ts"]
+    Acceptance --> Output["Manifest, artifacts and reporters"]
+
+    Output --> UI["Browser entry: report-app/src/main.tsx"]
+    UI --> App["App → JobDetail → Compare / actions"]
+
+    Commands --> Fix["fixer/fix.ts: propose and apply"]
+    Fix --> Verify["fixer/verify.ts: check or rollback"]
+    Verify --> Run
+```
+
+`capture/` gathers evidence, `diff/` identifies changed pixels, and `mapping/` explains those regions using DOM changes. `core/comparison.ts` combines visual classification with independent checks; `ai/` can add interpretation, and `core/accepted.ts` applies reviewer acceptance. Reporter callbacks present and export the stored results.
+
+The fixture calls shared helpers directly rather than executing the entire CLI loop. Source-based diffing can also call `computeDiff` inline when the built worker is unavailable. The report's browser app calls the local server for accept/fix actions; it does not directly execute Node repair code. Repairs re-enter the capture/comparison pipeline for deterministic verification.
+
+### Explore every file
+
+New to JavaScript or TypeScript? Start with [Reading the code](docs/READING-THE-CODE.md) for the language patterns, data formats and a guided path through a comparison. Source files include responsibility headers and beginner-friendly function comments, including the small helpers and test fixtures.
+
+- [Complete architecture guide](docs/PACKAGE-ARCHITECTURE.md): diagrams, reading order and all 149 package files, with each file's purpose, exported symbols, dependencies and callers.
+- [Full Mermaid dependency graph](docs/PACKAGE-DEPENDENCIES.mmd): every package file and its local connections, grouped by directory.
+- [Dependency data](docs/PACKAGE-DEPENDENCIES.json): machine-readable edges, relationship kinds and source line references.
+
+The inventory excludes generated bundles, installed dependencies and temporary artifacts. It distinguishes type-only imports from runtime/build relationships. Start reading `cli/main.ts` → `cli/program.ts` → `cli/commands/test.ts` → `core/run.ts`; then follow the capture, diff, AI, repair or report module relevant to your change.
+
+After changing files/imports, refresh the map from the repository root:
+
+```bash
+node scripts/package-map.mjs
+```
+
+The helper scans source syntax without running browsers, models or Git mutations. Add descriptions for new package files to its `roles` map.
+
 ## Development and evaluation
 
 Requires the pnpm version declared in the root manifest (currently pnpm 9):
@@ -590,7 +659,7 @@ Evaluation saves results under `evals/results/`. Applicable cases come from labe
 | `evals/`                | Labels, metrics, quality gates and saved results.     |
 | `scripts/`              | Fixture servers and package smoke utilities.          |
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) for architecture and contribution guidance. Releases use Changesets; the current reliability changeset requests a major bump. Versioning or publishing requires an explicit release action.
+Read the [package architecture map](docs/PACKAGE-ARCHITECTURE.md) for entry points, execution diagrams and every file's role and connections. [CONTRIBUTING.md](CONTRIBUTING.md) covers contribution guidance. Releases use Changesets; the current reliability changeset requests a major bump. Versioning or publishing requires an explicit release action.
 
 ## Compatibility and troubleshooting
 

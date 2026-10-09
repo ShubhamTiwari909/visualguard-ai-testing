@@ -1,14 +1,34 @@
+/**
+ * @file Matches production and staging DOM trees, including stable keys, sibling changes and
+ * moved elements.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { DomIndex } from "./dom.js";
 
 export interface TreeMatch {
-  /** production index → staging index */
+  /**
+   * production index → staging index
+   */
   forward: Map<number, number>;
-  /** staging index → production index */
+  /**
+   * staging index → production index
+   */
   backward: Map<number, number>;
 }
 
 const LCS_LIMIT = 400;
 
+/**
+ * Build a compact tag/key signature for sibling matching. A stable key makes otherwise similar
+ * elements distinguishable.
+ */
 function signature(dom: DomIndex, index: number): string {
   const node = dom.node(index);
   return `${node.tag}|${node.key ?? ""}`;
@@ -17,6 +37,9 @@ function signature(dom: DomIndex, index: number): string {
 /**
  * How well two siblings correspond: 0 means they can't match (different tag or key); otherwise
  * matching class and text make the pairing more likely.
+ *
+ * Score how plausibly two nodes correspond, rejecting incompatible tags/keys. Matching stable
+ * keys, classes and text increase the score.
  */
 function weight(production: DomIndex, a: number, staging: DomIndex, b: number): number {
   const nodeA = production.node(a);
@@ -29,7 +52,13 @@ function weight(production: DomIndex, a: number, staging: DomIndex, b: number): 
   return score;
 }
 
-/** Weighted longest common subsequence of two child lists; returns matched index pairs. */
+/**
+ * Weighted longest common subsequence of two child lists; returns matched index pairs.
+ *
+ * Find the highest-scoring in-order matching of two child lists using dynamic programming. The
+ * table stores the best remaining score at each pair of positions, then a second walk
+ * reconstructs matched indexes.
+ */
 function align(
   production: DomIndex,
   a: number[],
@@ -38,6 +67,8 @@ function align(
 ): Array<[number, number]> {
   const n = a.length;
   const m = b.length;
+  // table[i][j] stores the best matching score for the suffixes beginning at i and j.
+  // An extra row/column of zeros handles empty suffixes without special edge branches.
   const table = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
   const weights = Array.from({ length: n }, (_, i) =>
     b.map((_, j) => weight(production, a[i]!, staging, b[j]!)),
@@ -70,7 +101,12 @@ function align(
   return pairs;
 }
 
-/** Greedy in-order matching for very long child lists. */
+/**
+ * Greedy in-order matching for very long child lists.
+ *
+ * Match equal signatures in order without building a quadratic table. This cheaper fallback
+ * handles very long child lists while preserving sibling order.
+ */
 function greedy(a: string[], b: string[]): Array<[number, number]> {
   const pairs: Array<[number, number]> = [];
   let j = 0;
@@ -87,11 +123,20 @@ function greedy(a: string[], b: string[]): Array<[number, number]> {
 /**
  * Matches elements between the two snapshots (PLAN.md §9.2). Elements with the same test id or
  * stable id match first, wherever they are; then children of matched parents are aligned like
- * lines in a text diff (LCS on tag + key), so an inserted banner doesn't shift every match after it.
+ * lines in a text diff (LCS on tag + key), so an inserted banner doesn't shift every match
+ * after it.
+ *
+ * Pair unique stable keys first, then align children of paired parents to handle
+ * insertions/removals. Return forward and backward Maps so either environment can find its
+ * counterpart.
  */
 export function matchTrees(production: DomIndex, staging: DomIndex): TreeMatch {
   const forward = new Map<number, number>();
   const backward = new Map<number, number>();
+  /**
+   * Record a one-to-one node match only when neither endpoint is already paired. Updating both
+   * Maps preserves the correspondence in both directions.
+   */
   const pair = (a: number, b: number) => {
     if (forward.has(a) || backward.has(b)) return false;
     forward.set(a, b);
@@ -100,6 +145,10 @@ export function matchTrees(production: DomIndex, staging: DomIndex): TreeMatch {
   };
 
   // 1. Unique keys present on both sides.
+  /**
+   * Group node indexes by stable key. Keeping an array for each key reveals duplicates, which
+   * should not be treated as unambiguous identities.
+   */
   const keyed = (dom: DomIndex) => {
     const byKey = new Map<string, number[]>();
     for (const node of dom.nodes) {

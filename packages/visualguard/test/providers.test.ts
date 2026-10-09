@@ -1,3 +1,14 @@
+/**
+ * @file Tests Gemini/Ollama transport shape, retries, settings fallback, quota handling and
+ * usage with mocked services.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
@@ -17,6 +28,10 @@ afterEach(
   () => new Promise<void>((resolve) => (server ? server.close(() => resolve()) : resolve())),
 );
 
+/**
+ * Start a local provider endpoint, capture request data and pass it to the test's response
+ * handler. This exercises real HTTP encoding/retries without calling Gemini or Ollama services.
+ */
 async function fake(
   handler: (request: Received) => { status?: number; body: unknown },
 ): Promise<{ url: string; received: Received[] }> {

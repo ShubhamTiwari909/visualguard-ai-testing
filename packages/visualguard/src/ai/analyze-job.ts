@@ -1,3 +1,15 @@
+/**
+ * @file Per-run/test analysis session: request caching, budget/provider fallback and guarded
+ * application of AI status changes.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DomSnapshot } from "../capture/dom-snapshot.js";
@@ -30,17 +42,29 @@ export interface AnalysisSettings {
   maxCallsPerRun: number;
 }
 
-/** Shared across a run: provider, cache, call budget and token usage. */
+/**
+ * Shared across a run: provider, cache, call budget and token usage.
+ */
 export class AnalysisSession {
   calls = 0;
   readonly budget: AIBudget;
+  /**
+   * Expose the token totals held by the shared AI budget. This getter returns the live ledger,
+   * so callers should treat the result as accounting data rather than replace it.
+   */
   get usage() {
     return this.budget.usage;
   }
   private readonly cache: AnalysisCache | undefined;
-  /** Set when the provider can't answer for the rest of the run (quota, bad key). */
+  /**
+   * Set when the provider can't answer for the rest of the run (quota, bad key).
+   */
   private stopped: string | undefined;
 
+  /**
+   * Create a shared budget and, when a cache directory is configured, a disk cache for this
+   * analyzer. The timeout/cancellation signal applies to the whole analysis operation.
+   */
   constructor(
     readonly provider: AIProvider,
     readonly settings: AnalysisSettings,
@@ -52,10 +76,19 @@ export class AnalysisSession {
       : undefined;
   }
 
+  /**
+   * Return the remaining number of job analyses allowed in this run. This call limit is
+   * separate from the generation, network and token limits in AIBudget.
+   */
   get budgetLeft(): number {
     return this.settings.maxCallsPerRun - this.calls;
   }
 
+  /**
+   * Analyze one job using cached evidence or the configured provider, then return an updated
+   * job object. Keep the deterministic base status and replace old AI findings so repeated
+   * analysis cannot silently weaken a hard failure or duplicate messages.
+   */
   async analyze(job: JobResult, runDir: string, mode: RunManifest["mode"]): Promise<JobResult> {
     const base = job.baseStatus ?? job.status;
     const updated: JobResult = {
@@ -137,6 +170,10 @@ export class AnalysisSession {
 /**
  * Jobs that differ and have something to show the model. With `scope: "uncertain"`, jobs the
  * heuristics already marked as regressions are skipped: the model can't change that status.
+ *
+ * Decide whether this job has usable visual evidence and is eligible for the requested AI
+ * scope. Returning false avoids spending model calls on accepted jobs, capture errors or images
+ * with no changed pixels.
  */
 export function needsAnalysis(job: JobResult, scope: "uncertain" | "all" = "all"): boolean {
   if (scope === "uncertain" && (job.baseStatus ?? job.status) === "regression") return false;
@@ -152,6 +189,10 @@ export function needsAnalysis(job: JobResult, scope: "uncertain" | "all" = "all"
 /**
  * Combines the heuristic status with the model's classification (PLAN.md §10.5). Hard failures
  * found without AI (findings with severity "regression") are never downgraded (principle 8).
+ *
+ * Combine the model answer with deterministic findings and the configured AI policy. Advisory
+ * mode keeps the base verdict; even decision-making AI cannot downgrade a deterministic
+ * regression.
  */
 export function statusWithAnalysis(
   base: Status,
@@ -180,11 +221,19 @@ export function statusWithAnalysis(
 
 const AI_FINDING = /^AI (analysis failed|budget reached|skipped)/;
 
+/**
+ * Remove messages created by an earlier AI attempt while retaining other findings. Return
+ * undefined for an empty result to match the optional findings field used elsewhere.
+ */
 function withoutAIFindings(findings: Finding[] | undefined): Finding[] | undefined {
   const kept = findings?.filter((finding) => !AI_FINDING.test(finding.message));
   return kept && kept.length > 0 ? kept : undefined;
 }
 
+/**
+ * Return a new job with an informational explanation and no analysis result. This is how
+ * skipped or failed AI work stays visible without mutating the original job.
+ */
 function addFinding(job: JobResult, status: Status, message: string): JobResult {
   return {
     ...job,
@@ -194,6 +243,11 @@ function addFinding(job: JobResult, status: Status, message: string): JobResult 
   };
 }
 
+/**
+ * Collect selectors already present in regions and saved DOM snapshots into a Set. The Set
+ * removes duplicates and gives the AI guardrail a list of selectors supported by captured
+ * evidence.
+ */
 function knownSelectors(job: JobResult, runDir: string): Set<string> {
   const selectors = new Set<string>();
   for (const region of job.regions) {

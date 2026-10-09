@@ -1,3 +1,15 @@
+/**
+ * @file Re-analyzes saved run artifacts, restores accumulated usage and updates the
+ * manifest/report.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { restoreRunUsage, persistRunUsage } from "../../ai/budget.js";
 import { join } from "node:path";
 import { Option, type Command } from "commander";
@@ -34,6 +46,11 @@ export interface AnalyzeFlags {
   json?: boolean;
 }
 
+/**
+ * Register the analyze command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerAnalyzeCommand(program: Command): void {
   program
     .command("analyze")
@@ -61,7 +78,9 @@ export interface ReanalyzeOptions {
   runId?: string;
   useCache?: boolean;
   only?: string[];
-  /** Called as each job finishes. */
+  /**
+   * Called as each job finishes.
+   */
   onJob?: (job: JobResult) => void;
 }
 
@@ -74,7 +93,12 @@ export interface ReanalyzeResult {
 
 /**
  * Runs AI analysis on a finished run (PLAN.md §10, `visualguard analyze`): every job that
- * differs is analyzed from its base status, then the manifest, run index and report are updated.
+ * differs is analyzed from its base status, then the manifest, run index and report are
+ * updated.
+ *
+ * Revisit saved screenshot evidence without opening a browser again. Restore the run's usage,
+ * analyze eligible jobs from their base verdicts and rewrite the manifest, index and HTML
+ * report.
  */
 export async function reanalyzeRun(
   config: ResolvedConfig,
@@ -128,6 +152,10 @@ export async function reanalyzeRun(
   return { manifest: updated, runDir: dir, analyzed: targets.length, calls: session.calls };
 }
 
+/**
+ * Resolve CLI configuration, select the saved run and run analysis. Return the resulting exit
+ * code so the caller can set process.exitCode without abruptly terminating pending output.
+ */
 export async function runAnalyzeCommand(flags: AnalyzeFlags): Promise<number> {
   const config = await loadResolvedConfig({
     config: flags.config,
@@ -148,6 +176,10 @@ export async function runAnalyzeCommand(flags: AnalyzeFlags): Promise<number> {
   const colors = pc.createColors(
     !usePlainOutput(flags.ci, out as NodeJS.WriteStream) && pc.isColorSupported && !isCI(),
   );
+  /**
+   * Write progress to the selected output stream. With JSON output, progress belongs on stderr
+   * so stdout remains machine-readable.
+   */
   const write = (line = "") => out.write(`${line}\n`);
   const count = before.jobs.filter(
     (job) => needsAnalysis(job) && (!flags.only?.length || matchesAny(job.route, flags.only)),
@@ -163,6 +195,10 @@ export async function runAnalyzeCommand(flags: AnalyzeFlags): Promise<number> {
     runId: flags.run,
     useCache: flags.cache,
     only: flags.only,
+    /**
+     * Print each reanalyzed job as its result arrives. This callback presents the result; the
+     * analysis session determines its status.
+     */
     onJob: (job) => {
       const color = statusColor(colors, job.status);
       const detail = job.analysis

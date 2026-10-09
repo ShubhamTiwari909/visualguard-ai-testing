@@ -1,3 +1,15 @@
+/**
+ * @file Deterministic visual classifier: explains regions, finds removed
+ * controls/readability/overlap problems and filters tiny noise.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { DomSnapshot } from "../capture/dom-snapshot.js";
 import type { DiffResult, Finding, RegionResult, Status } from "../core/types.js";
 import { describeDeltas } from "./describe.js";
@@ -6,10 +18,14 @@ import { textContrast } from "./contrast.js";
 import { area, DomIndex, intersection, shiftBox } from "./dom.js";
 import { matchTrees, type TreeMatch } from "./match.js";
 
-/** Elements whose disappearance breaks a user flow. */
+/**
+ * Elements whose disappearance breaks a user flow.
+ */
 const INTERACTIVE = new Set(["a", "button", "input", "select", "textarea", "form", "label"]);
 
-/** Differences this small, with no DOM change behind them, are treated as rendering noise. */
+/**
+ * Differences this small, with no DOM change behind them, are treated as rendering noise.
+ */
 const NOISE_MAX_RATIO = 0.001;
 const NOISE_MAX_REGION_AREA = 64 * 64;
 
@@ -21,12 +37,18 @@ export interface ClassifyInput {
 }
 
 export interface ClassifyOutput {
-  /** Status from the visual comparison alone; health findings are applied on top. */
+  /**
+   * Status from the visual comparison alone; health findings are applied on top.
+   */
   status: Extract<Status, "pass" | "review" | "regression">;
   findings: Finding[];
   regions: RegionResult[];
 }
 
+/**
+ * Create a structured finding attributed to deterministic heuristics. Parentheses around the
+ * object let an arrow function return it directly instead of opening a function block.
+ */
 const finding = (severity: Finding["severity"], message: string): Finding => ({
   severity,
   message,
@@ -37,6 +59,9 @@ const finding = (severity: Finding["severity"], message: string): Finding => ({
  * Explains a job's differences without AI (PLAN.md §9 and §10.4): maps every region to DOM
  * deltas, describes it, detects removed controls, new overlaps and layout shifts, and filters
  * rendering noise.
+ *
+ * Explain changed regions using matched DOM snapshots and deterministic heuristics. Identify
+ * layout, presence, overlap and readability evidence before choosing pass/review/regression.
  */
 export function classifyJob(input: ClassifyInput): ClassifyOutput {
   const { diff } = input;
@@ -140,6 +165,10 @@ export function classifyJob(input: ClassifyInput): ClassifyOutput {
   return { status, findings, regions };
 }
 
+/**
+ * Describe the direction and distance of a detected vertical shift, optionally including its
+ * suspected cause. Positive deltaY means content moved down in staging.
+ */
 function describeShift(
   shift: { fromY: number; deltaY: number },
   cause: string | undefined,
@@ -150,8 +179,11 @@ function describeShift(
 }
 
 /**
- * Pairs of visible elements that overlap on staging but not on production, where at least one of
- * them changed. Ancestors and descendants are excluded (they overlap by definition).
+ * Pairs of visible elements that overlap on staging but not on production, where at least one
+ * of them changed. Ancestors and descendants are excluded (they overlap by definition).
+ *
+ * Find newly overlapping visible peers in changed areas after matching the snapshots. Exclude
+ * ancestor/descendant pairs because their boxes naturally overlap.
  */
 function newOverlaps(
   production: DomIndex,
@@ -163,6 +195,10 @@ function newOverlaps(
   const changedSelectors = new Set(
     regions.flatMap((region) => region.deltas.map((delta) => delta.selector)),
   );
+  /**
+   * Check whether a box intersects at least one changed region. This local predicate restricts
+   * overlap investigation to relevant screenshot areas.
+   */
   const inRegions = (box: { x: number; y: number; width: number; height: number }) =>
     regions.some((region) => intersection(box, region.box) > 0);
 
@@ -200,12 +236,17 @@ function newOverlaps(
   return messages;
 }
 
-/** Minimum contrast for text (WCAG AA for large text); below it, text is hard to read. */
+/**
+ * Minimum contrast for text (WCAG AA for large text); below it, text is hard to read.
+ */
 const MIN_CONTRAST = 3;
 
 /**
  * Text in the changed regions whose contrast dropped below 3:1, or that is newly cut off by an
  * overflow-hidden box.
+ *
+ * Look for newly poor text contrast or newly clipped text in changed regions. Limit the
+ * returned messages so one page cannot flood the report with repeated symptoms.
  */
 function readabilityProblems(
   production: DomIndex,

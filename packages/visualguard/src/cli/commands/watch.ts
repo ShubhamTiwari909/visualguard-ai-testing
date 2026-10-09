@@ -1,3 +1,15 @@
+/**
+ * @file Watches source files, traces page import relationships and re-runs affected routes
+ * against a dev server.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, watch, type FSWatcher } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import type { Command } from "commander";
@@ -19,7 +31,12 @@ export interface WatchFlags extends ConfigFlags {
   ai?: boolean;
 }
 
-/** Top-level directories to watch, from glob patterns like "app/**" or "src/components/**". */
+/**
+ * Top-level directories to watch, from glob patterns like "app/**" or "src/components/**".
+ *
+ * Find existing fixed directory prefixes of include globs. Watching these roots avoids trying
+ * to watch wildcard text as though it were a filesystem path.
+ */
 export function watchRoots(cwd: string, include: readonly string[]): string[] {
   const roots = new Set<string>();
   for (const pattern of include) {
@@ -35,7 +52,12 @@ export function watchRoots(cwd: string, include: readonly string[]): string[] {
   return [...roots];
 }
 
-/** Reverse import graph: file → files that import it (project-relative paths). */
+/**
+ * Reverse import graph: file → files that import it (project-relative paths).
+ *
+ * Build a reverse dependency map from a source file to the files that import it. Reverse edges
+ * allow a changed shared component to be traced back toward route pages.
+ */
 export function importers(cwd: string, include: readonly string[]): Map<string, Set<string>> {
   const files = listSourceFiles(cwd, include);
   const byPath = new Map(files.map((file) => [file.path, file]));
@@ -52,8 +74,12 @@ export function importers(cwd: string, include: readonly string[]): Map<string, 
 
 /**
  * Routes affected by changed files (PLAN.md §14.1): a route is affected when its page file, or
- * anything the page imports (a few levels deep), changed. Returns undefined when a change can't be
- * traced to a page (global CSS, config), meaning "re-test everything".
+ * anything the page imports (a few levels deep), changed. Returns undefined when a change can't
+ * be traced to a page (global CSS, config), meaning "re-test everything".
+ *
+ * Walk importer edges from changed files to route pages and return affected routes. Return
+ * undefined when a change cannot be safely localized, instructing the watcher to test every
+ * route.
  */
 export function affectedRoutes(
   changed: readonly string[],
@@ -83,6 +109,11 @@ export function affectedRoutes(
   return [...routes];
 }
 
+/**
+ * Register the watch command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerWatchCommand(program: Command): void {
   const command = program
     .command("watch")
@@ -99,6 +130,11 @@ export function registerWatchCommand(program: Command): void {
   });
 }
 
+/**
+ * Watch source roots and coordinate repeated runs against the local server. Track pending
+ * changes separately from the active run so edits arriving during capture are handled
+ * afterward.
+ */
 export async function runWatch(routes: string[], flags: WatchFlags): Promise<void> {
   const config: ResolvedConfig = await loadResolvedConfig({
     ...flags,
@@ -119,6 +155,10 @@ export async function runWatch(routes: string[], flags: WatchFlags): Promise<voi
       : undefined;
   await server?.ensure();
 
+  /**
+   * Write one timestamp/progress line to stdout. A default empty string supports blank
+   * separator lines.
+   */
   const write = (line = "") => process.stdout.write(`${line}\n`);
   const allRoutes = (await resolveRoutes(config)).routes;
   const pages = discoverNextRoutes(config.cwd);
@@ -127,6 +167,10 @@ export async function runWatch(routes: string[], flags: WatchFlags): Promise<voi
   let pending = new Set<string>();
   let timer: NodeJS.Timeout | undefined;
 
+  /**
+   * Run the requested route subset and update watch progress. When the run finishes, schedule
+   * any changes that accumulated while it was busy.
+   */
   const test = async (only: string[] | undefined, reason: string) => {
     running = true;
     write(pc.dim(`\n[${new Date().toLocaleTimeString()}] ${reason}`));
@@ -159,6 +203,10 @@ export async function runWatch(routes: string[], flags: WatchFlags): Promise<voi
     else write(pc.dim("Watching for changes… (Ctrl+C to stop)"));
   };
 
+  /**
+   * Debounce rapid filesystem notifications into one run after a short delay. Clearing the
+   * previous timer combines a burst of saves rather than starting overlapping browser runs.
+   */
   const schedule = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
@@ -193,6 +241,10 @@ export async function runWatch(routes: string[], flags: WatchFlags): Promise<voi
   await test(undefined, "Initial run");
 
   await new Promise<void>((done) => {
+    /**
+     * Close watchers, cancel the pending timer and stop any managed server. Resolve the outer
+     * wait only after the server shutdown promise finishes.
+     */
     const stop = () => {
       for (const watcher of watchers) watcher.close();
       clearTimeout(timer);

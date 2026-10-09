@@ -1,3 +1,14 @@
+/**
+ * @file GitHub context/REST helpers for PR lookup, sticky comment updates and PR creation.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readFileSync } from "node:fs";
 import { EnvironmentError } from "../core/errors.js";
 import { COMMENT_MARKER } from "./markdown.js";
@@ -7,12 +18,19 @@ export interface GitHubContext {
   apiURL: string;
   owner: string;
   repo: string;
-  /** PR number, if the event carries one. */
+  /**
+   * PR number, if the event carries one.
+   */
   pullNumber?: number;
   sha?: string;
 }
 
-/** Reads the GitHub Actions environment (or explicit overrides). */
+/**
+ * Reads the GitHub Actions environment (or explicit overrides).
+ *
+ * Resolve GitHub credentials, repository and optional PR information from overrides or CI
+ * variables. Return no context when required credentials/repository data are unavailable.
+ */
 export function githubContext(
   env: NodeJS.ProcessEnv = process.env,
   overrides: { repo?: string; pr?: number; token?: string } = {},
@@ -55,6 +73,10 @@ export function githubContext(
   };
 }
 
+/**
+ * Send an authenticated GitHub API request and reject non-success responses. Return undefined
+ * for 204 No Content, otherwise parse JSON into the caller's expected result shape.
+ */
 async function request<T>(
   context: GitHubContext,
   method: string,
@@ -87,7 +109,12 @@ async function request<T>(
   return (response.status === 204 ? undefined : await response.json()) as T;
 }
 
-/** For events without a PR (deployment_status, push): the open PR that contains the commit. */
+/**
+ * For events without a PR (deployment_status, push): the open PR that contains the commit.
+ *
+ * Look up PRs associated with a CI commit when the event does not directly identify a PR.
+ * Prefer an open result, falling back to the first associated PR when present.
+ */
 export async function findPullForCommit(context: GitHubContext): Promise<number | undefined> {
   if (!context.sha) return undefined;
   const pulls = await request<Array<{ number: number; state: string }>>(
@@ -108,6 +135,9 @@ export interface CommentResult {
 /**
  * Creates the VisualGuard comment on the PR, or updates the existing one (found by its hidden
  * marker), so a PR has one comment that tracks the latest run.
+ *
+ * Find the existing comment by VisualGuard's hidden marker, then update it or create one.
+ * Reusing a marked comment prevents every run from adding another PR comment.
  */
 export async function upsertComment(
   context: GitHubContext,
@@ -143,7 +173,12 @@ export async function upsertComment(
   return { action: "created", id: created.id, url: created.html_url, pullNumber };
 }
 
-/** Opens a pull request (used by `fix --auto --pr` when the `gh` CLI isn't available). */
+/**
+ * Opens a pull request (used by `fix --auto --pr` when the `gh` CLI isn't available).
+ *
+ * Open a GitHub PR from the supplied branch/title/body and return its number/URL. This is an
+ * external write used by the explicitly requested automatic-fix PR flow.
+ */
 export async function createPullRequest(
   context: GitHubContext,
   pull: { title: string; body: string; head: string; base: string },

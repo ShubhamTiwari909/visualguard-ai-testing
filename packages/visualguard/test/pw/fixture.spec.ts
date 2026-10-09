@@ -1,3 +1,14 @@
+/**
+ * @file Real Playwright tests for passing/failing checkpoints, baselines, referenceSetup and
+ * early health collection.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -67,6 +78,10 @@ test("replays a per-check reference state", async ({ page, visualguard }) => {
     node.textContent = "Scenario state";
   });
   const result = await visualguard.check(page, {
+    /**
+     * Apply the same scenario text to the production page before capture. This checks that
+     * fixture setup hooks affect both sides of the intended comparison.
+     */
     referenceSetup: async (reference) => {
       await reference.locator("h1").evaluate((node) => {
         node.textContent = "Scenario state";

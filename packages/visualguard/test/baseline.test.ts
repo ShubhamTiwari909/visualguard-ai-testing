@@ -1,3 +1,13 @@
+/**
+ * @file Tests explicit baseline creation/update and comparison with saved references.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -19,6 +29,10 @@ describe("baseline mode", () => {
 
   it("saves baselines with --update-baselines and compares later runs against them", async () => {
     const routes = ["/identical", "/alignment", "/hidden"];
+    /**
+     * Build a baseline-mode test config pointing to this fixture URL with missing-baseline
+     * creation enabled. Reusing the helper keeps the baseline assertions on the same route set.
+     */
     const site = (url: string) =>
       testConfig(
         { mode: "baseline", routes, baseline: { missing: "create" } },

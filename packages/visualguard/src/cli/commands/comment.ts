@@ -1,3 +1,14 @@
+/**
+ * @file Finds the associated GitHub PR and posts/updates a sticky Markdown run-summary comment.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Command } from "commander";
 import { findRun, readManifest } from "../../core/runs.js";
 import { githubContext, findPullForCommit, upsertComment } from "../../reporters/github-comment.js";
@@ -13,6 +24,11 @@ export interface CommentFlags {
   dryRun?: boolean;
 }
 
+/**
+ * Register the comment command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerCommentCommand(program: Command): void {
   program
     .command("comment")
@@ -35,6 +51,9 @@ export function registerCommentCommand(program: Command): void {
 /**
  * Upserts one sticky comment per PR (PLAN.md §12.3). Run it after uploading the report so the
  * comment can link to it. Outside a PR (and with no PR for the commit) it does nothing.
+ *
+ * Load a finished run and post or update its marked GitHub PR comment. Resolve the PR from
+ * explicit flags or CI context, and leave non-PR runs without a matching PR alone.
  */
 export async function runCommentCommand(
   flags: CommentFlags,

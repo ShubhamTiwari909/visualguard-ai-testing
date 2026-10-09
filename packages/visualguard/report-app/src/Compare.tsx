@@ -1,3 +1,14 @@
+/**
+ * @file Screenshot comparison modes: side by side, slider, onion-skin overlay, diff, zoom and
+ * region display.
+ *
+ * This module runs in the report viewer's browser. React components return JSX (the markup-like
+ * syntax); state changes request a new render, while effects synchronize browser APIs and clean
+ * up listeners.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { useState, type ReactNode } from "react";
 import { canvasSize, envLabels, type JobResult, type RunManifest } from "./data";
 
@@ -22,6 +33,9 @@ interface CompareProps {
 /**
  * Lays images out on a canvas of the diff's size, so overlays positioned in percentages line up
  * with the screenshots at any zoom level, and a shorter screenshot keeps its real proportions.
+ *
+ * Place screenshot layers in a shared coordinate system. The wrapper controls their display
+ * size so region rectangles stay aligned when the image is scaled.
  */
 function Canvas({
   job,
@@ -57,6 +71,10 @@ function Canvas({
   );
 }
 
+/**
+ * Render one screenshot with its accessible description and optional sizing styles. Keeping
+ * this small component separate gives all comparison modes consistent image behavior.
+ */
 function Screenshot({
   job,
   src,
@@ -80,6 +98,10 @@ function Screenshot({
   );
 }
 
+/**
+ * Draw highlight rectangles over changed screenshot areas. Coordinates come from the captured
+ * image, so the overlay uses the same dimensions as its canvas.
+ */
 function Regions({ job, focusedRegion }: { job: JobResult; focusedRegion?: number }) {
   const canvas = canvasSize(job)!;
   return (
@@ -107,6 +129,10 @@ function Regions({ job, focusedRegion }: { job: JobResult; focusedRegion?: numbe
   );
 }
 
+/**
+ * Render the selected comparison mode using production and staging images. React state tracks
+ * interactive controls, while region overlays connect the image to the job details.
+ */
 export function Compare({
   job,
   manifest,
@@ -115,6 +141,8 @@ export function Compare({
   actualSize,
   focusedRegion,
 }: CompareProps) {
+  // Each useState call returns the current value and a setter that requests a render.
+  // Slider/opacity use percentages so the controls are independent of image dimensions.
   const [slider, setSlider] = useState(50);
   const [opacity, setOpacity] = useState(50);
   const labels = envLabels(manifest);

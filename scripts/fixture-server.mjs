@@ -1,3 +1,13 @@
+/**
+ * @file Shared local HTTP server for repository demos, smoke checks and evaluations.
+ *
+ * This is a repository-support script run by Node.js, outside the published package API.
+ * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
+ * helpers below before invoking a script that starts processes or writes artifacts.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 // Serves fixtures/site/<variant>: "/name" → name.html, "/" → index.html; {{origin}} in .xml/.txt
 // files becomes the server's origin. Used by serve-fixtures.mjs and the eval runner.
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -13,7 +23,12 @@ const TYPES = {
   ".txt": "text/plain",
 };
 
-/** Starts a server for one variant; resolves to { url, close }. Port 0 picks a free port. */
+/**
+ * Starts a server for one variant; resolves to { url, close }. Port 0 picks a free port.
+ *
+ * Serve one fixture variant from localhost and return its chosen port/URL plus a close Promise.
+ * Port 0 lets the OS select an available port for demos and evaluations.
+ */
 export function startFixtureServer(variant, port = 0) {
   const dir = join(FIXTURE_ROOT, variant);
   const server = createServer((request, response) => {
@@ -36,6 +51,10 @@ export function startFixtureServer(variant, port = 0) {
     server.listen(port, "127.0.0.1", () =>
       resolvePromise({
         url: `http://127.0.0.1:${server.address().port}`,
+        /**
+         * Return a Promise that resolves when the fixture HTTP server closes. Teardown can
+         * await it before releasing the temporary resources.
+         */
         close: () => new Promise((done) => server.close(() => done())),
       }),
     ),

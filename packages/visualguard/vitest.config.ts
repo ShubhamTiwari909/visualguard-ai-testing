@@ -1,3 +1,13 @@
+/**
+ * @file Selects Vitest suites, test timeouts, report global setup and compile-time version
+ * replacement.
+ *
+ * This file is read by development/build tooling. Its exported object configures that tool; it
+ * is not a visual-test run or an application page.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vitest/config";
 

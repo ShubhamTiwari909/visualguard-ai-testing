@@ -1,3 +1,14 @@
+/**
+ * @file Child-process static site server whose files can be edited during repair/verification
+ * tests.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 // A tiny dev server for fixer tests: serves <dir> like the fixture server ("/x" → x.html).
 // Usage: node static-site-server.mjs <dir> <port>
 import { existsSync, readFileSync, statSync } from "node:fs";

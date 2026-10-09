@@ -1,3 +1,15 @@
+/**
+ * @file Loads/resolves config, maps CLI options, selects standard reporters and formats common
+ * errors.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { InvalidArgumentError, Option, type Command } from "commander";
 import pc from "picocolors";
 import { loadConfig, loadEnvFiles } from "../config/load.js";
@@ -11,8 +23,16 @@ import { htmlReporter, reportPath } from "../reporters/html.js";
 import { jsonReporter } from "../reporters/json.js";
 import { terminalReporter } from "../reporters/terminal.js";
 
+/**
+ * Append a repeated CLI option value to a new array. Object/array spread copies the prior
+ * values so each parse result contains every supplied occurrence.
+ */
 export const collect = (value: string, previous: string[] = []): string[] => [...previous, value];
 
+/**
+ * Parse a strictly written positive base-10 integer for a CLI option. Reject partial strings
+ * such as 2x and non-positive values with Commander's argument error.
+ */
 export function parsePositiveInt(value: string): number {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed < 1 || String(parsed) !== value.trim()) {
@@ -21,11 +41,20 @@ export function parsePositiveInt(value: string): number {
   return parsed;
 }
 
+/**
+ * Treat a populated CI environment variable as enabled except for explicit false or 0.
+ * Accepting an environment object makes the check testable without changing process.env.
+ */
 export function isCI(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(env.CI && env.CI !== "false" && env.CI !== "0");
 }
 
-/** Plain output (no colours or box drawing) in CI or when stdout is not a terminal. */
+/**
+ * Plain output (no colours or box drawing) in CI or when stdout is not a terminal.
+ *
+ * Choose plain terminal output for CI or non-interactive streams. isTTY indicates a real
+ * terminal; redirected output should not rely on terminal drawing.
+ */
 export function usePlainOutput(
   ciFlag: boolean | undefined,
   stream: NodeJS.WriteStream = process.stdout,
@@ -45,12 +74,19 @@ export interface ConfigFlags {
   concurrency?: number;
   provider?: "gemini" | "ollama" | "none";
   model?: string;
-  /** `--a11y` / `--perf`: turn the checks on for this run. */
+  /**
+   * `--a11y` / `--perf`: turn the checks on for this run.
+   */
   a11y?: boolean;
   perf?: boolean;
 }
 
-/** Loads .env files and the config, then applies CLI overrides. */
+/**
+ * Loads .env files and the config, then applies CLI overrides.
+ *
+ * Load environment files and user configuration, then apply CLI overrides and defaults. The
+ * resolved form is what runtime modules consume, so commands share one precedence rule.
+ */
 export async function loadResolvedConfig(
   flags: ConfigFlags,
   extra: Partial<ConfigOverrides> = {},
@@ -79,6 +115,10 @@ export async function loadResolvedConfig(
   });
 }
 
+/**
+ * Guard compare command setup when both environment URLs have not been supplied. A missing
+ * configuration file receives a specific setup hint.
+ */
 export function requireCompareURLs(config: ResolvedConfig): void {
   if (config.baseURL.production && config.baseURL.staging) return;
   if (!config.configPath) {
@@ -88,7 +128,12 @@ export function requireCompareURLs(config: ResolvedConfig): void {
   }
 }
 
-/** Prints an error with its hint and returns the exit code to use. */
+/**
+ * Prints an error with its hint and returns the exit code to use.
+ *
+ * Print a readable error and its optional hint, then return the matching exit code. Debug stack
+ * traces are shown only when enabled so normal CLI output stays focused.
+ */
 export function reportError(
   error: unknown,
   stream: NodeJS.WritableStream = process.stderr,
@@ -115,7 +160,12 @@ export interface OutputFlags {
   failOn?: FailOn;
 }
 
-/** Terminal (to stderr with --json), HTML report and optional JSON reporters. */
+/**
+ * Terminal (to stderr with --json), HTML report and optional JSON reporters.
+ *
+ * Build terminal, HTML and requested CI/JSON reporters for a run. Send progress to stderr when
+ * stdout is reserved for JSON.
+ */
 export function standardReporters(
   config: ResolvedConfig,
   flags: OutputFlags,
@@ -127,6 +177,10 @@ export function standardReporters(
     terminalReporter({
       stream,
       plain,
+      /**
+       * Build contextual commands the terminal can suggest after the run. These are displayed
+       * hints; returning them does not invoke a command.
+       */
       nextSteps: (manifest) => {
         const steps: Array<[string, string]> = [];
         if (config.report.html) {
@@ -155,6 +209,9 @@ export function standardReporters(
     reporters.push(
       webhookReporter(webhook, {
         reportURL: config.report.publicURL,
+        /**
+         * Write notification-delivery warnings to stderr so JSON stdout stays valid.
+         */
         warn: (message) => process.stderr.write(`  ⚠ ${message}\n`),
       }),
     );
@@ -162,14 +219,24 @@ export function standardReporters(
   return reporters;
 }
 
-/** `--a11y` and `--perf`. */
+/**
+ * `--a11y` and `--perf`.
+ *
+ * Add accessibility and performance opt-in flags to a Commander command. Return the command to
+ * support further chained configuration.
+ */
 export function addCheckOptions(command: Command): Command {
   return command
     .option("--a11y", "also report new accessibility violations (axe-core)")
     .option("--perf", "also report slower loads, more layout shift and heavier pages");
 }
 
-/** `--provider`, `--model` and `--no-ai`. */
+/**
+ * `--provider`, `--model` and `--no-ai`.
+ *
+ * Add provider/model selection and the negated --no-ai flag. Commander translates a negated
+ * flag into ai=false, which later configuration code interprets.
+ */
 export function addAIOptions(command: Command): Command {
   return command
     .addOption(new Option("--provider <name>", "AI provider").choices(["gemini", "ollama", "none"]))

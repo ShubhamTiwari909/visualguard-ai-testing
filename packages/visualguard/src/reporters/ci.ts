@@ -1,3 +1,14 @@
+/**
+ * @file JUnit XML, GitHub job summary and webhook reporter implementations.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Reporter } from "../core/run.js";
@@ -5,6 +16,10 @@ import { isFailing } from "../core/status.js";
 import type { FailOn, JobResult, RunManifest } from "../core/types.js";
 import { renderMarkdown } from "./markdown.js";
 
+/**
+ * Escape text for XML attributes/content and remove forbidden control characters. Escaping
+ * ampersands first prevents newly created entities from being escaped again.
+ */
 const xml = (text: string) =>
   text
     .replace(/&/g, "&amp;")
@@ -15,6 +30,10 @@ const xml = (text: string) =>
     // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
 
+/**
+ * Choose a concise failure reason from AI, findings or diff measurements. The result becomes
+ * the JUnit failure message.
+ */
 function failureMessage(job: JobResult): string {
   if (job.analysis) return job.analysis.title;
   const finding = job.findings?.find((item) => item.severity !== "info");
@@ -24,7 +43,12 @@ function failureMessage(job: JobResult): string {
   );
 }
 
-/** JUnit XML: one testcase per route × viewport, failing per `--fail-on` (PLAN.md §12.1). */
+/**
+ * JUnit XML: one testcase per route × viewport, failing per `--fail-on` (PLAN.md §12.1).
+ *
+ * Render one JUnit testcase per job and failures selected by failOn. Escape page/config/model
+ * text before inserting it into XML.
+ */
 export function renderJUnit(manifest: RunManifest, failOn: FailOn): string {
   const cases = manifest.jobs.map((job) => {
     const name = xml(`${job.route} (${job.viewport})`);
@@ -67,9 +91,17 @@ export function renderJUnit(manifest: RunManifest, failOn: FailOn): string {
   ].join("\n");
 }
 
+/**
+ * Create a reporter that writes JUnit at run completion. The factory stores its
+ * destination/policy in a closure for the later callback.
+ */
 export function junitReporter(path: string, failOn: FailOn): Reporter {
   return {
     name: "junit",
+    /**
+     * Ensure the output directory exists and write the completed run as JUnit XML. This
+     * callback runs after jobs and classifications have finished.
+     */
     onRunEnd(manifest) {
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, renderJUnit(manifest, failOn));
@@ -77,10 +109,19 @@ export function junitReporter(path: string, failOn: FailOn): Reporter {
   };
 }
 
-/** Appends the Markdown summary to $GITHUB_STEP_SUMMARY; needs no token (PLAN.md §12.2). */
+/**
+ * Appends the Markdown summary to $GITHUB_STEP_SUMMARY; needs no token (PLAN.md §12.2).
+ *
+ * Create a reporter that appends Markdown to GitHub Actions' step-summary file. This
+ * integration writes a local workflow file and does not require a GitHub API token.
+ */
 export function githubSummaryReporter(summaryPath: string, reportURL?: string): Reporter {
   return {
     name: "github-summary",
+    /**
+     * Append the completed run's Markdown summary to the configured Actions summary file.
+     * Append mode preserves summaries already written by other steps.
+     */
     onRunEnd(manifest) {
       appendFileSync(summaryPath, `${renderMarkdown(manifest, { reportURL })}\n`);
     },
@@ -90,6 +131,9 @@ export function githubSummaryReporter(summaryPath: string, reportURL?: string): 
 /**
  * POSTs a JSON summary to a URL (n8n, Slack workflows, Zapier…) without the core depending on
  * any of them (PLAN.md §12.7). Failures are reported as warnings, never as run failures.
+ *
+ * Create a reporter that posts a JSON summary after a run. Catch delivery failures and notify
+ * through warn so notification outages do not change the visual-test verdict.
  */
 export function webhookReporter(
   url: string,
@@ -97,6 +141,10 @@ export function webhookReporter(
 ): Reporter {
   return {
     name: "webhook",
+    /**
+     * Build and send a bounded run/problem summary to the configured webhook. Treat
+     * network/HTTP failures as notification warnings rather than test failures.
+     */
     async onRunEnd(manifest) {
       const { summary } = manifest;
       const problems = manifest.jobs.filter(

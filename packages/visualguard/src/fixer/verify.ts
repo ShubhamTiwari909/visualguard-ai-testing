@@ -1,3 +1,15 @@
+/**
+ * @file Runs bounded verification commands, manages the dev-server process and compares new
+ * captures with immutable saved references.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 import { joinURL } from "../config/urls.js";
@@ -11,12 +23,20 @@ import { sleep } from "../core/util.js";
 export interface CommandResult {
   ok: boolean;
   command: string;
-  /** Last lines of combined output, for feedback and display. */
+  /**
+   * Last lines of combined output, for feedback and display.
+   */
   output: string;
   timedOut?: boolean;
 }
 
-/** Runs a shell command with a timeout; output is kept, never streamed. */
+/**
+ * Runs a shell command with a timeout; output is kept, never streamed.
+ *
+ * Run a configured shell command with cancellation, a timeout and bounded captured output.
+ * Resolve a structured result after cleanup so verification can inspect failures without
+ * streaming noisy logs.
+ */
 export function runCommand(
   command: string,
   cwd: string,
@@ -35,6 +55,10 @@ export function runCommand(
       env: { ...process.env, CI: process.env.CI ?? "1" },
     });
     let output = "";
+    /**
+     * Append process output while retaining only the most recent bounded text. Buffer limits
+     * prevent a verbose verification command from consuming unbounded memory.
+     */
     const collect = (chunk: Buffer) => {
       output = (output + chunk.toString()).slice(-8_000);
     };
@@ -43,6 +67,10 @@ export function runCommand(
     let timedOut = false;
     let settled = false;
     let escalation: ReturnType<typeof setTimeout> | undefined;
+    /**
+     * Settle the command result once and remove timers/listeners. Multiple process events may
+     * fire, so the settled flag prevents resolving and cleaning up twice.
+     */
     const finish = (code: number | null, error?: string) => {
       if (settled) return;
       settled = true;
@@ -56,6 +84,10 @@ export function runCommand(
         output: error ?? output.split("\n").slice(-30).join("\n").trim(),
       });
     };
+    /**
+     * Terminate the command's process group on Unix or its descendant tree on Windows. Killing
+     * only the shell could otherwise leave its child server/build process running.
+     */
     const killTree = (signal: NodeJS.Signals) => {
       try {
         if (process.platform === "win32") {
@@ -65,6 +97,11 @@ export function runCommand(
         /* Already exited. */
       }
     };
+    /**
+     * Mark a timeout, request graceful termination and schedule a forceful fallback. The
+     * fallback also releases output streams so an exited parent cannot leave the promise
+     * waiting on descendants.
+     */
     const terminate = () => {
       timedOut = true;
       output += `\n(timed out after ${timeoutMs}ms)`;
@@ -76,6 +113,10 @@ export function runCommand(
         finish(null);
       }, 1000);
     };
+    /**
+     * Record caller cancellation and use the same termination path as a timeout. This keeps
+     * process cleanup consistent across both stop conditions.
+     */
     const cancel = () => {
       output += "\n(cancelled)";
       terminate();
@@ -87,6 +128,10 @@ export function runCommand(
   });
 }
 
+/**
+ * Execute verification commands in order and stop at the first unsuccessful result. Later
+ * checks should not run against a build that already failed.
+ */
 export async function runCommands(
   commands: string[],
   cwd: string,
@@ -102,6 +147,10 @@ export async function runCommands(
   return results;
 }
 
+/**
+ * Probe whether an HTTP server answers within a short timeout and discard its response body.
+ * Any response proves it is listening, regardless of its page status.
+ */
 async function responds(url: string): Promise<boolean> {
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(3_000) });
@@ -120,17 +169,31 @@ export class DevServer {
   private child: ChildProcess | undefined;
   private log = "";
 
+  /**
+   * Store server settings, working directory and verification mode. Parameter properties create
+   * fields; starting a process is deferred to ensure.
+   */
   constructor(
     private readonly options: { command?: string; url: string; readyTimeoutMs: number },
     private readonly cwd: string,
     private readonly mode: { requireFresh?: boolean } = {},
   ) {}
 
+  /**
+   * Expose the configured local server URL through a getter. Reading this property does not
+   * start or probe the server.
+   */
   get url(): string {
     return this.options.url;
   }
 
-  /** Starts the server (unless one already answers) and waits until it responds. */
+  /**
+   * Starts the server (unless one already answers) and waits until it responds.
+   *
+   * Start a server if policy requires it and wait until its URL answers or startup fails/times
+   * out. Check cancellation throughout and retain recent process logs for useful failure
+   * messages.
+   */
   async ensure(signal?: AbortSignal): Promise<void> {
     signal?.throwIfAborted();
     if (!this.child && (await responds(this.options.url))) {
@@ -152,6 +215,10 @@ export class DevServer {
         shell: true,
         detached: process.platform !== "win32",
       });
+      /**
+       * Append managed-server output to a bounded diagnostic log. The final startup error can
+       * then include the most recent lines.
+       */
       const collect = (chunk: Buffer) => {
         this.log = (this.log + chunk.toString()).slice(-4_000);
       };
@@ -171,6 +238,10 @@ export class DevServer {
     });
   }
 
+  /**
+   * Stop the managed server process tree if this instance started it. Clear the stored child
+   * reference first so repeated stop calls are harmless.
+   */
   async stop(): Promise<void> {
     const child = this.child;
     this.child = undefined;
@@ -193,6 +264,10 @@ export class DevServer {
   }
 }
 
+/**
+ * Recover a route path/query/fragment from a capture URL, stripping the configured base prefix
+ * when present. The local verification server can then capture the corresponding page.
+ */
 function pathOf(url: string, base: string | undefined): string {
   const parsed = new URL(url);
   const basePath = base ? new URL(base).pathname.replace(/\/$/, "") : "";
@@ -210,8 +285,11 @@ export interface Verification {
 }
 
 /**
- * Captures the job's route on the local server and compares it with production again. The
- * fix is resolved when the comparison passes.
+ * Captures the job's route on the local server and compares it with production again. The fix
+ * is resolved when the comparison passes.
+ *
+ * Capture the repaired page on the local server and classify it against the original reference
+ * evidence. Use deterministic checks and return resolved only when the resulting status passes.
  */
 export async function verifyAgainstProduction(
   config: ResolvedConfig,

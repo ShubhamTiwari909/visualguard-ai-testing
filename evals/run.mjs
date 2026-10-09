@@ -1,3 +1,14 @@
+/**
+ * @file Runs labeled visual-diff evaluations and writes machine-readable and Markdown metric
+ * reports.
+ *
+ * This is a repository-support script run by Node.js, outside the published package API.
+ * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
+ * helpers below before invoking a script that starts processes or writes artifacts.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 // AI eval runner (PLAN.md §10.8). Runs VisualGuard over the labelled fixture pages and reports
 // how well the classifications match the labels.
 //
@@ -96,6 +107,10 @@ try {
   const statusAccuracy =
     cases.filter((item) => item.status === item.expectedStatus).length / cases.length;
 
+  /**
+   * Format a fractional evaluation metric as a padded percentage for table output. Use a dash
+   * for null so an unavailable score is distinct from zero.
+   */
   const pct = (value) => (value === null ? "  –  " : `${(value * 100).toFixed(0).padStart(3)}%`);
   console.log(
     `\nVisualGuard evals · ${manifest.config.ai.provider}${manifest.config.ai.model ? ` (${manifest.config.ai.model})` : ""} · ${cases.length} cases · ${((Date.now() - started) / 1000).toFixed(1)}s\n`,

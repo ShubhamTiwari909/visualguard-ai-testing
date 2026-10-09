@@ -1,3 +1,14 @@
+/**
+ * @file Tests AI integration with capture runs, status guards, analysis scope, manifest usage
+ * and saved-run reanalysis.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -21,13 +32,19 @@ afterAll(async () => {
   await staging?.close();
 });
 
-/** The model's verdict per route, keyed off the route in the prompt. */
+/**
+ * The model's verdict per route, keyed off the route in the prompt.
+ */
 const verdicts: Record<string, string> = {
   "/alignment": "regression",
   "/text-change": "intentional",
   "/spacing": "noise",
   "/missing-image": "noise",
 };
+/**
+ * Create a mock model whose response is selected by the route text in its prompt. No cloud
+ * request is made, so these policy assertions are deterministic.
+ */
 const provider = () =>
   new MockProvider((request) => {
     const prompt = request.parts.map((part) => (part.type === "text" ? part.text : "")).join("\n");
@@ -52,6 +69,10 @@ describe("test with AI", () => {
     ({ manifest, runDir } = await createRun(config, { ai: provider() }).start());
   }, 120_000);
 
+  /**
+   * Find the named route in the original run manifest. The non-null assertion expresses that
+   * the test fixture is expected to contain that route.
+   */
   const job = (route: string) => manifest.jobs.find((candidate) => candidate.route === route)!;
 
   it("lets the model raise, keep or lower heuristic statuses", () => {
@@ -97,6 +118,10 @@ describe("test with AI", () => {
       useCache: false,
     });
     expect(result.analyzed).toBe(4);
+    /**
+     * Find the same route in the reanalyzed manifest. Comparing it with the original job
+     * verifies what analysis changed.
+     */
     const updated = (route: string) =>
       result.manifest.jobs.find((candidate) => candidate.route === route)!;
     expect(updated("/alignment")).toMatchObject({ baseStatus: "review", status: "review" });

@@ -1,3 +1,15 @@
+/**
+ * @file Local artifact server: renders current manifest data and dispatches token-protected
+ * POST action handlers.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -5,17 +17,25 @@ import sirv from "sirv";
 import { readManifest } from "../core/runs.js";
 import { renderReportHTML } from "../reporters/html.js";
 
-/** A POST handler for the local action API. Receives the parsed JSON body. */
+/**
+ * A POST handler for the local action API. Receives the parsed JSON body.
+ */
 export type ApiHandler = (body: unknown) => Promise<unknown> | unknown;
 
 export interface ReportServerOptions {
   runDir: string;
   port?: number;
-  /** Always 127.0.0.1 unless overridden in tests. */
+  /**
+   * Always 127.0.0.1 unless overridden in tests.
+   */
   host?: string;
-  /** Mutating endpoints, e.g. { "accept": handler } → POST /api/accept. */
+  /**
+   * Mutating endpoints, e.g. { "accept": handler } → POST /api/accept.
+   */
   api?: Record<string, ApiHandler>;
-  /** Show "Generate fix" in the page (fix.enabled). */
+  /**
+   * Show "Generate fix" in the page (fix.enabled).
+   */
   fixEnabled?: boolean;
 }
 
@@ -27,6 +47,10 @@ export interface ReportServer {
 
 const MAX_BODY_BYTES = 1_000_000;
 
+/**
+ * Collect an HTTP request body into UTF-8 text while enforcing a size limit. Request data
+ * arrives in chunks, so a Promise resolves only at the end event.
+ */
 function readBody(request: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -45,11 +69,19 @@ function readBody(request: IncomingMessage): Promise<string> {
   });
 }
 
+/**
+ * Set an HTTP status and no-store JSON headers, then end the response with serialized data.
+ * Ending the response signals that no further body bytes are coming.
+ */
 function sendJSON(response: ServerResponse, status: number, body: unknown): void {
   response.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
   response.end(JSON.stringify(body));
 }
 
+/**
+ * Compare a supplied action token with the expected token using constant-time byte comparison.
+ * Check type and byte length first because timingSafeEqual requires equal-sized buffers.
+ */
 function tokenMatches(expected: string, given: string | string[] | undefined): boolean {
   if (typeof given !== "string") return false;
   const a = Buffer.from(expected);
@@ -61,6 +93,10 @@ function tokenMatches(expected: string, given: string | string[] | undefined): b
  * Serves one run directory on localhost (PLAN.md §11.4). The page is rendered per request so it
  * reflects manifest changes (accepted changes, re-analysis). Actions go through POST /api/* and
  * require the per-session token that is embedded in the page.
+ *
+ * Serve one saved run on localhost and handle authenticated POST actions. Render fresh manifest
+ * data per request, protect actions with a session token/origin checks and expose a close
+ * promise for cleanup.
  */
 export async function startReportServer(options: ReportServerOptions): Promise<ReportServer> {
   const token = randomBytes(24).toString("base64url");
@@ -123,6 +159,10 @@ export async function startReportServer(options: ReportServerOptions): Promise<R
   return {
     url: `http://${host}:${port}/`,
     token,
+    /**
+     * Close active connections and resolve after the HTTP server stops listening. The caller
+     * awaits this Promise during command shutdown.
+     */
     close: () =>
       new Promise((resolve) => {
         server.closeAllConnections?.();

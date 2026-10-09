@@ -1,3 +1,15 @@
+/**
+ * @file Defines analysis prompt/schema, selects regions, builds trusted/untrusted context and
+ * validates visual classifications/selectors.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { join } from "node:path";
 import { z } from "zod";
 import type { Analysis, Delta, JobResult, RunManifest } from "../../core/types.js";
@@ -5,7 +17,9 @@ import { formatValue } from "../../mapping/describe.js";
 import { compositePNG, preparedPNG } from "../images.js";
 import type { AIProvider, Part, Usage } from "../provider.js";
 
-/** Bump when the prompt or schema changes, so cached answers aren't reused (PLAN.md §10.6). */
+/**
+ * Bump when the prompt or schema changes, so cached answers aren't reused (PLAN.md §10.6).
+ */
 export const PROMPT_VERSION = "diff-v2";
 
 export const VisualAnalysisSchema = z.object({
@@ -49,7 +63,9 @@ export interface AnalyzeInput {
   runDir: string;
   mode: RunManifest["mode"];
   maxRegions: number;
-  /** Selectors from the DOM snapshots; answers may only reference these. */
+  /**
+   * Selectors from the DOM snapshots; answers may only reference these.
+   */
   knownSelectors: Set<string>;
   intent?: { title: string; description?: string; changedFiles: string[] };
   parts?: Part[];
@@ -61,6 +77,10 @@ export interface AnalyzeOutput {
   usage: Usage;
 }
 
+/**
+ * Describe one structured DOM change as text for the AI prompt. The kind field chooses how to
+ * read the delta's production/staging values.
+ */
 function formatDelta(delta: Delta): string {
   switch (delta.kind) {
     case "style":
@@ -74,7 +94,12 @@ function formatDelta(delta: Delta): string {
   }
 }
 
-/** The regions worth showing the model: the shift band first, then the largest changes. */
+/**
+ * The regions worth showing the model: the shift band first, then the largest changes.
+ *
+ * Choose regions with saved image crops, putting a detected layout shift before the largest
+ * remaining differences. Copy before sorting so the original report order is preserved.
+ */
 export function regionsForAnalysis(job: JobResult, maxRegions: number) {
   return [...job.regions]
     .filter((region) => region.crops)
@@ -85,11 +110,20 @@ export function regionsForAnalysis(job: JobResult, maxRegions: number) {
     .slice(0, maxRegions);
 }
 
-/** Builds the multimodal prompt for one job (PLAN.md Appendix B). */
+/**
+ * Builds the multimodal prompt for one job (PLAN.md Appendix B).
+ *
+ * Build the ordered text/image parts for a visual-analysis request. Include environment labels,
+ * captured health and DOM evidence while respecting provider image limits.
+ */
 export function buildParts(provider: AIProvider, input: AnalyzeInput): Part[] {
   const { job, runDir } = input;
   const regions = regionsForAnalysis(job, input.maxRegions);
   const labels = input.mode === "compare" ? ["production", "staging"] : ["baseline", "current"];
+  /**
+   * Summarize console errors and failed requests for one capture. Return n/a when evidence is
+   * absent so the prompt does not imply a healthy measurement was collected.
+   */
   const health = (env: "production" | "staging") => {
     const signals = job.captures[env]?.health;
     return signals
@@ -166,7 +200,13 @@ export function buildParts(provider: AIProvider, input: AnalyzeInput): Part[] {
   return parts;
 }
 
-/** Asks the model to classify and explain one job's differences, then applies guardrails. */
+/**
+ * Asks the model to classify and explain one job's differences, then applies guardrails.
+ *
+ * Generate a schema-validated classification and then check its references against captured
+ * evidence. Return cleaned analysis text and usage so the caller can apply policy and update
+ * accounting.
+ */
 export async function analyzeVisualDiff(
   provider: AIProvider,
   input: AnalyzeInput,

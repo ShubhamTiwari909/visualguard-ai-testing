@@ -1,3 +1,14 @@
+/**
+ * @file Tests stored exact/similar acceptance, changed fingerprints, legacy entries and health
+ * protections.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,6 +17,10 @@ import { acceptJobs, applyAccepted, sameChange, type AcceptedFile } from "../src
 import type { JobResult } from "../src/core/types.js";
 import { createImage, writePNG } from "../src/diff/image.js";
 
+/**
+ * Create a synthetic job and PNG pair with a controlled difference for acceptance tests.
+ * Options vary its geometry/evidence so exact and similar matching can be tested independently.
+ */
 function jobWith(
   runDir: string,
   name: string,

@@ -1,3 +1,15 @@
+/**
+ * @file Central orchestrator: plans jobs, captures references/current pages,
+ * diffs/classifies/analyzes/accepts results, emits events and saves runs.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { join, relative } from "node:path";
@@ -47,7 +59,9 @@ export interface ReporterContext {
   config: ResolvedConfig;
 }
 
-/** Reporters receive run events and the final manifest (PLAN.md §5.6). */
+/**
+ * Reporters receive run events and the final manifest (PLAN.md §5.6).
+ */
 export interface Reporter {
   name: string;
   onEvent?(event: RunEvent): void;
@@ -57,7 +71,9 @@ export interface Reporter {
 export interface RunOptions {
   runGroup?: string;
   signal?: AbortSignal;
-  /** Replay original jobs against immutable reference artifacts (fix verification). */
+  /**
+   * Replay original jobs against immutable reference artifacts (fix verification).
+   */
   jobs?: JobSpec[];
   references?: Record<string, { runDir: string; capture: CaptureResult }>;
   /**
@@ -65,7 +81,9 @@ export interface RunOptions {
    * and compare it with a stored snapshot from `baselineDir` (PLAN.md §14.2).
    */
   mode?: RunManifest["mode"];
-  /** Snapshot directory for baseline and scan modes. */
+  /**
+   * Snapshot directory for baseline and scan modes.
+   */
   baselineDir?: string;
   /**
    * Overwrite the stored snapshots with this run's captures. "unless-regression" (monitor mode)
@@ -73,24 +91,36 @@ export interface RunOptions {
    */
   updateBaselines?: boolean | "unless-regression";
   /**
-   * Compare health signals (broken images, HTTP errors…) with the stored snapshot's, so only new
-   * problems are reported (monitor mode).
+   * Compare health signals (broken images, HTTP errors…) with the stored snapshot's, so only
+   * new problems are reported (monitor mode).
    */
   baselineHealth?: boolean;
-  /** Route limit when routes are discovered. */
+  /**
+   * Route limit when routes are discovered.
+   */
   discoveryLimit?: number;
-  /** AI provider for this run; `false` disables AI. Defaults to the configured provider. */
+  /**
+   * AI provider for this run; `false` disables AI. Defaults to the configured provider.
+   */
   ai?: AIProvider | false;
-  /** Reuse cached AI answers (default true). */
+  /**
+   * Reuse cached AI answers (default true).
+   */
   aiCache?: boolean;
   failOn?: FailOn;
-  /** Record a Playwright trace for every capture. */
+  /**
+   * Record a Playwright trace for every capture.
+   */
   debug?: boolean;
   reporters?: Reporter[];
   env?: NodeJS.ProcessEnv;
-  /** Skip the up-front request to each base URL. */
+  /**
+   * Skip the up-front request to each base URL.
+   */
   skipReachabilityCheck?: boolean;
-  /** Run only this part of the jobs, e.g. { index: 1, total: 4 } (`--shard 1/4`). */
+  /**
+   * Run only this part of the jobs, e.g. { index: 1, total: 4 } (`--shard 1/4`).
+   */
   shard?: Shard;
 }
 
@@ -100,6 +130,10 @@ export interface RunOutcome {
 }
 
 export class Run extends RunEmitter {
+  /**
+   * Store the resolved configuration/options and initialize the event-emitter base class.
+   * Construction alone does not launch a browser; start performs the run.
+   */
   constructor(
     readonly config: ResolvedConfig,
     private readonly options: RunOptions = {},
@@ -107,6 +141,10 @@ export class Run extends RunEmitter {
     super();
   }
 
+  /**
+   * Emit a progress event to API listeners and configured reporters. Catch reporter callback
+   * failures so display code cannot stop capture.
+   */
   private emitAll(event: RunEvent): void {
     this.emit(event);
     for (const reporter of this.options.reporters ?? []) {
@@ -118,6 +156,11 @@ export class Run extends RunEmitter {
     }
   }
 
+  /**
+   * Orchestrate planning, run-directory allocation, browser/diff resources, jobs, AI analysis
+   * and final reporters. Cleanup and saved accounting belong to this run lifecycle so
+   * cancellation or errors do not leave resources running.
+   */
   async start(): Promise<RunOutcome> {
     const { config } = this;
     const failOn = this.options.failOn ?? "regression";
@@ -232,6 +275,10 @@ export class Run extends RunEmitter {
     let results: JobResult[];
 
     const accepted = readAccepted(config.acceptedPath);
+    /**
+     * Close the browser when the caller cancels the run. Closing it interrupts pending page
+     * operations; catch shutdown errors because cancellation may race with ordinary cleanup.
+     */
     const onAbort = () => {
       void browser.close().catch(() => {});
     };
@@ -325,6 +372,11 @@ export class Run extends RunEmitter {
     return { manifest, runDir: run.dir };
   }
 
+  /**
+   * Capture the required environments, save evidence, compute the diff and classify one
+   * route/viewport job. Convert capture/diff failures into an error job so the manifest can
+   * still represent the attempt.
+   */
   private async runJob(
     job: JobSpec,
     runDir: string,
@@ -336,6 +388,10 @@ export class Run extends RunEmitter {
     this.emitAll({ type: "job:start", job });
     const jobDir = join(runDir, "jobs", job.id);
     mkdirSync(jobDir, { recursive: true });
+    /**
+     * Turn an absolute artifact path into a run-relative path using forward slashes. Reports
+     * use portable paths even when the host OS uses a different separator.
+     */
     const rel = (path: string) => relative(runDir, path).split("\\").join("/");
 
     const result: JobResult = {
@@ -350,6 +406,10 @@ export class Run extends RunEmitter {
       regions: [],
       durationMs: 0,
     };
+    /**
+     * Record elapsed time and preserve the current deterministic verdict as baseStatus. Return
+     * the same in-progress result after these final fields are set.
+     */
     const finish = (): JobResult => {
       result.durationMs = Date.now() - started;
       result.baseStatus = result.status;
@@ -366,6 +426,10 @@ export class Run extends RunEmitter {
           job,
           env,
           tracePath: this.options.debug ? join(jobDir, `trace.${env}.zip`) : undefined,
+          /**
+           * Collect and persist optional DOM evidence after the screenshot. A DOM failure
+           * weakens explanation, but does not invalidate the captured image.
+           */
           afterScreenshot: async (page) => {
             // A failed DOM snapshot only costs the explanation, never the capture.
             dom = await captureDomSnapshot(page).catch(() => undefined);
@@ -535,7 +599,13 @@ export class Run extends RunEmitter {
     return finish();
   }
 
-  /** Copies a stored snapshot into the job directory as the "production" side. */
+  /**
+   * Copies a stored snapshot into the job directory as the "production" side.
+   *
+   * Copy a saved baseline image and available DOM/health sidecars into this job's reference
+   * artifacts. Represent it as a production-side capture so later comparison code can use its
+   * normal two-sided shape.
+   */
   private loadBaseline(
     baselinePath: string,
     jobDir: string,
@@ -560,6 +630,10 @@ export class Run extends RunEmitter {
     };
   }
 
+  /**
+   * Save the captured image, DOM, health and rendering metadata as the route/viewport baseline.
+   * These disk writes establish the reference for later baseline comparisons.
+   */
   private saveBaseline(
     baselinePath: string,
     runDir: string,
@@ -592,6 +666,10 @@ export class Run extends RunEmitter {
   }
 }
 
+/**
+ * Turn temporal-noise measurements into a readable finding. Distinguish skipped noise sampling
+ * from pixels intentionally ignored because repeated captures varied.
+ */
 function describeNoise(noise: DiffResult["noise"], nameEnv: boolean): Finding | undefined {
   if (!noise) return undefined;
   if (noise.skipped) {
@@ -610,12 +688,18 @@ function describeNoise(noise: DiffResult["noise"], nameEnv: boolean): Finding | 
   };
 }
 
+/**
+ * Remove empty header values from an optional header object. Empty placeholders should not
+ * override a server's normal behavior with empty credentials.
+ */
 function nonEmptyHeaders(headers: Record<string, string> | undefined): Record<string, string> {
   return Object.fromEntries(Object.entries(headers ?? {}).filter(([, value]) => value !== ""));
 }
 
 export interface Shard {
-  /** 1-based. */
+  /**
+   * 1-based.
+   */
   index: number;
   total: number;
 }
@@ -623,6 +707,9 @@ export interface Shard {
 /**
  * The jobs for one shard: sorted by id and dealt out round-robin, so every machine computes the
  * same split from the same job list and the shards stay balanced.
+ *
+ * Sort jobs by stable ID and distribute them round-robin across numbered shards. position %
+ * total chooses a bucket; subtract one because public shard indexes begin at one.
  */
 export function shardJobs<T extends { id: string }>(jobs: readonly T[], shard: Shard): T[] {
   return [...jobs]
@@ -630,6 +717,10 @@ export function shardJobs<T extends { id: string }>(jobs: readonly T[], shard: S
     .filter((_, position) => position % shard.total === shard.index - 1);
 }
 
+/**
+ * Parse and validate a shard argument such as 1/4. Reject missing, zero or out-of-range indexes
+ * before work is assigned.
+ */
 export function parseShard(value: string): Shard {
   const match = value.trim().match(/^(\d+)\s*\/\s*(\d+)$/);
   const index = Number(match?.[1]);
@@ -640,6 +731,10 @@ export function parseShard(value: string): Shard {
   return { index, total };
 }
 
+/**
+ * Create a Run object with the public configuration/options interface. Call start on the
+ * returned object to execute it, or subscribe to events first.
+ */
 export function createRun(config: ResolvedConfig, options?: RunOptions): Run {
   return new Run(config, options);
 }

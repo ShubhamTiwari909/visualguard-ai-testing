@@ -1,3 +1,15 @@
+/**
+ * @file Combines discovery sources/extra routes, expands dynamic parameters and filters the
+ * route plan.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { matchesAny } from "./glob.js";
 import { discoverNextRoutes } from "./discover/nextjs.js";
 import { crawlRoutes, discoverSitemapRoutes } from "./discover/web.js";
@@ -6,10 +18,14 @@ import type { DiscoverySource, RouteDiscovery, RouteInput } from "./schema.js";
 import { expandRoutes, isDynamicRoute, type ExpandRoutesResult } from "./urls.js";
 
 export interface ResolvedRoutes extends ExpandRoutesResult {
-  /** Where the routes came from, for display. */
+  /**
+   * Where the routes came from, for display.
+   */
   source: string;
   warnings: string[];
-  /** Route path → source file, from file-system discovery (used by the fixer and watch mode). */
+  /**
+   * Route path → source file, from file-system discovery (used by the fixer and watch mode).
+   */
   sourceFiles: Record<string, string>;
 }
 
@@ -17,7 +33,9 @@ export interface DiscoveryResult {
   paths: string[];
   sources: DiscoverySource[];
   sourceFiles: Record<string, string>;
-  /** Dynamic file-system routes that need params. */
+  /**
+   * Dynamic file-system routes that need params.
+   */
   dynamic: string[];
 }
 
@@ -30,6 +48,9 @@ const DEFAULT_DISCOVERY: RouteDiscovery = {
 /**
  * Runs route discovery. `crawl` only runs when the other sources found nothing, because a
  * sitemap or the file system is a better list than whatever links a crawler happens to see.
+ *
+ * Collect route paths from configured discovery sources with crawl as a fallback. Retain source
+ * files and unresolved dynamic patterns so the result can explain where routes came from.
  */
 export async function discoverRoutes(
   config: Pick<ResolvedConfig, "cwd" | "baseURL" | "environments">,
@@ -77,7 +98,13 @@ export async function discoverRoutes(
   return { paths: result.slice(0, discovery.limit), sources: used, sourceFiles, dynamic };
 }
 
-/** Turns the configured routes (an explicit list or discovery) into concrete paths. */
+/**
+ * Turns the configured routes (an explicit list or discovery) into concrete paths.
+ *
+ * Expand explicit route definitions or discovered paths into concrete environment pairs. Apply
+ * include/exclude filters and report skipped dynamic routes instead of guessing parameter
+ * values.
+ */
 export async function resolveRoutes(
   config: ResolvedConfig,
   options: { discoveryLimit?: number } = {},

@@ -1,3 +1,14 @@
+/**
+ * @file Report shell: search/status filtering, selected job, navigation/hash state, themes,
+ * incomplete banner and usage summary.
+ *
+ * This module runs in the report viewer's browser. React components return JSX (the markup-like
+ * syntax); state changes request a new render, while effects synchronize browser APIs and clean
+ * up listeners.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COMPARE_MODES, type CompareMode } from "./Compare";
 import {
@@ -17,6 +28,11 @@ import { Kbd, StatusIcon } from "./ui";
 
 type Theme = "light" | "dark";
 
+/**
+ * Choose the first theme from saved browser preferences, then fall back to the operating
+ * system. Storage access can throw, so a missing preference must not prevent the report from
+ * opening.
+ */
 function initialTheme(): Theme {
   try {
     const saved = localStorage.getItem("visualguard-theme");
@@ -27,9 +43,18 @@ function initialTheme(): Theme {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
+/**
+ * Check whether a URL value is one of the comparison views the UI supports. The TypeScript type
+ * predicate also tells callers that a successful check makes this string a CompareMode.
+ */
 const isCompareMode = (value: string | undefined): value is CompareMode =>
   COMPARE_MODES.some((mode) => mode.value === value);
 
+/**
+ * Render the report shell and own the selected job, filters, theme and comparison view. React
+ * state triggers a new render when it changes; effects keep browser storage, the URL and
+ * keyboard listeners in sync with that state.
+ */
 export function App({ data }: { data: ReportData }) {
   const { manifest } = data;
   const jobs = useMemo(() => sortJobs(manifest.jobs), [manifest.jobs]);
@@ -59,6 +84,10 @@ export function App({ data }: { data: ReportData }) {
     }
   }, [theme]);
 
+  /**
+   * Derive the displayed jobs from search/status filters. useMemo reuses this array until a
+   * listed dependency changes; it is derived data rather than independent state.
+   */
   const visibleJobs = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return jobs.filter(
@@ -78,6 +107,10 @@ export function App({ data }: { data: ReportData }) {
   }, [selectedId, mode, selected, manifest.number]);
 
   useEffect(() => {
+    /**
+     * Read a changed URL fragment and restore a valid job selection and comparison view. This
+     * event handler lets browser back/forward navigation work without loading a new page.
+     */
     const onHash = () => {
       const state = readHash();
       if (state.jobId && jobs.some((job) => job.id === state.jobId)) setSelectedId(state.jobId);
@@ -87,12 +120,20 @@ export function App({ data }: { data: ReportData }) {
     return () => window.removeEventListener("hashchange", onHash);
   }, [jobs]);
 
+  /**
+   * Select a job and reset region/scroll state. useCallback keeps the function reference stable
+   * between renders while its dependencies remain unchanged.
+   */
   const select = useCallback((id: string) => {
     setSelectedId(id);
     setFocusedRegion(undefined);
     document.getElementById("main")?.scrollTo({ top: 0 });
   }, []);
 
+  /**
+   * Move through the currently filtered list, clamping to its first/last item. The dependency
+   * list refreshes the callback when its selection or visible jobs change.
+   */
   const move = useCallback(
     (step: number) => {
       if (visibleJobs.length === 0) return;
@@ -106,6 +147,10 @@ export function App({ data }: { data: ReportData }) {
     [visibleJobs, selectedId, select],
   );
 
+  /**
+   * Enable the overlay and focus a region on the next animation frame. Clearing its ID first
+   * lets repeated selections restart the highlight animation.
+   */
   const focusRegion = useCallback((id: number) => {
     setShowRegions(true);
     setFocusedRegion(undefined);
@@ -118,6 +163,11 @@ export function App({ data }: { data: ReportData }) {
   }, []);
 
   useEffect(() => {
+    /**
+     * Translate keyboard shortcuts into navigation and view changes. Ignore modified shortcuts
+     * and ordinary typing in form fields so the report does not steal browser or text-input
+     * behavior.
+     */
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -142,6 +192,10 @@ export function App({ data }: { data: ReportData }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [move]);
 
+  /**
+   * Add or remove one status from the active filter. Copy the Set before changing it: React
+   * needs a new object to notice the state update.
+   */
   const toggleStatus = (status: Status) =>
     setStatusFilter((current) => {
       const next = new Set(current);

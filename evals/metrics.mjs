@@ -1,4 +1,20 @@
-/** Dataset applicability is independent from detector output. Missing captures remain misses. */
+/**
+ * @file Computes dataset classification, policy and confidence-calibration metrics from saved
+ * run evidence.
+ *
+ * This is a repository-support script run by Node.js, outside the published package API.
+ * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
+ * helpers below before invoking a script that starts processes or writes artifacts.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
+/**
+ * Dataset applicability is independent from detector output. Missing captures remain misses.
+ *
+ * Create one evaluation case for every applicable dataset route/viewport label. Missing/error
+ * jobs remain error cases so absent captures cannot inflate detector accuracy.
+ */
 export function evaluationCases(manifest, labels, viewports) {
   const cases = [];
   for (const [route, expected] of Object.entries(labels)) {
@@ -32,6 +48,11 @@ export function evaluationCases(manifest, labels, viewports) {
   return cases;
 }
 
+/**
+ * Measure regression recall, precision and false-green rate from final job statuses. Separate
+ * model-backed and fallback cases so policy results are not confused with raw model
+ * classification.
+ */
 export function policyMetrics(cases) {
   const regressions = cases.filter((c) => c.label === "regression");
   const detections = cases.filter((c) => c.status === "regression");
@@ -52,7 +73,12 @@ export function policyMetrics(cases) {
   };
 }
 
-/** Confidence is self-reported; bins expose calibration rather than assuming probability. */
+/**
+ * Confidence is self-reported; bins expose calibration rather than assuming probability.
+ *
+ * Group model answers by reported confidence and calculate observed accuracy per group. Empty
+ * groups return null measurements; self-reported confidence is not assumed to be a probability.
+ */
 export function calibrationMetrics(cases) {
   const scored = cases.filter((c) => c.modelPredicted && Number.isFinite(c.confidence));
   return [0, 0.5, 0.8, 0.9].map((low, index, bounds) => {

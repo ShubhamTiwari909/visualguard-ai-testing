@@ -1,3 +1,14 @@
+/**
+ * @file Opt-in real Next.js build/dev test: seeds three regressions and verifies repairs;
+ * skipped without VG_E2E_NEXT.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { createServer } from "node:net";
 import { resolve } from "node:path";
@@ -16,6 +27,11 @@ import { DevServer } from "../src/fixer/verify.js";
 const enabled = process.env.VG_E2E_NEXT === "1";
 const root = resolve(import.meta.dirname, "../../../examples/nextjs");
 
+/**
+ * Ask the OS for an available localhost port by listening on port 0, then close the probe. The
+ * Promise resolves after close; the returned port is a suggestion and is not reserved
+ * afterward.
+ */
 const freePort = () =>
   new Promise<number>((done) => {
     const probe = createServer().listen(0, "127.0.0.1", () => {
@@ -28,6 +44,10 @@ describe.skipIf(!enabled)("Next.js example", () => {
   let production: ChildProcess | undefined;
   let productionPort: number;
   let stagingPort: number;
+  /**
+   * Run the example's regression-seeding script with the requested arguments. Return the
+   * process result so assertions can check command success and output.
+   */
   const seed = (...args: string[]) =>
     spawnSync("node", ["scripts/seed-regressions.mjs", ...args], { cwd: root });
 
@@ -90,7 +110,22 @@ describe.skipIf(!enabled)("Next.js example", () => {
         includeReview: true,
         yes: true,
         allowDirty: true,
-        callbacks: { confirm: async () => true, consent: async () => false, progress: () => {} },
+        callbacks: {
+          /**
+           * Approve this test proposal so the assertion reaches application and verification.
+           */
+          confirm: async () => true,
+          /**
+           * Decline source upload in this test so only previously authorized/deterministic repair
+           * can proceed.
+           */
+          consent: async () => false,
+          /**
+           * Ignore progress messages in this test; assertions inspect structured outcomes
+           * instead.
+           */
+          progress: () => {},
+        },
       });
       expect(
         Object.fromEntries(outcomes.map((outcome) => [outcome.job.route, outcome.result])),
