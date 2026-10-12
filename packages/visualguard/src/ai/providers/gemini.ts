@@ -40,8 +40,9 @@ export interface GeminiOptions {
   baseUrl?: string;
   timeoutMs?: number;
   /**
-   * Provider attempts per request, including the first. This provider retries 408/429/5xx;
-   * the SDK is limited to one attempt so it does not add its own retries.
+   * Provider attempts per request, including the first. The provider retries eligible
+   * 408/429/5xx responses and network failures; daily-quota and long-wait 429s stop immediately.
+   * The SDK is limited to one attempt so it does not add its own retries.
    */
   retryAttempts?: number;
   /**
@@ -111,8 +112,8 @@ export function retryDelayMs(message: string): number | undefined {
 
 /**
  * Gemini through the official `@google/genai` SDK, with structured output (a JSON schema).
- * Retries 408/429/5xx itself, so a daily quota error fails at once instead of retrying. Images
- * are sent inline.
+ * Handles eligible transport retries itself; daily-quota and long-wait 429s stop immediately.
+ * Images are sent inline.
  */
 export class GeminiProvider extends BaseProvider {
   readonly name = "gemini";

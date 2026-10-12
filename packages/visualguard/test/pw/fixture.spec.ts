@@ -2,8 +2,8 @@
  * @file Real Playwright tests for passing/failing checkpoints, baselines, referenceSetup and
  * early health collection.
  *
- * The fixture uses temporary output and baseline directories created at module scope; each
- * test checks a checkpoint result against the local fixture site.
+ * A temporary workspace is created at module scope; checkpoint checks create its output and
+ * baseline directories as needed. Each test checks a result against the local fixture site.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */
