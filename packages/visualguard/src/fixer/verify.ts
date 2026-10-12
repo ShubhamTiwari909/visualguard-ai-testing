@@ -247,18 +247,37 @@ export class DevServer {
     const child = this.child;
     this.child = undefined;
     if (!child || child.exitCode !== null) return;
+    if (child.pid && process.platform === "win32") {
+      // Keep the shell alive until taskkill identifies and stops its descendants.
+      await new Promise<void>((resolve) => {
+        const killer = spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
+          stdio: ["ignore", "ignore", "pipe"],
+        });
+        killer.stderr?.on("data", (chunk: Buffer) => {
+          this.log = (this.log + chunk.toString()).slice(-4_000);
+        });
+        killer.once("close", (code) => {
+          if (code !== 0)
+            this.log = `${this.log}\nServer taskkill exited with code ${code}`.slice(-4_000);
+          resolve();
+        });
+        killer.once("error", (error) => {
+          this.log = `${this.log}\nCould not stop server tree: ${error.message}`.slice(-4_000);
+          resolve();
+        });
+      });
+      return;
+    }
     try {
       // Kill the whole process group: dev servers spawn their own children.
-      if (child.pid && process.platform !== "win32") process.kill(-child.pid, "SIGTERM");
+      if (child.pid) process.kill(-child.pid, "SIGTERM");
       else child.kill("SIGTERM");
     } catch {
       // Already gone.
     }
     await new Promise((resolve) => setTimeout(resolve, 300));
     try {
-      if (child.pid && process.platform !== "win32") process.kill(-child.pid, "SIGKILL");
-      else if (child.pid)
-        spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+      if (child.pid) process.kill(-child.pid, "SIGKILL");
     } catch {
       /* Already stopped. */
     }
