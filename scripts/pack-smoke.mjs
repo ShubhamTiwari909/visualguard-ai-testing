@@ -1,7 +1,18 @@
+/**
+ * @file Checks the packed npm artifact in a disposable consumer project, including its public
+ * entry points.
+ *
+ * This is a repository-support script run by Node.js, outside the published package API.
+ * Runs commands synchronously with execFileSync and cleans up the temporary consumer project
+ * in finally, including when a check fails.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 // Packs the visualguard package, installs the tarball into a throwaway project,
 // and checks that `npx visualguard --version` works the way a user would run it.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -10,6 +21,10 @@ const pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
 const work = mkdtempSync(join(tmpdir(), "visualguard-smoke-"));
 const isWindows = process.platform === "win32";
 
+/**
+ * Run a packaging-check command and capture its trimmed stdout. execFileSync throws on failure
+ * so the smoke script cannot continue as if installation or invocation succeeded.
+ */
 const run = (cmd, args, cwd) =>
   execFileSync(cmd, args, { cwd, encoding: "utf8", shell: isWindows }).trim();
 
@@ -18,7 +33,7 @@ try {
   const [{ filename }] = JSON.parse(packOutput);
 
   const project = join(work, "project");
-  run("node", ["-e", `require("fs").mkdirSync(${JSON.stringify(project)})`], work);
+  mkdirSync(project);
   writeFileSync(join(project, "package.json"), JSON.stringify({ name: "smoke", private: true }));
   run("npm", ["install", "--no-audit", "--no-fund", join(work, filename)], project);
 

@@ -1,3 +1,14 @@
+/**
+ * @file Tests JSON extraction/schema repair, analysis sessions, cache/policy behavior and patch
+ * request preparation.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -62,6 +73,10 @@ describe("statusWithAnalysis (PLAN.md §10.5)", () => {
   });
 });
 
+/**
+ * Write small comparison crops into a temporary directory and return a job referencing them.
+ * Real image files exercise prompt construction without browser or model traffic.
+ */
 function fixtureJob(): { job: JobResult; runDir: string } {
   const runDir = mkdtempSync(join(tmpdir(), "vg-ai-"));
   const crops = { production: "p.png", staging: "s.png", diff: "d.png" };
@@ -198,6 +213,10 @@ describe("buildParts", () => {
       maxRegions: 3,
       knownSelectors: new Set<string>(),
     };
+    /**
+     * Build prompt parts for a mock provider with a chosen image limit and keep only image
+     * parts. This makes the test assert provider-capability behavior directly.
+     */
     const images = (maxImages: number) =>
       buildParts(new MockProvider(() => ({}), maxImages), input).filter(
         (part) => part.type === "image",

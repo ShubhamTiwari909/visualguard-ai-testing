@@ -1,3 +1,15 @@
+/**
+ * @file Builds changing-area masks from repeat captures, aligns them to DOM boxes and clears
+ * ignored pixels.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Box } from "../core/types.js";
 import { pixelmatchEngine } from "./compare.js";
 import { padBox, type RGBAImage } from "./image.js";
@@ -6,30 +18,46 @@ import { extractRegions } from "./regions.js";
 export interface NoiseOptions {
   threshold: number;
   ignoreAntialiasing: boolean;
-  /** Skip the noise map when it would cover more than this share of the page. */
+  /**
+   * Skip the noise map when it would cover more than this share of the page.
+   */
   maxRatio: number;
-  /** Grows each noisy area so anti-aliased edges around it are covered too. */
+  /**
+   * Grows each noisy area so anti-aliased edges around it are covered too.
+   */
   padding?: number;
 }
 
 export interface NoiseMap {
-  /** Areas that differ between two loads of the same page. */
+  /**
+   * Areas that differ between two loads of the same page.
+   */
   boxes: Box[];
-  /** Share of the page the boxes cover. */
+  /**
+   * Share of the page the boxes cover.
+   */
   ratio: number;
-  /** Why the map isn't used, when it isn't. */
+  /**
+   * Why the map isn't used, when it isn't.
+   */
   skipped?: string;
 }
 
 /**
- * Compares two captures of the same page: whatever differs between them changes on
- * every load (carousels, timestamps, ads, random content) and can't be blamed on a deploy.
+ * Compares two captures of the same page: whatever differs between them changes on every load
+ * (carousels, timestamps, ads, random content) and can't be blamed on a deploy.
+ *
+ * Compare repeated captures of the same page to identify areas that vary independently of a
+ * deployment. Bound the ignored coverage so a broadly unstable page cannot have all its
+ * evidence hidden.
  */
 export function noiseMap(
   first: RGBAImage,
   again: RGBAImage,
   options: NoiseOptions,
-  /** Element boxes ([x, y, width, height]) from the first capture's DOM snapshot. */
+  /**
+   * Element boxes ([x, y, width, height]) from the first capture's DOM snapshot.
+   */
   elements: ReadonlyArray<readonly [number, number, number, number]> = [],
 ): NoiseMap {
   if (first.width !== again.width || first.height !== again.height) {
@@ -66,6 +94,9 @@ export function noiseMap(
  * ("$412" and "$498" share "$4"), and a third load can differ exactly there; covering the whole
  * element (the price) catches that. Elements much larger than the area are left alone, so a
  * blinking cursor doesn't swallow its whole section.
+ *
+ * Expand a noisy rectangle to a nearby suitably sized element when available. This covers an
+ * entire changing value while avoiding expansion to a huge ancestor section.
  */
 export function snapToElement(
   box: Box,
@@ -92,6 +123,10 @@ export function snapToElement(
   };
 }
 
+/**
+ * Count the union of rectangles by filling a temporary binary mask. Overlapping boxes write the
+ * same 1 values, so their intersection is not counted twice.
+ */
 function coveredPixels(boxes: readonly Box[], width: number, height: number): number {
   const covered = new Uint8Array(width * height);
   fillBoxes(covered, boxes, width, height);
@@ -100,6 +135,10 @@ function coveredPixels(boxes: readonly Box[], width: number, height: number): nu
   return count;
 }
 
+/**
+ * Set mask entries inside each clamped rectangle to 1. A row-major mask stores position x/y at
+ * y * width + x.
+ */
 function fillBoxes(target: Uint8Array, boxes: readonly Box[], width: number, height: number): void {
   for (const box of boxes) {
     const x1 = Math.min(width, box.x + box.width);
@@ -110,7 +149,12 @@ function fillBoxes(target: Uint8Array, boxes: readonly Box[], width: number, hei
   }
 }
 
-/** Clears `mask` inside `boxes`. Returns how many differing pixels were cleared. */
+/**
+ * Clears `mask` inside `boxes`. Returns how many differing pixels were cleared.
+ *
+ * Remove changed-mask entries covered by ignored rectangles and return the number removed. Only
+ * count an entry the first time it changes from 1 to 0.
+ */
 export function clearBoxes(
   mask: Uint8Array,
   boxes: readonly Box[],

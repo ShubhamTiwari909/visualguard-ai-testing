@@ -1,3 +1,13 @@
+/**
+ * @file Builds React/Tailwind assets under dist/report-app in the layout expected by the HTML
+ * reporter.
+ *
+ * This file is read by development/build tooling. Its exported object configures that tool; it
+ * is not a visual-test run or an application page.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";

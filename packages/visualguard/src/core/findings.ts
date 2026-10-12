@@ -1,3 +1,15 @@
+/**
+ * @file Converts health/accessibility/performance changes into findings and raises result
+ * severity without downgrading failures.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { ParsedConfig } from "../config/schema.js";
 import type {
   A11yImpact,
@@ -11,7 +23,12 @@ import type {
 
 const RANK: Record<Status, number> = { pass: 0, accepted: 0, review: 1, regression: 2, error: 3 };
 
-/** Raises `status` to the most severe finding: findings can only make a status worse. */
+/**
+ * Raises `status` to the most severe finding: findings can only make a status worse.
+ *
+ * Raise a job verdict to the most severe non-info finding. Comparing status ranks means
+ * independent checks can worsen a result but cannot hide an existing failure.
+ */
 export function applyFindings(status: Status, findings: readonly Finding[]): Status {
   let result = status;
   for (const finding of findings) {
@@ -21,6 +38,10 @@ export function applyFindings(status: Status, findings: readonly Finding[]): Sta
   return result;
 }
 
+/**
+ * Display a URL's path and query without its host when parsing succeeds. Return the original
+ * input for non-URL failure text.
+ */
 function shortURL(url: string): string {
   try {
     const parsed = new URL(url);
@@ -32,8 +53,12 @@ function shortURL(url: string): string {
 
 /**
  * Health findings from capture signals (PLAN.md §7.2). With a production capture to compare
- * against, only problems that are new on staging count; without one (scan mode), any problem
- * is worth a review.
+ * against, only problems that are new on staging count; without one (scan mode), any problem is
+ * worth a review.
+ *
+ * Turn captured browser/network/image failures into findings, comparing staging with reference
+ * evidence when available. In scan mode there is no reference, so problems need review rather
+ * than being assumed new regressions.
  */
 export function healthFindings(
   captures: Partial<Record<Env, CaptureResult>>,
@@ -46,6 +71,10 @@ export function healthFindings(
       ? captures.production!.health
       : undefined;
   const findings: Finding[] = [];
+  /**
+   * Append one health finding with the given severity and message to the local result list.
+   * This closure uses the findings array owned by healthFindings.
+   */
   const add = (severity: FindingSeverity, message: string) =>
     findings.push({ severity, message, source: "health" });
   const newProblem: FindingSeverity = reference ? "regression" : "review";
@@ -106,6 +135,10 @@ const IMPACT_RANK: Record<A11yImpact, number> = { minor: 0, moderate: 1, serious
  * New accessibility violations: rules that fail on more elements than on the reference. Without
  * reference results (no production capture, or a snapshot taken before the check was on), the
  * violations are listed as info, so turning the check on doesn't fail every page at once.
+ *
+ * Report relevant accessibility rules that affect more elements than in the reference capture.
+ * Without reference evidence, list violations as information so enabling the check does not
+ * invent a regression baseline.
  */
 export function accessibilityFindings(
   current: HealthSignals,
@@ -144,13 +177,25 @@ export function accessibilityFindings(
   });
 }
 
+/**
+ * Format kilobytes as KB or MB depending on their size. Divide by 1024 only for the MB label.
+ */
 function formatKB(kb: number): string {
   return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
 }
 
+/**
+ * Convert milliseconds to a seconds label with one decimal place. This is presentation text for
+ * performance findings.
+ */
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 
-/** Load metrics that got worse than the reference by more than the configured margins. */
+/**
+ * Load metrics that got worse than the reference by more than the configured margins.
+ *
+ * Compare current metrics with reference values using configured timing, layout-shift and
+ * payload thresholds. Return no findings for disabled checks or unavailable evidence.
+ */
 export function performanceFindings(
   current: HealthSignals,
   reference: HealthSignals | undefined,
@@ -160,6 +205,10 @@ export function performanceFindings(
   const before = reference?.performance;
   if (!settings.enabled || !now || !before) return [];
   const findings: Finding[] = [];
+  /**
+   * Append one performance finding using the configured severity. This closure avoids repeating
+   * the source/severity fields for every metric.
+   */
   const add = (message: string) =>
     findings.push({ severity: settings.severity, source: "health", message });
 
@@ -173,6 +222,11 @@ export function performanceFindings(
   if (now.cls - before.cls > settings.clsIncrease) {
     add(`More layout shift while loading: CLS ${before.cls} → ${now.cls}`);
   }
+  /**
+   * Require a payload increase to exceed both its absolute KB margin and percentage margin.
+   * Using both guards avoids flagging tiny files solely because their relative increase is
+   * large.
+   */
   const grew = (after: number, earlier: number) =>
     after - earlier > settings.weightIncreaseKB &&
     after > earlier * (1 + settings.weightIncreasePercent / 100);

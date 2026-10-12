@@ -1,3 +1,15 @@
+/**
+ * @file Complete image job: pad sizes, compare pixels, remove noise, enforce tolerances, detect
+ * shifts and write diff/crop artifacts.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Box, Env, Size } from "../core/types.js";
@@ -16,38 +28,50 @@ export interface DiffOptions {
   regionCellSize: number;
   regionMergeDistance: number;
   regionPadding: number;
-  /** Look for a vertical layout shift and report the inserted/removed band separately. */
+  /**
+   * Look for a vertical layout shift and report the inserted/removed band separately.
+   */
   detectShift: boolean;
-  /** Skip the noise map when it covers more than this share of the page. */
+  /**
+   * Skip the noise map when it covers more than this share of the page.
+   */
   noiseMapMaxRatio?: number;
 }
 
 export interface DiffJobInput {
   productionPath: string;
   stagingPath: string;
-  /** Job directory; `diff.png` and `regions/*.png` are written here. */
+  /**
+   * Job directory; `diff.png` and `regions/*.png` are written here.
+   */
   outDir: string;
   options: DiffOptions;
   /**
-   * A second capture of one side (`noise.env`). Areas that differ between the two captures change
-   * on every load and are left out of the diff.
+   * A second capture of one side (`noise.env`). Areas that differ between the two captures
+   * change on every load and are left out of the diff.
    */
   noise?: { env: Env; againPath: string; domPath?: string };
 }
 
 export interface DiffNoise {
   boxes: Box[];
-  /** Differing pixels inside the boxes, left out of `diffPixels`. */
+  /**
+   * Differing pixels inside the boxes, left out of `diffPixels`.
+   */
   ignoredPixels: number;
   skipped?: string;
 }
 
 export interface DiffJobRegion {
-  /** "shift" for the inserted or removed band of a layout shift. */
+  /**
+   * "shift" for the inserted or removed band of a layout shift.
+   */
   kind: "pixels" | "shift";
   box: Box;
   diffPixels: number;
-  /** Absolute paths. */
+  /**
+   * Absolute paths.
+   */
   crops: Record<Env | "diff", string>;
 }
 
@@ -58,7 +82,9 @@ export interface DiffJobOutput {
   sizeMismatch?: Record<Env, Size>;
   diffPixels: number;
   diffRatio: number;
-  /** Absolute path, only written when the job did not pass. */
+  /**
+   * Absolute path, only written when the job did not pass.
+   */
   image?: string;
   shift?: { fromY: number; deltaY: number };
   noise?: DiffNoise;
@@ -66,6 +92,10 @@ export interface DiffJobOutput {
   durationMs: number;
 }
 
+/**
+ * Load element rectangles from a DOM artifact for noise-region expansion. Return an empty list
+ * when the optional snapshot cannot be read.
+ */
 function elementBoxes(domPath: string): Array<[number, number, number, number]> {
   try {
     const snapshot = JSON.parse(readFileSync(domPath, "utf8")) as {
@@ -77,12 +107,23 @@ function elementBoxes(domPath: string): Array<[number, number, number, number]> 
   }
 }
 
+/**
+ * Decide whether changed pixels fall within the allowed absolute or ratio tolerance. A zero
+ * ratio setting disables the ratio allowance rather than accepting every image.
+ */
 export function passesGate(diffPixels: number, diffRatio: number, options: DiffOptions): boolean {
   if (diffPixels <= options.maxDiffPixels) return true;
   return options.maxDiffRatio > 0 && diffRatio <= options.maxDiffRatio;
 }
 
-/** Diffs two screenshots on disk (PLAN.md §8.1). Pure apart from file I/O, so it runs in workers. */
+/**
+ * Diffs two screenshots on disk (PLAN.md §8.1). Pure apart from file I/O, so it runs in
+ * workers.
+ *
+ * Read screenshot files, normalize their dimensions, account for noise/layout shifts and write
+ * diff/crop artifacts. Return measured evidence for classification; this function runs inline
+ * or in a worker with the same input.
+ */
 export function computeDiff(input: DiffJobInput): DiffJobOutput {
   const started = Date.now();
   const production = readPNG(input.productionPath);
@@ -175,6 +216,10 @@ export function computeDiff(input: DiffJobInput): DiffJobOutput {
   ];
 
   // Production crops come from where the content was before it moved.
+  /**
+   * Translate a staging-coordinate crop back to production when it lies below a detected
+   * vertical shift. Leave boxes outside that shifted area unchanged.
+   */
   const productionBox = (box: Box): Box =>
     output.shift && box.y >= output.shift.fromY + Math.max(0, output.shift.deltaY)
       ? { ...box, y: Math.max(0, box.y - output.shift.deltaY) }

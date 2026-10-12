@@ -1,3 +1,14 @@
+/**
+ * @file Renders typed VisualGuard config from setup answers and viewport/provider choices.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 export const VIEWPORT_PRESETS = {
   desktop: { width: 1440, height: 900 },
   laptop: { width: 1280, height: 800 },
@@ -10,18 +21,30 @@ export type AIProviderName = "gemini" | "ollama" | "none";
 
 export interface InitAnswers {
   production: string;
-  /** Undefined when the staging URL comes from VISUALGUARD_STAGING_URL (e.g. per-PR previews). */
+  /**
+   * Undefined when the staging URL comes from VISUALGUARD_STAGING_URL (e.g. per-PR previews).
+   */
   staging?: string;
   routes: string[];
-  /** Dynamic routes that need params; written as commented examples. */
+  /**
+   * Dynamic routes that need params; written as commented examples.
+   */
   dynamicRoutes: string[];
   viewports: ViewportPreset[];
   ai: AIProviderName;
   aiModel?: string;
 }
 
+/**
+ * Serialize a string as a valid JavaScript string literal using JSON.stringify. Embedded quotes
+ * and backslashes are escaped before insertion into generated config source.
+ */
 const quote = (value: string) => JSON.stringify(value);
 
+/**
+ * Render one named viewport preset as a config-object line. Object.entries exposes its fields
+ * so numeric/boolean options can be written in a readable form.
+ */
 function viewportLine(name: ViewportPreset): string {
   const preset = VIEWPORT_PRESETS[name] as Record<string, number | boolean>;
   const fields = Object.entries(preset)
@@ -30,7 +53,12 @@ function viewportLine(name: ViewportPreset): string {
   return `    ${name}: { ${fields} },`;
 }
 
-/** Renders `visualguard.config.ts` from the init answers. */
+/**
+ * Renders `visualguard.config.ts` from the init answers.
+ *
+ * Generate visualguard.config.ts from validated setup answers. Build an array of source lines
+ * and join it at the end so optional sections are easy to include.
+ */
 export function renderConfig(answers: InitAnswers): string {
   const lines: string[] = [];
   lines.push(`import { defineConfig } from "visualguard";`, "", "export default defineConfig({");

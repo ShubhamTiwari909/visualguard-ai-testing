@@ -1,3 +1,14 @@
+/**
+ * @file Simulates failure during a multi-file write and verifies restoration of already-written
+ * files.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -9,6 +20,10 @@ vi.mock("node:fs", async (original) => {
   const actual = await original<typeof import("node:fs")>();
   return {
     ...actual,
+    /**
+     * Simulate a single disk-write failure on the chosen path, then delegate other writes to
+     * the real filesystem API. Resetting the failure path allows rollback writes to proceed.
+     */
     writeFileSync: (...args: Parameters<typeof actual.writeFileSync>) => {
       if (String(args[0]) === failure.path) {
         failure.path = "";

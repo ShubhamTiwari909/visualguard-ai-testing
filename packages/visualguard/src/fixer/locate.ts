@@ -1,3 +1,15 @@
+/**
+ * @file Collects DOM/source clues, follows page imports, ranks candidate files and selects
+ * source excerpts.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import type { DomNode, DomSnapshot } from "../capture/dom-snapshot.js";
@@ -9,23 +21,35 @@ export interface Candidate {
   path: string;
   score: number;
   reasons: string[];
-  /** 0-based line numbers that matched a clue. */
+  /**
+   * 0-based line numbers that matched a clue.
+   */
   lines: number[];
 }
 
-/** What the run knows about the changed elements, used to find them in the source. */
+/**
+ * What the run knows about the changed elements, used to find them in the source.
+ */
 export interface Clues {
   testIds: string[];
   ids: string[];
-  /** Full class attributes of the changed elements (from the DOM snapshots). */
+  /**
+   * Full class attributes of the changed elements (from the DOM snapshots).
+   */
   classLists: string[];
   texts: string[];
   components: string[];
   styles: StyleDelta[];
-  /** Elements whose class attribute differs between production and staging. */
+  /**
+   * Elements whose class attribute differs between production and staging.
+   */
   classChanges: Array<{ selector: string; production: string; staging: string }>;
 }
 
+/**
+ * Load an optional saved DOM snapshot from the run directory. Return undefined for absent or
+ * malformed evidence so source location can use other clues.
+ */
 function loadDom(runDir: string, path: string | undefined): DomSnapshot | undefined {
   if (!path || !existsSync(join(runDir, path))) return undefined;
   try {
@@ -35,7 +59,12 @@ function loadDom(runDir: string, path: string | undefined): DomSnapshot | undefi
   }
 }
 
-/** Collects test ids, classes, texts and style changes from a job's regions and analysis. */
+/**
+ * Collects test ids, classes, texts and style changes from a job's regions and analysis.
+ *
+ * Gather selectors, text, component names, styles and class changes from job evidence.
+ * Deduplicate repeated clues before ranking source files.
+ */
 export function collectClues(job: JobResult, runDir: string): Clues {
   const selectors = new Set<string>();
   const texts = new Set<string>();
@@ -105,8 +134,16 @@ export function collectClues(job: JobResult, runDir: string): Clues {
   };
 }
 
+/**
+ * Escape a literal clue before using it inside a regular expression. This prevents characters
+ * such as . or [ from becoming pattern operators.
+ */
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/**
+ * Return zero-based line indexes for content lines accepted by the supplied predicate. These
+ * indexes help choose relevant source excerpts.
+ */
 function linesMatching(content: string, test: (line: string) => boolean): number[] {
   const lines: number[] = [];
   content.split("\n").forEach((line, index) => {
@@ -115,9 +152,18 @@ function linesMatching(content: string, test: (line: string) => boolean): number
   return lines;
 }
 
-/** Page files that render a route (Next.js file-system routing). */
+/**
+ * Page files that render a route (Next.js file-system routing).
+ *
+ * Find Next.js page files that can render the concrete route, including parameterized patterns.
+ * Strip query/fragment text because filesystem routing uses the pathname.
+ */
 export function routeFiles(cwd: string, route: string): string[] {
   const path = route.split(/[?#]/)[0]!.replace(/\/$/, "") || "/";
+  /**
+   * Convert a framework route pattern into an anchored matcher for concrete URL paths. Escape
+   * static segments and expand dynamic/catch-all segments according to their shape.
+   */
   const pattern = (filePath: string) =>
     new RegExp(
       `^${filePath
@@ -139,7 +185,12 @@ export function routeFiles(cwd: string, route: string): string[] {
     .map((candidate) => candidate.file);
 }
 
-/** Relative imports of a file, resolved to project paths (also `@/` and `~/` aliases). */
+/**
+ * Relative imports of a file, resolved to project paths (also `@/` and `~/` aliases).
+ *
+ * Resolve supported relative and project-alias imports to known source paths. This is a bounded
+ * source-text heuristic rather than a complete TypeScript module resolver.
+ */
 export function localImports(file: SourceFile, files: Map<string, SourceFile>): string[] {
   const results: string[] = [];
   for (const match of file.content.matchAll(
@@ -182,6 +233,10 @@ export function localImports(file: SourceFile, files: Map<string, SourceFile>): 
  * Ranks source files by how likely they are to contain the regression (PLAN.md §13.3): files
  * changed since `compareRef`, the route's page and its imports, then matches for test ids, ids,
  * class lists, visible text, component names and changed CSS values.
+ *
+ * Rank allowed source files using route ownership, import links, changed files and captured
+ * element/style clues. Return the highest-scoring candidates with reasons and matching lines
+ * for review.
  */
 export function locateSource(input: {
   job: JobResult;
@@ -194,6 +249,10 @@ export function locateSource(input: {
   const { clues, files } = input;
   const byPath = new Map(files.map((file) => [file.path, file]));
   const candidates = new Map<string, Candidate>();
+  /**
+   * Accumulate a candidate's score, unique reasons and matching line indexes in a Map. Reusing
+   * the same path combines evidence rather than creating duplicate candidates.
+   */
   const add = (path: string, score: number, reason: string, lines: number[] = []) => {
     const candidate = candidates.get(path) ?? { path, score: 0, reasons: [], lines: [] };
     candidate.score += score;
@@ -276,7 +335,13 @@ export function locateSource(input: {
     .slice(0, input.limit ?? 5);
 }
 
-/** The parts of a file worth showing a model: whole small files, windows around matches otherwise. */
+/**
+ * The parts of a file worth showing a model: whole small files, windows around matches
+ * otherwise.
+ *
+ * Choose the whole small file or bounded windows around relevant lines for a model prompt.
+ * Merge nearby windows and use an omission marker between separate ranges.
+ */
 export function excerpt(
   content: string,
   lines: number[],

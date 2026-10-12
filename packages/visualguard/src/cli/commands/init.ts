@@ -1,3 +1,15 @@
+/**
+ * @file Interactive/noninteractive setup: discovers project routes and writes config, env and
+ * optional workflow files.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -35,7 +47,9 @@ export interface InitFlags {
   staging?: string;
   ai?: AIProviderName;
   force?: boolean;
-  /** Write .github/workflows/visualguard.yml (asked interactively). */
+  /**
+   * Write .github/workflows/visualguard.yml (asked interactively).
+   */
   workflow?: boolean;
 }
 
@@ -47,6 +61,11 @@ export interface InitResult {
 
 const MAX_ROUTES = 50;
 
+/**
+ * Register the init command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerInitCommand(program: Command): void {
   program
     .command("init")
@@ -62,6 +81,10 @@ export function registerInitCommand(program: Command): void {
     });
 }
 
+/**
+ * Return a prompt validation message for missing, malformed or non-HTTP URLs. Returning
+ * undefined is the prompt library's signal that the input is valid.
+ */
 function validateURL(value: string | undefined): string | undefined {
   if (!value) return "Enter a URL";
   try {
@@ -73,6 +96,10 @@ function validateURL(value: string | undefined): string | undefined {
   return undefined;
 }
 
+/**
+ * Stop setup when the prompt library returns its cancellation symbol. Otherwise narrow the
+ * answer type so subsequent code can use the selected value.
+ */
 function cancelled<T>(value: T): Exclude<T, symbol> {
   if (p.isCancel(value)) {
     p.cancel("Setup cancelled.");
@@ -87,6 +114,10 @@ interface RouteCandidates {
   source: string;
 }
 
+/**
+ * Collect setup suggestions from framework routes and available web discovery. Deduplicate and
+ * bound the suggestions, retaining dynamic-route information for explicit parameter input.
+ */
 async function findRouteCandidates(
   cwd: string,
   project: ProjectInfo,
@@ -124,7 +155,12 @@ async function findRouteCandidates(
   };
 }
 
-/** Interactive (or `--yes`) setup. Returns what was written, for tests. */
+/**
+ * Interactive (or `--yes`) setup. Returns what was written, for tests.
+ *
+ * Detect the project, gather setup answers and write configuration plus selected integration
+ * files. Return the created paths and answers so the setup workflow is inspectable in tests.
+ */
 export async function runInit(cwd: string, flags: InitFlags): Promise<InitResult> {
   const interactive = !flags.yes;
   const project = detectProject(cwd);
@@ -176,6 +212,10 @@ export async function runInit(cwd: string, flags: InitFlags): Promise<InitResult
       await p.text({
         message: "Staging / preview URL",
         placeholder: "https://staging.example.com (leave empty to use VISUALGUARD_STAGING_URL)",
+        /**
+         * Validate an optional URL only when the prompt contains a value. Leaving it blank is
+         * supported by this setup question.
+         */
         validate: (input) => (input ? validateURL(input) : undefined),
       }),
     );
@@ -327,6 +367,10 @@ export async function runInit(cwd: string, flags: InitFlags): Promise<InitResult
   return { configPath, answers, created };
 }
 
+/**
+ * Show whether a local Ollama installation and suitable models are reachable. A bounded fetch
+ * keeps this optional setup explanation from waiting indefinitely.
+ */
 async function describeOllama(): Promise<void> {
   const host = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
   try {
@@ -348,6 +392,10 @@ async function describeOllama(): Promise<void> {
   }
 }
 
+/**
+ * Install missing Playwright dependencies/browser binaries using the detected package manager.
+ * Report an installation failure with a command the developer can run manually.
+ */
 async function ensurePlaywright(cwd: string, project: ProjectInfo): Promise<void> {
   const browserInstall = execCommand(project.packageManager, ["playwright", "install", "chromium"]);
   if (project.playwrightVersion) {

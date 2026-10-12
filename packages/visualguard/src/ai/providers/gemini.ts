@@ -1,3 +1,15 @@
+/**
+ * @file Gemini SDK transport: image/schema requests, thinking/detail settings, retry/quota
+ * handling and returned model/token metadata.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import {
   ApiError,
   GoogleGenAI,
@@ -14,23 +26,33 @@ import {
   type CompletionRequest,
 } from "../provider.js";
 
-/** A moving alias, so the default follows Google's current Flash model. Override with ai.model. */
+/**
+ * A moving alias, so the default follows Google's current Flash model. Override with ai.model.
+ */
 export const DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
 
 export interface GeminiOptions {
   apiKey: string;
   model?: string;
-  /** For tests and proxies. */
+  /**
+   * For tests and proxies.
+   */
   baseUrl?: string;
   timeoutMs?: number;
-  /** Attempts per request, including the first (SDK retries 408/429/5xx). */
+  /**
+   * Provider attempts per request, including the first. The provider retries eligible
+   * 408/429/5xx responses and network failures; daily-quota and long-wait 429s stop immediately.
+   * The SDK is limited to one attempt so it does not add its own retries.
+   */
   retryAttempts?: number;
   /**
    * How much the model reasons before answering. Thinking is billed as output and is most of a
    * Flash call's latency; classifying a visual diff needs little of it. Default "low".
    */
   thinking?: GeminiThinking;
-  /** Tokens spent per image. "medium" is plenty for region crops. Default "medium". */
+  /**
+   * Tokens spent per image. "medium" is plenty for region crops. Default "medium".
+   */
   imageDetail?: ImageDetail;
 }
 
@@ -50,6 +72,10 @@ const MEDIA_RESOLUTION: Record<ImageDetail, MediaResolution> = {
 type ThinkingStyle = "level" | "budget" | "none";
 const THINKING_STYLES: readonly ThinkingStyle[] = ["level", "budget", "none"];
 
+/**
+ * Map VisualGuard's thinking preference to the setting supported by this Gemini model. Return
+ * undefined when defaults should be used or the model does not support a thinking option.
+ */
 function thinkingConfig(
   thinking: GeminiThinking,
   style: ThinkingStyle,
@@ -61,10 +87,17 @@ function thinkingConfig(
   return { thinkingBudget: thinking === "off" ? 0 : 1024 };
 }
 
-/** Waits longer than this are not worth it: the quota is per day, or the run would stall. */
+/**
+ * Waits longer than this are not worth it: the quota is per day, or the run would stall.
+ */
 const MAX_RETRY_WAIT_MS = 60_000;
 
-/** The server's suggested wait from a 429 ("retryDelay":"17s" or "Please retry in 1h2m3s"). */
+/**
+ * The server's suggested wait from a 429 ("retryDelay":"17s" or "Please retry in 1h2m3s").
+ *
+ * Read a provider-suggested retry delay and convert hours, minutes or seconds into
+ * milliseconds. Return undefined when the message contains no recognizable wait instruction.
+ */
 export function retryDelayMs(message: string): number | undefined {
   const field = message.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
   if (field) return Number(field[1]) * 1000;
@@ -79,7 +112,7 @@ export function retryDelayMs(message: string): number | undefined {
 
 /**
  * Gemini through the official `@google/genai` SDK, with structured output (a JSON schema).
- * Retries 408/429/5xx itself, so a daily quota error fails at once instead of retrying.
+ * Handles eligible transport retries itself; daily-quota and long-wait 429s stop immediately.
  * Images are sent inline.
  */
 export class GeminiProvider extends BaseProvider {
@@ -93,6 +126,10 @@ export class GeminiProvider extends BaseProvider {
   private mediaResolutionSupported = true;
   private readonly retryAttempts: number;
 
+  /**
+   * Create the Gemini SDK client and store model/image/retry preferences. SDK retries are
+   * disabled here so this provider can explicitly account for each network attempt.
+   */
   constructor(options: GeminiOptions) {
     super();
     this.model = options.model ?? DEFAULT_GEMINI_MODEL;
@@ -109,6 +146,11 @@ export class GeminiProvider extends BaseProvider {
     });
   }
 
+  /**
+   * Encode text and PNG bytes for Gemini, issue a budgeted request and return the answer with
+   * token usage. Retry eligible transport failures with bounded waits, and step down
+   * unsupported model options when possible.
+   */
   protected async complete(request: CompletionRequest): Promise<Completion> {
     const parts: GeminiPart[] = request.parts.map((part) =>
       part.type === "text"
@@ -158,7 +200,13 @@ export class GeminiProvider extends BaseProvider {
     }
   }
 
-  /** Steps down to settings the model accepts after a 400 about them. Returns true to retry. */
+  /**
+   * Steps down to settings the model accepts after a 400 about them. Returns true to retry.
+   *
+   * Handle a 400 response that identifies an unsupported thinking or media-resolution setting.
+   * Update this provider instance and return true only when another request can use a different
+   * option.
+   */
   private dropUnsupportedOption(error: unknown): boolean {
     if (!(error instanceof ApiError) || error.status !== 400) return false;
     if (/thinking/i.test(error.message) && this.thinking !== "default") {
@@ -174,7 +222,12 @@ export class GeminiProvider extends BaseProvider {
     return false;
   }
 
-  /** Model ids available to this key (for `doctor` and `init`). */
+  /**
+   * Model ids available to this key (for `doctor` and `init`).
+   *
+   * Ask Gemini for models available to these credentials, reading a bounded number from its
+   * async pager. Async iteration waits for additional API pages as they are needed.
+   */
   async listModels(): Promise<string[]> {
     try {
       const pager = await this.client.models.list();
@@ -190,6 +243,10 @@ export class GeminiProvider extends BaseProvider {
   }
 }
 
+/**
+ * Translate SDK or network errors into the shared AIError shape. HTTP status and model
+ * information determine whether retrying is reasonable and what guidance the CLI can show.
+ */
 function toAIError(error: unknown, model: string): AIError {
   if (error instanceof AIError) return error;
   const status = error instanceof ApiError ? error.status : undefined;
@@ -229,11 +286,19 @@ function toAIError(error: unknown, model: string): AIError {
   });
 }
 
+/**
+ * Format a long retry delay as minutes or hours for the error message. The input is
+ * milliseconds, so divide by 60,000 before rounding.
+ */
 function formatWait(ms: number): string {
   const minutes = Math.round(ms / 60_000);
   return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`;
 }
 
+/**
+ * Wait asynchronously for a retry delay, but reject promptly when cancellation arrives. A
+ * Promise allows other work to run while the timer is pending.
+ */
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(signal.reason as Error);

@@ -1,3 +1,15 @@
+/**
+ * @file Runs one page capture: instrument, navigate, prepare/stabilize, retry, screenshot,
+ * gather DOM/health/checks and traces.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Browser, Page } from "playwright";
 import type { ResolvedConfig } from "../config/resolve.js";
 import type { CaptureHookContext } from "../config/schema.js";
@@ -22,17 +34,25 @@ import {
 } from "./stabilize.js";
 
 export interface CaptureRequest {
-  /** Replay a per-check interaction state on the reference page. */
+  /**
+   * Replay a per-check interaction state on the reference page.
+   */
   setup?: (page: Page) => Promise<void>;
   browser: Browser;
   config: ResolvedConfig;
   job: JobSpec;
   env: Env;
-  /** Called with the stabilised page right after the screenshot (DOM snapshots, Phase 4). */
+  /**
+   * Called with the stabilised page right after the screenshot (DOM snapshots, Phase 4).
+   */
   afterScreenshot?: (page: Page) => Promise<void>;
-  /** Save a Playwright trace of the final attempt here. */
+  /**
+   * Save a Playwright trace of the final attempt here.
+   */
   tracePath?: string;
-  /** Run the configured accessibility and performance checks (default true). */
+  /**
+   * Run the configured accessibility and performance checks (default true).
+   */
   checks?: boolean;
 }
 
@@ -49,6 +69,11 @@ export interface CaptureOutcome {
 const MASK_COLOR = "#FF00FF";
 const STABLE_PIXEL_TOLERANCE = 10;
 
+/**
+ * Decode two PNGs and count pixels whose RGB channels differ. Advance by four bytes per pixel
+ * because PNG data also includes alpha; different dimensions return Infinity so they cannot be
+ * considered stable.
+ */
 function countChangedPixels(a: Buffer, b: Buffer): number {
   const imageA = decodePNG(a);
   const imageB = decodePNG(b);
@@ -73,6 +98,10 @@ function countChangedPixels(a: Buffer, b: Buffer): number {
  * Every attempt gets its own browser context: Playwright's clock belongs to the context, so
  * pausing it for one page would freeze any other page sharing that context. Separate contexts
  * also keep cookies and storage from leaking between routes.
+ *
+ * Capture a route with a fresh context for each retry and close it in finally. Await pauses
+ * this function while the browser works; cleanup still executes when navigation or screenshot
+ * capture throws.
  */
 export async function capturePage(request: CaptureRequest): Promise<CaptureOutcome> {
   const started = Date.now();
@@ -102,6 +131,11 @@ export async function capturePage(request: CaptureRequest): Promise<CaptureOutco
   });
 }
 
+/**
+ * Navigate and collect health/check evidence around one screenshot attempt. Install listeners
+ * and performance instrumentation before navigation so early page failures and timing data are
+ * not missed.
+ */
 async function captureOnce(
   page: Page,
   { config, job, env, afterScreenshot, setup, checks = true }: CaptureRequest,
@@ -181,19 +215,29 @@ async function captureOnce(
 export interface ShootContext {
   config: ResolvedConfig;
   job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide">;
-  /** Filled in with broken images and overflow. */
+  /**
+   * Filled in with broken images and overflow.
+   */
   health: HealthSignals;
-  /** Present when the tracker was attached before navigation. */
+  /**
+   * Present when the tracker was attached before navigation.
+   */
   network?: NetworkTracker;
-  /** Present when the page clock was installed before navigation, so it can be paused. */
+  /**
+   * Present when the page clock was installed before navigation, so it can be paused.
+   */
   clock?: { base: number; installedAt: number };
   hookContext: CaptureHookContext;
 }
 
 /**
  * Stabilises a loaded page and takes the screenshot (PLAN.md §7): stabilisation CSS, fonts,
- * lazy content, images, network, hooks, media and clock, then a stability loop. Also used by the
- * Playwright fixture on pages a test has already navigated.
+ * lazy content, images, network, hooks, media and clock, then a stability loop. Also used by
+ * the Playwright fixture on pages a test has already navigated.
+ *
+ * Apply the configured stabilization steps, then compare repeated screenshots to check whether
+ * pixels have settled. Return image bytes and capture flags so later classification can
+ * distinguish page movement from a regression.
  */
 export async function stabilizeAndShoot(
   page: Page,
@@ -237,6 +281,10 @@ export async function stabilizeAndShoot(
   const mask = [IGNORE_MASK_SELECTOR, ...stabilize.mask, ...job.mask].map((selector) =>
     page.locator(selector),
   );
+  /**
+   * Take one screenshot with the same masks, scale and clipping rules each time. Reusing this
+   * closure makes the stability loop compare equivalent capture settings.
+   */
   const shoot = () =>
     page.screenshot({
       type: "png",
@@ -275,6 +323,9 @@ export async function stabilizeAndShoot(
 /**
  * Stops timers and requestAnimationFrame, which CSS overrides cannot reach. The pause time must
  * not be behind the clock's internal time, so it is derived from when the clock was installed.
+ *
+ * Freeze JavaScript timers using a pause time ahead of the browser clock. Retry with larger
+ * margins only for past-time errors; other errors still propagate.
  */
 async function pauseClock(page: Page, clockBase: number, installedAt: number): Promise<void> {
   for (const margin of [100, 1_000, 5_000]) {

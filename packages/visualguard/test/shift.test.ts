@@ -1,8 +1,23 @@
+/**
+ * @file Tests inserted/removed vertical layout bands and cases without a meaningful shift.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { describe, expect, it } from "vitest";
 import { detectShift } from "../src/diff/shift.js";
 import { createImage, type RGBAImage } from "../src/diff/image.js";
 
-/** A page of distinct text-like rows so every row hashes differently. */
+/**
+ * A page of distinct text-like rows so every row hashes differently.
+ *
+ * Generate distinct text-like pixel rows at controlled positions. Unique row hashes make
+ * inserted/removed vertical bands detectable without real font rendering.
+ */
 function page(
   height: number,
   rows: Array<{ y: number; seed: number; length?: number }>,

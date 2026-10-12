@@ -1,3 +1,14 @@
+/**
+ * @file Creates the Commander program and registers every subcommand plus positional URL mode.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { Command } from "commander";
 import { VERSION } from "../core/version.js";
 import { registerAcceptCommand } from "./commands/accept.js";
@@ -14,6 +25,10 @@ import { registerTestCommand } from "./commands/test.js";
 import { registerWatchCommand } from "./commands/watch.js";
 import { registerZeroConfigCommand } from "./commands/zero-config.js";
 
+/**
+ * Build the root Commander program and register all subcommands. The returned object can parse
+ * real CLI arguments or be inspected by tests without running a command immediately.
+ */
 export function createProgram(): Command {
   const program = new Command();
 

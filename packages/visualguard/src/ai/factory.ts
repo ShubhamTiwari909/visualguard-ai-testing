@@ -1,3 +1,15 @@
+/**
+ * @file Chooses Gemini/Ollama/no provider from config/env and reports missing-credential
+ * fallback.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { ParsedConfig } from "../config/schema.js";
 import type { AIProvider } from "./provider.js";
 import { GeminiProvider } from "./providers/gemini.js";
@@ -7,13 +19,19 @@ export type ProviderName = ParsedConfig["ai"]["provider"];
 
 export interface ProviderResult {
   provider: AIProvider | undefined;
-  /** Why there is no provider, when AI was requested but can't run. */
+  /**
+   * Why there is no provider, when AI was requested but can't run.
+   */
   reason?: string;
 }
 
 /**
  * Creates the configured provider. A missing key is not an error: VisualGuard falls back to its
  * heuristics and says why (PLAN.md §2, principle 2).
+ *
+ * Translate resolved AI settings and environment variables into a provider instance. Return an
+ * explanatory fallback when cloud credentials are missing so deterministic comparisons remain
+ * usable.
  */
 export function createProvider(
   ai: Pick<ParsedConfig["ai"], "provider" | "model"> &

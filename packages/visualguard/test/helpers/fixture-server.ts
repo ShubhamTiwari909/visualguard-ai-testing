@@ -1,3 +1,13 @@
+/**
+ * @file Serves production/staging fixture pages and returns server lifecycle helpers.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -20,7 +30,13 @@ export interface FixtureServer {
   close: () => Promise<void>;
 }
 
-/** Serves fixtures/site/<variant>: "/name" -> name.html, "/" -> index.html. */
+/**
+ * Serves fixtures/site/<variant>: "/name" -> name.html, "/" -> index.html.
+ *
+ * Serve the chosen fixture variant on localhost and return its URL plus asynchronous close
+ * helper. Map extensionless page routes to HTML files so fixtures behave like a simple deployed
+ * site.
+ */
 export async function startFixtureServer(
   variant: "production" | "staging",
   root = FIXTURE_ROOT,
@@ -50,6 +66,10 @@ export async function startFixtureServer(
   const { port } = server.address() as AddressInfo;
   return {
     url: `http://127.0.0.1:${port}`,
+    /**
+     * Return a Promise that resolves when the fixture HTTP server closes. Teardown can await it
+     * before releasing the temporary resources.
+     */
     close: () => new Promise((resolveClose) => server.close(() => resolveClose())),
   };
 }

@@ -1,3 +1,15 @@
+/**
+ * @file CLI repair prompts, source-upload consent and progress; dispatches interactive or
+ * automatic fixing.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import * as p from "@clack/prompts";
 import type { Command } from "commander";
 import pc from "picocolors";
@@ -28,6 +40,11 @@ export interface FixFlags extends Pick<ConfigFlags, "config" | "provider" | "mod
   keepWorktree?: boolean;
 }
 
+/**
+ * Register the fix command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerFixCommand(program: Command): void {
   const command = program
     .command("fix")
@@ -58,6 +75,10 @@ export function registerFixCommand(program: Command): void {
   });
 }
 
+/**
+ * Color added, removed and hunk lines in a unified diff. File headers beginning with +++ or ---
+ * are not treated as changed source lines.
+ */
 const colorDiff = (diff: string) =>
   diff
     .split("\n")
@@ -72,6 +93,10 @@ const colorDiff = (diff: string) =>
     )
     .join("\n");
 
+/**
+ * Recognize the prompt library's cancellation sentinel and end the interactive command cleanly.
+ * Otherwise return the selected answer with the sentinel excluded from its TypeScript type.
+ */
 function cancelled<T>(value: T): Exclude<T, symbol> {
   if (p.isCancel(value)) {
     p.cancel("Stopped. Changes already verified stay in place.");
@@ -80,6 +105,11 @@ function cancelled<T>(value: T): Exclude<T, symbol> {
   return value as Exclude<T, symbol>;
 }
 
+/**
+ * Resolve the provider and run, then coordinate consent, proposal review, application and
+ * verification. Return an exit code based on the repair outcomes instead of assuming a proposed
+ * patch succeeded.
+ */
 export async function runFixCommand(routes: string[], flags: FixFlags): Promise<number> {
   const config = await loadResolvedConfig({
     config: flags.config,
@@ -102,8 +132,15 @@ export async function runFixCommand(routes: string[], flags: FixFlags): Promise<
   const interactive = process.stdin.isTTY && !isCI();
 
   const callbacks: FixCallbacks = {
+    /**
+     * Render interactive repair progress for the supplied job.
+     */
     progress: (job, message) =>
       p.log.step(`${pc.bold(job.route)} ${pc.dim(job.viewport)}  ${message}`),
+    /**
+     * Show a proposal's files, rationale and diff, then ask whether it should be applied.
+     * Declining returns false to the fixer so the source remains unmodified by that proposal.
+     */
     async confirm(proposal: Proposal) {
       const files = [...new Set(proposal.edits.map((edit) => edit.file))];
       p.note(
@@ -113,6 +150,10 @@ export async function runFixCommand(routes: string[], flags: FixFlags): Promise<
       if (!interactive) return false;
       return cancelled(await p.confirm({ message: "Apply this change?", initialValue: false }));
     },
+    /**
+     * Explain which source excerpts would be sent to the chosen provider and request consent.
+     * This is distinct from approving the eventual file edits.
+     */
     async consent(files, chosen) {
       p.note(
         `To propose a patch, VisualGuard sends excerpts of these files to ${chosen.name} (${chosen.model}):\n${files.map((file) => `  ${file}`).join("\n")}\n\nYour answer is remembered in .visualguard/consent.json.`,
@@ -163,6 +204,10 @@ const RESULT_STYLE: Record<FixOutcome["result"], (text: string) => string> = {
   failed: pc.red,
 };
 
+/**
+ * Render one result line per attempted job using the outcome's style. A skipped or unverified
+ * proposal stays distinguishable from a verified fix.
+ */
 function printSummary(outcomes: FixOutcome[]): void {
   const lines = outcomes.map((outcome) => {
     const style = RESULT_STYLE[outcome.result];
@@ -171,12 +216,20 @@ function printSummary(outcomes: FixOutcome[]): void {
   p.note(lines.join("\n"), "Summary");
 }
 
+/**
+ * Run the automatic repair workflow in its managed workspace and print its outcomes. Translate
+ * the final set of verified repairs into a CLI exit code.
+ */
 async function runAutoFix(
   routes: string[],
   flags: FixFlags,
   config: Awaited<ReturnType<typeof loadResolvedConfig>>,
   provider: AIProvider | undefined,
 ): Promise<number> {
+  /**
+   * Append a newline when writing automated-fix progress to stdout. Keeping this local helper
+   * centralizes the output formatting.
+   */
   const write = (line = "") => process.stdout.write(`${line}\n`);
   write(`VisualGuard fix --auto${flags.pr ? " --pr" : ""}`);
   const result = await autoFix(config, {
@@ -190,6 +243,9 @@ async function runAutoFix(
     base: flags.base,
     branch: flags.branch,
     keepWorktree: flags.keepWorktree,
+    /**
+     * Write automatic repair progress through this command's local line writer.
+     */
     progress: (message) => write(`  ${message}`),
   });
   write();

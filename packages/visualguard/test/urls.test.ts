@@ -1,3 +1,12 @@
+/**
+ * @file Tests URL joining/validation and single/catch-all/optional dynamic route parameter
+ * expansion.
+ *
+ * The tests call imported URL/glob helpers with inline inputs and check their outputs.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { describe, expect, it } from "vitest";
 import {
   applyParams,

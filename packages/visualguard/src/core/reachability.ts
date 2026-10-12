@@ -1,3 +1,14 @@
+/**
+ * @file Performs an upfront base-URL reachability check and returns environment diagnostics.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { EnvironmentError, errorMessage } from "./errors.js";
 import type { Env } from "./types.js";
 
@@ -7,7 +18,13 @@ export interface ReachabilityResult {
   status: number;
 }
 
-/** Requests a base URL once. Any HTTP response counts as reachable; network errors do not. */
+/**
+ * Requests a base URL once. Any HTTP response counts as reachable; network errors do not.
+ *
+ * Probe an environment URL with a bounded GET request before starting expensive capture work.
+ * Any HTTP response proves network reachability; connection failures become an EnvironmentError
+ * with a troubleshooting hint.
+ */
 export async function checkReachable(
   env: Env,
   url: string,

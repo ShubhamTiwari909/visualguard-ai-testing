@@ -1,3 +1,14 @@
+/**
+ * @file Tests automatic fixing in temporary repositories/worktrees with a simulated PR API and
+ * verified Git outcomes.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer as createHttpServer, type Server } from "node:http";
@@ -13,6 +24,11 @@ import { autoFix, repoFromRemote } from "../src/fixer/auto.js";
 import { DevServer } from "../src/fixer/verify.js";
 import { FIXTURE_ROOT, startFixtureServer, type FixtureServer } from "./helpers/fixture-server.js";
 
+/**
+ * Ask the OS for an available localhost port by listening on port 0, then close the probe. The
+ * Promise resolves after close; the returned port is a suggestion and is not reserved
+ * afterward.
+ */
 const freePort = () =>
   new Promise<number>((done) => {
     const probe = createServer().listen(0, "127.0.0.1", () => {
@@ -30,6 +46,11 @@ describe("fix --auto", () => {
   let origin: string;
   let port: number;
   const serverScript = resolve(import.meta.dirname, "helpers/static-site-server.mjs");
+  /**
+   * Run Git in the disposable test repository with an explicit test identity. These
+   * configuration arguments prevent fixture commits from depending on the developer's global
+   * Git settings.
+   */
   const git = (cwd: string, ...args: string[]) =>
     execFileSync("git", ["-c", "user.email=test@example.com", "-c", "user.name=Test", ...args], {
       cwd,
@@ -62,6 +83,8 @@ describe("fix --auto", () => {
     cpSync(join(FIXTURE_ROOT, "staging"), join(dir, "site"), { recursive: true });
     writeFileSync(join(dir, ".gitignore"), ".visualguard/\n");
     git(dir, "init", "-q", "-b", "main");
+    git(dir, "config", "user.email", "test@example.com");
+    git(dir, "config", "user.name", "Test");
     git(dir, "add", ".");
     git(dir, "commit", "-q", "-m", "init");
     git(dir, "remote", "add", "origin", origin);
@@ -104,6 +127,7 @@ describe("fix --auto", () => {
     await staging.ensure();
     const { manifest } = await createRun(config).start();
     await staging.stop();
+    await expect(fetch(config.fix.verify.server!.url)).rejects.toThrow();
 
     const messages: string[] = [];
     const result = await autoFix(config, {
@@ -111,11 +135,15 @@ describe("fix --auto", () => {
       pr: true,
       preferAPI: true,
       env: { GITHUB_TOKEN: "t0ken", GITHUB_REPOSITORY: "acme/web", GITHUB_API_URL: githubURL },
+      /**
+       * Collect progress text so the test can assert the reported workflow steps.
+       */
       progress: (message) => messages.push(message),
     });
 
     expect(
       Object.fromEntries(result.outcomes.map((outcome) => [outcome.job.route, outcome.result])),
+      result.outcomes.map((outcome) => `${outcome.job.route}: ${outcome.message}`).join("\n"),
     ).toEqual({
       "/alignment": "fixed",
       "/color-change": "fixed",

@@ -1,3 +1,14 @@
+/**
+ * @file Human-readable progress, statuses, findings and AI/usage output for the terminal.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { relative } from "node:path";
 import pc from "picocolors";
 import type { Reporter } from "../core/run.js";
@@ -9,9 +20,13 @@ type Colors = ReturnType<typeof pc.createColors>;
 
 export interface TerminalReporterOptions {
   stream?: NodeJS.WritableStream;
-  /** Plain output: no colours, no box drawing (CI and non-TTY). */
+  /**
+   * Plain output: no colours, no box drawing (CI and non-TTY).
+   */
   plain?: boolean;
-  /** Commands to suggest at the end, e.g. "npx visualguard report". */
+  /**
+   * Commands to suggest at the end, e.g. "npx visualguard report".
+   */
   nextSteps?: (manifest: RunManifest) => Array<[label: string, command: string]>;
 }
 
@@ -31,6 +46,10 @@ export const STATUS_SYMBOL: Record<Status, string> = {
   error: "!",
 };
 
+/**
+ * Return the color-formatting function associated with a status. Returning a function lets
+ * callers color their own label consistently.
+ */
 export function statusColor(colors: Colors, status: Status): (text: string) => string {
   switch (status) {
     case "pass":
@@ -44,7 +63,12 @@ export function statusColor(colors: Colors, status: Status): (text: string) => s
   }
 }
 
-/** One-line description of why a job has its status. */
+/**
+ * One-line description of why a job has its status.
+ *
+ * Choose a short explanation of why the job has its verdict. Prefer recorded errors/evidence
+ * and fall back to measured pixel changes.
+ */
 export function jobDetail(job: JobResult): string {
   if (job.error) return `${job.error.stage} failed: ${job.error.message.split("\n")[0]}`;
   if (job.status === "accepted") return "matches an accepted change";
@@ -61,16 +85,29 @@ export function jobDetail(job: JobResult): string {
   return `${share} changed · ${pluralize(job.regions.length, "region")}`;
 }
 
+/**
+ * Create a progress reporter with terminal/plain-output preferences and run-local formatting
+ * state. The returned onEvent callback receives lifecycle events from the runner.
+ */
 export function terminalReporter(options: TerminalReporterOptions = {}): Reporter {
   const stream = options.stream ?? process.stdout;
   const plain = options.plain ?? false;
   const colors = pc.createColors(!plain && pc.isColorSupported);
+  /**
+   * Write one formatted line to the selected terminal stream. This helper also handles blank
+   * lines when no argument is supplied.
+   */
   const write = (line = "") => stream.write(`${line}\n`);
   let routeWidth = 20;
   let viewportWidth = 8;
 
   return {
     name: "terminal",
+    /**
+     * Render the lifecycle event appropriate to its type, including run setup, job progress,
+     * analysis and summary. The discriminating type field lets TypeScript narrow the event
+     * payload in each switch case.
+     */
     onEvent(event) {
       switch (event.type) {
         case "run:start": {
@@ -166,6 +203,10 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
             `  ${parts.join(colors.dim(" · "))}   ${colors.dim(`(${formatDuration(manifest.durationMs)})`)}`,
           );
           if (manifest.usage && manifest.usage.aiCalls > 0) {
+            /**
+             * Abbreviate token counts of at least one thousand with a k suffix. Small counts
+             * remain ordinary integer text.
+             */
             const k = (tokens: number) =>
               tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}k` : String(tokens);
             write(
@@ -191,7 +232,12 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
   };
 }
 
-/** The "AI ANALYSIS" block for one job (PLAN.md §3.6). */
+/**
+ * The "AI ANALYSIS" block for one job (PLAN.md §3.6).
+ *
+ * Print a job's AI classification, evidence and suggested fix using the supplied writer/color
+ * helpers. The caller invokes this only for jobs with analysis.
+ */
 export function writeAnalysis(
   write: (line?: string) => void,
   colors: Colors,

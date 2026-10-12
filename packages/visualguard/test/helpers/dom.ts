@@ -1,3 +1,13 @@
+/**
+ * @file Constructs synthetic DOM snapshots/nodes used in matching and classification tests.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { DomNode, DomSnapshot } from "../../src/capture/dom-snapshot.js";
 
 export interface NodeSpec {
@@ -11,10 +21,19 @@ export interface NodeSpec {
   children?: NodeSpec[];
 }
 
-/** Builds a DomSnapshot from a nested spec (depth-first order, like the real collector). */
+/**
+ * Builds a DomSnapshot from a nested spec (depth-first order, like the real collector).
+ *
+ * Convert readable nested test nodes into the real flat snapshot format in depth-first order.
+ * This lets matching tests specify small DOM examples without browser capture.
+ */
 export function snapshot(root: NodeSpec): DomSnapshot {
   const nodes: DomNode[] = [];
   const styles: Array<Record<string, string>> = [];
+  /**
+   * Add one synthetic node/style record and recurse into its children with the parent index.
+   * Node indexes must match their positions for DomIndex to behave like a captured snapshot.
+   */
   const visit = (spec: NodeSpec, parent: number) => {
     const style = { display: "block", color: "rgb(0, 0, 0)", ...spec.style };
     styles.push(style);

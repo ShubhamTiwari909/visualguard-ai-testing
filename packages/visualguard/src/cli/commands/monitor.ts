@@ -1,3 +1,15 @@
+/**
+ * @file Compares a site with prior captures, rolls eligible references forward, or generates a
+ * scheduled workflow.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { Option, type Command } from "commander";
@@ -24,12 +36,21 @@ export interface MonitorFlags extends ConfigFlags {
   json?: boolean;
   junit?: string;
   debug?: boolean;
-  /** Replace every stored snapshot with this run's captures. */
+  /**
+   * Replace every stored snapshot with this run's captures.
+   */
   reset?: boolean;
-  /** Write a scheduled GitHub Actions workflow instead of running. */
+  /**
+   * Write a scheduled GitHub Actions workflow instead of running.
+   */
   workflow?: boolean | string;
 }
 
+/**
+ * Register the monitor command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerMonitorCommand(program: Command): void {
   const command = program
     .command("monitor")
@@ -57,6 +78,10 @@ export function registerMonitorCommand(program: Command): void {
     });
 }
 
+/**
+ * Either write a scheduled workflow or compare a live URL against its saved baseline. Resolve
+ * monitor-specific configuration and return the completed run's exit code.
+ */
 export async function runMonitorCommand(
   url: string | undefined,
   flags: MonitorFlags,
@@ -91,6 +116,10 @@ export async function runMonitorCommand(
   return exitCodeFor(manifest, flags.failOn);
 }
 
+/**
+ * Describe whether the baseline was created, updated or retained because differences need
+ * review. These terminal hints reflect the saved run rather than making further changes.
+ */
 function nextSteps(manifest: RunManifest, snapshotDir: string): Array<[string, string]> {
   const compared = manifest.jobs.some((job) => job.captures.production?.source === "baseline");
   const kept = manifest.jobs.filter((job) => job.status === "regression").length;
@@ -107,6 +136,10 @@ function nextSteps(manifest: RunManifest, snapshotDir: string): Array<[string, s
   ];
 }
 
+/**
+ * Write the monitor GitHub Actions workflow for the requested schedule and optional URL. An
+ * existing workflow is handled before any file write.
+ */
 async function writeMonitorWorkflow(
   schedule: string | true,
   url: string | undefined,

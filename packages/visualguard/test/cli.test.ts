@@ -1,3 +1,11 @@
+/**
+ * @file Tests CLI version and subcommand option routing.
+ *
+ * The tests construct the CLI program and check version and subcommand option routing.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { describe, expect, it } from "vitest";
 import { createProgram } from "../src/cli/program.js";
 import { VERSION } from "../src/index.js";

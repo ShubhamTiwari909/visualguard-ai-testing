@@ -1,3 +1,14 @@
+/**
+ * @file Runs environment/config/browser/URL diagnostics and prints actionable setup results.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { accessSync, constants, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Command } from "commander";
@@ -20,10 +31,17 @@ export interface CheckResult {
   status: CheckStatus;
   detail: string;
   hint?: string;
-  /** Exit code to use when this check fails. */
+  /**
+   * Exit code to use when this check fails.
+   */
   exitCode?: number;
 }
 
+/**
+ * Register the doctor command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerDoctorCommand(program: Command): void {
   program
     .command("doctor")
@@ -40,6 +58,10 @@ export function registerDoctorCommand(program: Command): void {
     });
 }
 
+/**
+ * Compare the running Node.js major/minor version with the package minimum. Return a structured
+ * diagnostic instead of throwing so doctor can report several problems together.
+ */
 function nodeCheck(): CheckResult {
   const [major = 0, minor = 0] = process.versions.node.split(".").map(Number);
   const ok = major > 22 || (major === 22 && minor >= 12);
@@ -51,6 +73,10 @@ function nodeCheck(): CheckResult {
   };
 }
 
+/**
+ * Check Playwright installation and whether its configured browser can launch. Convert failures
+ * into diagnostic entries with installation hints.
+ */
 async function playwrightChecks(config: ResolvedConfig | undefined): Promise<CheckResult[]> {
   const version = playwrightVersion();
   if (!version) {
@@ -85,6 +111,10 @@ async function playwrightChecks(config: ResolvedConfig | undefined): Promise<Che
   return results;
 }
 
+/**
+ * Check configured environment URLs concurrently and return one result per environment.
+ * Promise.all waits for every check while each callback handles its own failure.
+ */
 async function urlChecks(config: ResolvedConfig): Promise<CheckResult[]> {
   return Promise.all(
     ENVS.map(async (env): Promise<CheckResult> => {
@@ -117,6 +147,11 @@ async function urlChecks(config: ResolvedConfig): Promise<CheckResult[]> {
   );
 }
 
+/**
+ * Check the configured provider and model availability without performing visual analysis.
+ * Disabled AI is valid; an unavailable optional provider becomes a diagnostic rather than a
+ * screenshot failure.
+ */
 async function aiCheck(config: ResolvedConfig): Promise<CheckResult> {
   const name = "AI provider";
   if (config.ai.provider === "none")
@@ -179,6 +214,10 @@ async function aiCheck(config: ResolvedConfig): Promise<CheckResult> {
   }
 }
 
+/**
+ * Check that report output is writable and ignored by Git. Temporary filesystem probes test
+ * actual access instead of relying only on a path string.
+ */
 function outputChecks(config: ResolvedConfig): CheckResult[] {
   const results: CheckResult[] = [];
   try {
@@ -208,6 +247,10 @@ function outputChecks(config: ResolvedConfig): CheckResult[] {
   return results;
 }
 
+/**
+ * Collect Node, configuration, browser, URL, provider and output diagnostics. Continue with
+ * checks that can run even when another prerequisite is unavailable.
+ */
 export async function runDoctor(
   cwd: string,
   flags: { config?: string } = {},
@@ -248,6 +291,10 @@ export async function runDoctor(
   return results;
 }
 
+/**
+ * Render diagnostic symbols, details and hints to the supplied stream. Keep the result data
+ * separate from rendering so tests and CLI callers can inspect it directly.
+ */
 export function printResults(
   results: CheckResult[],
   stream: NodeJS.WritableStream = process.stdout,

@@ -1,3 +1,13 @@
+/**
+ * @file Tests noise area snapping/limits and conservative handling of oversized DOM containers.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,6 +17,10 @@ import { computeDiff } from "../src/diff/compute.js";
 import { createImage, writePNG, type RGBAImage } from "../src/diff/image.js";
 import { snapToElement } from "../src/diff/noise.js";
 
+/**
+ * Generate a small white image with digit-like dark blocks representing a changing price.
+ * Controlled shapes make repeated-capture noise masks predictable.
+ */
 function page(digits: string): RGBAImage {
   // A 400×200 white page with a "price" at x=100..196, y=50..74: one dark block per digit.
   const image = createImage(400, 200, [255, 255, 255, 255]);
@@ -26,6 +40,10 @@ function page(digits: string): RGBAImage {
 
 describe("noise map", () => {
   const dir = mkdtempSync(join(tmpdir(), "vg-noise-"));
+  /**
+   * Save a synthetic image under the test's temporary directory and return its path. The diff
+   * pipeline consumes files, so this bridges in-memory fixtures to its input.
+   */
   const write = (name: string, image: RGBAImage) => {
     const path = join(dir, `${name}.png`);
     writePNG(path, image);

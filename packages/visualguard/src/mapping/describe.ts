@@ -1,6 +1,22 @@
+/**
+ * @file Turns DOM deltas into concise explanations such as changed colour, spacing, text or
+ * alignment.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { Delta, StyleDelta } from "../core/types.js";
 import { LAYOUT_PROPERTIES } from "./deltas.js";
 
+/**
+ * Clamp/round RGB channels and encode each as two hexadecimal digits. padStart preserves
+ * leading zeros so the final value is always a complete hex color.
+ */
 const toHex = (channels: number[]) =>
   `#${channels
     .map((channel) =>
@@ -10,12 +26,22 @@ const toHex = (channels: number[]) =>
     )
     .join("")}`;
 
-/** Linear-light sRGB (0–1) → gamma-encoded 0–255. */
+/**
+ * Linear-light sRGB (0–1) → gamma-encoded 0–255.
+ *
+ * Convert one linear-light channel back to sRGB on the 0–255 scale. Use the linear segment for
+ * dark values and the power curve for brighter values.
+ */
 const encode = (linear: number) =>
   255 *
   (linear <= 0.0031308 ? 12.92 * linear : 1.055 * Math.pow(Math.max(0, linear), 1 / 2.4) - 0.055);
 
-/** OKLab → sRGB (Björn Ottosson's matrices). */
+/**
+ * OKLab → sRGB (Björn Ottosson's matrices).
+ *
+ * Convert OKLab coordinates into linear RGB using the defined matrices, then encode channels as
+ * sRGB. Cubing reverses OKLab's intermediate cube-root transform.
+ */
 function oklabToRGB(l: number, a: number, b: number): number[] {
   const l_ = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
   const m_ = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
@@ -27,11 +53,21 @@ function oklabToRGB(l: number, a: number, b: number): number[] {
   ].map(encode);
 }
 
-/** CIE Lab (D50, as CSS uses it) → sRGB via XYZ and Bradford adaptation to D65. */
+/**
+ * CIE Lab (D50, as CSS uses it) → sRGB via XYZ and Bradford adaptation to D65.
+ *
+ * Convert CSS CIE Lab through XYZ, adapt D50 to D65 and then produce sRGB channels. The
+ * intermediate white-point adaptation is needed because the two color spaces use different
+ * reference whites.
+ */
 function labToRGB(l: number, a: number, b: number): number[] {
   const fy = (l + 16) / 116;
   const fx = fy + a / 500;
   const fz = fy - b / 200;
+  /**
+   * Reverse the piecewise Lab intermediate transform for one channel. Use a cubic branch or a
+   * linear branch according to its threshold.
+   */
   const inverse = (t: number) => (t ** 3 > 216 / 24389 ? t ** 3 : (116 * t - 16) / (24389 / 27));
   const [x, y, z] = [
     0.96422 * inverse(fx),
@@ -50,12 +86,19 @@ function labToRGB(l: number, a: number, b: number): number[] {
   ].map(encode);
 }
 
+/**
+ * Parse a color component, converting percentage notation into a fraction. parseFloat accepts
+ * the numeric prefix while the suffix determines scaling.
+ */
 const number = (value: string) =>
   value.endsWith("%") ? Number.parseFloat(value) / 100 : Number.parseFloat(value);
 
 /**
  * Makes computed CSS values readable: rgb()/lab()/oklch()/oklab() colours become hex (with any
  * alpha kept), and long decimals are rounded. Other values pass through.
+ *
+ * Turn supported computed color formats into readable hex text and shorten long decimals.
+ * Preserve opacity information and leave unrecognized CSS text available in the output.
  */
 export function formatValue(value: string): string {
   return value
@@ -87,11 +130,20 @@ export function formatValue(value: string): string {
     );
 }
 
+/**
+ * Wrap visible text in typographic quotes and shorten long strings. The ellipsis keeps a region
+ * description to a manageable single-line label.
+ */
 const quote = (text: string) => `“${text.length > 50 ? `${text.slice(0, 49)}…` : text}”`;
 
 const SIDES = ["top", "right", "bottom", "left"];
 
-/** Collapses padding-top/right/bottom/left (or margin) changes with the same values into one. */
+/**
+ * Collapses padding-top/right/bottom/left (or margin) changes with the same values into one.
+ *
+ * Collapse compatible padding/margin side changes into a compact description. Track consumed
+ * delta objects in a Set so the grouped and original entries are not both displayed.
+ */
 function groupSides(deltas: StyleDelta[]): StyleDelta[] {
   const result: StyleDelta[] = [];
   const used = new Set<StyleDelta>();
@@ -112,6 +164,10 @@ function groupSides(deltas: StyleDelta[]): StyleDelta[] {
   return [...result, ...deltas.filter((delta) => !used.has(delta))];
 }
 
+/**
+ * Choose a plain-language label for one CSS property change and optional occurrence count.
+ * Format the old/new values without changing the captured delta.
+ */
 function describeStyle(delta: StyleDelta, count: number): string {
   const subject = `${delta.selector}${count > 1 ? ` (×${count})` : ""}`;
   const change = `${delta.property} ${formatValue(delta.production)} → ${formatValue(delta.staging)}`;
@@ -129,7 +185,12 @@ function describeStyle(delta: StyleDelta, count: number): string {
   return `Style changed: ${change} on ${subject}`;
 }
 
-/** A one-line, plain-language description of a region's most important change (PLAN.md §9.2). */
+/**
+ * A one-line, plain-language description of a region's most important change (PLAN.md §9.2).
+ *
+ * Select a concise description of a region's most informative presence, text, style or movement
+ * change. Return undefined when no supported delta explains it.
+ */
 export function describeDeltas(deltas: readonly Delta[]): string | undefined {
   const presence = deltas.find((delta) => delta.kind === "presence");
   if (presence?.kind === "presence") {

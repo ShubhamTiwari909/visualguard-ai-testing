@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+/**
+ * @file Executable CLI entry: parses arguments, catches command errors and assigns process exit
+ * codes.
+ *
+ * This is the executable entry point used by the visualguard command. It parses process
+ * arguments and translates command errors into process exit codes.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { CommanderError } from "commander";
 import { ExitCode } from "../core/errors.js";
 import { createProgram } from "./program.js";

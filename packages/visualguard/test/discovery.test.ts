@@ -1,3 +1,13 @@
+/**
+ * @file Tests Next.js route conventions, base-path URLs, sitemap/robots and web crawling.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -8,6 +18,10 @@ import { resolveRoutes } from "../src/config/routes.js";
 import { testConfig } from "./helpers/config.js";
 import { startFixtureServer, type FixtureServer } from "./helpers/fixture-server.js";
 
+/**
+ * Create a temporary Next.js-like file tree from the supplied page paths. Only route filenames
+ * matter here, so each file exports a minimal empty page.
+ */
 function project(files: string[]): string {
   const dir = mkdtempSync(join(tmpdir(), "vg-next-"));
   for (const file of files) {

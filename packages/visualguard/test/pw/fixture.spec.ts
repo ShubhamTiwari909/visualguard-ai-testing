@@ -1,3 +1,13 @@
+/**
+ * @file Real Playwright tests for passing/failing checkpoints, baselines, referenceSetup and
+ * early health collection.
+ *
+ * A temporary workspace is created at module scope; checkpoint checks create its output and
+ * baseline directories as needed. Each test checks a result against the local fixture site.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -67,6 +77,10 @@ test("replays a per-check reference state", async ({ page, visualguard }) => {
     node.textContent = "Scenario state";
   });
   const result = await visualguard.check(page, {
+    /**
+     * Apply the same scenario text to the production page before capture. This checks that
+     * fixture setup hooks affect both sides of the intended comparison.
+     */
     referenceSetup: async (reference) => {
       await reference.locator("h1").evaluate((node) => {
         node.textContent = "Scenario state";

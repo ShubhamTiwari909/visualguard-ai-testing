@@ -1,5 +1,16 @@
+/**
+ * @file Tests capture pipeline/statuses, errors, retention, dynamic content and deterministic
+ * stability on fixture pages.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createRun } from "../src/core/run.js";
 import { readRunIndex } from "../src/core/runs.js";
@@ -21,6 +32,10 @@ afterAll(async () => {
   await staging?.close();
 });
 
+/**
+ * Build a route-and-viewport-to-status lookup from the run. Including both values distinguishes
+ * jobs for the same route at different screen sizes.
+ */
 const statuses = (manifest: RunManifest) =>
   Object.fromEntries(manifest.jobs.map((job) => [`${job.route} ${job.viewport}`, job.status]));
 
@@ -112,7 +127,9 @@ describe("test pipeline on the fixture site", () => {
       dirs.push((await createRun(config, { skipReachabilityCheck: true }).start()).runDir);
     expect(existsSync(dirs[0]!)).toBe(false);
     expect(existsSync(dirs[1]!)).toBe(true);
-    expect(readRunIndex(config.outputDir).runs.map((run) => run.number)).toEqual([2, 3]);
+    expect(readRunIndex(config.outputDir).runs.map((run) => run.id)).toEqual(
+      dirs.slice(1).map((dir) => basename(dir)),
+    );
   }, 120_000);
 });
 

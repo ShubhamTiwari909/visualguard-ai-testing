@@ -1,24 +1,50 @@
+/**
+ * @file Hashes image rows to detect vertical insertion/removal shifts and computes a residual
+ * diff after alignment.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import pixelmatch from "pixelmatch";
 import type { RGBAImage } from "./image.js";
 
 export interface ShiftResult {
-  /** First row (page coordinates) where content starts to be offset. */
+  /**
+   * First row (page coordinates) where content starts to be offset.
+   */
   fromY: number;
-  /** Positive: staging content moved down (something was inserted). Negative: moved up. */
+  /**
+   * Positive: staging content moved down (something was inserted). Negative: moved up.
+   */
   deltaY: number;
-  /** Differences that remain after realigning, in staging coordinates (1 byte per pixel). */
+  /**
+   * Differences that remain after realigning, in staging coordinates (1 byte per pixel).
+   */
   residualMask: Uint8Array;
   residualPixels: number;
-  /** True when realigning removes most of the differences below the shifted band. */
+  /**
+   * True when realigning removes most of the differences below the shifted band.
+   */
   explainsBelow: boolean;
 }
 
 interface RowInfo {
   hash: Int32Array;
-  /** Rows that are not a single flat colour; flat rows match at any offset, so they don't vote. */
+  /**
+   * Rows that are not a single flat colour; flat rows match at any offset, so they don't vote.
+   */
   informative: Uint8Array;
 }
 
+/**
+ * Hash each pixel row and mark whether it contains useful non-flat content. Typed arrays keep
+ * row fingerprints compact; flat rows are poor alignment anchors because many look identical.
+ */
 function rowInfo(image: RGBAImage): RowInfo {
   const hash = new Int32Array(image.height);
   const informative = new Uint8Array(image.height);
@@ -30,6 +56,8 @@ function rowInfo(image: RGBAImage): RowInfo {
       image.data[start]! | (image.data[start + 1]! << 8) | (image.data[start + 2]! << 16);
     let flat = true;
     for (let i = start; i < start + rowBytes; i += 4) {
+      // Pack RGB bytes into one 24-bit value; << shifts a channel into its byte position.
+      // Math.imul below deliberately keeps the rolling hash in 32-bit integer arithmetic.
       const pixel = image.data[i]! | (image.data[i + 1]! << 8) | (image.data[i + 2]! << 16);
       if (pixel !== first) flat = false;
       h = Math.imul(h ^ pixel, 0x01000193);
@@ -41,16 +69,22 @@ function rowInfo(image: RGBAImage): RowInfo {
 }
 
 /**
- * Detects a vertical layout shift (PLAN.md §8.1 step 6): when an element is inserted or removed,
- * everything below it moves, and a plain pixel diff marks the whole rest of the page as changed.
- * Rows are hashed; the offset that realigns the most informative rows wins, and the images are
- * diffed again with that offset to find what is left.
+ * Detects a vertical layout shift (PLAN.md §8.1 step 6): when an element is inserted or
+ * removed, everything below it moves, and a plain pixel diff marks the whole rest of the page
+ * as changed. Rows are hashed; the offset that realigns the most informative rows wins, and the
+ * images are diffed again with that offset to find what is left.
+ *
+ * Find a vertical offset that explains a large portion of the screenshot difference. Compare
+ * informative row hashes, validate sustained alignment and recompare aligned rows to retain
+ * residual changes.
  */
 export function detectShift(
   production: RGBAImage,
   staging: RGBAImage,
   options: { threshold: number; ignoreAntialiasing: boolean; maxShift?: number; minRows?: number },
-  /** The plain pixel-diff mask, used to check that the shift explains the differences below it. */
+  /**
+   * The plain pixel-diff mask, used to check that the shift explains the differences below it.
+   */
   originalMask?: Uint8Array,
 ): ShiftResult | undefined {
   if (production.width !== staging.width || production.height !== staging.height) return undefined;
@@ -96,10 +130,18 @@ export function detectShift(
   if (deltaY === 0 || best < Math.max(minRows, informativeRows * 0.15)) return undefined;
 
   // Production row y shows up on staging at y + deltaY once the shift has started.
+  /**
+   * Check whether a production row matches the staging row displaced by deltaY. Guard the
+   * shifted index before reading its hash.
+   */
   const aligned = (y: number) => {
     const target = y + deltaY;
     return target >= 0 && target < height && a.hash[y] === b.hash[target];
   };
+  /**
+   * Validate a candidate boundary using several subsequent informative rows. Skipping flat rows
+   * prevents blank background bands from confirming a false alignment.
+   */
   const keepsAligning = (start: number) => {
     let ok = 0;
     for (let y = start; y < height && ok < 8; y++) {
@@ -147,6 +189,10 @@ export function detectShift(
   // Residual differences: above fromY unshifted, below it realigned; in staging coordinates.
   const residualMask = new Uint8Array(width * height);
   let residualPixels = 0;
+  /**
+   * Compare corresponding row slices and add remaining changes to a mask indexed in staging
+   * coordinates. Pixel bytes use width * 4 per row, while the mask uses width entries per row.
+   */
   const compareRows = (prodStart: number, stagingStart: number, rows: number) => {
     if (rows <= 0) return;
     const rowBytes = width * 4;

@@ -1,3 +1,14 @@
+/**
+ * @file Tests deterministic sharding/merge and production-monitor rolling references/generated
+ * schedule.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -23,6 +34,10 @@ afterAll(async () => {
   await staging?.close();
 });
 
+/**
+ * Build a route-to-status lookup from manifest jobs using Object.fromEntries. Assertions can
+ * then name a route directly without depending on job array order.
+ */
 const statuses = (manifest: RunManifest) =>
   Object.fromEntries(manifest.jobs.map((job) => [job.route, job.status]));
 
@@ -80,11 +95,19 @@ describe("sharding", () => {
 });
 
 describe("monitor mode", () => {
+  /**
+   * Hash a saved file's bytes so a test can detect whether its baseline changed. Comparing
+   * digests avoids depending on PNG encoding text.
+   */
   const sha = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
 
   it("compares with the previous capture and rolls snapshots forward except regressions", async () => {
     const snapshots = mkdtempSync(join(tmpdir(), "vg-monitor-"));
     const routes = ["/identical", "/text-change", "/hidden"];
+    /**
+     * Run baseline monitoring against the chosen fixture URL using shared snapshot storage. The
+     * unless-regression policy lets the test verify which references are advanced or retained.
+     */
     const monitor = (site: string) => {
       const config = testConfig({ baseURL: { production: site, staging: site }, routes });
       return createRun(config, {

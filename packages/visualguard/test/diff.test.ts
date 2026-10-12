@@ -1,3 +1,14 @@
+/**
+ * @file Tests complete image comparisons, size padding, thresholds and written diff/region
+ * artifacts.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -17,6 +28,10 @@ const options: DiffOptions = {
   detectShift: true,
 };
 
+/**
+ * Paint an opaque colored rectangle into the test image's RGBA buffer. Compute the row-major
+ * byte offset as (y * width + x) * 4.
+ */
 function fillRect(
   image: RGBAImage,
   x0: number,
@@ -33,6 +48,10 @@ function fillRect(
   }
 }
 
+/**
+ * Write a supplied image pair to temporary PNG files and return a computeDiff input. This tests
+ * the actual file-based pipeline while keeping the image content controlled.
+ */
 function setup(a: RGBAImage, b: RGBAImage) {
   const dir = mkdtempSync(join(tmpdir(), "vg-diff-"));
   writePNG(join(dir, "production.png"), a);

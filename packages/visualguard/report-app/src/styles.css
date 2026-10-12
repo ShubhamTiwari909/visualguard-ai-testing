@@ -1,3 +1,7 @@
+/* Report-viewer styles: Tailwind theme setup, shared screenshot backgrounds and region highlights.
+ * These rules run in the browser; comparison coordinates and classifications are calculated in TypeScript.
+ */
+
 @import "tailwindcss";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));

@@ -1,3 +1,14 @@
+/**
+ * @file Tests F01-F12 invariants: acceptance/AI guards, baseline identity, eval denominator,
+ * budgets/cache, stale edits and shards.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -23,7 +34,15 @@ import { runCommand } from "../src/fixer/verify.js";
 import { testConfig } from "./helpers/config.js";
 import { analysis, MockProvider } from "./helpers/mock-provider.js";
 
+/**
+ * Create a unique temporary directory for reliability-test artifacts. Unique names keep tests
+ * from sharing saved usage or shard files.
+ */
 const temporary = () => mkdtempSync(join(tmpdir(), "vg-reliability-"));
+/**
+ * Build a minimal review job with a stable ID and healthy capture. Tests can alter manifest
+ * relationships without launching a browser.
+ */
 function job(id = "a"): JobResult {
   return {
     id,
@@ -179,6 +198,10 @@ describe("reliability policies", () => {
       config.cwd,
       [{ file: "src/a.css", search: "red", replace: "blue", reason: "repair" }],
       {
+        /**
+         * Deliberately throw from an observer to verify that callback failures do not break the
+         * protected operation.
+         */
         progress: () => {
           throw new Error("callback failed");
         },
@@ -239,6 +262,10 @@ describe("AI request identity and accounting", () => {
 });
 
 describe("shard completeness", () => {
+  /**
+   * Write a controlled shard manifest into the supplied directory and return that directory.
+   * The index/group parameters let merge tests construct compatible or conflicting inputs.
+   */
   function shard(dir: string, index: number, group = "test"): string {
     mkdirSync(dir, { recursive: true });
     const manifest: RunManifest = {

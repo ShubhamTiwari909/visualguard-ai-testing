@@ -1,3 +1,15 @@
+/**
+ * @file Discovers shard manifests, validates shared identity/full coverage and copies artifacts
+ * into one merged run.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { cpSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import type { ResolvedConfig } from "../config/resolve.js";
@@ -9,8 +21,12 @@ import type { JobResult, RunManifest } from "./types.js";
 
 /**
  * Finds run directories under `path`: a run directory itself, an output or runs directory (its
- * latest run, plus the latest run of every other shard when that run is a shard), or a folder of
- * downloaded CI artifacts holding any of those, a few levels deep.
+ * latest run, plus the latest run of every other shard when that run is a shard), or a folder
+ * of downloaded CI artifacts holding any of those, a few levels deep.
+ *
+ * Find saved run directories directly or beneath downloaded artifact/output folders. Bound
+ * recursive depth and skip irrelevant directories so discovery does not scan an entire
+ * filesystem.
  */
 export function findRunDirs(path: string, depth = 4): string[] {
   const dir = resolve(path);
@@ -27,6 +43,10 @@ export function findRunDirs(path: string, depth = 4): string[] {
     .flatMap((entry) => findRunDirs(join(dir, entry.name), depth - 1));
 }
 
+/**
+ * Select the newest applicable run for each shard, excluding prior merge outputs. Sort shard
+ * indexes so the selected inputs have a predictable order.
+ */
 function latestRuns(runs: string): string[] {
   // Newest first; earlier merge results are outputs, never inputs.
   const candidates = readdirSync(runs)
@@ -60,8 +80,12 @@ export interface MergeOptions {
 }
 
 /**
- * Combines shard runs (`visualguard test --shard i/n` on several machines) into one run with one
- * report, summary and exit code (`visualguard merge`).
+ * Combines shard runs (`visualguard test --shard i/n` on several machines) into one run with
+ * one report, summary and exit code (`visualguard merge`).
+ *
+ * Validate shard membership and configuration, combine jobs/artifacts and write one
+ * manifest/report. Mark allowed partial merges incomplete so missing shard evidence cannot
+ * create a false pass.
  */
 export async function mergeRuns(
   config: ResolvedConfig,
@@ -131,6 +155,10 @@ export async function mergeRuns(
   }
 
   const first = manifests[0]!.manifest;
+  /**
+   * Add one chosen usage counter across input manifests, using zero for missing counters. The
+   * pick callback lets the same reducer total input tokens, output tokens or attempts.
+   */
   const sum = (pick: (usage: NonNullable<RunManifest["usage"]>) => number | undefined) =>
     manifests.reduce(
       (total, { manifest }) => total + (manifest.usage ? (pick(manifest.usage) ?? 0) : 0),
@@ -168,6 +196,10 @@ export async function mergeRuns(
   // Replay the run through the reporters, so the terminal summary, HTML report, JUnit file, job
   // summary and webhook all describe the merged run.
   const reporters = options.reporters ?? [];
+  /**
+   * Notify merge reporters about progress while isolating their event-handler errors. Optional
+   * chaining calls onEvent only when a reporter implements it.
+   */
   const emit = (event: Parameters<NonNullable<Reporter["onEvent"]>>[0]) => {
     for (const reporter of reporters) {
       try {

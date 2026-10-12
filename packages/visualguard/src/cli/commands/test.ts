@@ -1,3 +1,15 @@
+/**
+ * @file Implements configured comparisons/baselines, capture flags, planned-job listing and
+ * failure exits.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { resolve } from "node:path";
 import { Option, type Command } from "commander";
 import { ConfigError } from "../../core/errors.js";
@@ -21,19 +33,27 @@ import {
 
 export interface TestFlags extends ConfigFlags {
   failOn: FailOn;
-  /** false with --no-ai */
+  /**
+   * false with --no-ai
+   */
   ai?: boolean;
   ci?: boolean;
   json?: boolean;
   junit?: string;
   debug?: boolean;
   list?: boolean;
-  /** Baseline mode: save this run's screenshots as the new baselines. */
+  /**
+   * Baseline mode: save this run's screenshots as the new baselines.
+   */
   updateBaselines?: boolean;
   shard?: Shard;
   runGroup?: string;
 }
 
+/**
+ * Add shared configuration, URL, route, viewport and browser flags to a command. Return the
+ * command so Commander configuration can continue through chained method calls.
+ */
 export function addConfigOptions(command: Command): Command {
   command
     .option("-c, --config <path>", "config file path")
@@ -54,6 +74,11 @@ export function addConfigOptions(command: Command): Command {
   return addCheckOptions(command);
 }
 
+/**
+ * Register the test command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerTestCommand(program: Command): void {
   const command = program
     .command("test")
@@ -81,6 +106,10 @@ export function registerTestCommand(program: Command): void {
     });
 }
 
+/**
+ * Resolve flags, plan/list jobs when requested, or start the configured capture run. Select
+ * compare/baseline behavior and return an exit code derived from the final manifest.
+ */
 export async function runTestCommand(
   flags: TestFlags,
   reporters: Reporter[] = [],
@@ -126,12 +155,21 @@ export async function runTestCommand(
   return exitCodeFor(manifest, flags.failOn);
 }
 
-/** `--list`: show what would run, without opening a browser (PLAN.md §6.5). */
+/**
+ * `--list`: show what would run, without opening a browser (PLAN.md §6.5).
+ *
+ * Plan the route-by-viewport matrix and print it without launching a browser. This helps
+ * developers inspect what their configuration will test before spending capture time.
+ */
 export async function printJobList(
   config: ResolvedConfig,
   stream: NodeJS.WritableStream = process.stdout,
 ) {
   const plan = await planJobs(config);
+  /**
+   * Write a line to the listing's supplied stream. Supplying a stream makes the same listing
+   * usable in the CLI and output assertions.
+   */
   const write = (line = "") => stream.write(`${line}\n`);
   const width = Math.max(12, ...plan.routes.map((route) => route.paths.production.length));
 

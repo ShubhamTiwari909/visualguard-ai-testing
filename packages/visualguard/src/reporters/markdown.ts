@@ -1,3 +1,15 @@
+/**
+ * @file Escapes/formats Markdown run summaries and detailed findings for comments/job
+ * summaries.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import type { JobResult, RunManifest, Status } from "../core/types.js";
 import { VERSION } from "../core/version.js";
 
@@ -14,8 +26,11 @@ const EMOJI: Record<Status, string> = {
 const ORDER: Status[] = ["error", "regression", "review", "accepted", "pass"];
 
 /**
- * Escapes text from pages, configs and models before it goes into Markdown, so a route or
- * a page title can't inject links, mentions, HTML or table cells (PLAN.md §12.3).
+ * Escapes text from pages, configs and models before it goes into Markdown, so a route or a
+ * page title can't inject links, mentions, HTML or table cells (PLAN.md §12.3).
+ *
+ * Escape captured/user/model text before placing it in Markdown tables and paragraphs.
+ * Normalize line breaks and neutralize mention syntax so evidence stays display text.
  */
 export function escapeMarkdown(text: string): string {
   return text
@@ -27,7 +42,12 @@ export function escapeMarkdown(text: string): string {
     .replace(/@/g, "@​");
 }
 
-/** Inline code that survives backticks in the content. */
+/**
+ * Inline code that survives backticks in the content.
+ *
+ * Choose a backtick fence longer than any backticks inside the value. Normalize newlines and
+ * escape table pipes so the value stays inside its cell.
+ */
 export function inlineCode(text: string): string {
   const clean = text.replace(/[\r\n]+/g, " ").replace(/\|/g, "\\|");
   const longest = Math.max(0, ...(clean.match(/`+/g) ?? []).map((run) => run.length));
@@ -35,13 +55,22 @@ export function inlineCode(text: string): string {
   return longest > 0 ? `${fence} ${clean} ${fence}` : `${fence}${clean}${fence}`;
 }
 
-/** A fenced code block whose fence is longer than any backtick run in the content. */
+/**
+ * A fenced code block whose fence is longer than any backtick run in the content.
+ *
+ * Choose a multiline code fence that the supplied snippet cannot prematurely close. Keep the
+ * optional language hint for syntax highlighting.
+ */
 export function codeBlock(text: string, language = ""): string {
   const longest = Math.max(2, ...(text.match(/`+/g) ?? []).map((run) => run.length));
   const fence = "`".repeat(longest + 1);
   return `${fence}${language}\n${text}\n${fence}`;
 }
 
+/**
+ * Choose the most useful one-line explanation for a job, prioritizing errors and available
+ * analysis. This supplies summary table text rather than changing the job verdict.
+ */
 function finding(job: JobResult): string {
   if (job.error) return `${job.error.stage} failed: ${job.error.message.split("\n")[0]}`;
   if (job.status === "accepted") return "matches an accepted change";
@@ -54,15 +83,24 @@ function finding(job: JobResult): string {
 }
 
 export interface MarkdownOptions {
-  /** Link to the full report (artifact or published URL). */
+  /**
+   * Link to the full report (artifact or published URL).
+   */
   reportURL?: string;
-  /** Include the hidden marker used to find and update the PR comment. */
+  /**
+   * Include the hidden marker used to find and update the PR comment.
+   */
   marker?: boolean;
   maxRows?: number;
   maxDetails?: number;
 }
 
-/** The PR comment / job summary body (PLAN.md Appendix D). */
+/**
+ * The PR comment / job summary body (PLAN.md Appendix D).
+ *
+ * Build the run summary used by PR comments and CI step summaries. Bound table rows/details and
+ * escape embedded evidence while retaining actionable report links.
+ */
 export function renderMarkdown(manifest: RunManifest, options: MarkdownOptions = {}): string {
   const { summary } = manifest;
   const maxRows = options.maxRows ?? 30;
@@ -119,6 +157,10 @@ export function renderMarkdown(manifest: RunManifest, options: MarkdownOptions =
   return lines.join("\n");
 }
 
+/**
+ * Build expandable Markdown/HTML detail lines for one problem job. Include evidence and any
+ * suggested snippet with appropriate escaping/fences.
+ */
 function details(job: JobResult): string[] {
   const lines: string[] = [];
   const confidence = job.analysis
@@ -159,6 +201,10 @@ function details(job: JobResult): string[] {
   return lines;
 }
 
+/**
+ * Escape HTML-significant characters in text used inside generated markup. Replacement order
+ * avoids double-escaping newly inserted entities.
+ */
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")

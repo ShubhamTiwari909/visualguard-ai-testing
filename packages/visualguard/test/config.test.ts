@@ -1,6 +1,16 @@
+/**
+ * @file Tests schema/defaults/invalid secrets, overrides/env precedence and config loading.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadConfig, loadEnvFiles, parseConfig } from "../src/config/load.js";
 import { resolveConfig } from "../src/config/resolve.js";
@@ -46,7 +56,7 @@ describe("resolveConfig precedence: flags → env → config", () => {
   it("uses the config file by default", () => {
     const resolved = resolveConfig(config, { cwd: "/tmp/project", env: {} });
     expect(resolved.baseURL.staging).toBe("https://staging.config.example.com");
-    expect(resolved.outputDir).toBe("/tmp/project/.visualguard");
+    expect(resolved.outputDir).toBe(resolve("/tmp/project", ".visualguard"));
   });
 
   it("env vars beat the config file", () => {

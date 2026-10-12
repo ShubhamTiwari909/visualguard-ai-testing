@@ -1,3 +1,15 @@
+/**
+ * @file Playwright fixture entry: extends test/page, loads config, checks interactive state
+ * against production/baselines and attaches evidence.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { test as base, expect, type Page, type TestInfo } from "@playwright/test";
@@ -32,20 +44,32 @@ import { computeDiff } from "../diff/compute.js";
 const pageHealth = new WeakMap<Page, HealthSignals>();
 
 export interface VisualGuardOptions {
-  /** Instrument the test-owned page before navigation. */
+  /**
+   * Instrument the test-owned page before navigation.
+   */
   collectHealth?: boolean;
-  /** Path to a config file (default: visualguard.config.* in the working directory). */
+  /**
+   * Path to a config file (default: visualguard.config.* in the working directory).
+   */
   configPath?: string;
-  /** Inline config, merged over the file. */
+  /**
+   * Inline config, merged over the file.
+   */
   config?: VisualGuardConfig;
-  /** What fails the test (default "regression"). */
+  /**
+   * What fails the test (default "regression").
+   */
   failOn?: FailOn;
 }
 
 export interface CheckOptions {
-  /** Bring a fresh production page to the same interactive state as the test page. */
+  /**
+   * Bring a fresh production page to the same interactive state as the test page.
+   */
   referenceSetup?: (page: Page) => Promise<void>;
-  /** Name for this check, unique within the test (default "page"). */
+  /**
+   * Name for this check, unique within the test (default "page").
+   */
   name?: string;
   waitFor?: string;
   mask?: string[];
@@ -55,12 +79,17 @@ export interface CheckOptions {
 
 export interface VisualGuardFixture {
   /**
-   * Compares the page as it is now with production (same path on baseURL.production), or with
-   * a stored baseline when there's no production URL. Fails the test per `failOn`.
+   * Compares the page as it is now with production (same path on baseURL.production), or with a
+   * stored baseline when there's no production URL. Fails the test per `failOn`.
    */
   check(page: Page, options?: CheckOptions): Promise<JobResult>;
 }
 
+/**
+ * Map the current test page URL to the production origin while preserving its
+ * route/query/fragment and configured prefix. This chooses the reference page for the
+ * Playwright fixture.
+ */
 function productionURL(config: ResolvedConfig, current: URL): string {
   const production = new URL(config.baseURL.production!);
   const staging = config.baseURL.staging ? new URL(config.baseURL.staging) : undefined;
@@ -72,6 +101,10 @@ function productionURL(config: ResolvedConfig, current: URL): string {
   return `${production.origin}${base}${path}${current.search}${current.hash}`;
 }
 
+/**
+ * Capture an already-navigated Playwright test page, obtain its reference and classify the
+ * comparison. Attach artifacts/results to testInfo and fail according to the configured policy.
+ */
 async function check(
   baseConfig: ResolvedConfig,
   page: Page,
@@ -148,6 +181,10 @@ async function check(
       (health.checkErrors ??= []).push(`accessibility: ${String(error)}`);
     }
   }
+  /**
+   * Convert an artifact path to the fixture's portable relative path. Forward slashes are used
+   * in serialized results and reports.
+   */
   const rel = (path: string) => relative(dir, path).split("\\").join("/");
   const stagingPath = join(dir, "staging.png");
   writeFileSync(stagingPath, shot.png);
@@ -175,6 +212,11 @@ async function check(
     testInfo.config.updateSnapshots === "all" ||
     testInfo.config.updateSnapshots === "changed" ||
     Boolean(process.env.VISUALGUARD_UPDATE_BASELINES);
+  /**
+   * Capture the corresponding production page in an isolated context and optionally save its
+   * DOM evidence. Reuse the test page's browser engine while keeping authentication/storage
+   * sessions separate.
+   */
   const captureReference = async (saveDom = true) => {
     const browser = page.context().browser();
     if (!browser) throw new Error("visualguard.check needs a browser-backed page.");
@@ -184,6 +226,10 @@ async function check(
       job,
       env: "production",
       setup: options.referenceSetup,
+      /**
+       * Save optional reference DOM evidence after the production screenshot. Catch snapshot
+       * errors so the captured image remains usable.
+       */
       afterScreenshot: async (reference) => {
         if (!saveDom) return;
         await captureDomSnapshot(reference)
@@ -351,6 +397,10 @@ export const test = base.extend<{
 }>({
   // Test-scoped so `test.use({ visualguardOptions })` works in describe blocks too.
   visualguardOptions: [{}, { option: true }],
+  /**
+   * Resolve configuration for this test and supply it through Playwright's use callback. Code
+   * before await use sets up the fixture; code after it would run during teardown.
+   */
   visualguardConfig: async ({ visualguardOptions }, use) => {
     const cwd = process.cwd();
     loadEnvFiles(cwd);
@@ -360,6 +410,10 @@ export const test = base.extend<{
       : loaded.config;
     await use(resolveConfig(merged, { cwd, configPath: loaded.configPath }));
   },
+  /**
+   * Wrap the test page with optional health/performance instrumentation. await use(page) spans
+   * the test, and finally removes listeners even when its assertions fail.
+   */
   page: async ({ page, visualguardConfig, visualguardOptions }, use) => {
     const instrumentation = visualguardOptions.collectHealth ? instrumentHealth(page) : undefined;
     if (instrumentation) pageHealth.set(page, instrumentation.health);
@@ -371,6 +425,10 @@ export const test = base.extend<{
       pageHealth.delete(page);
     }
   },
+  /**
+   * Create a test-scoped AI session and expose the visualguard fixture through use. Tests call
+   * the supplied check callback with their own navigated page.
+   */
   visualguard: async ({ visualguardConfig, visualguardOptions }, use, testInfo) => {
     const { provider } = createProvider(visualguardConfig.ai);
     const session = provider
@@ -379,6 +437,10 @@ export const test = base.extend<{
         })
       : undefined;
     await use({
+      /**
+       * Delegate a fixture call to the shared capture/comparison helper with this test's
+       * configuration and reporting context.
+       */
       check: (page, options = {}) =>
         check(visualguardConfig, page, options, visualguardOptions, testInfo, session),
     });

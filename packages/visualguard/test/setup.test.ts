@@ -1,3 +1,14 @@
+/**
+ * @file Tests project detection, idempotent setup edits, generated config/init and doctor
+ * diagnostics.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,6 +25,10 @@ import {
 } from "../src/setup/project.js";
 import { startFixtureServer, type FixtureServer } from "./helpers/fixture-server.js";
 
+/**
+ * Create a small temporary Next.js-like project with package metadata and route files. Setup
+ * discovery can inspect it without installing or starting a framework.
+ */
 function nextProject(): string {
   const dir = mkdtempSync(join(tmpdir(), "vg-init-"));
   writeFileSync(
@@ -180,7 +195,14 @@ describe("auth and custom reporters", () => {
 
   it("accepts reporter objects in the config and rejects anything else", async () => {
     const { parseConfig } = await import("../src/config/load.js");
-    const reporter = { name: "dashboard", onRunEnd: () => {} };
+    const reporter = {
+      name: "dashboard",
+      /**
+       * Provide an empty reporter callback because this test checks setup/orchestration
+       * rather than output rendering.
+       */
+      onRunEnd: () => {},
+    };
     expect(parseConfig({ reporters: [reporter] }).reporters).toEqual([reporter]);
     expect(() => parseConfig({ reporters: [{ name: "broken" }] })).toThrow(/expected a reporter/);
   });

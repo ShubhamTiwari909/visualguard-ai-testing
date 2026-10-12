@@ -1,3 +1,15 @@
+/**
+ * @file Records intentional screenshot/change fingerprints and reapplies acceptance without
+ * waiving health findings.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { relative } from "node:path";
 import type { Command } from "commander";
 import pc from "picocolors";
@@ -28,7 +40,9 @@ export interface AcceptFlags {
 
 export interface AcceptOptions {
   runId?: string;
-  /** Route paths or globs; empty with `all` accepts every job that needs review. */
+  /**
+   * Route paths or globs; empty with `all` accepts every job that needs review.
+   */
   routes?: string[];
   jobIds?: string[];
   viewports?: string[];
@@ -46,10 +60,18 @@ export interface AcceptResult {
  * Accepts the changes in a run as intentional (PLAN.md §12, `visualguard accept`): records the
  * exact screenshots in visualguard.accepted.json and marks the jobs accepted in that run.
  * `--all` only takes jobs marked review; regressions must be named explicitly.
+ *
+ * Load a saved run, record selected changes as intentional and rewrite its results/report. The
+ * --all shortcut selects review jobs; regressions require explicit selection so a bulk
+ * acceptance cannot hide them accidentally.
  */
 export function acceptChanges(config: ResolvedConfig, options: AcceptOptions): AcceptResult {
   const { entry, dir } = findRun(config.outputDir, options.runId);
   const manifest = readManifest(dir);
+  /**
+   * Check that the job is review/regression and has both captures. The && expression
+   * short-circuits, so a missing capture makes the job ineligible for acceptance.
+   */
   const differs = (job: JobResult) =>
     ["review", "regression"].includes(job.status) &&
     job.captures.production &&
@@ -94,6 +116,11 @@ export function acceptChanges(config: ResolvedConfig, options: AcceptOptions): A
   return { added, manifest: updated, path: config.acceptedPath };
 }
 
+/**
+ * Register the accept command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerAcceptCommand(program: Command): void {
   program
     .command("accept")
@@ -115,6 +142,10 @@ export function registerAcceptCommand(program: Command): void {
         all: flags.all,
         note: flags.note,
       });
+      /**
+       * Write one line to the command's stdout stream, adding a newline. An omitted argument
+       * produces a blank line for readable terminal spacing.
+       */
       const write = (line = "") => process.stdout.write(`${line}\n`);
       write();
       for (const item of result.added)

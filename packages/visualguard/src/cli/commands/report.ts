@@ -1,3 +1,15 @@
+/**
+ * @file Opens/serves saved reports and binds accept/propose/apply API handlers, proposal
+ * freshness and apply locking.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { AIBudget, budgetedProvider, restoreRunUsage, persistRunUsage } from "../../ai/budget.js";
 import { basename, relative } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -31,11 +43,17 @@ const proposals = new Map<string, { originals: Map<string, string>; createdAt: n
 const applying = new Set<string>();
 const reportBudgets = new Map<string, AIBudget>();
 
-/** Actions the served report can trigger (POST /api/<name>). */
+/**
+ * Actions the served report can trigger (POST /api/<name>).
+ */
 export const reportActions: Record<
   string,
   (context: { runDir: string; config: ResolvedConfig }) => ApiHandler
 > = {
+  /**
+   * Create an acceptance action bound to this configuration/run directory. The returned
+   * callback validates the request body and writes the selected job's accepted change.
+   */
   accept:
     ({ config, runDir }) =>
     (body) => {
@@ -49,7 +67,13 @@ export const reportActions: Record<
       return { accepted: result.added.map((item) => item.job) };
     },
 
-  /** Step 1 of "Generate fix": a proposal with its diff; nothing is changed yet. */
+  /**
+   * Step 1 of "Generate fix": a proposal with its diff; nothing is changed yet.
+   */
+  /**
+   * Create a proposal action bound to the saved run. The returned async callback locates source
+   * and stores an expiring proposal with original file snapshots for later application.
+   */
   "fix-propose":
     ({ config, runDir }) =>
     async (body) => {
@@ -75,6 +99,10 @@ export const reportActions: Record<
         useHeuristic: true,
         provider: provider ? budgetedProvider(provider, budget) : undefined,
         // Consent is given in the terminal (`visualguard fix`) or with fix.allowSourceUpload.
+        /**
+         * Decline new source-upload consent inside the report server. Existing explicit/saved
+         * consent must already authorize an AI proposal.
+         */
         consent: async () => false,
       });
       persistRunUsage(budget, runDir);
@@ -102,7 +130,13 @@ export const reportActions: Record<
       };
     },
 
-  /** Step 2 of "Generate fix": apply the confirmed edits and verify them visually. */
+  /**
+   * Step 2 of "Generate fix": apply the confirmed edits and verify them visually.
+   */
+  /**
+   * Create an apply action bound to this run. Its callback requires a fresh matching proposal,
+   * prevents concurrent workspace applications and verifies or restores the edits.
+   */
   "fix-apply":
     ({ config, runDir }) =>
     async (body) => {
@@ -142,6 +176,10 @@ export const reportActions: Record<
     },
 };
 
+/**
+ * Validate a server action's requested job against configuration and the saved manifest. Reject
+ * disabled fixing, missing jobs or missing comparison captures before preparing source edits.
+ */
 function fixableJob(config: ResolvedConfig, runDir: string, body: unknown): JobResult {
   if (!config.fix.enabled)
     throw new Error("Fixing is turned off (fix.enabled in visualguard.config.ts).");
@@ -153,6 +191,11 @@ function fixableJob(config: ResolvedConfig, runDir: string, body: unknown): JobR
   return job;
 }
 
+/**
+ * Register the report command, its arguments and flags on the shared Commander program.
+ * Registration describes what the CLI accepts; its action callback runs only when the user
+ * invokes the command.
+ */
 export function registerReportCommand(program: Command): void {
   program
     .command("report")
@@ -167,6 +210,10 @@ export function registerReportCommand(program: Command): void {
     });
 }
 
+/**
+ * Find and render a saved report, then optionally serve/open it with local acceptance and
+ * repair actions. Keep the process alive until the server is closed.
+ */
 export async function runReportCommand(flags: ReportFlags): Promise<void> {
   const config = await loadResolvedConfig({ config: flags.config });
   const { dir } = findRun(config.outputDir, flags.run);
@@ -197,6 +244,10 @@ export async function runReportCommand(flags: ReportFlags): Promise<void> {
   if (flags.open && !isCI()) await open(server.url).catch(() => {});
 
   await new Promise<void>((resolve) => {
+    /**
+     * Close the report server after a termination signal and resolve the waiting command. Using
+     * the existing close promise lets active cleanup finish before exit.
+     */
     const stop = () => {
       void server.close().then(resolve);
     };

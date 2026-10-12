@@ -1,9 +1,24 @@
+/**
+ * @file Reads sitemap/robots URLs and crawls same-site links within configured scope/depth.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { normalizeBaseURL } from "../urls.js";
 
 const FETCH_TIMEOUT_MS = 10_000;
 const NON_PAGE_EXTENSION =
   /\.(png|jpe?g|gif|webp|avif|svg|ico|pdf|zip|gz|mp4|webm|mp3|wav|css|js|mjs|json|xml|txt|woff2?|ttf|otf|eot)$/i;
 
+/**
+ * Fetch a text page with the supplied headers and a bounded timeout. Return its final URL after
+ * redirects, or undefined when discovery cannot use the response.
+ */
 async function fetchText(
   url: string,
   headers: Record<string, string>,
@@ -24,6 +39,10 @@ async function fetchText(
   }
 }
 
+/**
+ * Decode the small set of HTML/XML entities handled by discovery. Chained replace calls produce
+ * a new string rather than changing the input string.
+ */
 const decodeEntities = (value: string) =>
   value
     .replace(/&amp;/g, "&")
@@ -35,6 +54,9 @@ const decodeEntities = (value: string) =>
 /**
  * Converts an absolute URL to a route path relative to the base URL, or undefined when it is on
  * another host, outside the base path, or not a page.
+ *
+ * Resolve a discovered link against the base URL and keep only usable page paths within that
+ * site/prefix. Return undefined for invalid, external or excluded resource links.
  */
 export function toRoutePath(href: string, base: URL): string | undefined {
   let url: URL;
@@ -53,7 +75,12 @@ export function toRoutePath(href: string, base: URL): string | undefined {
   return `/${rest}`;
 }
 
-/** Reads `sitemap.xml` (following sitemap indexes and robots.txt hints) into route paths. */
+/**
+ * Reads `sitemap.xml` (following sitemap indexes and robots.txt hints) into route paths.
+ *
+ * Read sitemap locations, following index files and robots.txt hints within configured limits.
+ * Sets prevent duplicate pages and repeated sitemap processing.
+ */
 export async function discoverSitemapRoutes(
   baseURL: string,
   options: { headers?: Record<string, string>; limit?: number } = {},
@@ -92,7 +119,12 @@ export async function discoverSitemapRoutes(
   return [...paths];
 }
 
-/** Breadth-first crawl of same-site links from the base URL (static HTML only, no JS). */
+/**
+ * Breadth-first crawl of same-site links from the base URL (static HTML only, no JS).
+ *
+ * Explore same-site links one depth level at a time using fetched HTML. This is breadth-first
+ * discovery and does not execute a site's JavaScript.
+ */
 export async function crawlRoutes(
   baseURL: string,
   options: { headers?: Record<string, string>; depth?: number; limit?: number } = {},

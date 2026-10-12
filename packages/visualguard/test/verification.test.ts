@@ -1,3 +1,14 @@
+/**
+ * @file Tests immutable references when production is offline and rollback of collateral
+ * viewport damage.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -40,6 +51,11 @@ it("reverts a desktop repair that changes the previously passing mobile variant"
     viewports: { desktop: { width: 1000, height: 600 }, mobile: { width: 390, height: 600 } },
     fix: { enabled: true, include: ["staging/**"], maxAttempts: 1, allowSourceUpload: true },
   });
+  /**
+   * Return a small responsive HTML page whose desktop text can be changed independently of
+   * mobile content. This lets verification tests check that repairs are validated across
+   * viewports.
+   */
   const html = (text: string) =>
     `<html><head><style>body { margin: 0; } .desktop { display: none; } .mobile { color: black; } @media(min-width:700px) { .desktop { display: block; } .mobile { display: none; } }</style></head><body><h1 class="desktop">${text}</h1><h1 class="mobile">Mobile title</h1></body></html>`;
   for (const variant of ["production", "staging"]) {
@@ -87,7 +103,21 @@ it("reverts a desktop repair that changes the previously passing mobile variant"
       viewports: ["desktop"],
       provider,
       yes: true,
-      callbacks: { confirm: async () => true, consent: async () => true, progress: () => {} },
+      callbacks: {
+        /**
+         * Approve this test proposal so the assertion reaches application and verification.
+         */
+        confirm: async () => true,
+        /**
+         * Grant source-upload consent for this fixture, allowing its mock-provider repair path.
+         */
+        consent: async () => true,
+        /**
+         * Ignore progress messages in this test; assertions inspect structured outcomes
+         * instead.
+         */
+        progress: () => {},
+      },
     });
     expect(outcomes[0]?.result).toBe("failed");
     expect(outcomes[0]?.message).toMatch(/Batch verification failed.*mobile/);

@@ -1,3 +1,13 @@
+/**
+ * @file Browser-tests the served report's propose → confirm → apply/verify repair flow.
+ *
+ * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
+ * expect checks the result. Helpers below create controlled data or temporary resources so
+ * assertions do not depend on a developer's environment.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { execFileSync } from "node:child_process";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
@@ -14,6 +24,11 @@ import { htmlReporter } from "../src/reporters/html.js";
 import { startReportServer } from "../src/server/report-server.js";
 import { FIXTURE_ROOT, startFixtureServer, type FixtureServer } from "./helpers/fixture-server.js";
 
+/**
+ * Ask the OS for an available localhost port by listening on port 0, then close the probe. The
+ * Promise resolves after close; the returned port is a suggestion and is not reserved
+ * afterward.
+ */
 const freePort = () =>
   new Promise<number>((done) => {
     const probe = createServer().listen(0, "127.0.0.1", () => {
@@ -35,6 +50,10 @@ describe("Generate fix in the served report", () => {
     dir = mkdtempSync(join(tmpdir(), "vg-report-fix-"));
     cpSync(join(FIXTURE_ROOT, "staging"), join(dir, "site"), { recursive: true });
     writeFileSync(join(dir, ".gitignore"), ".visualguard/\n");
+    /**
+     * Run Git with a fixture-only identity inside the disposable repair repository. These
+     * commands prepare/assert test state rather than changing the real project history.
+     */
     const git = (...args: string[]) =>
       execFileSync("git", ["-c", "user.email=t@example.com", "-c", "user.name=T", ...args], {
         cwd: dir,

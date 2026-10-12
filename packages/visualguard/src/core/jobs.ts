@@ -1,3 +1,15 @@
+/**
+ * @file Builds uniquely identified route × viewport jobs with per-environment URLs, waits,
+ * masks and hides.
+ *
+ * This module runs on Node.js unless a function explicitly enters the browser with
+ * page.evaluate/addInitScript. async functions return Promises; await waits for a result
+ * without blocking the event loop. Relative .js imports refer to the JavaScript files produced
+ * from these TypeScript sources.
+ *
+ * Beginner reference: docs/READING-THE-CODE.md in the repository root.
+ */
+
 import { matchesAny } from "../config/glob.js";
 import type { ResolvedConfig } from "../config/resolve.js";
 import { resolveRoutes } from "../config/routes.js";
@@ -5,7 +17,12 @@ import { joinURL, routeSlug, shortHash, type ExpandedRoute } from "../config/url
 import { ConfigError } from "./errors.js";
 import type { Env, JobSpec } from "./types.js";
 
-/** Builds one job per route × viewport. */
+/**
+ * Builds one job per route × viewport.
+ *
+ * Create one capture job for each expanded route and configured viewport. Construct stable IDs
+ * and environment URLs while carrying route-specific wait, mask and hide settings.
+ */
 export function buildJobs(config: ResolvedConfig, routes: readonly ExpandedRoute[]): JobSpec[] {
   const missing = (["production", "staging"] as const).filter((env) => !config.baseURL[env]);
   if (missing.length > 0) {
@@ -46,14 +63,21 @@ export function buildJobs(config: ResolvedConfig, routes: readonly ExpandedRoute
 }
 
 export interface JobPlan {
-  /** Routes after `--only` filtering. */
+  /**
+   * Routes after `--only` filtering.
+   */
   routes: ExpandedRoute[];
   jobs: JobSpec[];
   warnings: string[];
   source: string;
 }
 
-/** Resolves routes (including discovery) and builds the job list. */
+/**
+ * Resolves routes (including discovery) and builds the job list.
+ *
+ * Resolve/discover concrete routes and build their job matrix. Return warnings and discovery
+ * metadata with the jobs so listing and execution share the same plan.
+ */
 export async function planJobs(
   config: ResolvedConfig,
   options: { discoveryLimit?: number } = {},
