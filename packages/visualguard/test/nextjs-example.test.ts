@@ -10,7 +10,7 @@
  */
 
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -48,7 +48,7 @@ describe.skipIf(!enabled)("Next.js example", () => {
   let productionPort: number;
   let stagingPort: number;
   const originals = new Map<string, string>();
-  const work = mkdtempSync(join(tmpdir(), "vg-next-"));
+  let work: string;
   /**
    * Run the example's regression-seeding script with the requested arguments. Return the
    * process result so assertions can check command success and output.
@@ -57,6 +57,7 @@ describe.skipIf(!enabled)("Next.js example", () => {
     spawnSync("node", ["scripts/seed-regressions.mjs", ...args], { cwd: root });
 
   beforeAll(async () => {
+    work = mkdtempSync(join(tmpdir(), "vg-next-"));
     for (const file of ["CheckoutSummary", "Hero", "PricingCard"]) {
       const path = join(root, "components", `${file}.tsx`);
       originals.set(path, readFileSync(path, "utf8"));
@@ -76,7 +77,11 @@ describe.skipIf(!enabled)("Next.js example", () => {
 
   afterAll(() => {
     for (const [path, content] of originals) writeFileSync(path, content);
-    if (production?.pid) process.kill(-production.pid, "SIGTERM");
+    try {
+      if (production?.pid) process.kill(-production.pid, "SIGTERM");
+    } finally {
+      if (work) rmSync(work, { recursive: true, force: true });
+    }
   });
 
   it("finds the three seeded regressions and fixes each one, verified", async () => {
