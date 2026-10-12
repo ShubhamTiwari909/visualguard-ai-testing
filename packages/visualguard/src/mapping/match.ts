@@ -36,7 +36,8 @@ function signature(dom: DomIndex, index: number): string {
 
 /**
  * How well two siblings correspond: 0 means they can't match (different tag or key); otherwise
- * matching stable keys, classes and text make the pairing more likely.
+ * a matching stable key raises the base score, equal first class names add one point, and
+ * equal non-empty text adds another point.
  */
 function weight(production: DomIndex, a: number, staging: DomIndex, b: number): number {
   const nodeA = production.node(a);

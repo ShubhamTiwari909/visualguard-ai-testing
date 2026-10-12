@@ -108,21 +108,21 @@ Not every catch means the whole job should fail. Missing optional DOM evidence c
 
 ## Common syntax in the package
 
-| Syntax                              | Meaning                                                   | Why it appears here                                                      |
-| ----------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `value?.field`                      | Read a field only if the value is not null/undefined.     | Captures and analysis can be absent after a failed or skipped stage.     |
-| `value ?? fallback`                 | Use the fallback only for null/undefined.                 | Keep valid zero/false values while filling omitted settings.             |
-| `value ??= fallback`                | Assign the fallback only for null/undefined.              | Cache the lazily loaded axe script.                                      |
-| `value \|\| fallback` | Use the fallback for any falsy value, including empty text, zero and false. | Some environment values treat an empty string as unspecified. |
-| `value!`                            | Tell TypeScript this value is not null/undefined.         | Known valid fixture/node indexes; this adds no runtime check.            |
-| `value as SomeType`                 | Assert a type to the compiler.                            | Describe loaded data; this does not parse or validate JSON.              |
-| `{ ...object, status }`             | Make a shallow object copy and replace/add fields.        | Produce an updated job without replacing every field manually.           |
-| `[...array]`                        | Make a shallow array copy.                                | Sort an array while preserving the original order.                       |
-| `const { job, runDir } = input`     | Extract named object fields.                              | Give inputs short readable local names.                                  |
-| `const [x, y, width, height] = box` | Extract array positions.                                  | Expand compact snapshot geometry.                                        |
-| `` `${route} ${viewport}` ``        | Interpolate values into a string.                         | Construct labels and stable job identifiers.                             |
-| `condition ? a : b`                 | Choose one of two expressions.                            | Select labels, thresholds or optional values.                            |
-| `readonly`                          | Prevent reassignment through that TypeScript declaration. | Express ownership/contracts; it does not deeply freeze a runtime object. |
+| Syntax                              | Meaning                                                                     | Why it appears here                                                      |
+| ----------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `value?.field`                      | Read a field only if the value is not null/undefined.                       | Captures and analysis can be absent after a failed or skipped stage.     |
+| `value ?? fallback`                 | Use the fallback only for null/undefined.                                   | Keep valid zero/false values while filling omitted settings.             |
+| `value ??= fallback`                | Assign the fallback only for null/undefined.                                | Cache the lazily loaded axe script.                                      |
+| `value \|\| fallback`               | Use the fallback for any falsy value, including empty text, zero and false. | Some environment values treat an empty string as unspecified.            |
+| `value!`                            | Tell TypeScript this value is not null/undefined.                           | Known valid fixture/node indexes; this adds no runtime check.            |
+| `value as SomeType`                 | Assert a type to the compiler.                                              | Describe loaded data; this does not parse or validate JSON.              |
+| `{ ...object, status }`             | Make a shallow object copy and replace/add fields.                          | Produce an updated job without replacing every field manually.           |
+| `[...array]`                        | Make a shallow array copy.                                                  | Sort an array while preserving the original order.                       |
+| `const { job, runDir } = input`     | Extract named object fields.                                                | Give inputs short readable local names.                                  |
+| `const [x, y, width, height] = box` | Extract array positions.                                                    | Expand compact snapshot geometry.                                        |
+| `` `${route} ${viewport}` ``        | Interpolate values into a string.                                           | Construct labels and stable job identifiers.                             |
+| `condition ? a : b`                 | Choose one of two expressions.                                              | Select labels, thresholds or optional values.                            |
+| `readonly`                          | Prevent reassignment through that TypeScript declaration.                   | Express ownership/contracts; it does not deeply freeze a runtime object. |
 
 Spread copies are **shallow**: nested objects retain their references unless explicitly copied. React filter state copies the Set before changing it so React sees a new state object. Image processing intentionally writes into mutable typed arrays.
 
