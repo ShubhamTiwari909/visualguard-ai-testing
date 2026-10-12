@@ -591,12 +591,10 @@ The fixture calls shared helpers directly rather than executing the entire CLI l
 New to JavaScript or TypeScript? Start with [Reading the code](docs/READING-THE-CODE.md) for the language patterns, data formats and a guided path through a comparison. Source files include responsibility headers and beginner-friendly function comments, including the small helpers and test fixtures.
 
 - [Complete architecture guide](docs/PACKAGE-ARCHITECTURE.md): diagrams, reading order and all 149 package files, with each file's purpose, exported symbols, dependencies and callers.
-- [Full Mermaid dependency graph](docs/PACKAGE-DEPENDENCIES.mmd): every package file and its local connections, grouped by directory.
-- [Dependency data](docs/PACKAGE-DEPENDENCIES.json): machine-readable edges, relationship kinds and source line references.
 
 The inventory excludes generated bundles, installed dependencies and temporary artifacts. It distinguishes type-only imports from runtime/build relationships. Start reading `cli/main.ts` → `cli/program.ts` → `cli/commands/test.ts` → `core/run.ts`; then follow the capture, diff, AI, repair or report module relevant to your change.
 
-After changing files/imports, refresh the map from the repository root:
+After changing files/imports, refresh the inventory from the repository root:
 
 ```bash
 node scripts/package-map.mjs

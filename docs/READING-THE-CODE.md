@@ -57,7 +57,7 @@ JSX is the markup-like syntax returned by React components. A component is a fun
 
 Internal Node TypeScript imports commonly end in `.js`. They describe the filenames in the published JavaScript build. This is intentional; do not change them to `.ts` just because the source file uses that extension.
 
-`import type` and `export type` describe compile-time relationships and are removed from the JavaScript output. The generated architecture graph marks type relationships separately from executable dependencies.
+`import type` and `export type` describe compile-time relationships and are removed from the JavaScript output. The generated architecture index labels type relationships separately from executable dependencies.
 
 The public library entry, [src/index.ts](../packages/visualguard/src/index.ts), gathers selected exports. Importing it does not start a comparison. The caller creates a run and calls `.start()`. The CLI entry parses terminal arguments. The Playwright entry extends test fixtures. The worker entry listens for diff tasks. The report entry mounts React in the browser.
 
@@ -193,4 +193,4 @@ When files/imports change, regenerate the architecture inventory from the reposi
 node scripts/package-map.mjs
 ```
 
-The generator reads source syntax and curated file roles. It does not execute package capture or repair code. Add a role for a new package file, then regenerate and review the guide/graph changes.
+The generator reads source syntax and curated file roles. It does not execute package capture or repair code. Add a role for a new package file, then regenerate and review the guide changes.
