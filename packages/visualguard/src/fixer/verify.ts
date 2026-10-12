@@ -251,10 +251,20 @@ export class DevServer {
       // Keep the shell alive until taskkill identifies and stops its descendants.
       await new Promise<void>((resolve) => {
         const killer = spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
-          stdio: "ignore",
+          stdio: ["ignore", "ignore", "pipe"],
         });
-        killer.once("close", () => resolve());
-        killer.once("error", () => resolve());
+        killer.stderr?.on("data", (chunk: Buffer) => {
+          this.log = (this.log + chunk.toString()).slice(-4_000);
+        });
+        killer.once("close", (code) => {
+          if (code !== 0)
+            this.log = `${this.log}\nServer taskkill exited with code ${code}`.slice(-4_000);
+          resolve();
+        });
+        killer.once("error", (error) => {
+          this.log = `${this.log}\nCould not stop server tree: ${error.message}`.slice(-4_000);
+          resolve();
+        });
       });
       return;
     }
