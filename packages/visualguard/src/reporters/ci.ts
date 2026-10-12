@@ -113,7 +113,7 @@ export function junitReporter(path: string, failOn: FailOn): Reporter {
  * Appends the Markdown summary to $GITHUB_STEP_SUMMARY; needs no token (PLAN.md §12.2).
  *
  * Create a reporter that appends Markdown to the runner's job-summary file. Append mode
- * preserves content written by earlier steps.
+ * preserves existing content in the configured summary file.
  */
 export function githubSummaryReporter(summaryPath: string, reportURL?: string): Reporter {
   return {
