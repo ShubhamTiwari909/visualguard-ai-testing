@@ -83,6 +83,8 @@ describe("fix --auto", () => {
     cpSync(join(FIXTURE_ROOT, "staging"), join(dir, "site"), { recursive: true });
     writeFileSync(join(dir, ".gitignore"), ".visualguard/\n");
     git(dir, "init", "-q", "-b", "main");
+    git(dir, "config", "user.email", "test@example.com");
+    git(dir, "config", "user.name", "Test");
     git(dir, "add", ".");
     git(dir, "commit", "-q", "-m", "init");
     git(dir, "remote", "add", "origin", origin);

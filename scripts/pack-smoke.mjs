@@ -12,7 +12,7 @@
 // Packs the visualguard package, installs the tarball into a throwaway project,
 // and checks that `npx visualguard --version` works the way a user would run it.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -33,7 +33,7 @@ try {
   const [{ filename }] = JSON.parse(packOutput);
 
   const project = join(work, "project");
-  run("node", ["-e", `require("fs").mkdirSync(${JSON.stringify(project)})`], work);
+  mkdirSync(project);
   writeFileSync(join(project, "package.json"), JSON.stringify({ name: "smoke", private: true }));
   run("npm", ["install", "--no-audit", "--no-fund", join(work, filename)], project);
 

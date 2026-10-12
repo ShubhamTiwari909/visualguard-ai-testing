@@ -10,7 +10,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createRun } from "../src/core/run.js";
 import { readRunIndex } from "../src/core/runs.js";
@@ -127,7 +127,9 @@ describe("test pipeline on the fixture site", () => {
       dirs.push((await createRun(config, { skipReachabilityCheck: true }).start()).runDir);
     expect(existsSync(dirs[0]!)).toBe(false);
     expect(existsSync(dirs[1]!)).toBe(true);
-    expect(readRunIndex(config.outputDir).runs.map((run) => run.number)).toEqual([2, 3]);
+    expect(readRunIndex(config.outputDir).runs.map((run) => run.id)).toEqual(
+      dirs.slice(1).map((dir) => basename(dir)),
+    );
   }, 120_000);
 });
 
