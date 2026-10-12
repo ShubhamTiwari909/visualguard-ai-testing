@@ -3,8 +3,8 @@
  * connections.
  *
  * This is a repository-support script run by Node.js, outside the published package API.
- * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
- * helpers below before invoking a script that starts processes or writes artifacts.
+ * Requires ripgrep (the rg executable) on PATH to inventory non-ignored package files.
+ * Top-level await loads formatting options before the guide is regenerated.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

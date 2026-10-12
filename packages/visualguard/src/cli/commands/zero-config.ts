@@ -168,8 +168,8 @@ export async function runZeroConfig(urls: string[], flags: ZeroConfigFlags): Pro
 }
 
 /**
- * Build contextual hints for viewing, accepting, analyzing or configuring this run. Return text
- * pairs for the terminal reporter rather than executing those suggested commands.
+ * Build snapshot-status and setup hints for this run. Return text pairs for the terminal
+ * reporter rather than executing suggested commands.
  */
 function nextSteps(manifest: RunManifest, hasConfig: boolean): Array<[string, string]> {
   const steps: Array<[string, string]> = [];

@@ -190,9 +190,10 @@ export class DevServer {
   /**
    * Starts the server (unless one already answers) and waits until it responds.
    *
-   * Start a server if policy requires it and wait until its URL answers or startup fails/times
-   * out. Check cancellation throughout and retain recent process logs for useful failure
-   * messages.
+   * Start the configured command when the URL is unresponsive, then wait until it answers or
+   * startup fails/times out. requireFresh rejects an already-answering server not started by
+   * this instance; this instance reuses its own answering server. Check cancellation and retain
+   * recent process logs for useful failure messages.
    */
   async ensure(signal?: AbortSignal): Promise<void> {
     signal?.throwIfAborted();

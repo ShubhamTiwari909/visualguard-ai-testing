@@ -77,8 +77,7 @@ export const pixelmatchEngine: DiffEngine = {
  * (inserted or removed content) is tinted orange, and `ignored` areas (they change on every
  * load) blue.
  *
- * Create a dimmed grayscale screenshot with red changes, an orange shift band and blue ignored
- * areas. The mask indexes pixels, while image bytes use four-channel offsets.
+ * The mask indexes pixels, while image bytes use four-channel offsets.
  */
 export function renderDiffImage(
   base: RGBAImage,

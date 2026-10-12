@@ -82,8 +82,8 @@ export function createImage(
 export const PAD_COLOR = [255, 0, 255, 255] as const;
 
 /**
- * Place an image at the top-left of a larger white canvas. Copy rows using the destination
- * width because row offsets differ after padding.
+ * Place an image at the top-left of a larger canvas filled with the magenta PAD_COLOR sentinel.
+ * Copy rows using the destination width because row offsets differ after padding.
  */
 export function padImage(image: RGBAImage, width: number, height: number): RGBAImage {
   if (image.width === width && image.height === height) return image;

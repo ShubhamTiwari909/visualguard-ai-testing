@@ -3,8 +3,8 @@
  * entry points.
  *
  * This is a repository-support script run by Node.js, outside the published package API.
- * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
- * helpers below before invoking a script that starts processes or writes artifacts.
+ * Runs commands synchronously with execFileSync and cleans up the temporary consumer project
+ * in finally, including when a check fails.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

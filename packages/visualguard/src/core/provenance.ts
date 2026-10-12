@@ -80,7 +80,8 @@ export type CapturePolicy = ReturnType<typeof capturePolicy>;
 
 /**
  * Build the baseline rendering identity from platform, project and capture policy, excluding
- * diff thresholds. Changing verdict thresholds does not change the rendered screenshot itself.
+ * the entire diff configuration (engine, thresholds, region and noise-map settings). These
+ * comparison settings do not change the rendered screenshot itself.
  */
 export function renderingIdentity(
   config: ResolvedConfig,

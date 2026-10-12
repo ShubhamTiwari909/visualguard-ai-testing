@@ -53,7 +53,7 @@ function luminance({ r, g, b }: RGBA): number {
 /**
  * WCAG contrast ratio between two opaque colours (1–21).
  *
- * Calculate the light-to-dark relative-luminance ratio for two opaque colors. Sort luminances
+ * Calculate the light-to-dark relative-luminance ratio for two opaque colours. Sort luminances
  * first so the result does not depend on argument order.
  */
 export function contrastRatio(a: RGBA, b: RGBA): number {

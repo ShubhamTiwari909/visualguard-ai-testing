@@ -56,7 +56,7 @@ export interface ChangeFingerprint {
 
 /**
  * Serialize one DOM difference into stable fingerprint text. Include its selector and old/new
- * values so accepting one change does not accept every change on that element.
+ * values or presence state so accepting one change does not accept every change on that element.
  */
 function formatDelta(delta: Delta): string {
   switch (delta.kind) {

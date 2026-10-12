@@ -64,7 +64,7 @@ const execFileAsync = promisify(execFile);
 
 /**
  * Runs `visualguard test --ci` against both fixture servers in a temp project and returns {
- * stdout, reportPath, cleanup }. The CLI runs asynchronously so the in-process servers can
+ * stdout, reportPath, work, cleanup }. The CLI runs asynchronously so the in-process servers can
  * answer.
  *
  * Run the built CLI against temporary fixture servers and return its real output/report. Keep

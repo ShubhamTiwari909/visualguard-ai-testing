@@ -82,8 +82,8 @@ export class AIBudget {
     addUsage(this.usage, usage);
   }
   /**
-   * Load previously recorded counters after rejecting negative or non-finite numbers. Optional
-   * counters default to zero so older saved reports can still be read.
+   * Load previously recorded counters after rejecting negative or non-finite numbers. Missing
+   * generation/network attempt counters default to zero; absent thinkingTokens stays undefined.
    */
   restore(snapshot: {
     inputTokens: number;

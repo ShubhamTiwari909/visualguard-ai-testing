@@ -68,8 +68,8 @@ function Findings({ findings }: { findings: Finding[] }) {
 }
 
 /**
- * Render the optional AI explanation, evidence and suggested fix. Returning no content when
- * analysis is absent lets heuristic-only reports use the same page.
+ * Render the AI explanation, evidence and suggested fix. The caller renders this component
+ * only when job.analysis exists, so heuristic-only reports omit it.
  */
 function Analysis({ job }: { job: JobResult }) {
   const analysis = job.analysis!;

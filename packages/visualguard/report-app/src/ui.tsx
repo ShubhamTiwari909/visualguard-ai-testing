@@ -195,7 +195,8 @@ export function SegmentedControl<T extends string>({
 
 /**
  * Copy the supplied text through the browser clipboard API and show temporary feedback.
- * Component state handles the feedback without changing the original text.
+ * The click handler temporarily swaps the button label, then restores it with setTimeout,
+ * without changing the supplied text.
  */
 export function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   return (

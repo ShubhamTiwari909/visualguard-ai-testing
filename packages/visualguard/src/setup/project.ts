@@ -193,8 +193,8 @@ export function addPackageScript(cwd: string, name: string, command: string): bo
 /**
  * Sets KEY=value in an env file, replacing an existing line for KEY.
  *
- * Replace or append one KEY=value line in an environment file. Escape the key for matching and
- * preserve unrelated settings.
+ * Replace or append one KEY=value line in an environment file, preserving unrelated settings.
+ * The key is interpolated directly into a regular expression; callers supply plain env names.
  */
 export function setEnvVar(path: string, key: string, value: string): void {
   const current = existsSync(path) ? readFileSync(path, "utf8") : "";

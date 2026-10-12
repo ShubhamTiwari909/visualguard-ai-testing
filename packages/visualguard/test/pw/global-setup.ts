@@ -1,9 +1,7 @@
 /**
  * @file Starts/stops fixture production/staging servers for the nested Playwright runner.
  *
- * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
- * expect checks the result. Helpers below create controlled data or temporary resources so
- * assertions do not depend on a developer's environment.
+ * Starts both fixture servers before the suite and returns teardown that closes them.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

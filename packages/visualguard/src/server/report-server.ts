@@ -95,7 +95,7 @@ function tokenMatches(expected: string, given: string | string[] | undefined): b
  * require the per-session token that is embedded in the page.
  *
  * Serve one saved run on localhost and handle authenticated POST actions. Render fresh manifest
- * data per request, protect actions with a session token/origin checks and expose a close
+ * data per request, protect actions with a session token and expose a close
  * promise for cleanup.
  */
 export async function startReportServer(options: ReportServerOptions): Promise<ReportServer> {

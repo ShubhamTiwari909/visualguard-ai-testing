@@ -36,10 +36,8 @@ function signature(dom: DomIndex, index: number): string {
 
 /**
  * How well two siblings correspond: 0 means they can't match (different tag or key); otherwise
- * matching class and text make the pairing more likely.
- *
- * Score how plausibly two nodes correspond, rejecting incompatible tags/keys. Matching stable
- * keys, classes and text increase the score.
+ * a matching stable key raises the base score, equal first class names add one point, and
+ * equal non-empty text adds another point.
  */
 function weight(production: DomIndex, a: number, staging: DomIndex, b: number): number {
   const nodeA = production.node(a);

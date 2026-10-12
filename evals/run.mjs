@@ -1,6 +1,6 @@
 /**
- * @file Runs labeled visual-diff evaluations and writes machine-readable and Markdown metric
- * reports.
+ * @file Runs labeled visual-diff evaluations and writes JSON metric results and prints tables to
+ * stdout.
  *
  * This is a repository-support script run by Node.js, outside the published package API.
  * Top-level await waits for setup before proceeding; async helpers return Promises. Read the

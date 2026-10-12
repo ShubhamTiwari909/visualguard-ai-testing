@@ -2,9 +2,8 @@
  * @file Builds the fixture entry and launches the nested Playwright suite to verify real public
  * imports.
  *
- * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
- * expect checks the result. Helpers below create controlled data or temporary resources so
- * assertions do not depend on a developer's environment.
+ * The test builds the public fixture entry and runs the nested suite with a temporary output
+ * directory created inline.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

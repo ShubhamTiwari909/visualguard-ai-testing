@@ -101,9 +101,10 @@ export async function discoverRoutes(
 /**
  * Turns the configured routes (an explicit list or discovery) into concrete paths.
  *
- * Expand explicit route definitions or discovered paths into concrete environment pairs. Apply
- * include/exclude filters and report skipped dynamic routes instead of guessing parameter
- * values.
+ * Expand explicit route definitions or discovered paths into concrete environment pairs.
+ * discoverRoutes applies include/exclude filters to concrete discovered paths; explicit routes
+ * and discovery extras bypass those filters. Unresolved dynamic Next.js patterns are reported
+ * regardless of the filters, rather than guessing parameter values.
  */
 export async function resolveRoutes(
   config: ResolvedConfig,
