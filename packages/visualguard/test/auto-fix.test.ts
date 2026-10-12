@@ -83,6 +83,8 @@ describe("fix --auto", () => {
     cpSync(join(FIXTURE_ROOT, "staging"), join(dir, "site"), { recursive: true });
     writeFileSync(join(dir, ".gitignore"), ".visualguard/\n");
     git(dir, "init", "-q", "-b", "main");
+    git(dir, "config", "user.email", "test@example.com");
+    git(dir, "config", "user.name", "Test");
     git(dir, "add", ".");
     git(dir, "commit", "-q", "-m", "init");
     git(dir, "remote", "add", "origin", origin);
@@ -125,6 +127,7 @@ describe("fix --auto", () => {
     await staging.ensure();
     const { manifest } = await createRun(config).start();
     await staging.stop();
+    await expect(fetch(config.fix.verify.server!.url)).rejects.toThrow();
 
     const messages: string[] = [];
     const result = await autoFix(config, {
@@ -140,6 +143,7 @@ describe("fix --auto", () => {
 
     expect(
       Object.fromEntries(result.outcomes.map((outcome) => [outcome.job.route, outcome.result])),
+      result.outcomes.map((outcome) => `${outcome.job.route}: ${outcome.message}`).join("\n"),
     ).toEqual({
       "/alignment": "fixed",
       "/color-change": "fixed",

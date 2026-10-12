@@ -178,10 +178,11 @@ export async function autoFix(
 ): Promise<AutoFixResult> {
   const env = options.env ?? process.env;
   const progress = options.progress ?? (() => {});
-  const repoRoot = gitRoot(config.cwd);
-  if (!repoRoot) throw new ConfigError("`visualguard fix --auto` needs a git repository.");
-  // git reports resolved paths (e.g. /private/var on macOS), so compare against the real cwd.
-  const projectDir = realpathSync(config.cwd);
+  const detectedRoot = gitRoot(config.cwd);
+  if (!detectedRoot) throw new ConfigError("`visualguard fix --auto` needs a git repository.");
+  // Resolve both paths: Windows temp paths may use short names while Git reports long names.
+  const repoRoot = realpathSync.native(detectedRoot);
+  const projectDir = realpathSync.native(config.cwd);
   assertCanFix(config, config.cwd, !options.inPlace);
   if (!config.fix.verify.server) {
     throw new ConfigError("Automatic fixing requires fix.verify.server for visual verification.", {

@@ -24,6 +24,7 @@ describe("visualguard/playwright fixture", () => {
     const build = spawnSync("pnpm", ["exec", "tsup"], {
       cwd: root,
       encoding: "utf8",
+      shell: process.platform === "win32",
       env: { ...process.env, TSUP_NO_CLEAN: "1" },
     });
     expect(build.status, build.stderr).toBe(0);
@@ -33,6 +34,7 @@ describe("visualguard/playwright fixture", () => {
       {
         cwd: root,
         encoding: "utf8",
+        shell: process.platform === "win32",
         env: { ...process.env, VG_PW_OUTPUT: mkdtempSync(join(tmpdir(), "vg-pw-out-")), CI: "1" },
       },
     );

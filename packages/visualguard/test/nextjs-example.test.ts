@@ -10,11 +10,14 @@
  */
 
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config/load.js";
 import { resolveConfig } from "../src/config/resolve.js";
+import type { CaptureHookContext } from "../src/config/schema.js";
 import { createRun } from "../src/core/run.js";
 import { fixRegressions } from "../src/fixer/fix.js";
 import { DevServer } from "../src/fixer/verify.js";
@@ -44,6 +47,8 @@ describe.skipIf(!enabled)("Next.js example", () => {
   let production: ChildProcess | undefined;
   let productionPort: number;
   let stagingPort: number;
+  const originals = new Map<string, string>();
+  let work: string;
   /**
    * Run the example's regression-seeding script with the requested arguments. Return the
    * process result so assertions can check command success and output.
@@ -52,6 +57,13 @@ describe.skipIf(!enabled)("Next.js example", () => {
     spawnSync("node", ["scripts/seed-regressions.mjs", ...args], { cwd: root });
 
   beforeAll(async () => {
+    work = mkdtempSync(join(tmpdir(), "vg-next-"));
+    for (const file of ["CheckoutSummary", "Hero", "PricingCard"]) {
+      const path = join(root, "components", `${file}.tsx`);
+      originals.set(path, readFileSync(path, "utf8"));
+    }
+    // Build a clean reference even when the checked-in demo contains seeded regressions.
+    expect(seed("--undo").status).toBe(0);
     productionPort = await freePort();
     stagingPort = await freePort();
     const build = spawnSync("pnpm", ["exec", "next", "build"], { cwd: root, encoding: "utf8" });
@@ -60,12 +72,16 @@ describe.skipIf(!enabled)("Next.js example", () => {
       cwd: root,
       detached: true,
     });
-    seed();
+    expect(seed().status).toBe(0);
   }, 300_000);
 
   afterAll(() => {
-    seed("--undo");
-    if (production?.pid) process.kill(-production.pid, "SIGTERM");
+    for (const [path, content] of originals) writeFileSync(path, content);
+    try {
+      if (production?.pid) process.kill(-production.pid, "SIGTERM");
+    } finally {
+      if (work) rmSync(work, { recursive: true, force: true });
+    }
   });
 
   it("finds the three seeded regressions and fixes each one, verified", async () => {
@@ -76,6 +92,15 @@ describe.skipIf(!enabled)("Next.js example", () => {
           staging: `http://127.0.0.1:${stagingPort}`,
         },
         routes: ["/", "/pricing", "/checkout"],
+        output: { dir: join(work, "out"), acceptedFile: join(work, "accepted.json") },
+        hooks: {
+          beforeNavigate: async ({ page, env }: CaptureHookContext) => {
+            if (env === "staging") {
+              // Mock only the dev-server HMR socket; app errors remain health failures.
+              await page.routeWebSocket(/\/_next\/(?:webpack-)?hmr(?:\?|$)/, () => {});
+            }
+          },
+        },
         viewports: { desktop: { width: 1280, height: 800 } },
         stabilize: { freezeTime: "2026-01-01T00:00:00Z", hide: ["nextjs-portal"] },
         fix: {

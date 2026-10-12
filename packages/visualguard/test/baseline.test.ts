@@ -73,6 +73,6 @@ describe("baseline mode", () => {
     expect(manifest.jobs.find((job) => job.route === "/hidden")!.findings![0]!.message).toContain(
       "is missing on staging",
     );
-    expect(join(baselineDir)).toContain("visualguard/baselines");
+    expect(baselineDir).toBe(join(first.cwd, "visualguard", "baselines"));
   }, 120_000);
 });
