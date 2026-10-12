@@ -113,7 +113,7 @@ Not every catch means the whole job should fail. Missing optional DOM evidence c
 | `value?.field`                      | Read a field only if the value is not null/undefined.     | Captures and analysis can be absent after a failed or skipped stage.     |
 | `value ?? fallback`                 | Use the fallback only for null/undefined.                 | Keep valid zero/false values while filling omitted settings.             |
 | `value ??= fallback`                | Assign the fallback only for null/undefined.              | Cache the lazily loaded axe script.                                      |
-| `value                              |                                                           | fallback`                                                                | Use the fallback for any falsy value, including empty text, zero and false. | Some environment values treat an empty string as unspecified. |
+| `value \|\| fallback` | Use the fallback for any falsy value, including empty text, zero and false. | Some environment values treat an empty string as unspecified. |
 | `value!`                            | Tell TypeScript this value is not null/undefined.         | Known valid fixture/node indexes; this adds no runtime check.            |
 | `value as SomeType`                 | Assert a type to the compiler.                            | Describe loaded data; this does not parse or validate JSON.              |
 | `{ ...object, status }`             | Make a shallow object copy and replace/add fields.        | Produce an updated job without replacing every field manually.           |

@@ -2,8 +2,8 @@
  * @file Shared local HTTP server for repository demos, smoke checks and evaluations.
  *
  * This is a repository-support script run by Node.js, outside the published package API.
- * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
- * helpers below before invoking a script that starts processes or writes artifacts.
+ * Exports a server factory; importing the module does not start a server. Callers invoke the
+ * factory to listen on a local port and receive a cleanup function.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

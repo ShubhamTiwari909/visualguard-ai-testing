@@ -29,7 +29,8 @@ export interface GitHubContext {
  * Reads the GitHub Actions environment (or explicit overrides).
  *
  * Resolve GitHub credentials, repository and optional PR information from overrides or CI
- * variables. Return no context when required credentials/repository data are unavailable.
+ * variables. Throw an EnvironmentError when required credentials or repository data are
+ * unavailable.
  */
 export function githubContext(
   env: NodeJS.ProcessEnv = process.env,

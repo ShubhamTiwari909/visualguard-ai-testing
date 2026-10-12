@@ -50,9 +50,6 @@ export interface Box {
 }
 
 /**
- * One route × viewport comparison.
- */
-/**
  * The planned input for one route and viewport, before any capture has happened. It carries
  * both environment URLs and per-route stabilization overrides.
  */

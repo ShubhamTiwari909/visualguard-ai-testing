@@ -594,7 +594,7 @@ New to JavaScript or TypeScript? Start with [Reading the code](docs/READING-THE-
 
 The inventory excludes generated bundles, installed dependencies and temporary artifacts. It distinguishes type-only imports from runtime/build relationships. Start reading `cli/main.ts` → `cli/program.ts` → `cli/commands/test.ts` → `core/run.ts`; then follow the capture, diff, AI, repair or report module relevant to your change.
 
-After changing files/imports, refresh the inventory from the repository root:
+After changing files/imports, refresh the inventory from the repository root. The helper requires ripgrep (`rg`) on PATH and installed workspace dependencies:
 
 ```bash
 node scripts/package-map.mjs

@@ -3,8 +3,8 @@
  * run evidence.
  *
  * This is a repository-support script run by Node.js, outside the published package API.
- * Top-level await waits for setup before proceeding; async helpers return Promises. Read the
- * helpers below before invoking a script that starts processes or writes artifacts.
+ * Exports synchronous, side-effect-free functions that derive cases and metrics from the
+ * supplied data without starting processes, calling models or writing files.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

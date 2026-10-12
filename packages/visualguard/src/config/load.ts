@@ -53,7 +53,6 @@ export function findConfigFile(cwd: string): string | undefined {
  * Loads `.env` then `.env.local` from `cwd` into `env`. Variables that are already set win, so
  * CI secrets and shell exports are never overridden by files.
  *
- * Load .env and .env.local while preserving variables already supplied by the shell or CI.
  * Mutate the chosen environment object and return the paths that were loaded.
  */
 export function loadEnvFiles(cwd: string, env: NodeJS.ProcessEnv = process.env): string[] {
@@ -106,8 +105,7 @@ export interface LoadedConfig {
  * Finds, imports and validates the config. With no config file, returns the defaults so
  * zero-config runs and CLI flags still work.
  *
- * Choose an explicit or discovered config, import it and validate its exported value. With no
- * file, validate defaults so the CLI can still run from supplied flags.
+ * An explicit config path takes precedence over discovery.
  */
 export async function loadConfig(options: {
   cwd: string;

@@ -40,7 +40,8 @@ export interface GeminiOptions {
   baseUrl?: string;
   timeoutMs?: number;
   /**
-   * Attempts per request, including the first (SDK retries 408/429/5xx).
+   * Provider attempts per request, including the first. This provider retries 408/429/5xx;
+   * the SDK is limited to one attempt so it does not add its own retries.
    */
   retryAttempts?: number;
   /**

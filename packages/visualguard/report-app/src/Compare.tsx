@@ -1,6 +1,6 @@
 /**
- * @file Screenshot comparison modes: side by side, slider, onion-skin overlay, diff, zoom and
- * region display.
+ * @file Screenshot comparison modes: side by side, slider, onion-skin overlay and diff, with
+ * separate actual-size and region-display toggles.
  *
  * This module runs in the report viewer's browser. React components return JSX (the markup-like
  * syntax); state changes request a new render, while effects synchronize browser APIs and clean

@@ -2,9 +2,8 @@
  * @file Child-process static site server whose files can be edited during repair/verification
  * tests.
  *
- * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
- * expect checks the result. Helpers below create controlled data or temporary resources so
- * assertions do not depend on a developer's environment.
+ * Runs as a standalone child process, serving the directory and port supplied on the command
+ * line. Tests edit the served files to exercise repair and verification.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

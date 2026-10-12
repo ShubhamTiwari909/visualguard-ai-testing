@@ -2,9 +2,8 @@
  * @file Tests end-to-end human explanations for text, colour, layout/spacing and deterministic
  * failures.
  *
- * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
- * expect checks the result. Helpers below create controlled data or temporary resources so
- * assertions do not depend on a developer's environment.
+ * beforeAll starts fixture servers and builds the run manifest using testConfig. The local
+ * job and messages helpers read that manifest for the assertions.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

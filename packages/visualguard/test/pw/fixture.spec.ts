@@ -2,9 +2,8 @@
  * @file Real Playwright tests for passing/failing checkpoints, baselines, referenceSetup and
  * early health collection.
  *
- * Tests are executable examples: describe groups a scenario, it/test names one expectation, and
- * expect checks the result. Helpers below create controlled data or temporary resources so
- * assertions do not depend on a developer's environment.
+ * The fixture uses temporary output and baseline directories created at module scope; each
+ * test checks a checkpoint result against the local fixture site.
  *
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */

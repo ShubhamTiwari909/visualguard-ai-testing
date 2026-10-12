@@ -156,8 +156,8 @@ export async function runWatch(routes: string[], flags: WatchFlags): Promise<voi
   await server?.ensure();
 
   /**
-   * Write one timestamp/progress line to stdout. A default empty string supports blank
-   * separator lines.
+   * Write the supplied line to stdout followed by a newline. Callers compose its text,
+   * including any timestamps or progress labels.
    */
   const write = (line = "") => process.stdout.write(`${line}\n`);
   const allRoutes = (await resolveRoutes(config)).routes;

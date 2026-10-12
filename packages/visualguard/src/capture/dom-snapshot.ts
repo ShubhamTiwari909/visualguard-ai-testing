@@ -13,11 +13,6 @@
 import type { Page } from "playwright";
 
 /**
- * A compact DOM snapshot taken right after the screenshot (PLAN.md §9.1). Computed styles are
- * stored once per unique combination in `styles` and referenced by index, which keeps snapshots
- * small: most elements share their styles with many others.
- */
-/**
  * A compact captured element. Short field names reduce snapshot JSON size: i/p/s are indexes,
  * not nested objects; box is measured in page pixels.
  */

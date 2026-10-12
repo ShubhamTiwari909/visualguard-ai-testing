@@ -602,9 +602,9 @@ export class Run extends RunEmitter {
   /**
    * Copies a stored snapshot into the job directory as the "production" side.
    *
-   * Copy a saved baseline image and available DOM/health sidecars into this job's reference
-   * artifacts. Represent it as a production-side capture so later comparison code can use its
-   * normal two-sided shape.
+   * Copy the saved image and available DOM sidecar into this job's reference artifacts. Read
+   * the health sidecar into the returned capture without copying it. Represent the capture as
+   * the production side so later comparison code can use its normal two-sided shape.
    */
   private loadBaseline(
     baselinePath: string,

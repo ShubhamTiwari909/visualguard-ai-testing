@@ -98,7 +98,7 @@ function formatDelta(delta: Delta): string {
  * The regions worth showing the model: the shift band first, then the largest changes.
  *
  * Choose regions with saved image crops, putting a detected layout shift before the largest
- * remaining differences. Copy before sorting so the original report order is preserved.
+ * remaining differences. Filtering produces a fresh array, so sorting preserves report order.
  */
 export function regionsForAnalysis(job: JobResult, maxRegions: number) {
   return [...job.regions]

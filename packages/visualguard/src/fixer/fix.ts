@@ -580,7 +580,8 @@ export async function fixRegressions(
 
 /**
  * Attempt one job's repair, feeding failed verification evidence into subsequent proposals.
- * Keep only verified changes and return a structured outcome with attempts/edits.
+ * Keep changes when verification succeeds or is skipped (unverified), and return a structured
+ * outcome with attempts/edits.
  */
 async function fixJob(
   config: ResolvedConfig,
