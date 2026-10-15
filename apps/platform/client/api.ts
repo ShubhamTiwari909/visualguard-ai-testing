@@ -1,4 +1,5 @@
 import type { Project, RunDetail, RunPage } from "../shared/contracts";
+import type { ReviewInboxPage, ReviewPerson, ReviewView } from "../shared/reviews";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, options);
@@ -9,6 +10,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  review: (runId: string, jobId: string, signal: AbortSignal) =>
+    request<ReviewView>(`/api/runs/${encodeURIComponent(runId)}/reviews?${new URLSearchParams({ job: jobId })}`, { signal }),
+  reviewInbox: (search: string, signal: AbortSignal) =>
+    request<ReviewInboxPage>(`/api/reviews?${search}`, { signal }),
+  reviewers: (projectId: string, signal: AbortSignal) =>
+    request<{ reviewers: ReviewPerson[] }>(`/api/projects/${encodeURIComponent(projectId)}/reviewers`, { signal }),
   projects: (signal: AbortSignal) => request<{ projects: Project[] }>("/api/projects", { signal }),
   runs: (search: string, signal: AbortSignal) => request<RunPage>(`/api/runs${search}`, { signal }),
   async run(id: string, signal: AbortSignal): Promise<RunDetail> {

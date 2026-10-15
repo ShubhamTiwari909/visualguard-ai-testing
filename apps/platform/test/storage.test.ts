@@ -11,6 +11,9 @@ import { openMongo } from "../server/mongo.js";
 import type { PlatformRepository, StateStore } from "../server/storage-contracts.js";
 import type { ArtifactStore } from "../server/artifacts.js";
 import type { RunDetail } from "../shared/contracts.js";
+import { AuthService } from "../server/auth.js";
+import { Reviews } from "../server/reviews.js";
+import { reviewRun } from "./fixtures/review-run.js";
 
 for (const backend of ["sqlite", "postgres", "mongo"] as const) {
   const url =
@@ -59,6 +62,38 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect((await state.list(prefix)).length).toBe(2);
       await state.create(prefix, "prune", {}, "2000-01-01T00:00:00.000Z");
       expect(await state.pruneExpired()).toBeGreaterThanOrEqual(1);
+    });
+    it("persists exact review history across instances, pages state, and removes reviews with evidence", async () => {
+      const projectId = `${prefix}-reviews`;
+      await repository.createProject(projectId, "Review storage");
+      const input = reviewRun();
+      input.projectId = projectId;
+      const { id: _id, ...document } = input;
+      const { run } = await repository.insertRun(document);
+      const auth = new AuthService(state, { VISUALGUARD_AUTH_MODE: "local" });
+      const actor = { id: "local-owner", name: "Local workspace", email: "", admin: true, csrf: "" };
+      const reviews = new Reviews(repository, state, auth);
+      const first = await reviews.read(actor, run.id, "checkout__desktop");
+      const mutation = { jobId: first.jobId, evidenceDigest: first.evidenceDigest,
+        scopeDigest: first.scopeDigest, expectedVersion: 0,
+        event: { action: "comment" as const, reason: "Shared review history" } };
+      const results = await Promise.allSettled([
+        reviews.append(actor, run.id, mutation), reviews.append(actor, run.id, mutation),
+      ]);
+      expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+      const otherInstance = new Reviews(repository, state, new AuthService(state, { VISUALGUARD_AUTH_MODE: "local" }));
+      expect((await otherInstance.read(actor, run.id, first.jobId)).events).toHaveLength(1);
+      const keyPrefix = `${projectId}:`;
+      const [row] = await state.list("reviews", keyPrefix, 1);
+      expect(row).toBeDefined();
+      expect(await state.list("reviews", keyPrefix, 1, row!.id)).toEqual([]);
+      await repository.deleteRun(run.id, projectId);
+      expect(await state.list("reviews", keyPrefix)).toEqual([]);
+      const second = await repository.insertRun({ ...document, engineRunId: `${document.engineRunId}-again` });
+      const view = await reviews.read(actor, second.run.id, first.jobId);
+      await reviews.append(actor, second.run.id, { ...mutation, scopeDigest: view.scopeDigest });
+      await repository.deleteProject(projectId, 1);
+      expect(await state.list("reviews", keyPrefix)).toEqual([]);
     });
     it("creates a project once under racing requests and preserves its existing name", async () => {
       const id = `${prefix}-ensure`;

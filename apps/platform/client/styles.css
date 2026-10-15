@@ -14,6 +14,104 @@
 .platform select {
   font: inherit;
 }
+.vg-review-panel {
+  margin-top: 24px;
+  scroll-margin-top: 20px;
+}
+.vg-review-body {
+  padding: 24px;
+}
+.vg-review-toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.vg-review-toolbar label,
+.vg-review-body fieldset label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.vg-review-toolbar select { max-width: 100%; }
+.vg-review-body fieldset {
+  border: 1px solid #dfe7e3;
+  border-radius: 9px;
+  padding: 16px;
+  margin: 16px 0;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.vg-review-body textarea {
+  font: inherit;
+  border: 1px solid #dfe7e3;
+  border-radius: 7px;
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.vg-review-body textarea:focus {
+  outline: 2px solid #70bba2;
+  outline-offset: 1px;
+}
+.vg-review-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.vg-review-images figure {
+  margin: 0;
+}
+.vg-review-images img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  object-position: top;
+  background: #eef3f0;
+  border: 1px solid #dfe7e3;
+  border-radius: 7px;
+}
+.vg-review-images figcaption {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.vg-review-events {
+  list-style: none;
+  padding: 0;
+}
+.vg-review-events li {
+  border-left: 3px solid #dfe7e3;
+  padding: 14px;
+  margin: 12px 0;
+  background: #f7f9f8;
+  overflow-wrap: anywhere;
+}
+.vg-review-reason {
+  white-space: pre-wrap;
+}
+.vg-review-state {
+  font-weight: 700;
+}
+.vg-review-state-approved {
+  color: #226346;
+}
+.vg-review-state-rejected {
+  color: #9d3434;
+}
+.vg-review-toolbar .vg-review-checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .vg-review-images { grid-template-columns: minmax(0, 1fr); }
+  .vg-review-body { padding: 16px; }
+}
 .platform a {
   text-decoration: none;
 }

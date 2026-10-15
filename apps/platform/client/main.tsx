@@ -16,6 +16,7 @@ import "./styles.css";
 import { AccountMenu, SessionProvider, useSession } from "./auth";
 import { Settings } from "./settings";
 import { DeleteAction, deletionMessage } from "./delete-action";
+import { ReviewInbox, RunReviews } from "./reviews";
 
 function navigate(path: string) {
   window.history.pushState(null, "", path);
@@ -120,8 +121,11 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
           </div>
         </div>
         <p className="vg-nav-heading">QUALITY</p>
-        <Link className={`vg-nav-link ${!selected ? "is-active" : ""}`} href="/">
+        <Link className={`vg-nav-link ${!selected && window.location.pathname === "/" ? "is-active" : ""}`} href="/">
           <span aria-hidden="true">▦</span> Run history
+        </Link>
+        <Link className={`vg-nav-link ${window.location.pathname === "/reviews" ? "is-active" : ""}`} href="/reviews">
+          <span aria-hidden="true">✓</span> Review inbox
         </Link>
         <Link className="vg-nav-link" href="/settings">
           <span aria-hidden="true">⚙</span> People & integrations
@@ -769,6 +773,7 @@ function RunView({
             {!jobs.length && <div className="vg-empty">No matching checks.</div>}
           </div>
         </section>
+        <RunReviews run={run} initialJob={new URLSearchParams(window.location.search).get("review") ?? undefined} />
         <details className="vg-provenance">
           <summary>Evidence identity & provenance</summary>
           <dl>
@@ -850,7 +855,7 @@ function Platform() {
   const match = location.path.match(/^\/runs\/([a-f0-9-]{36})(\/report)?$/);
   return match ? (
     <RunView
-      key={match[1]}
+      key={`${match[1]}:${location.search}`}
       id={match[1]!}
       report={Boolean(match[2])}
       projects={projects}
@@ -868,6 +873,8 @@ function Platform() {
       )}
       {location.path === "/settings" ? (
         <Settings projects={projects} onDeleted={deleted} />
+      ) : location.path === "/reviews" ? (
+        <ReviewInbox key={location.search} projects={projects} search={location.search} />
       ) : (
         <RunHistory
           key={revision}

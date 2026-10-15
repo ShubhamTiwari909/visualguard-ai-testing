@@ -542,7 +542,8 @@ export class MemoryStateStore implements StateStore {
       : undefined;
   }
   async create<T>(namespace: string, id: string, value: T, expiresAt?: string) {
-    if (await this.get(namespace, id)) return false;
+    const prior = this.entries.get(`${namespace}:${id}`);
+    if (prior && (!prior.expiresAt || prior.expiresAt > new Date().toISOString())) return false;
     this.entries.set(`${namespace}:${id}`, {
       id,
       value: structuredClone(value),
@@ -552,8 +553,9 @@ export class MemoryStateStore implements StateStore {
     return true;
   }
   async replace<T>(namespace: string, record: StateRecord<T>) {
-    const prior = await this.get(namespace, record.id);
-    if (!prior || prior.version !== record.version) return false;
+    const prior = this.entries.get(`${namespace}:${record.id}`);
+    if (!prior || prior.version !== record.version ||
+      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())) return false;
     this.entries.set(
       `${namespace}:${record.id}`,
       structuredClone({ ...record, version: record.version + 1 }),
@@ -561,16 +563,19 @@ export class MemoryStateStore implements StateStore {
     return true;
   }
   async remove(namespace: string, id: string, version?: number) {
-    const prior = await this.get(namespace, id);
+    const prior = this.entries.get(`${namespace}:${id}`);
     return Boolean(
       prior &&
+      (!prior.expiresAt || prior.expiresAt > new Date().toISOString()) &&
       (version === undefined || prior.version === version) &&
       this.entries.delete(`${namespace}:${id}`),
     );
   }
-  async list<T>(namespace: string, prefix = "", limit = 1000) {
+  async list<T>(namespace: string, prefix = "", limit = 1000, after?: string) {
     const keys = [...this.entries.keys()]
-      .filter((key) => key.startsWith(`${namespace}:${prefix}`))
+      .filter((key) => key.startsWith(`${namespace}:${prefix}`) &&
+        (after === undefined || key.slice(namespace.length + 1) > after) &&
+        (!this.entries.get(key)!.expiresAt || this.entries.get(key)!.expiresAt! > new Date().toISOString()))
       .sort()
       .slice(0, limit);
     const rows = await Promise.all(
