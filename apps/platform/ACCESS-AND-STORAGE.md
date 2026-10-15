@@ -2,6 +2,8 @@
 
 The standalone release supports one workspace with project-level access. F02 adds password accounts, optional OpenID Connect company login, project roles, account disabling/session revocation, scoped expiring upload credentials, and an audit trail. Remote publishing is implemented separately under F06.
 
+Session and OIDC correlation cookies contain opaque SHA-256 handles derived from 256-bit random values, rather than the raw random secret output. The database indexes a second hash of each handle, so stored lookup keys cannot be replayed as browser cookies. Passwords, provider client credentials, and PKCE verifiers are not placed in these cookies. Existing HttpOnly, SameSite, HTTPS Secure, expiry, CSRF, and one-time OIDC callback checks remain in force. Regression coverage for handle persistence and callback replay is included; it was not executed locally for this PR fix, per the user's instruction.
+
 ## Minimal configuration
 
 Local use needs no database or login configuration. New local evidence is stored in `.visualguard/platform/metadata.sqlite` beneath the caller's project (or `VISUALGUARD_PLATFORM_DATA_DIR`). Existing F01 filesystem objects remain readable from that directory's `objects/` fallback.

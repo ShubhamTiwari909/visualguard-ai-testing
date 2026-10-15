@@ -89,7 +89,10 @@ export function addConfigOptions(command: Command): Command {
 export function registerTestCommand(program: Command): void {
   const command = program
     .command("test")
-    .argument("[project]", "dashboard project ID or exact unique name; publish the saved run automatically")
+    .argument(
+      "[project]",
+      "dashboard project ID or exact unique name; publish the saved run automatically",
+    )
     .description("capture production and staging, diff every route, and report the differences");
   addAIOptions(addConfigOptions(command))
     .addOption(
@@ -103,7 +106,10 @@ export function registerTestCommand(program: Command): void {
     .option("--debug", "save Playwright traces")
     .option("--list", "print the resolved URL pairs and exit without capturing")
     .option("--run-group <id>", "shared identity for all shards of one execution")
-    .option("--dashboard <url>", "dashboard origin (or VISUALGUARD_DASHBOARD_URL); otherwise use local dashboard storage")
+    .option(
+      "--dashboard <url>",
+      "dashboard origin (or VISUALGUARD_DASHBOARD_URL); otherwise use local dashboard storage",
+    )
     .option("--environment <name>", "dashboard environment label", "staging")
     .option("--branch <name>", "dashboard branch label")
     .option("--commit <sha>", "dashboard source revision")
@@ -129,7 +135,8 @@ export async function runTestCommand(
   reporters: Reporter[] = [],
 ): Promise<number> {
   const config = await loadResolvedConfig(flags);
-  if (flags.dashboard !== undefined && flags.project === undefined) throw new ConfigError("Provide a project: visualguard test <PROJECT_ID> --dashboard <url>");
+  if (flags.dashboard !== undefined && flags.project === undefined)
+    throw new ConfigError("Provide a project: visualguard test <PROJECT_ID> --dashboard <url>");
   const baseline = config.mode === "baseline";
   if (baseline) {
     if (!config.baseURL.staging) {
@@ -150,16 +157,41 @@ export async function runTestCommand(
     return 0;
   }
 
-  let binding: Awaited<ReturnType<typeof import("../../../../../apps/platform/server/test-binding.js").prepareTestBinding>> | undefined;
+  let binding:
+    | Awaited<
+        ReturnType<
+          typeof import("../../../../../apps/platform/server/test-binding.js").prepareTestBinding
+        >
+      >
+    | undefined;
   if (flags.project !== undefined) {
     try {
-      const { prepareTestBinding } = await import("../../../../../apps/platform/server/test-binding.js");
-      binding = await prepareTestBinding({ project: flags.project, server: flags.dashboard ?? (process.env.VISUALGUARD_DASHBOARD_URL || undefined), metadata: { environment: flags.environment ?? "staging", branch: flags.branch, commit: flags.commit, pullRequest: flags.pr, deployment: flags.deployment } });
+      const { prepareTestBinding } =
+        await import("../../../../../apps/platform/server/test-binding.js");
+      binding = await prepareTestBinding({
+        project: flags.project,
+        server: flags.dashboard ?? (process.env.VISUALGUARD_DASHBOARD_URL || undefined),
+        metadata: {
+          environment: flags.environment ?? "staging",
+          branch: flags.branch,
+          commit: flags.commit,
+          pullRequest: flags.pr,
+          deployment: flags.deployment,
+        },
+      });
     } catch (error) {
-      if (error && typeof error === "object" && "status" in error && [400, 409].includes(Number(error.status))) throw new ConfigError(errorMessage(error));
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        [400, 409].includes(Number(error.status))
+      )
+        throw new ConfigError(errorMessage(error));
       throw new EnvironmentError(`Cannot bind dashboard project: ${errorMessage(error)}`);
     }
-    process.stderr.write(`Dashboard project: ${binding.name} (${binding.id}) · ${binding.destination}\n`);
+    process.stderr.write(
+      `Dashboard project: ${binding.name} (${binding.id}) · ${binding.destination}\n`,
+    );
   }
 
   const allReporters: Reporter[] = [...standardReporters(config, flags), ...reporters];
@@ -185,7 +217,9 @@ export async function runTestCommand(
       const published = await binding.publish(runDir);
       process.stderr.write(`Dashboard run: ${published.url} [${published.status}]\n`);
     } catch (error) {
-      process.stderr.write(`Dashboard publishing failed: ${errorMessage(error)}\nSaved evidence is kept at: ${runDir}\nRetry this saved run with visualguard dashboard ${flags.dashboard || process.env.VISUALGUARD_DASHBOARD_URL ? "publish" : "import"} and project ID ${binding.id}; keep the same metadata labels.\n`);
+      process.stderr.write(
+        `Dashboard publishing failed: ${errorMessage(error)}\nSaved evidence is kept at: ${runDir}\nRetry this saved run with visualguard dashboard ${flags.dashboard || process.env.VISUALGUARD_DASHBOARD_URL ? "publish" : "import"} and project ID ${binding.id}; keep the same metadata labels.\n`,
+      );
       return testExitCode === ExitCode.Ok ? ExitCode.Environment : testExitCode;
     }
   }

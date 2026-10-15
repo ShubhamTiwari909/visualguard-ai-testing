@@ -7,43 +7,150 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const exec = promisify(execFile), repo = fileURLToPath(new URL("../", import.meta.url));
+const exec = promisify(execFile),
+  repo = fileURLToPath(new URL("../", import.meta.url));
 const temporary = await mkdtemp(join(tmpdir(), "vg-package-smoke-"));
 let server;
 try {
-  const release = join(temporary, "release"); await mkdir(release);
-  await exec("pnpm", ["--dir", join(repo, "packages/visualguard"), "pack", "--pack-destination", release], { cwd: repo });
+  const release = join(temporary, "release");
+  await mkdir(release);
+  await exec(
+    "pnpm",
+    ["--dir", join(repo, "packages/visualguard"), "pack", "--pack-destination", release],
+    { cwd: repo },
+  );
   const pkg = JSON.parse(await readFile(join(repo, "packages/visualguard/package.json"), "utf8"));
-  const tarball = join(release, `visualguard-${pkg.version}.tgz`), consumer = join(temporary, "consumer"); await mkdir(consumer);
-  await writeFile(join(consumer, "package.json"), JSON.stringify({ name: "visualguard-consumer-smoke", private: true, type: "module" }));
-  const npmCandidates = [resolve(dirname(process.execPath), "../lib/node_modules/npm/bin/npm-cli.js"), resolve(dirname(process.execPath), "node_modules/npm/bin/npm-cli.js")];
+  const tarball = join(release, `visualguard-${pkg.version}.tgz`),
+    consumer = join(temporary, "consumer");
+  await mkdir(consumer);
+  await writeFile(
+    join(consumer, "package.json"),
+    JSON.stringify({ name: "visualguard-consumer-smoke", private: true, type: "module" }),
+  );
+  const npmCandidates = [
+    resolve(dirname(process.execPath), "../lib/node_modules/npm/bin/npm-cli.js"),
+    resolve(dirname(process.execPath), "node_modules/npm/bin/npm-cli.js"),
+  ];
   let npm;
-  for (const path of npmCandidates) { try { await stat(path); npm = path; break; } catch { /* Try another Node installation layout. */ } }
+  for (const path of npmCandidates) {
+    try {
+      await stat(path);
+      npm = path;
+      break;
+    } catch {
+      /* Try another Node installation layout. */
+    }
+  }
   if (!npm) throw new Error("Cannot locate npm alongside the running Node binary");
-  await exec(process.execPath, [npm, "install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], { cwd: consumer, maxBuffer: 4 * 1024 * 1024 });
+  await exec(
+    process.execPath,
+    [npm, "install", "--ignore-scripts", "--no-audit", "--no-fund", tarball],
+    { cwd: consumer, maxBuffer: 4 * 1024 * 1024 },
+  );
   const installed = join(consumer, "node_modules/visualguard/dist");
   const dashboard = await import(pathToFileURL(join(installed, "dashboard.js")).href);
-  const core = await import(pathToFileURL(join(installed, "index.js")).href); assert.equal(typeof core.createRun, "function");
-  const env = { VISUALGUARD_PLATFORM_DATA_DIR: join(consumer, "data"), VISUALGUARD_AUTH_MODE: "local", VISUALGUARD_PUBLIC_URL: "", VISUALGUARD_DATABASE_URL: "", DATABASE_URL: "", VERCEL: "", K_SERVICE: "" };
+  const core = await import(pathToFileURL(join(installed, "index.js")).href);
+  assert.equal(typeof core.createRun, "function");
+  const env = {
+    VISUALGUARD_PLATFORM_DATA_DIR: join(consumer, "data"),
+    VISUALGUARD_AUTH_MODE: "local",
+    VISUALGUARD_PUBLIC_URL: "",
+    VISUALGUARD_DATABASE_URL: "",
+    DATABASE_URL: "",
+    VERCEL: "",
+    K_SERVICE: "",
+  };
   server = await dashboard.startDashboard({ port: 0, host: "127.0.0.1", env });
   assert.equal((await fetch(`${server.url}/api/health`)).status, 200);
-  const html = await (await fetch(server.url)).text(); assert.match(html, /<div id="root">/);
-  const asset = html.match(/src="([^"]+\.js)"/)?.[1]; assert.ok(asset); assert.equal((await fetch(new URL(asset, server.url))).status, 200);
-  const fixture = join(consumer, "fixture"); await mkdir(fixture);
-  await writeFile(join(fixture, "image.png"), Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=", "base64"));
-  const capture = { image: "image.png", size: { width: 1, height: 1 }, health: { consoleErrors: [], failedRequests: [], brokenImages: [] }, durationMs: 1, attempts: 1 };
-  await writeFile(join(fixture, "manifest.json"), JSON.stringify({ schemaVersion: 1, id: "package-smoke", number: 1, startedAt: new Date().toISOString(), durationMs: 1, mode: "compare", tool: { version: pkg.version }, config: { baseURL: {}, viewports: { desktop: { width: 1, height: 1 } }, ai: { provider: "none" }, failOn: "regression" }, summary: { pass: 1, accepted: 0, review: 0, regression: 0, error: 0 }, jobs: [{ id: "home", route: "/", name: "Home", viewport: "desktop", status: "pass", durationMs: 1, urls: { production: "https://example.test", staging: "https://staging.test" }, captures: { production: capture, staging: capture }, regions: [] }] }));
-  const imported = await dashboard.importDashboardRun({ project: "smoke", runDir: fixture, metadata: { environment: "validation" }, env });
+  const html = await (await fetch(server.url)).text();
+  assert.match(html, /<div id="root">/);
+  const asset = html.match(/src="([^"]+\.js)"/)?.[1];
+  assert.ok(asset);
+  assert.equal((await fetch(new URL(asset, server.url))).status, 200);
+  const fixture = join(consumer, "fixture");
+  await mkdir(fixture);
+  await writeFile(
+    join(fixture, "image.png"),
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  );
+  const capture = {
+    image: "image.png",
+    size: { width: 1, height: 1 },
+    health: { consoleErrors: [], failedRequests: [], brokenImages: [] },
+    durationMs: 1,
+    attempts: 1,
+  };
+  await writeFile(
+    join(fixture, "manifest.json"),
+    JSON.stringify({
+      schemaVersion: 1,
+      id: "package-smoke",
+      number: 1,
+      startedAt: new Date().toISOString(),
+      durationMs: 1,
+      mode: "compare",
+      tool: { version: pkg.version },
+      config: {
+        baseURL: {},
+        viewports: { desktop: { width: 1, height: 1 } },
+        ai: { provider: "none" },
+        failOn: "regression",
+      },
+      summary: { pass: 1, accepted: 0, review: 0, regression: 0, error: 0 },
+      jobs: [
+        {
+          id: "home",
+          route: "/",
+          name: "Home",
+          viewport: "desktop",
+          status: "pass",
+          durationMs: 1,
+          urls: { production: "https://example.test", staging: "https://staging.test" },
+          captures: { production: capture, staging: capture },
+          regions: [],
+        },
+      ],
+    }),
+  );
+  const imported = await dashboard.importDashboardRun({
+    project: "smoke",
+    runDir: fixture,
+    metadata: { environment: "validation" },
+    env,
+  });
   assert.equal((await fetch(`${server.url}/api/runs/${imported.run.id}`)).status, 200);
-  const uploaded = await dashboard.publishDashboardRun({ server: server.url, project: "smoke", runDir: fixture, metadata: { environment: "validation" } }); assert.equal(uploaded.id, imported.run.id);
-  const backup = join(consumer, "evidence.vgbackup.gz"); await dashboard.exportDashboard(backup, env);
-  const restoredEnv = { ...env, VISUALGUARD_PLATFORM_DATA_DIR: join(consumer, "restored") }; assert.equal((await dashboard.restoreDashboard(backup, restoredEnv)).runs, 1);
-  const help = await exec(process.execPath, [join(installed, "cli.js"), "dashboard", "--help"], { cwd: consumer }); assert.match(help.stdout, /--env-file/);
+  const uploaded = await dashboard.publishDashboardRun({
+    server: server.url,
+    project: "smoke",
+    runDir: fixture,
+    metadata: { environment: "validation" },
+  });
+  assert.equal(uploaded.id, imported.run.id);
+  const backup = join(consumer, "evidence.vgbackup.gz");
+  await dashboard.exportDashboard(backup, env);
+  const restoredEnv = { ...env, VISUALGUARD_PLATFORM_DATA_DIR: join(consumer, "restored") };
+  assert.equal((await dashboard.restoreDashboard(backup, restoredEnv)).runs, 1);
+  const help = await exec(process.execPath, [join(installed, "cli.js"), "dashboard", "--help"], {
+    cwd: consumer,
+  });
+  assert.match(help.stdout, /--env-file/);
   for (const target of ["vercel", "cloud-run"]) {
     const out = join(consumer, target);
     await dashboard.scaffoldDashboard({ target, out, version: pkg.version, packageFile: tarball });
-    assert.equal(JSON.parse(await readFile(join(out, "package.json"), "utf8")).dependencies.visualguard, "file:./visualguard.tgz");
+    assert.equal(
+      JSON.parse(await readFile(join(out, "package.json"), "utf8")).dependencies.visualguard,
+      "file:./visualguard.tgz",
+    );
   }
-  await dashboard.copyDashboardAssets(join(consumer, "public")); await stat(join(consumer, "public/index.html"));
-  console.log("Standalone package smoke passed: fresh install, core API, UI/assets, local start, import, publish, backup/restore, CLI, and both deployment scaffolds.");
-} finally { await server?.close(); await rm(temporary, { recursive: true, force: true }); }
+  await dashboard.copyDashboardAssets(join(consumer, "public"));
+  await stat(join(consumer, "public/index.html"));
+  console.log(
+    "Standalone package smoke passed: fresh install, core API, UI/assets, local start, import, publish, backup/restore, CLI, and both deployment scaffolds.",
+  );
+} finally {
+  await server?.close();
+  await rm(temporary, { recursive: true, force: true });
+}
