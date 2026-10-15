@@ -37,17 +37,17 @@ The first organizational product should answer:
 
 The organization's industry, size, infrastructure, and delivery team were not specified when this draft was prepared. Use these assumptions for sizing, then replace them during discovery.
 
-| Planning input | Working assumption | Adjustment if different |
-| --- | --- | --- |
-| Initial audience | 2 frontend teams; 1–2 pilot applications | One app: start with CI artifacts and shared review; dozens of apps: add quotas and ownership earlier |
-| Broader adoption | Approximately 5–15 web apps and 20–100 potential users | Hundreds of apps require separate capacity planning and stronger isolation |
-| Application stack | React/Next.js first; existing Playwright tests where available | Prioritize another adapter only when a pilot needs it |
-| Code hosting | GitHub initially, matching existing integration | Use the organization's actual CI and code host; do not build every connector |
-| Hosting | Internal deployment with organization-controlled runners | Hosted execution requires a separate data and network design |
-| Delivery staffing | 2 engineers, with part-time QA/design/platform support | A solo maintainer should ship a smaller artifact-upload pilot first |
-| Time horizon | 12–16 weeks for a narrowly scoped pilot product; 6–12 months for wider features | These are estimates, not delivery commitments |
-| AI policy | Optional and advisory; local/no-AI mode available | Teams allowing external AI can enable it project by project |
-| Test information | Seeded accounts and synthetic fixtures | Real customer data requires approved capture and retention rules |
+| Planning input    | Working assumption                                                              | Adjustment if different                                                                              |
+| ----------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Initial audience  | 2 frontend teams; 1–2 pilot applications                                        | One app: start with CI artifacts and shared review; dozens of apps: add quotas and ownership earlier |
+| Broader adoption  | Approximately 5–15 web apps and 20–100 potential users                          | Hundreds of apps require separate capacity planning and stronger isolation                           |
+| Application stack | React/Next.js first; existing Playwright tests where available                  | Prioritize another adapter only when a pilot needs it                                                |
+| Code hosting      | GitHub initially, matching existing integration                                 | Use the organization's actual CI and code host; do not build every connector                         |
+| Hosting           | Internal deployment with organization-controlled runners                        | Hosted execution requires a separate data and network design                                         |
+| Delivery staffing | 2 engineers, with part-time QA/design/platform support                          | A solo maintainer should ship a smaller artifact-upload pilot first                                  |
+| Time horizon      | 12–16 weeks for a narrowly scoped pilot product; 6–12 months for wider features | These are estimates, not delivery commitments                                                        |
+| AI policy         | Optional and advisory; local/no-AI mode available                               | Teams allowing external AI can enable it project by project                                          |
+| Test information  | Seeded accounts and synthetic fixtures                                          | Real customer data requires approved capture and retention rules                                     |
 
 No current market prices, staffing rates, published package versions, or measured production capacity are assumed. All targets in this document are proposed acceptance thresholds unless explicitly described as historical measurements.
 
@@ -55,19 +55,19 @@ No current market prices, staffing rates, published package versions, or measure
 
 This plan builds on [the current README](../README.md), [the reliability changes](RELIABILITY-CHANGES.md), and selected source files. The earlier [project analysis](PROJECT-ANALYSIS-AND-ROADMAP.md) is useful history, but its F01–F12 findings describe an older checkout. The reliability guide records their implementation; they should not be reopened as missing features without fresh evidence.
 
-| Area | Present in the reviewed checkout | Growth opportunity |
-| --- | --- | --- |
-| Visual testing | Live comparisons, saved baselines, pixels, DOM changes, regions, noise handling | Team-managed evidence and comparison history |
-| Real application capture | Routes, discovery, authentication, stabilization, hooks, responsive viewports, configurable browser | Named reusable journeys, datasets, and coverage profiles |
-| Interactive tests | Playwright fixture with per-check `referenceSetup` | Organization-wide scenario catalog and parity diagnostics |
-| Results | React HTML reports, filters, image views, local accept/fix actions | Durable shared dashboard, discussions, assignments, audit trail |
-| References | Rendering metadata, compatibility checks, explicit missing-baseline policy | Branch/release baseline lineage and controlled promotion |
-| CI | GitHub Action, PR comments, summaries, JSON/JUnit, webhooks | Revision-specific organizational release checks and required reviewers |
-| Scaling runs | Concurrency, shards, provenance, completeness validation | Private worker scheduling, quotas, queue visibility, operational recovery |
-| AI | Gemini/Ollama, request caching, budgets, intent, advisory mode | Project policy, approved providers, consistent evaluation, aggregate usage |
-| Repairs | Source ranking, proposals, verification, rollback, optional worktree/PR workflow | Shared repair evidence, ownership, organizational scope controls |
-| Other checks | Accessibility, performance, broken images, failed requests, overflow | Longitudinal tracking and issue lifecycle across releases |
-| Monitoring | CLI/scheduled production comparisons | Incident ownership, approved release references, deploy correlation |
+| Area                     | Present in the reviewed checkout                                                                    | Growth opportunity                                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Visual testing           | Live comparisons, saved baselines, pixels, DOM changes, regions, noise handling                     | Team-managed evidence and comparison history                               |
+| Real application capture | Routes, discovery, authentication, stabilization, hooks, responsive viewports, configurable browser | Named reusable journeys, datasets, and coverage profiles                   |
+| Interactive tests        | Playwright fixture with per-check `referenceSetup`                                                  | Organization-wide scenario catalog and parity diagnostics                  |
+| Results                  | React HTML reports, filters, image views, local accept/fix actions                                  | Durable shared dashboard, discussions, assignments, audit trail            |
+| References               | Rendering metadata, compatibility checks, explicit missing-baseline policy                          | Branch/release baseline lineage and controlled promotion                   |
+| CI                       | GitHub Action, PR comments, summaries, JSON/JUnit, webhooks                                         | Revision-specific organizational release checks and required reviewers     |
+| Scaling runs             | Concurrency, shards, provenance, completeness validation                                            | Private worker scheduling, quotas, queue visibility, operational recovery  |
+| AI                       | Gemini/Ollama, request caching, budgets, intent, advisory mode                                      | Project policy, approved providers, consistent evaluation, aggregate usage |
+| Repairs                  | Source ranking, proposals, verification, rollback, optional worktree/PR workflow                    | Shared repair evidence, ownership, organizational scope controls           |
+| Other checks             | Accessibility, performance, broken images, failed requests, overflow                                | Longitudinal tracking and issue lifecycle across releases                  |
+| Monitoring               | CLI/scheduled production comparisons                                                                | Incident ownership, approved release references, deploy correlation        |
 
 Important source observations:
 
@@ -82,14 +82,14 @@ No builds, browser tests, live AI requests, or benchmarks were run for this plan
 
 ## 4. Who uses the product and why
 
-| Persona | Main need | Primary workflow | Evidence of value |
-| --- | --- | --- | --- |
-| Frontend developer | Find a meaningful UI issue without sorting hundreds of screenshots | Open PR result → inspect grouped evidence → reproduce or propose fix | Less time locating the cause; fewer escaped defects |
-| QA engineer | Cover important states consistently | Manage journeys and fixtures → triage failures → record outcomes | Repeatable coverage and fewer manual release checks |
-| Designer/design-system owner | Review intended changes across apps | Review component/page changes → comment → approve scoped evidence | Faster review and fewer inconsistent shared components |
-| Engineering lead | Decide whether a release has sufficient evidence | Inspect coverage, unresolved findings, approvals, and exceptions | Clear release decisions and fewer unexplained green results |
-| Platform engineer | Operate testing without unpredictable infrastructure use | Configure runners → monitor queue, failures, storage, quotas | Predictable execution and manageable support burden |
-| Product owner | Understand impact on important journeys | Review annotated screenshots and critical-path status | Clearer decisions without needing source-level detail |
+| Persona                      | Main need                                                          | Primary workflow                                                     | Evidence of value                                           |
+| ---------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Frontend developer           | Find a meaningful UI issue without sorting hundreds of screenshots | Open PR result → inspect grouped evidence → reproduce or propose fix | Less time locating the cause; fewer escaped defects         |
+| QA engineer                  | Cover important states consistently                                | Manage journeys and fixtures → triage failures → record outcomes     | Repeatable coverage and fewer manual release checks         |
+| Designer/design-system owner | Review intended changes across apps                                | Review component/page changes → comment → approve scoped evidence    | Faster review and fewer inconsistent shared components      |
+| Engineering lead             | Decide whether a release has sufficient evidence                   | Inspect coverage, unresolved findings, approvals, and exceptions     | Clear release decisions and fewer unexplained green results |
+| Platform engineer            | Operate testing without unpredictable infrastructure use           | Configure runners → monitor queue, failures, storage, quotas         | Predictable execution and manageable support burden         |
+| Product owner                | Understand impact on important journeys                            | Review annotated screenshots and critical-path status                | Clearer decisions without needing source-level detail       |
 
 **Example end-to-end use:** a shared-button change affects checkout on mobile. CI captures a seeded checkout journey against an approved reference; VisualGuard explains the overlap and associates affected pages with the checkout team. A designer approves the intentional color change, while the overlap stays unresolved. A developer proposes a source fix, verifies the captured scope, and uploads fresh evidence. The release check succeeds only for that reviewed revision after required tests and approvals are complete.
 
@@ -99,54 +99,54 @@ Priority means **P0: pilot foundation**, **P1: next expansion**, **P2: validate 
 
 ### 5.1 Organization and daily workflow
 
-| ID | Idea | Concrete benefit and example | Priority | Effort |
-| --- | --- | --- | --- | --- |
-| F01 | Central quality dashboard | One searchable history for every app, commit, environment, and run | P0 | L |
-| F02 | Organization login and project permissions | Designers can review; CI can upload; maintainers control policies | P0 | M |
-| F03 | Collaborative review inbox | Assign changes, discuss regions, record approval/rejection and review deadlines | P0 | L |
-| F04 | Approved baseline registry | Trace which revision/reference was approved and safely promote release references | P0 | L |
-| F05 | Named journey and data catalog | Reuse “checkout with coupon,” “empty dashboard,” and “expired session” states | P0 | M–L |
-| F06 | Private runners and reliable upload | Run browsers on internal networks and publish evidence without transferring cookies | P0 | M for CI upload; XL for managed scheduling |
-| F07 | Release policy and PR gate | Require critical coverage and the right approvals for the exact PR revision | P0 after observation | M–L |
-| F08 | Ownership and impact grouping | Show one shared-header incident with all affected routes and the responsible team | P1 | M |
-| F09 | Jira/Linear and Slack/Teams adapters | Create one deduplicated issue or alert with evidence and a stable link | P1 | M per selected pair |
-| F10 | Team profiles and onboarding wizard | Apply common capture/review policies across repos; explain effective overrides | P1 | M |
-| F11 | Portable evidence bundle and redaction | Export a checksummed run with selected data removed for another reviewer | P1 | M |
-| F12 | Noise and quarantine workbench | Explain unstable regions and time-bound flaky checks with owner and expiry | P1 | M |
+| ID  | Idea                                       | Concrete benefit and example                                                        | Priority             | Effort                                     |
+| --- | ------------------------------------------ | ----------------------------------------------------------------------------------- | -------------------- | ------------------------------------------ |
+| F01 | Central quality dashboard                  | One searchable history for every app, commit, environment, and run                  | P0                   | L                                          |
+| F02 | Organization login and project permissions | Designers can review; CI can upload; maintainers control policies                   | P0                   | M                                          |
+| F03 | Collaborative review inbox                 | Assign changes, discuss regions, record approval/rejection and review deadlines     | P0                   | L                                          |
+| F04 | Approved baseline registry                 | Trace which revision/reference was approved and safely promote release references   | P0                   | L                                          |
+| F05 | Named journey and data catalog             | Reuse “checkout with coupon,” “empty dashboard,” and “expired session” states       | P0                   | M–L                                        |
+| F06 | Private runners and reliable upload        | Run browsers on internal networks and publish evidence without transferring cookies | P0                   | M for CI upload; XL for managed scheduling |
+| F07 | Release policy and PR gate                 | Require critical coverage and the right approvals for the exact PR revision         | P0 after observation | M–L                                        |
+| F08 | Ownership and impact grouping              | Show one shared-header incident with all affected routes and the responsible team   | P1                   | M                                          |
+| F09 | Jira/Linear and Slack/Teams adapters       | Create one deduplicated issue or alert with evidence and a stable link              | P1                   | M per selected pair                        |
+| F10 | Team profiles and onboarding wizard        | Apply common capture/review policies across repos; explain effective overrides      | P1                   | M                                          |
+| F11 | Portable evidence bundle and redaction     | Export a checksummed run with selected data removed for another reviewer            | P1                   | M                                          |
+| F12 | Noise and quarantine workbench             | Explain unstable regions and time-bound flaky checks with owner and expiry          | P1                   | M                                          |
 
 ### 5.2 Coverage, quality, and diagnosis
 
-| ID | Idea | Concrete benefit and example | Priority | Effort |
-| --- | --- | --- | --- | --- |
-| F13 | Coverage profiles across browser/theme/locale/role | Keep critical combinations on PRs and broader combinations on nightly runs | P1 | M–L |
-| F14 | Storybook/component adapter | Catch button/modal/table regressions before page-level suites | P1 | M–L |
-| F15 | Component-to-page impact graph | Map a shared token/component change to apps, pages, stories, and owners | P1 | L–XL |
-| F16 | Selective test planner with coverage ledger | Run likely affected checks quickly while showing exactly what was skipped | P1 after F15 | L |
-| F17 | Design-token and brand contracts | Flag forbidden colors, typography/spacing drift, and inconsistent themes | P1 | M–L |
-| F18 | Accessibility regression history | Track introduced/resolved violations, focus changes, and owned exceptions | P1 | M–L |
-| F19 | Performance and layout budgets | Compare repeatable metric distributions and identify new layout shifts | P1 | M–L |
-| F20 | Content, localization, and RTL checks | Find truncated labels, untranslated keys, missing content, and wrong direction | P1 | M–L |
-| F21 | Production incident and deployment timeline | Link visible production drift to deployment, owner, and incident evidence | P1 | L |
-| F22 | Approved AI gateway and usage controls | Enforce per-project providers, request preparation, budgets, and analysis versions | P1 | M–L |
-| F23 | Repair review center | Share candidate cause, patch, target verification, and collateral checks | P1 | L |
-| F24 | Evidence API and agent/editor integration | Let approved tools query findings and propose repairs using structured evidence | P2 | M–L |
+| ID  | Idea                                               | Concrete benefit and example                                                       | Priority     | Effort |
+| --- | -------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------ | ------ |
+| F13 | Coverage profiles across browser/theme/locale/role | Keep critical combinations on PRs and broader combinations on nightly runs         | P1           | M–L    |
+| F14 | Storybook/component adapter                        | Catch button/modal/table regressions before page-level suites                      | P1           | M–L    |
+| F15 | Component-to-page impact graph                     | Map a shared token/component change to apps, pages, stories, and owners            | P1           | L–XL   |
+| F16 | Selective test planner with coverage ledger        | Run likely affected checks quickly while showing exactly what was skipped          | P1 after F15 | L      |
+| F17 | Design-token and brand contracts                   | Flag forbidden colors, typography/spacing drift, and inconsistent themes           | P1           | M–L    |
+| F18 | Accessibility regression history                   | Track introduced/resolved violations, focus changes, and owned exceptions          | P1           | M–L    |
+| F19 | Performance and layout budgets                     | Compare repeatable metric distributions and identify new layout shifts             | P1           | M–L    |
+| F20 | Content, localization, and RTL checks              | Find truncated labels, untranslated keys, missing content, and wrong direction     | P1           | M–L    |
+| F21 | Production incident and deployment timeline        | Link visible production drift to deployment, owner, and incident evidence          | P1           | L      |
+| F22 | Approved AI gateway and usage controls             | Enforce per-project providers, request preparation, budgets, and analysis versions | P1           | M–L    |
+| F23 | Repair review center                               | Share candidate cause, patch, target verification, and collateral checks           | P1           | L      |
+| F24 | Evidence API and agent/editor integration          | Let approved tools query findings and propose repairs using structured evidence    | P2           | M–L    |
 
 ### 5.3 Outside-the-box opportunities
 
-| ID | Idea | Concrete benefit and example | Priority | Effort |
-| --- | --- | --- | --- | --- |
-| F25 | Responsive breakpoint explorer | Search widths between standard devices to find the first overlap or clipping | P2 | M–L |
-| F26 | Layout stress testing | Exercise long names, 200% text, empty data, large tables, missing images, slow fonts | P2 | M |
-| F27 | Feature-flag interaction guard | Catch combinations such as new checkout + new promo panel that break together | P2 | L |
-| F28 | UI semantic contracts | Assert that a critical action remains visible, enabled, reachable, and correctly named | P2 | M–L |
-| F29 | Visual release time machine | Search how an element looked across releases and when a change first appeared | P2 | M–L after history |
-| F30 | Cross-app consistency radar | Find incompatible versions or token use across internal apps using shared components | P2 | L–XL |
-| F31 | Figma-to-runtime review | Compare mapped design frames and tokens to an actual state with an explained mismatch | P2 | L–XL |
-| F32 | Synthetic incident replay | Turn an approved support reproduction into a seeded regression journey | P2 | L |
-| F33 | UI change budget and visual debt | Track reviewed change volume, stale exceptions, and recurring unresolved issues | P2 | M |
-| F34 | Evidence-grounded review assistant | Ask “What changed in checkout?” and receive linked evidence with clear uncertainty | P2 | M–L |
-| F35 | Visual contract tests for AI-generated UI | Require agent-created changes to satisfy approved screenshots, states, and invariants | P2 | L |
-| F36 | Preview-environment resilience laboratory | Explore missing APIs, slow responses, font failure, and third-party outages | P3 | L–XL |
+| ID  | Idea                                      | Concrete benefit and example                                                           | Priority | Effort            |
+| --- | ----------------------------------------- | -------------------------------------------------------------------------------------- | -------- | ----------------- |
+| F25 | Responsive breakpoint explorer            | Search widths between standard devices to find the first overlap or clipping           | P2       | M–L               |
+| F26 | Layout stress testing                     | Exercise long names, 200% text, empty data, large tables, missing images, slow fonts   | P2       | M                 |
+| F27 | Feature-flag interaction guard            | Catch combinations such as new checkout + new promo panel that break together          | P2       | L                 |
+| F28 | UI semantic contracts                     | Assert that a critical action remains visible, enabled, reachable, and correctly named | P2       | M–L               |
+| F29 | Visual release time machine               | Search how an element looked across releases and when a change first appeared          | P2       | M–L after history |
+| F30 | Cross-app consistency radar               | Find incompatible versions or token use across internal apps using shared components   | P2       | L–XL              |
+| F31 | Figma-to-runtime review                   | Compare mapped design frames and tokens to an actual state with an explained mismatch  | P2       | L–XL              |
+| F32 | Synthetic incident replay                 | Turn an approved support reproduction into a seeded regression journey                 | P2       | L                 |
+| F33 | UI change budget and visual debt          | Track reviewed change volume, stale exceptions, and recurring unresolved issues        | P2       | M                 |
+| F34 | Evidence-grounded review assistant        | Ask “What changed in checkout?” and receive linked evidence with clear uncertainty     | P2       | M–L               |
+| F35 | Visual contract tests for AI-generated UI | Require agent-created changes to satisfy approved screenshots, states, and invariants  | P2       | L                 |
+| F36 | Preview-environment resilience laboratory | Explore missing APIs, slow responses, font failure, and third-party outages            | P3       | L–XL              |
 
 Do not treat the catalog as an obligation to build everything. The sections below define a focused first product and experiments that can earn a place on the roadmap.
 
@@ -320,20 +320,20 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 These should begin as small, opt-in experiments against preview environments. Each has a falsifiable hypothesis and a reason to stop.
 
-| Idea | Small first experiment | Mechanism and prerequisites | Advance when / stop when |
-| --- | --- | --- | --- |
-| F25 Responsive breakpoint explorer | Sweep 320–1600 CSS pixels on 10 critical pages, then refine widths near detected failures | Detect overlap/overflow/control visibility at coarse intervals; re-capture fresh states near transitions; nonmonotonic layouts need multiple intervals | Advance if it finds useful failures missed by normal profiles; stop if state instability dominates or runtime is unacceptable |
-| F26 Layout stress testing | Apply 8 approved fixture mutations to 5 journeys | Long text, empty list, large number, missing image, slow font, enlarged text, validation errors, dense table; deterministic seeds | Advance if actionable issues are reproducible; stop if fixtures do not represent plausible product states |
-| F27 Flag interaction guard | Model 6 relevant flags on checkout; use pairwise candidates plus mandatory risky combinations | Flag metadata, compatible-state constraints, seed data, profile budget; compare matching reference/candidate flag states | Advance if interactions escape ordinary tests; stop if infeasible combinations dominate. Pairwise tests cannot cover all higher-order interactions |
-| F28 UI semantic contracts | Define 10 deterministic contracts on login/checkout/settings | Role/name identity; visibility, enabled state, geometry, keyboard reachability; application assertions for expected behavior | Advance if it detects pixel-invisible changes or prevents noise-based suppression; stop if rule maintenance exceeds saved investigation time |
-| F29 Visual time machine | Index one component across the last 20 retained releases | Element identity, screenshots, baseline lineage, source/deploy metadata, text search; later optional embeddings | Advance if incident investigation becomes faster; stop if identity drift makes historical comparison misleading |
-| F30 Consistency radar | Inspect header/button/input across 3 apps sharing a library | Explicit component/token mapping, package versions, theme exceptions | Advance if owners act on real inconsistency; stop if unrelated product design differences dominate |
-| F31 Figma-to-runtime review | Manually map 5 design frames to exact seeded states | Authorized Figma access, frame/token version, font/assets, viewport normalization, component mapping | Advance if explained findings beat ordinary designer review effort; stop if frame-state mismatch produces excessive noise |
-| F32 Synthetic incident replay | Convert 3 approved support reproductions into regression fixtures | Manually reproduce using synthetic data, captured state assertions, owned teardown; no raw customer session ingestion | Advance if issues become durable automated checks; stop if cases cannot be reproduced without sensitive live data |
-| F33 Visual debt ledger | Track 30 accepted exceptions with owners and expiry for a month | Decision history, recurring finding identity, issue status | Advance if teams retire stale exceptions; stop if it becomes a vanity score or punitive ranking |
-| F34 Review assistant | Answer 20 historical review questions with source-linked findings | Permission-filtered evidence retrieval; structured answers; explicit unknowns | Advance if answers are correct/useful and always traceable; stop if it invents causes or retrieves unauthorized evidence |
-| F35 AI-generated UI contracts | Run 10 agent-created changes against approved checkpoints and semantic rules | Read-only evidence first; existing patch/verification workflow; source and scope controls | Advance if evidence improves review quality; stop if passing only target screenshots hides neighboring failures |
-| F36 Resilience laboratory | Inject 4 fault types into one preview journey | Mocked slow/missing API, absent font, broken asset, failed third-party widget; defined recovery expectations | Advance if degraded states are testable and useful; stop if failures are too artificial. Keep production fault injection outside this scope |
+| Idea                               | Small first experiment                                                                        | Mechanism and prerequisites                                                                                                                            | Advance when / stop when                                                                                                                           |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F25 Responsive breakpoint explorer | Sweep 320–1600 CSS pixels on 10 critical pages, then refine widths near detected failures     | Detect overlap/overflow/control visibility at coarse intervals; re-capture fresh states near transitions; nonmonotonic layouts need multiple intervals | Advance if it finds useful failures missed by normal profiles; stop if state instability dominates or runtime is unacceptable                      |
+| F26 Layout stress testing          | Apply 8 approved fixture mutations to 5 journeys                                              | Long text, empty list, large number, missing image, slow font, enlarged text, validation errors, dense table; deterministic seeds                      | Advance if actionable issues are reproducible; stop if fixtures do not represent plausible product states                                          |
+| F27 Flag interaction guard         | Model 6 relevant flags on checkout; use pairwise candidates plus mandatory risky combinations | Flag metadata, compatible-state constraints, seed data, profile budget; compare matching reference/candidate flag states                               | Advance if interactions escape ordinary tests; stop if infeasible combinations dominate. Pairwise tests cannot cover all higher-order interactions |
+| F28 UI semantic contracts          | Define 10 deterministic contracts on login/checkout/settings                                  | Role/name identity; visibility, enabled state, geometry, keyboard reachability; application assertions for expected behavior                           | Advance if it detects pixel-invisible changes or prevents noise-based suppression; stop if rule maintenance exceeds saved investigation time       |
+| F29 Visual time machine            | Index one component across the last 20 retained releases                                      | Element identity, screenshots, baseline lineage, source/deploy metadata, text search; later optional embeddings                                        | Advance if incident investigation becomes faster; stop if identity drift makes historical comparison misleading                                    |
+| F30 Consistency radar              | Inspect header/button/input across 3 apps sharing a library                                   | Explicit component/token mapping, package versions, theme exceptions                                                                                   | Advance if owners act on real inconsistency; stop if unrelated product design differences dominate                                                 |
+| F31 Figma-to-runtime review        | Manually map 5 design frames to exact seeded states                                           | Authorized Figma access, frame/token version, font/assets, viewport normalization, component mapping                                                   | Advance if explained findings beat ordinary designer review effort; stop if frame-state mismatch produces excessive noise                          |
+| F32 Synthetic incident replay      | Convert 3 approved support reproductions into regression fixtures                             | Manually reproduce using synthetic data, captured state assertions, owned teardown; no raw customer session ingestion                                  | Advance if issues become durable automated checks; stop if cases cannot be reproduced without sensitive live data                                  |
+| F33 Visual debt ledger             | Track 30 accepted exceptions with owners and expiry for a month                               | Decision history, recurring finding identity, issue status                                                                                             | Advance if teams retire stale exceptions; stop if it becomes a vanity score or punitive ranking                                                    |
+| F34 Review assistant               | Answer 20 historical review questions with source-linked findings                             | Permission-filtered evidence retrieval; structured answers; explicit unknowns                                                                          | Advance if answers are correct/useful and always traceable; stop if it invents causes or retrieves unauthorized evidence                           |
+| F35 AI-generated UI contracts      | Run 10 agent-created changes against approved checkpoints and semantic rules                  | Read-only evidence first; existing patch/verification workflow; source and scope controls                                                              | Advance if evidence improves review quality; stop if passing only target screenshots hides neighboring failures                                    |
+| F36 Resilience laboratory          | Inject 4 fault types into one preview journey                                                 | Mocked slow/missing API, absent font, broken asset, failed third-party widget; defined recovery expectations                                           | Advance if degraded states are testable and useful; stop if failures are too artificial. Keep production fault injection outside this scope        |
 
 **Best early bets:** F25, F26, and F28. They extend the existing Playwright/DOM engine, can be demonstrated locally, and do not require a large platform or speculative model capability.
 
@@ -367,20 +367,20 @@ flowchart LR
 
 ### 9.2 Contracts and data entities
 
-| Entity | Minimum information | Invariant |
-| --- | --- | --- |
-| Organization / Project | ID, name, ownership, memberships, policy references | Every query and artifact is scoped to authorized project membership |
-| Scenario / Check | Stable ID, checkpoint, owner, criticality, fixture version, allowed profiles | Renaming display text does not erase history |
-| Capture Profile | Browser/rendering identity, viewport, locale/theme/role, policy hashes | Incompatible references cannot be silently compared |
-| Run / Attempt | Engine manifest version, source revision, deploy/PR metadata, expected scope, attempt/lease IDs | Partial/duplicate attempts cannot become an ordinary complete run |
-| Artifact | Content hash, size, media type, private object reference, redaction version | Finalized evidence is immutable and checksummed |
-| Finding | Stable evidence ID, type/severity, selector/region, check, provenance | Finding identity and engine classification remain inspectable |
-| Baseline Set / Version | Check-to-artifact mapping, source revision, lineage, profile/capture identity | Promotion is atomic against an expected current version |
-| Review / Decision | Actor, action, scope, evidence digest, policy version, reason, timestamp | Decisions do not approve unreviewed replacement evidence |
-| Exception | Owner, reason, scope, expiry, approving role | Expiry and policy changes are re-evaluated |
-| Release Assessment | Candidate revision, evidence/baseline/policy versions, decision digest, outcome/reasons | A gate applies to exactly the assessed revision and evidence |
-| Runner / Lease | Registration, capabilities, last heartbeat, assignment and fencing token | Late or revoked workers cannot finalize newer work |
-| Audit / Integration Event | Actor/source, event ID, target, payload version, delivery status | Repeated delivery does not duplicate approvals/issues/alerts |
+| Entity                    | Minimum information                                                                             | Invariant                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Organization / Project    | ID, name, ownership, memberships, policy references                                             | Every query and artifact is scoped to authorized project membership |
+| Scenario / Check          | Stable ID, checkpoint, owner, criticality, fixture version, allowed profiles                    | Renaming display text does not erase history                        |
+| Capture Profile           | Browser/rendering identity, viewport, locale/theme/role, policy hashes                          | Incompatible references cannot be silently compared                 |
+| Run / Attempt             | Engine manifest version, source revision, deploy/PR metadata, expected scope, attempt/lease IDs | Partial/duplicate attempts cannot become an ordinary complete run   |
+| Artifact                  | Content hash, size, media type, private object reference, redaction version                     | Finalized evidence is immutable and checksummed                     |
+| Finding                   | Stable evidence ID, type/severity, selector/region, check, provenance                           | Finding identity and engine classification remain inspectable       |
+| Baseline Set / Version    | Check-to-artifact mapping, source revision, lineage, profile/capture identity                   | Promotion is atomic against an expected current version             |
+| Review / Decision         | Actor, action, scope, evidence digest, policy version, reason, timestamp                        | Decisions do not approve unreviewed replacement evidence            |
+| Exception                 | Owner, reason, scope, expiry, approving role                                                    | Expiry and policy changes are re-evaluated                          |
+| Release Assessment        | Candidate revision, evidence/baseline/policy versions, decision digest, outcome/reasons         | A gate applies to exactly the assessed revision and evidence        |
+| Runner / Lease            | Registration, capabilities, last heartbeat, assignment and fencing token                        | Late or revoked workers cannot finalize newer work                  |
+| Audit / Integration Event | Actor/source, event ID, target, payload version, delivery status                                | Repeated delivery does not duplicate approvals/issues/alerts        |
 
 **Canonical check identity proposal:** hash project + stable scenario/checkpoint + rendering profile + fixture/capture policy identity. Store source revision and baseline lineage as evidence provenance rather than changing the check's stable name on every commit. Hard rendering compatibility should retain engine semantics; do not unnecessarily invalidate every reference for an irrelevant patch version.
 
@@ -392,16 +392,16 @@ Platform lifecycle: `created → uploading/running → ingesting → complete`, 
 
 Proposed endpoints, **not current APIs**:
 
-| Operation | Purpose | Essential semantics |
-| --- | --- | --- |
-| `POST /v1/projects/{id}/upload-sessions` | Declare run envelope/artifacts and obtain scoped upload destinations | Project auth, size limits, idempotency key |
-| `POST /v1/upload-sessions/{id}/finalize` | Validate hashes/scope and ingest evidence | All required artifacts; immutable finalized digest |
-| `GET /v1/projects/{id}/runs` | Filter indexed history | Pagination and project authorization |
-| `GET /v1/runs/{id}` | Fetch metadata and permitted artifact references | Private expiring access; evidence version |
-| `POST /v1/findings/{id}/decisions` | Record scoped review | Actor from session; evidence version precondition |
-| `POST /v1/projects/{id}/baseline-promotions` | Advance approved reference | Expected current version; required decisions |
-| `GET /v1/runs/{id}/assessment` | Explain revision-specific release result | Policy/baseline/decision versions and missing scope |
-| `POST /v1/runs/{id}/repair-proposals` | Request an optional private-runner proposal | Explicit project capability; source revision and scope |
+| Operation                                    | Purpose                                                              | Essential semantics                                    |
+| -------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
+| `POST /v1/projects/{id}/upload-sessions`     | Declare run envelope/artifacts and obtain scoped upload destinations | Project auth, size limits, idempotency key             |
+| `POST /v1/upload-sessions/{id}/finalize`     | Validate hashes/scope and ingest evidence                            | All required artifacts; immutable finalized digest     |
+| `GET /v1/projects/{id}/runs`                 | Filter indexed history                                               | Pagination and project authorization                   |
+| `GET /v1/runs/{id}`                          | Fetch metadata and permitted artifact references                     | Private expiring access; evidence version              |
+| `POST /v1/findings/{id}/decisions`           | Record scoped review                                                 | Actor from session; evidence version precondition      |
+| `POST /v1/projects/{id}/baseline-promotions` | Advance approved reference                                           | Expected current version; required decisions           |
+| `GET /v1/runs/{id}/assessment`               | Explain revision-specific release result                             | Policy/baseline/decision versions and missing scope    |
+| `POST /v1/runs/{id}/repair-proposals`        | Request an optional private-runner proposal                          | Explicit project capability; source revision and scope |
 
 The API emits versioned events such as `run.completed`, `finding.assigned`, `decision.recorded`, `baseline.promoted`, and `assessment.changed`. Use a transactional outbox for external delivery, retries, and deduplication. Start with ordinary indexed search; add image/vector search only when a validated use case needs it.
 
@@ -421,28 +421,28 @@ For the internal pilot, use the organization's approved storage/encryption/backu
 
 For **two engineers**, reserve approximately **18–24 effective engineer-weeks** within 24–32 nominal engineer-weeks. The difference covers discovery, review, support, platform coordination, and contingency. It does not fit every feature's full specification: region matching, scheduler, selective execution, advanced integrations, and broad repair UI stay later.
 
-| Phase | Calendar estimate | Deliverables | Exit criteria |
-| --- | --- | --- | --- |
-| A: discover and baseline | Weeks 1–2 | App/team inventory; hosting/identity decision; 10–20 critical checkpoints; current review/noise/runtime measurements; pilot owners | Named apps/users, seeded state, agreed scope and success targets |
-| B: share evidence | Weeks 3–6 | F01 history/detail; F02 one OIDC provider and project roles; F06 CI upload; private artifacts; versioned ingest | Complete runs upload reliably; isolation checks pass; dashboard useful to pilot users |
-| C: review and references | Weeks 7–10 | F03 job/finding decisions and comments; F04 baseline versions/promotion; F05 catalog layered onto existing tests; initial ownership | A real PR can be reviewed by a second person; promotion is revision-aware and race-safe |
-| D: informative gate and operational readiness | Weeks 11–12 | F07 simple versioned policy; exact-revision GitHub check; completeness reasons; monitoring, backup/restore, runbooks | Shadow-mode assessment agrees with agreed human decisions; failure recovery demonstrated |
-| E: controlled adoption and buffer | Weeks 13–16 | Fix pilot feedback; stabilize journeys; optional one alert adapter; gate only selected reliable critical checks | Pilot outcome meets targets; owners accept support model; expand/iterate decision recorded |
+| Phase                                         | Calendar estimate | Deliverables                                                                                                                        | Exit criteria                                                                              |
+| --------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| A: discover and baseline                      | Weeks 1–2         | App/team inventory; hosting/identity decision; 10–20 critical checkpoints; current review/noise/runtime measurements; pilot owners  | Named apps/users, seeded state, agreed scope and success targets                           |
+| B: share evidence                             | Weeks 3–6         | F01 history/detail; F02 one OIDC provider and project roles; F06 CI upload; private artifacts; versioned ingest                     | Complete runs upload reliably; isolation checks pass; dashboard useful to pilot users      |
+| C: review and references                      | Weeks 7–10        | F03 job/finding decisions and comments; F04 baseline versions/promotion; F05 catalog layered onto existing tests; initial ownership | A real PR can be reviewed by a second person; promotion is revision-aware and race-safe    |
+| D: informative gate and operational readiness | Weeks 11–12       | F07 simple versioned policy; exact-revision GitHub check; completeness reasons; monitoring, backup/restore, runbooks                | Shadow-mode assessment agrees with agreed human decisions; failure recovery demonstrated   |
+| E: controlled adoption and buffer             | Weeks 13–16       | Fix pilot feedback; stabilize journeys; optional one alert adapter; gate only selected reliable critical checks                     | Pilot outcome meets targets; owners accept support model; expand/iterate decision recorded |
 
 The shorter 12-week result is an **informative internal pilot**, assuming identity/storage/CI are readily available. The 16-week result may include selected required gates after repeatability is established. Broader organizational gating is conditional on evidence, not the calendar.
 
 ### 10.2 Indicative effort allocation for this reduced scope
 
-| Workstream | Engineer-weeks | Scope boundary |
-| --- | --- | --- |
-| Discovery, contracts, environment integration | 1–2 | One identity provider and one deployment model |
-| Ingestion, artifacts, run index, history/detail UI | 4–5 | Existing capture/report logic reused |
-| Identity, roles, authorization, audit essentials | 2–3 | No custom password service or provisioning suite |
-| Decisions, comments, baseline promotion | 4–5 | Job/finding scope first; general region matching deferred |
-| Journey metadata and CI upload integration | 2–3 | Existing Playwright tests/CI; no managed runner scheduler |
-| Simple policy/GitHub checks and reconciliation | 2–3 | One code host; no generalized policy language |
-| Load/failure checks, operations, pilot feedback | 3 | Focused operational validation and iteration |
-| **Total range** | **18–24** | Application teams still contribute fixtures and scenario setup |
+| Workstream                                         | Engineer-weeks | Scope boundary                                                 |
+| -------------------------------------------------- | -------------- | -------------------------------------------------------------- |
+| Discovery, contracts, environment integration      | 1–2            | One identity provider and one deployment model                 |
+| Ingestion, artifacts, run index, history/detail UI | 4–5            | Existing capture/report logic reused                           |
+| Identity, roles, authorization, audit essentials   | 2–3            | No custom password service or provisioning suite               |
+| Decisions, comments, baseline promotion            | 4–5            | Job/finding scope first; general region matching deferred      |
+| Journey metadata and CI upload integration         | 2–3            | Existing Playwright tests/CI; no managed runner scheduler      |
+| Simple policy/GitHub checks and reconciliation     | 2–3            | One code host; no generalized policy language                  |
+| Load/failure checks, operations, pilot feedback    | 3              | Focused operational validation and iteration                   |
+| **Total range**                                    | **18–24**      | Application teams still contribute fixtures and scenario setup |
 
 ### 10.3 Months 4–6: expand where the pilot shows demand
 
@@ -462,20 +462,20 @@ Keep the existing CLI/CI as execution; ship checksummed upload, an authenticated
 
 Effort here is indicative focused engineering days, excluding waiting for external teams. Tasks share setup work; do not add these independently to the phase budget.
 
-| Ticket | Task / owner | Dependencies | Acceptance / estimate |
-| --- | --- | --- | --- |
-| VG-ORG-01 | Pilot discovery and app/journey inventory / product owner + QA | None | Two apps, owners, environment/data constraints, 10–20 checkpoints; 2–3 days |
-| VG-ORG-02 | Platform envelope and importer contract / backend engineer | 01 | Import current representative complete/incomplete manifests; version behavior documented; 2–3 days |
-| VG-ORG-03 | Database/object storage and project model / backend + platform | 02 | Private storage, migrations, local deployment, backup path; 3–4 days |
-| VG-ORG-04 | OIDC and project roles / backend engineer | 01, 03 | API/artifact permissions enforced; actor identity trusted; 4–6 days |
-| VG-ORG-05 | Upload adapter and finalization / backend engineer | 02–04 | Hash validation, idempotence, interrupted upload, scope completeness; 4–6 days |
-| VG-ORG-06 | Run history and compare detail / frontend engineer | 02–05 | Real uploads searchable; correct images/DOM/findings; stable links; 5–8 days |
-| VG-ORG-07 | Scenario/checkpoint identity and catalog / frontend + QA | 01, 02 | Stable names, owners, criticality, fixture/profile metadata; 3–5 days |
-| VG-ORG-08 | Review decisions/comments / frontend + backend | 04, 06, 07 | Scope/evidence binding, stale review conflict, decision audit; 5–7 days |
-| VG-ORG-09 | Baseline sets and atomic promotion / backend engineer | 05, 07, 08 | Version lineage, compatibility, racing promotion, rollback event; 5–7 days |
-| VG-ORG-10 | Versioned assessment service / backend + QA | 07–09 | Complete current evidence + decisions → reasons/outcome; separate engine/policy states; 3–5 days |
-| VG-ORG-11 | Exact-revision GitHub check / backend + platform | 10 | New commit supersedes status; retry/reconcile works; 3–4 days |
-| VG-ORG-12 | Operational controls and pilot sign-off / platform + QA | 04–11 | Retention, restore, failure runbook, agreed load, shadow pilot outcomes; 5–7 days |
+| Ticket    | Task / owner                                                   | Dependencies | Acceptance / estimate                                                                              |
+| --------- | -------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| VG-ORG-01 | Pilot discovery and app/journey inventory / product owner + QA | None         | Two apps, owners, environment/data constraints, 10–20 checkpoints; 2–3 days                        |
+| VG-ORG-02 | Platform envelope and importer contract / backend engineer     | 01           | Import current representative complete/incomplete manifests; version behavior documented; 2–3 days |
+| VG-ORG-03 | Database/object storage and project model / backend + platform | 02           | Private storage, migrations, local deployment, backup path; 3–4 days                               |
+| VG-ORG-04 | OIDC and project roles / backend engineer                      | 01, 03       | API/artifact permissions enforced; actor identity trusted; 4–6 days                                |
+| VG-ORG-05 | Upload adapter and finalization / backend engineer             | 02–04        | Hash validation, idempotence, interrupted upload, scope completeness; 4–6 days                     |
+| VG-ORG-06 | Run history and compare detail / frontend engineer             | 02–05        | Real uploads searchable; correct images/DOM/findings; stable links; 5–8 days                       |
+| VG-ORG-07 | Scenario/checkpoint identity and catalog / frontend + QA       | 01, 02       | Stable names, owners, criticality, fixture/profile metadata; 3–5 days                              |
+| VG-ORG-08 | Review decisions/comments / frontend + backend                 | 04, 06, 07   | Scope/evidence binding, stale review conflict, decision audit; 5–7 days                            |
+| VG-ORG-09 | Baseline sets and atomic promotion / backend engineer          | 05, 07, 08   | Version lineage, compatibility, racing promotion, rollback event; 5–7 days                         |
+| VG-ORG-10 | Versioned assessment service / backend + QA                    | 07–09        | Complete current evidence + decisions → reasons/outcome; separate engine/policy states; 3–5 days   |
+| VG-ORG-11 | Exact-revision GitHub check / backend + platform               | 10           | New commit supersedes status; retry/reconcile works; 3–4 days                                      |
+| VG-ORG-12 | Operational controls and pilot sign-off / platform + QA        | 04–11        | Retention, restore, failure runbook, agreed load, shadow pilot outcomes; 5–7 days                  |
 
 Use milestone demos instead of waiting for all tickets: first shared run; first second-person review; first atomic baseline promotion; first correct PR assessment; first recovery after an interrupted run.
 
@@ -483,33 +483,33 @@ Use milestone demos instead of waiting for all tickets: first shared run; first 
 
 ### 12.1 Validation layers
 
-| Layer | What to validate | Representative cases |
-| --- | --- | --- |
-| Engine contract | Existing guarantees survive platform integration | Saved-reference replay, rendering mismatch, accepted visual change + independent failure, incomplete shards |
-| Ingestion | Evidence identity and completeness | Missing artifact, corrupt hash, duplicate session, unknown schema, malformed/oversized artifact |
-| Permissions | Project and action boundaries | Cross-project URL/object lookup, revoked member, CI token trying to approve |
-| Review and baseline | Correct decisions under changes and concurrency | Two reviewers, new capture, force push, new policy, two competing promotions, restored reference |
-| Release assessment | Exact scope and revision | Missing critical journey, stale reference, expired exception, platform/code-host delivery outage |
-| Private execution | Recovery and repeatability | Interrupted upload, revoked lease, runner crash, retry, expired session, browser version mismatch |
-| User workflow | Actual usefulness | Developer, QA, and designer review representative real PRs without maintainer assistance |
-| Operation | Sustainable deployment | Capacity run, storage pruning, backup restore, issue/alert deduplication, on-call diagnosis |
+| Layer               | What to validate                                 | Representative cases                                                                                        |
+| ------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Engine contract     | Existing guarantees survive platform integration | Saved-reference replay, rendering mismatch, accepted visual change + independent failure, incomplete shards |
+| Ingestion           | Evidence identity and completeness               | Missing artifact, corrupt hash, duplicate session, unknown schema, malformed/oversized artifact             |
+| Permissions         | Project and action boundaries                    | Cross-project URL/object lookup, revoked member, CI token trying to approve                                 |
+| Review and baseline | Correct decisions under changes and concurrency  | Two reviewers, new capture, force push, new policy, two competing promotions, restored reference            |
+| Release assessment  | Exact scope and revision                         | Missing critical journey, stale reference, expired exception, platform/code-host delivery outage            |
+| Private execution   | Recovery and repeatability                       | Interrupted upload, revoked lease, runner crash, retry, expired session, browser version mismatch           |
+| User workflow       | Actual usefulness                                | Developer, QA, and designer review representative real PRs without maintainer assistance                    |
+| Operation           | Sustainable deployment                           | Capacity run, storage pruning, backup restore, issue/alert deduplication, on-call diagnosis                 |
 
 For new platform code, use focused contract/integration tests and a few end-to-end workflows. Preserve existing engine tests and evaluations. Run broader browser matrices where new profiles/adapters justify them; do not multiply every organizational test by every browser and operating system.
 
 ### 12.2 Proposed pilot success targets
 
-| Metric | Definition | Initial target / use |
-| --- | --- | --- |
-| Repeatability | Unchanged seeded check producing an unexpected visual finding | Below 2% over at least 100 repeated check executions per pilot app; report environment and sample uncertainty |
-| Review effort | Median active time reviewing a representative changed PR | At least 30% below the pilot's starting workflow |
-| Execution reliability | Runs finalized successfully, excluding genuine application test failures | At least 98% across 100 representative runs; report upload/runner failure separately |
-| Critical coverage | Required named checkpoints with compatible, fresh evidence | 100% for a gated revision; unknown/skipped scope visible |
-| Review correctness | Known blocking seeded cases receiving satisfied release assessment | Zero in the agreed invariant suite; broader empirical misses reported separately |
-| Reviewer usefulness | Reviewed finding groups judged actionable by pilot reviewers | At least 80%, with reasons for noise recorded |
-| Review turnaround | Elapsed time from ready evidence to required decisions | Agree a working-hours target with owners; initial proposal: one business day |
-| Adoption | Weekly active reviewers outside the maintainer | At least 5 across the two teams during the pilot |
-| Escaped defects | Organization incidents that included a UI issue | Establish a baseline; classify whether selected coverage could have detected them |
-| Support burden | Maintainer hours spent recovering/troubleshooting | Establish in the pilot; cap acceptable weekly burden before expansion |
+| Metric                | Definition                                                               | Initial target / use                                                                                          |
+| --------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Repeatability         | Unchanged seeded check producing an unexpected visual finding            | Below 2% over at least 100 repeated check executions per pilot app; report environment and sample uncertainty |
+| Review effort         | Median active time reviewing a representative changed PR                 | At least 30% below the pilot's starting workflow                                                              |
+| Execution reliability | Runs finalized successfully, excluding genuine application test failures | At least 98% across 100 representative runs; report upload/runner failure separately                          |
+| Critical coverage     | Required named checkpoints with compatible, fresh evidence               | 100% for a gated revision; unknown/skipped scope visible                                                      |
+| Review correctness    | Known blocking seeded cases receiving satisfied release assessment       | Zero in the agreed invariant suite; broader empirical misses reported separately                              |
+| Reviewer usefulness   | Reviewed finding groups judged actionable by pilot reviewers             | At least 80%, with reasons for noise recorded                                                                 |
+| Review turnaround     | Elapsed time from ready evidence to required decisions                   | Agree a working-hours target with owners; initial proposal: one business day                                  |
+| Adoption              | Weekly active reviewers outside the maintainer                           | At least 5 across the two teams during the pilot                                                              |
+| Escaped defects       | Organization incidents that included a UI issue                          | Establish a baseline; classify whether selected coverage could have detected them                             |
+| Support burden        | Maintainer hours spent recovering/troubleshooting                        | Establish in the pilot; cap acceptable weekly burden before expansion                                         |
 
 These targets do not prove universal accuracy, especially with small samples. Track classification recall separately from policy success: a review-classified defect may still block correctly under an organization policy requiring review.
 
@@ -551,19 +551,19 @@ Illustrative value: if 30 developers each save 20 minutes/week and 5 QA/design r
 
 ## 14. Main risks and decisions
 
-| Risk | Consequence | Mitigation and owner |
-| --- | --- | --- |
-| Too much scope before real users | A large platform with weak adoption | Product owner holds the pilot boundary; experiments need evidence to advance |
-| Unstable data/authentication | False alarms or wrong-state captures | Application owner provides seeds/readiness assertions; QA measures repeatability |
-| Excessive approval/mask reuse | Real changes disappear from review | Evidence-bound decisions, separate independent findings, visible exclusions; frontend lead |
-| Poor reference lineage | Review against the wrong expected appearance | Atomic promotion, compatibility checks, explicit selection reason; backend engineer |
-| Selective planner misses impact | Incomplete assurance disguised as speed | Conservative fallback, critical smoke, shadow/full sampling, visible ledger; testing lead |
-| AI explanation appears authoritative | Reviewers accept invented cause or unsafe fix | Evidence links, uncertainty, advisory policy, verified repair; AI/engine maintainer |
-| Sensitive artifact content | Unapproved exposure of screenshots/DOM/source | Synthetic data, capture and payload redaction, project access, retention; app/platform owner |
-| Gate delivery/platform outage | PR status disagrees with evidence | Pending/error, reconciliation, explicit incident handling; platform engineer |
-| Browser/runtime drift | Widespread unrelated diffs | Controlled capture image and reviewed reference migration; platform engineer |
-| Nobody owns reviews or incidents | Inbox backlog and permanent exceptions | Ownership map, working-hours expectations, expiring exceptions; engineering lead |
-| Metrics become team rankings | Incentives to hide findings | Use metrics for coverage and workflow improvement, not individual performance scoring; management |
+| Risk                                 | Consequence                                   | Mitigation and owner                                                                              |
+| ------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Too much scope before real users     | A large platform with weak adoption           | Product owner holds the pilot boundary; experiments need evidence to advance                      |
+| Unstable data/authentication         | False alarms or wrong-state captures          | Application owner provides seeds/readiness assertions; QA measures repeatability                  |
+| Excessive approval/mask reuse        | Real changes disappear from review            | Evidence-bound decisions, separate independent findings, visible exclusions; frontend lead        |
+| Poor reference lineage               | Review against the wrong expected appearance  | Atomic promotion, compatibility checks, explicit selection reason; backend engineer               |
+| Selective planner misses impact      | Incomplete assurance disguised as speed       | Conservative fallback, critical smoke, shadow/full sampling, visible ledger; testing lead         |
+| AI explanation appears authoritative | Reviewers accept invented cause or unsafe fix | Evidence links, uncertainty, advisory policy, verified repair; AI/engine maintainer               |
+| Sensitive artifact content           | Unapproved exposure of screenshots/DOM/source | Synthetic data, capture and payload redaction, project access, retention; app/platform owner      |
+| Gate delivery/platform outage        | PR status disagrees with evidence             | Pending/error, reconciliation, explicit incident handling; platform engineer                      |
+| Browser/runtime drift                | Widespread unrelated diffs                    | Controlled capture image and reviewed reference migration; platform engineer                      |
+| Nobody owns reviews or incidents     | Inbox backlog and permanent exceptions        | Ownership map, working-hours expectations, expiring exceptions; engineering lead                  |
+| Metrics become team rankings         | Incentives to hide findings                   | Use metrics for coverage and workflow improvement, not individual performance scoring; management |
 
 Decide during discovery: identity provider; hosting/data boundary; pilot apps; source of fixtures; initial profiles; baseline/promotion authority; policy exceptions; code-host integration; owners; artifact retention; whether AI requests may leave the organization. Decisions should record the reason and revisit date, not delay independent engine integration work.
 
@@ -605,13 +605,13 @@ The first success is not feature count. It is two teams using VisualGuard repeat
 
 Primary documentation was consulted on 14 October 2026. The observations below establish workflow context, not exhaustive competitor comparisons or superiority claims. External pricing was not used.
 
-| Source | Relevant observation | Planning implication |
-| --- | --- | --- |
-| [Chromatic TurboSnap](https://www.chromatic.com/docs/turbosnap/) | Uses source history/dependency relationships for component selection, with broad rebuild cases | Test selection needs conservative fallback and visible provenance |
-| [Chromatic modes](https://www.chromatic.com/docs/modes/) | Supports named rendering variants with independent baselines/approvals | Make selected combinations explicit and separately reviewable |
-| [Percy Git baseline management](https://www.browserstack.com/docs/percy/visual-testing-workflows/baseline-management/git) | Offers branch-based baseline selection and configurable approval behavior | Reference selection/promotion is a first-class organizational workflow |
-| [Playwright visual comparisons](https://playwright.dev/docs/test-snapshots) | Screenshot behavior depends on execution environment and rendering setup | Preserve rendering compatibility and controlled capture environments |
-| [W3C accessibility introduction](https://www.w3.org/WAI/fundamentals/accessibility-intro/) | Automated tools alone cannot determine accessibility | Keep automated findings distinct from human accessibility evaluation |
-| [OpenTelemetry traces](https://opentelemetry.io/docs/concepts/signals/traces/) | Traces correlate operations through context across services | Link visual incidents to trace evidence when applications expose that context |
+| Source                                                                                                                    | Relevant observation                                                                           | Planning implication                                                          |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [Chromatic TurboSnap](https://www.chromatic.com/docs/turbosnap/)                                                          | Uses source history/dependency relationships for component selection, with broad rebuild cases | Test selection needs conservative fallback and visible provenance             |
+| [Chromatic modes](https://www.chromatic.com/docs/modes/)                                                                  | Supports named rendering variants with independent baselines/approvals                         | Make selected combinations explicit and separately reviewable                 |
+| [Percy Git baseline management](https://www.browserstack.com/docs/percy/visual-testing-workflows/baseline-management/git) | Offers branch-based baseline selection and configurable approval behavior                      | Reference selection/promotion is a first-class organizational workflow        |
+| [Playwright visual comparisons](https://playwright.dev/docs/test-snapshots)                                               | Screenshot behavior depends on execution environment and rendering setup                       | Preserve rendering compatibility and controlled capture environments          |
+| [W3C accessibility introduction](https://www.w3.org/WAI/fundamentals/accessibility-intro/)                                | Automated tools alone cannot determine accessibility                                           | Keep automated findings distinct from human accessibility evaluation          |
+| [OpenTelemetry traces](https://opentelemetry.io/docs/concepts/signals/traces/)                                            | Traces correlate operations through context across services                                    | Link visual incidents to trace evidence when applications expose that context |
 
 Repository review was static and selective. Historical test/evaluation results are attributed to the repository's recorded validation, not rerun here. Organizational requirements, runtime, workload, and adoption assumptions must be replaced by pilot measurements. Proposed paths, endpoint names, priorities, timelines, and acceptance targets are design choices available for revision.

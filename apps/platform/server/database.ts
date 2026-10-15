@@ -4,7 +4,10 @@ import { dirname } from "node:path";
 
 type Value = string | number | null;
 export interface Sql {
-  query<T extends Record<string, unknown> = Record<string, unknown>>(sql: string, values?: Value[]): Promise<T[]>;
+  query<T extends Record<string, unknown> = Record<string, unknown>>(
+    sql: string,
+    values?: Value[],
+  ): Promise<T[]>;
 }
 export interface Database extends Sql {
   transaction<T>(work: (sql: Sql) => Promise<T>): Promise<T>;
@@ -45,11 +48,18 @@ const SCHEMA = [
   "CREATE INDEX IF NOT EXISTS vg_state_expiry ON vg_state(expires_at)",
 ];
 
-export async function openDatabase(options: { url?: string; sqlitePath: string }): Promise<Database> {
+export async function openDatabase(options: {
+  url?: string;
+  sqlitePath: string;
+}): Promise<Database> {
   let db: Database;
   if (options.url) {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: options.url, max: 5, connectionTimeoutMillis: 10_000 });
+    const pool = new Pool({
+      connectionString: options.url,
+      max: 5,
+      connectionTimeoutMillis: 10_000,
+    });
     const statement = (sql: string) => {
       let index = 0;
       return sql.replace(/\?/g, () => `$${++index}`);
@@ -78,15 +88,19 @@ export async function openDatabase(options: { url?: string; sqlitePath: string }
           client.release();
         }
       },
-      async close() { await pool.end(); },
+      async close() {
+        await pool.end();
+      },
     };
   } else {
     await mkdir(dirname(options.sqlitePath), { recursive: true });
     const { DatabaseSync } = await import("node:sqlite");
     const sqlite = new DatabaseSync(options.sqlitePath);
     sqlite.exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;");
-    const query: Sql["query"] = async <T extends Record<string, unknown>>(sql: string, values: Value[] = []) =>
-      sqlite.prepare(sql).all(...values) as T[];
+    const query: Sql["query"] = async <T extends Record<string, unknown>>(
+      sql: string,
+      values: Value[] = [],
+    ) => sqlite.prepare(sql).all(...values) as T[];
     // Serialize every access, including reads, so no request observes an in-flight transaction.
     let pending: Promise<unknown> = Promise.resolve();
     const exclusive = <T>(work: () => Promise<T>): Promise<T> => {
@@ -96,18 +110,22 @@ export async function openDatabase(options: { url?: string; sqlitePath: string }
     };
     db = {
       query: (sql, values) => exclusive(() => query(sql, values)),
-      transaction: (work) => exclusive(async () => {
-        sqlite.exec("BEGIN IMMEDIATE");
-        try {
-          const result = await work({ query });
-          sqlite.exec("COMMIT");
-          return result;
-        } catch (error) {
-          sqlite.exec("ROLLBACK");
-          throw error;
-        }
-      }),
-      close: () => exclusive(async () => { sqlite.close(); }),
+      transaction: (work) =>
+        exclusive(async () => {
+          sqlite.exec("BEGIN IMMEDIATE");
+          try {
+            const result = await work({ query });
+            sqlite.exec("COMMIT");
+            return result;
+          } catch (error) {
+            sqlite.exec("ROLLBACK");
+            throw error;
+          }
+        }),
+      close: () =>
+        exclusive(async () => {
+          sqlite.close();
+        }),
     };
   }
   try {

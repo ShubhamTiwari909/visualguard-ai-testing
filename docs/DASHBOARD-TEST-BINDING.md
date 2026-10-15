@@ -88,15 +88,15 @@ npx visualguard test storefront \
   --no-ai
 ```
 
-| Option | Behavior |
-| --- | --- |
-| Optional positional project | Enables automatic import/publishing |
-| `--dashboard <origin>` | Uses the running server instead of direct local storage |
-| `--environment` | Dashboard label; defaults to `staging` |
-| `--branch`, `--commit`, `--pr`, `--deployment` | Optional dashboard labels |
+| Option                                          | Behavior                                                                    |
+| ----------------------------------------------- | --------------------------------------------------------------------------- |
+| Optional positional project                     | Enables automatic import/publishing                                         |
+| `--dashboard <origin>`                          | Uses the running server instead of direct local storage                     |
+| `--environment`                                 | Dashboard label; defaults to `staging`                                      |
+| `--branch`, `--commit`, `--pr`, `--deployment`  | Optional dashboard labels                                                   |
 | `--output-dir`, route/viewport/browser/AI flags | Existing engine behavior; publishing uses the actual returned run directory |
-| `--list` | Lists the test plan only; does not create a project, capture, or publish |
-| `--json` | Keeps manifest JSON on stdout; dashboard progress/errors go to stderr |
+| `--list`                                        | Lists the test plan only; does not create a project, capture, or publish    |
+| `--json`                                        | Keeps manifest JSON on stdout; dashboard progress/errors go to stderr       |
 
 The project argument changes evidence storage, not the application's URLs, routes, baseline directory, or capture settings. An absent commit label still falls back to the engine's source revision. Individual shard uploads retain their incomplete status; merge all shards and publish the merged run when complete execution coverage is required.
 

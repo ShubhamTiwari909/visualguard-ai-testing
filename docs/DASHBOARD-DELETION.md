@@ -41,9 +41,9 @@ Deploy the same dashboard version to all writers before using deletion. An older
 
 Both routes require a browser session (or the local workspace action token), the `x-visualguard-platform-token` header, and JSON content type:
 
-| Request | JSON body |
-| --- | --- |
-| `DELETE /api/runs/RUN_UUID` | `{ "confirmation": "RUN_UUID" }` |
+| Request                           | JSON body                                             |
+| --------------------------------- | ----------------------------------------------------- |
+| `DELETE /api/runs/RUN_UUID`       | `{ "confirmation": "RUN_UUID" }`                      |
 | `DELETE /api/projects/PROJECT_ID` | `{ "confirmation": "PROJECT_ID", "expectedRuns": 3 }` |
 
 The browser asks users to type `DELETE` for a run, then submits that run's immutable UUID. Project requests submit the typed project ID and displayed run count. Incorrect confirmation returns 400; missing permission/action token returns 403; a missing entry returns 404; a changed project count returns 409.

@@ -46,10 +46,32 @@ describe("cli", () => {
   it("accepts a project name while preserving test flags", async () => {
     const program = createProgram();
     let selected: string | undefined, received: Record<string, unknown> | undefined;
-    program.commands.find((command) => command.name() === "test")!.action((project: string | undefined, flags: Record<string, unknown>) => { selected = project; received = flags; });
-    await program.parseAsync(["node", "visualguard", "test", "Storefront Web", "--dashboard", "https://dashboard.example.test", "--no-ai", "--environment", "preview", "--pr", "42"]);
+    program.commands
+      .find((command) => command.name() === "test")!
+      .action((project: string | undefined, flags: Record<string, unknown>) => {
+        selected = project;
+        received = flags;
+      });
+    await program.parseAsync([
+      "node",
+      "visualguard",
+      "test",
+      "Storefront Web",
+      "--dashboard",
+      "https://dashboard.example.test",
+      "--no-ai",
+      "--environment",
+      "preview",
+      "--pr",
+      "42",
+    ]);
     expect(selected).toBe("Storefront Web");
-    expect(received).toMatchObject({ dashboard: "https://dashboard.example.test", ai: false, environment: "preview", pr: 42 });
+    expect(received).toMatchObject({
+      dashboard: "https://dashboard.example.test",
+      ai: false,
+      environment: "preview",
+      pr: 42,
+    });
   });
   it("accepts dashboard project creation and its add alias", async () => {
     for (const name of ["create", "add"]) {
@@ -57,9 +79,26 @@ describe("cli", () => {
       const dashboard = program.commands.find((command) => command.name() === "dashboard")!;
       const project = dashboard.commands.find((command) => command.name() === "project")!;
       let id: string | undefined, options: Record<string, unknown> | undefined;
-      project.commands.find((command) => command.name() === "create")!.action((value: string, flags: Record<string, unknown>) => { id = value; options = flags; });
-      await program.parseAsync(["node", "visualguard", "dashboard", "project", name, "storefront", "--name", "Storefront Web", "--server", "http://127.0.0.1:4400"]);
-      expect(id).toBe("storefront"); expect(options).toMatchObject({ name: "Storefront Web", server: "http://127.0.0.1:4400" });
+      project.commands
+        .find((command) => command.name() === "create")!
+        .action((value: string, flags: Record<string, unknown>) => {
+          id = value;
+          options = flags;
+        });
+      await program.parseAsync([
+        "node",
+        "visualguard",
+        "dashboard",
+        "project",
+        name,
+        "storefront",
+        "--name",
+        "Storefront Web",
+        "--server",
+        "http://127.0.0.1:4400",
+      ]);
+      expect(id).toBe("storefront");
+      expect(options).toMatchObject({ name: "Storefront Web", server: "http://127.0.0.1:4400" });
     }
   });
 });

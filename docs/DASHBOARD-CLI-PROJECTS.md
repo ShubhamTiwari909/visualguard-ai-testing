@@ -92,13 +92,13 @@ The CLI and server must both support the new command/API response. New API proje
 ## Optional package API
 
 ```js
-import { createDashboardProject } from 'visualguard/dashboard';
+import { createDashboardProject } from "visualguard/dashboard";
 
 const { project, created } = await createDashboardProject({
-  id: 'storefront',
-  name: 'Storefront Web',
+  id: "storefront",
+  name: "Storefront Web",
 });
-console.log(created ? 'Created' : 'Already exists', project.id);
+console.log(created ? "Created" : "Already exists", project.id);
 ```
 
 Pass `server` to use a running dashboard, or `env` to supply explicit database/administrator settings. This API uses the same validation, permissions, and idempotency as the command; callers load their desired environment files themselves.

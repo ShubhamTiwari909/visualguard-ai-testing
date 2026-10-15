@@ -9,5 +9,12 @@
     "declaration": false,
     "types": ["vite/client", "node"]
   },
-  "include": ["server", "client", "shared", "test", "vite.config.ts", "../../packages/visualguard/src/globals.d.ts"]
+  "include": [
+    "server",
+    "client",
+    "shared",
+    "test",
+    "vite.config.ts",
+    "../../packages/visualguard/src/globals.d.ts"
+  ]
 }

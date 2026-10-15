@@ -12,14 +12,14 @@
 
 ## 1. Choose your setup
 
-| Goal | What to use | Configuration |
-| --- | --- | --- |
-| Try the dashboard on your computer | Local SQLite workspace | None beyond a supported Node version |
-| Open someone else's local evidence | Portable backup or SQLite file | One restore command or `--file` |
-| Use an existing PostgreSQL database | PostgreSQL URL | `VISUALGUARD_DATABASE_URL` |
-| Use an existing MongoDB database | MongoDB URL including database name | The same variable; backend detected automatically |
-| Share with your organization | Cloud Run, Vercel, or another Node host | Database URL, public URL, admin email, admin password |
-| Publish from another app or CI | Installed `visualguard` package | Dashboard URL, project ID, project upload token |
+| Goal                                | What to use                             | Configuration                                         |
+| ----------------------------------- | --------------------------------------- | ----------------------------------------------------- |
+| Try the dashboard on your computer  | Local SQLite workspace                  | None beyond a supported Node version                  |
+| Open someone else's local evidence  | Portable backup or SQLite file          | One restore command or `--file`                       |
+| Use an existing PostgreSQL database | PostgreSQL URL                          | `VISUALGUARD_DATABASE_URL`                            |
+| Use an existing MongoDB database    | MongoDB URL including database name     | The same variable; backend detected automatically     |
+| Share with your organization        | Cloud Run, Vercel, or another Node host | Database URL, public URL, admin email, admin password |
+| Publish from another app or CI      | Installed `visualguard` package         | Dashboard URL, project ID, project upload token       |
 
 The dashboard and test execution are separate. Your application and Playwright browsers run on your machine or CI. The dashboard stores and displays saved evidence; hosting it does not require your application source, browser binaries, or an AI key.
 
@@ -444,42 +444,42 @@ Cloud Run requires listening on the supplied port/all interfaces and treats cont
 
 ## 12. Configuration reference
 
-| Setting | Default / use |
-| --- | --- |
-| `VISUALGUARD_DATABASE_URL` | Preferred PostgreSQL/MongoDB URL; absent means local SQLite |
-| `DATABASE_URL` | Compatibility fallback |
-| `VISUALGUARD_PUBLIC_URL` | Canonical public origin; enables authenticated mode |
-| `VISUALGUARD_ADMIN_EMAIL` | One-time administrator email/bootstrap OIDC match |
-| `VISUALGUARD_ADMIN_PASSWORD` | One-time password-account bootstrap; 12–256 characters |
-| `VISUALGUARD_AUTH_MODE` | `local` or `login`; normally inferred |
-| `VISUALGUARD_PLATFORM_DATA_DIR` | Calling project's `.visualguard/platform`, or `--data-dir` |
-| `VISUALGUARD_SQLITE_FILE` | Explicit SQLite database file, or `--file` |
-| `VISUALGUARD_PLATFORM_PORT` / `PORT` | HTTP listener port; default 4400 |
-| `VISUALGUARD_HOST` | Loopback locally; hosted entry listens on all interfaces |
-| `VISUALGUARD_UPLOAD_TOKEN` | Publishing credential; never a browser login |
-| `VISUALGUARD_DASHBOARD_URL` | Client destination for `test <project>`; `--dashboard` overrides it |
-| `VISUALGUARD_OIDC_*` | Optional issuer/client credentials and admin subject allowlist |
+| Setting                              | Default / use                                                       |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `VISUALGUARD_DATABASE_URL`           | Preferred PostgreSQL/MongoDB URL; absent means local SQLite         |
+| `DATABASE_URL`                       | Compatibility fallback                                              |
+| `VISUALGUARD_PUBLIC_URL`             | Canonical public origin; enables authenticated mode                 |
+| `VISUALGUARD_ADMIN_EMAIL`            | One-time administrator email/bootstrap OIDC match                   |
+| `VISUALGUARD_ADMIN_PASSWORD`         | One-time password-account bootstrap; 12–256 characters              |
+| `VISUALGUARD_AUTH_MODE`              | `local` or `login`; normally inferred                               |
+| `VISUALGUARD_PLATFORM_DATA_DIR`      | Calling project's `.visualguard/platform`, or `--data-dir`          |
+| `VISUALGUARD_SQLITE_FILE`            | Explicit SQLite database file, or `--file`                          |
+| `VISUALGUARD_PLATFORM_PORT` / `PORT` | HTTP listener port; default 4400                                    |
+| `VISUALGUARD_HOST`                   | Loopback locally; hosted entry listens on all interfaces            |
+| `VISUALGUARD_UPLOAD_TOKEN`           | Publishing credential; never a browser login                        |
+| `VISUALGUARD_DASHBOARD_URL`          | Client destination for `test <project>`; `--dashboard` overrides it |
+| `VISUALGUARD_OIDC_*`                 | Optional issuer/client credentials and admin subject allowlist      |
 
 No separate session-signing secret is required: sessions are opaque random tokens with hashed server-side records. Authentication, revocation, and upload progress are persisted in the selected database. The generated examples do not contain real credentials.
 
 ## 13. Manual acceptance checklist
 
-| Check | Expected result |
-| --- | --- |
-| Start with no settings | Local dashboard and SQLite file work |
-| Open a copied SQLite file / restore portable backup | Projects, runs, images, and stable IDs are available |
-| Switch database URL between PostgreSQL and MongoDB | Both backends support the same workflow |
-| Sign in as admin; create a member/project | Accounts/project persist after restart |
-| Give member access to one project | Other project metadata, run details, and image bytes are denied |
-| Change password or disable an account | Previous sessions lose access |
-| Create a project upload token | Token appears once; expiry/revocation controls work |
-| Publish a run from a separate app | Shared run URL appears with correct revision metadata |
-| Interrupt/repeat publishing | Progress resumes; no partial run appears as passing |
-| Publish changed bytes under an existing engine ID | Conflict; original evidence stays unchanged |
-| Revoke token and retry | New upload/resume requests are rejected |
-| Inspect large screenshots | Viewer works through chunked responses |
-| Visit deployed `/api/health` and sign in | Ready service and correct canonical host |
-| Restart/scale hosted instance | Database evidence remains; no filesystem dependency |
+| Check                                               | Expected result                                                 |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| Start with no settings                              | Local dashboard and SQLite file work                            |
+| Open a copied SQLite file / restore portable backup | Projects, runs, images, and stable IDs are available            |
+| Switch database URL between PostgreSQL and MongoDB  | Both backends support the same workflow                         |
+| Sign in as admin; create a member/project           | Accounts/project persist after restart                          |
+| Give member access to one project                   | Other project metadata, run details, and image bytes are denied |
+| Change password or disable an account               | Previous sessions lose access                                   |
+| Create a project upload token                       | Token appears once; expiry/revocation controls work             |
+| Publish a run from a separate app                   | Shared run URL appears with correct revision metadata           |
+| Interrupt/repeat publishing                         | Progress resumes; no partial run appears as passing             |
+| Publish changed bytes under an existing engine ID   | Conflict; original evidence stays unchanged                     |
+| Revoke token and retry                              | New upload/resume requests are rejected                         |
+| Inspect large screenshots                           | Viewer works through chunked responses                          |
+| Visit deployed `/api/health` and sign in            | Ready service and correct canonical host                        |
+| Restart/scale hosted instance                       | Database evidence remains; no filesystem dependency             |
 
 ## 14. Operational limits and recovery
 
@@ -493,21 +493,21 @@ Use native database backups for operational recovery, plus an evidence-only port
 
 Troubleshooting:
 
-| Symptom | Action |
-| --- | --- |
-| Unsupported Node / SQLite import failure | Switch the actual consuming project/runtime to Node 22.12+ |
-| Unknown `dashboard` command | Install the dashboard-enabled release or local candidate tarball |
-| Port already in use | Use the running dashboard or choose `--port` |
-| Host/origin rejected | Match `VISUALGUARD_PUBLIC_URL` to the actual browser/deployment origin |
-| Hosted app refuses SQLite | Set an external MongoDB/PostgreSQL URL |
-| Login bootstrap fails | Set a valid email and unique 12+ character password, or an OIDC admin |
-| Changed bootstrap password does not change login | Rotate the existing account password; bootstrap is create-once |
-| New SSO member sees no projects | Administrator assigns project membership |
-| Database connection timeout | Check host reachability, network allowlists, credentials, TLS, and connection limits |
-| Missing driver after minimal npm install | Install the package's optional dependencies |
-| Missing evidence from an old F01 dump | Restore its `objects/` directory or export portable evidence from the original workspace |
-| Upload fails or is interrupted | Correct credentials/data, then repeat the same command within 24 hours |
-| Backup restore reports conflict/truncation | Keep original destination evidence; retry a complete backup into a fresh workspace |
+| Symptom                                          | Action                                                                                   |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Unsupported Node / SQLite import failure         | Switch the actual consuming project/runtime to Node 22.12+                               |
+| Unknown `dashboard` command                      | Install the dashboard-enabled release or local candidate tarball                         |
+| Port already in use                              | Use the running dashboard or choose `--port`                                             |
+| Host/origin rejected                             | Match `VISUALGUARD_PUBLIC_URL` to the actual browser/deployment origin                   |
+| Hosted app refuses SQLite                        | Set an external MongoDB/PostgreSQL URL                                                   |
+| Login bootstrap fails                            | Set a valid email and unique 12+ character password, or an OIDC admin                    |
+| Changed bootstrap password does not change login | Rotate the existing account password; bootstrap is create-once                           |
+| New SSO member sees no projects                  | Administrator assigns project membership                                                 |
+| Database connection timeout                      | Check host reachability, network allowlists, credentials, TLS, and connection limits     |
+| Missing driver after minimal npm install         | Install the package's optional dependencies                                              |
+| Missing evidence from an old F01 dump            | Restore its `objects/` directory or export portable evidence from the original workspace |
+| Upload fails or is interrupted                   | Correct credentials/data, then repeat the same command within 24 hours                   |
+| Backup restore reports conflict/truncation       | Keep original destination evidence; retry a complete backup into a fresh workspace       |
 
 ## 15. Validation record and release boundary
 
