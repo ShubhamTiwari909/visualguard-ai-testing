@@ -16,11 +16,14 @@ const request = (view: ReviewView, event: ReviewMutation["event"]): ReviewMutati
   expectedVersion: view.version, event,
 });
 // Count service-to-store calls, not MemoryStateStore.list()'s internal get() calls.
-const observedStore = (state: StateStore) => ({
-  get: vi.fn(state.get.bind(state)), list: vi.fn(state.list.bind(state)),
-  create: state.create.bind(state), replace: state.replace.bind(state),
-  remove: state.remove.bind(state), pruneExpired: state.pruneExpired.bind(state),
-});
+const observedStore = (state: StateStore) => {
+  const store: StateStore = {
+    get: state.get.bind(state), list: state.list.bind(state),
+    create: state.create.bind(state), replace: state.replace.bind(state),
+    remove: state.remove.bind(state), pruneExpired: state.pruneExpired.bind(state),
+  };
+  return { store, get: vi.spyOn(store, "get"), list: vi.spyOn(store, "list") };
+};
 
 describe("F03 exact-evidence collaborative reviews", () => {
   let state: MemoryStateStore, auth: AuthService, reviews: Reviews, runs: Map<string, RunDetail>;
@@ -168,7 +171,7 @@ describe("F03 exact-evidence collaborative reviews", () => {
       await state.create("memberships", `${id}:${projectId}`, { userId: id, projectId, role });
     }
     const observed = observedStore(state);
-    const people = await new Reviews(repository, observed, loginAuth).reviewers(owner, "storefront");
+    const people = await new Reviews(repository, observed.store, loginAuth).reviewers(owner, "storefront");
     expect(people).toHaveLength(103);
     expect(people).toContainEqual({ id: "admin", name: account.name });
     expect(people).toContainEqual({ id: "reviewer-100", name: account.name });
@@ -186,7 +189,7 @@ describe("F03 exact-evidence collaborative reviews", () => {
     }
     const getRun = vi.spyOn(repository, "getRun");
     const observed = observedStore(state);
-    const inbox = await new Reviews(repository, observed, auth).inbox(owner, { project: "storefront" });
+    const inbox = await new Reviews(repository, observed.store, auth).inbox(owner, { project: "storefront" });
     expect(inbox.items).toHaveLength(2);
     expect(getRun).toHaveBeenCalledExactlyOnceWith(run.id);
     expect(observed.get).not.toHaveBeenCalled();
