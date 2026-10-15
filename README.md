@@ -675,7 +675,7 @@ Read the [package architecture map](docs/PACKAGE-ARCHITECTURE.md) for entry poin
 
 The declared Playwright peer range starts at 1.45; repository development currently pins 1.64. Chromium has the full configured Node 22/24 and Linux/macOS/Windows CI matrix. Firefox/WebKit have focused Linux CI smoke coverage, narrower than the Chromium suite. Firefox uses responsive viewport sizes but does not apply `isMobile` emulation.
 
-Reports can contain page text, screenshots and source patches. Share artifacts according to your project's data policy. The [getting started guide](docs/getting-started.md) provides a shorter introduction; the [migration guide](docs/RELIABILITY-CHANGES.md) details current guarantees and limits. [PLAN.md](PLAN.md) and the [project analysis](docs/PROJECT-ANALYSIS-AND-ROADMAP.md) contain historical design and future ideas, not promises of shipped features.
+Reports can contain page text, screenshots and source patches. Share artifacts according to your project's data policy. The [getting started guide](docs/getting-started.md) provides a shorter introduction; the [migration guide](docs/RELIABILITY-CHANGES.md) details current guarantees and limits. [PLAN.md](PLAN.md) and the [project analysis](docs/PROJECT-ANALYSIS-AND-ROADMAP.md) contain historical design and future ideas, not promises of shipped features. The [organization growth plan](docs/ORGANIZATION-GROWTH-PLAN.md) proposes 36 feature ideas, an internal pilot, and a phased adoption roadmap.
 
 ## License
 
