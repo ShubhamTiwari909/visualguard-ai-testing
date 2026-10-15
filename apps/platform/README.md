@@ -56,9 +56,11 @@ Both hosts use database-backed metadata, artifacts, sessions, and upload progres
 
 ## Scope and boundaries
 
-Implemented: F01 history/comparison; F02 password accounts, optional OIDC, project roles, session/password revocation, scoped upload credentials and auditing; F06 chunked remote publishing; portable evidence backups; SQLite file inspection; database adapters; installed-package CLI/API; deployment scaffolds; confirmed project/run deletion.
+Implemented: F01 history/comparison; F02 password accounts, optional OIDC, project roles, session/password revocation, scoped upload credentials and auditing; F03 job-level visual decisions, assignments, deadlines, discussion and inbox; F06 chunked remote publishing; portable evidence backups; SQLite file inspection; database adapters; installed-package CLI/API; deployment scaffolds; confirmed project/run deletion.
 
-The shared viewer remains read-only with respect to source code and visual approvals. Collaborative review (F03), approved-baseline promotion (F04), managed browser scheduling, release gates, and automatic artifact retention remain separate features.
+Use **Team review** on a run to discuss or decide an individual check, and **Review inbox** to find assigned work. The [F03 guide](../../docs/COLLABORATIVE-REVIEW.md) includes setup, API details, boundaries, and a manual walkthrough. No checks, builds, or tests were run locally for this extension.
+
+The comparison viewer remains read-only; review decisions live separately beside the immutable evidence. Region-level approval, approved-baseline promotion (F04), managed browser scheduling, release gates, and automatic artifact retention remain separate features.
 
 ## Validation
 

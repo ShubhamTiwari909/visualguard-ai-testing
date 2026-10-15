@@ -60,6 +60,8 @@ Supply your existing application configuration or URL flags as in the first exam
 
 The editable ID is a **public ID**. The original `Project.id` remains the internal key for run history, memberships, upload state, immutable evidence, and stable links. `Project.publicId` is the current public ID, `Project.aliases` lists all committed reserved IDs, including the original key and current public ID, and `Project.version` is the profile version (default 0 before the first edit). This avoids moving or rewriting evidence and lets existing CLI integrations continue working. Historical IDs cannot be transferred to another project, including after deletion. Renaming is not a way to recycle an identity or reset account access.
 
+Run-name and project-label edits also preserve existing review threads and evidence-bound decisions. Public project IDs resolve to the same review inbox; a new capture still requires its own review.
+
 Names and aliases are stored in the existing database's `vg_state` records under `project-profiles` and `project-ids`. No new database service or manual schema migration is required. Upgrade all dashboard servers and local writers before changing IDs; older writers do not understand alias reservations.
 
 The API accepts `PATCH /api/projects/PROJECT_ID` with:

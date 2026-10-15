@@ -10,6 +10,7 @@ import { body, json } from "./transport.js";
 import { Uploads, UPLOAD_CHUNK_BYTES } from "./uploads.js";
 import { sha256 } from "./artifacts.js";
 import { findProject, projectSelector } from "./project-selector.js";
+import { Reviews, reviewMutation } from "./reviews.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -64,6 +65,7 @@ export function createApi(
   if (auth.mode === "login" && !options.state)
     throw new Error("Hosted access requires persistent authentication state");
   const uploads = new Uploads(repository, store, auth.state, auth);
+  const reviews = new Reviews(repository, auth.state, auth);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -145,6 +147,36 @@ export function createApi(
           403,
           "Upload credentials cannot browse or administer the dashboard",
         );
+      if (request.method === "GET" && url.pathname === "/api/reviews") {
+        const input = z.object({
+          project: z.string().regex(/^[a-z0-9-]{1,63}$/),
+          after: z.string().max(200).optional(),
+          owner: z.enum(["all", "mine", "unassigned"]).optional(),
+          status: z.enum(["all", "open", "pending", "approved", "rejected"]).optional(),
+          overdue: z.enum(["true", "false"]).optional(),
+        }).strict().parse(Object.fromEntries(url.searchParams));
+        json(response, 200, await reviews.inbox(actor, { ...input,
+          project: await repository.resolveProjectId(input.project), overdue: input.overdue === "true" }));
+        return true;
+      }
+      const reviewPeople = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/reviewers$/);
+      if (request.method === "GET" && reviewPeople) {
+        json(response, 200, { reviewers: await reviews.reviewers(actor, reviewPeople[1]!) });
+        return true;
+      }
+      const reviewRun = url.pathname.match(/^\/api\/runs\/([a-f0-9-]{36})\/reviews$/);
+      if (reviewRun) {
+        if (request.method === "GET") {
+          const job = z.string().min(1).max(500).parse(url.searchParams.get("job"));
+          json(response, 200, await reviews.read(actor, reviewRun[1]!, job));
+          return true;
+        }
+        if (request.method === "POST") {
+          const input = reviewMutation.parse(await body(request));
+          json(response, 200, await reviews.append(actor, reviewRun[1]!, input));
+          return true;
+        }
+      }
       if (request.method === "POST" && url.pathname === "/api/auth/password") {
         const input = z
           .object({ current: z.string().max(256), password: z.string().min(12).max(256) })
