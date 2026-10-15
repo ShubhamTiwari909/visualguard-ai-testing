@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RunDetail } from "../shared/contracts.js";
 import type { ReviewThread, ReviewView } from "../shared/reviews.js";
-import type { PlatformRepository } from "../server/storage-contracts.js";
+import type { PlatformRepository, StateStore } from "../server/storage-contracts.js";
 import { AuthService, MemoryStateStore, type Actor, type User } from "../server/auth.js";
 import { Reviews, reviewMutation, type ReviewMutation } from "../server/reviews.js";
 import { PlatformError } from "../server/errors.js";
@@ -15,17 +15,24 @@ const request = (view: ReviewView, event: ReviewMutation["event"]): ReviewMutati
   jobId: view.jobId, evidenceDigest: view.evidenceDigest, scopeDigest: view.scopeDigest,
   expectedVersion: view.version, event,
 });
+// Count service-to-store calls, not MemoryStateStore.list()'s internal get() calls.
+const observedStore = (state: StateStore) => ({
+  get: vi.fn(state.get.bind(state)), list: vi.fn(state.list.bind(state)),
+  create: state.create.bind(state), replace: state.replace.bind(state),
+  remove: state.remove.bind(state), pruneExpired: state.pruneExpired.bind(state),
+});
 
 describe("F03 exact-evidence collaborative reviews", () => {
   let state: MemoryStateStore, auth: AuthService, reviews: Reviews, runs: Map<string, RunDetail>;
   let run: RunDetail;
+  let repository: PlatformRepository;
   beforeEach(async () => {
     state = new MemoryStateStore();
     auth = new AuthService(state, { VISUALGUARD_AUTH_MODE: "local" });
     await auth.ready;
     run = reviewRun();
     runs = new Map([[run.id, run]]);
-    const repository = {
+    repository = {
       async getRun(id: string) {
         const stored = runs.get(id);
         if (!stored) throw new PlatformError(404, "Run not found");
@@ -118,6 +125,81 @@ describe("F03 exact-evidence collaborative reviews", () => {
     run.manifest.jobs[1]!.error = { stage: "capture", message: "Timeout" };
     view = await reviews.read(owner, run.id, "profile__desktop");
     await expect(reviews.append(owner, run.id, request(view, { action: "approve_visual_change", reason: "Cannot approve capture error" }))).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("rejects withdrawals without an approval or rejection and leaves history unchanged", async () => {
+    let view = await reviews.read(owner, run.id, "checkout__desktop");
+    const withdraw = () => reviews.append(owner, run.id, request(view, {
+      action: "withdraw_decision", reason: "Reconsidering the decision",
+    }));
+    await expect(withdraw()).rejects.toMatchObject({ status: 400 });
+    expect(await state.list("reviews")).toHaveLength(0);
+    view = await reviews.append(owner, run.id, request(view, { action: "comment", reason: "Discussion only" }));
+    await expect(withdraw()).rejects.toMatchObject({ status: 400 });
+    expect(await reviews.read(owner, run.id, view.jobId)).toEqual(view);
+    view = await reviews.append(owner, run.id, request(view, { action: "approve_visual_change", reason: "Looks right" }));
+    view = await reviews.append(owner, run.id, request(view, { action: "comment", reason: "Follow-up does not replace a decision" }));
+    view = await withdraw();
+    expect(view.status).toBe("pending");
+    await expect(withdraw()).rejects.toMatchObject({ status: 400 });
+    expect(await reviews.read(owner, run.id, view.jobId)).toEqual(view);
+  });
+
+  it("pages users and memberships without per-user lookups and lists only eligible reviewers", async () => {
+    await state.create("users", "admin", { ...account, id: "admin", role: "admin" });
+    const loginAuth = new AuthService(state, {
+      VISUALGUARD_AUTH_MODE: "login", VISUALGUARD_PUBLIC_URL: "http://127.0.0.1:4400",
+    });
+    await loginAuth.ready;
+    for (let index = 0; index < 101; index++) {
+      const id = `reviewer-${String(index).padStart(3, "0")}`;
+      await state.create("users", id, { ...account, id });
+      await state.create("memberships", `${id}:storefront`, {
+        userId: id, projectId: "storefront", role: index % 2 ? "reviewer" : "maintainer",
+      });
+    }
+    for (const [id, role, projectId, disabled] of [
+      ["viewer", "viewer", "storefront", false],
+      ["other-project", "reviewer", "other", false],
+      ["disabled", "reviewer", "storefront", true],
+      ["disabled-admin", "maintainer", "storefront", true],
+    ] as const) {
+      await state.create("users", id, { ...account, id, disabled, role: id === "disabled-admin" ? "admin" : "member" });
+      await state.create("memberships", `${id}:${projectId}`, { userId: id, projectId, role });
+    }
+    const observed = observedStore(state);
+    const people = await new Reviews(repository, observed, loginAuth).reviewers(owner, "storefront");
+    expect(people).toHaveLength(103);
+    expect(people).toContainEqual({ id: "admin", name: account.name });
+    expect(people).toContainEqual({ id: "reviewer-100", name: account.name });
+    expect(people).toContainEqual({ id: account.id, name: account.name });
+    expect(people.every((entry) => Object.keys(entry).sort().join(",") === "id,name")).toBe(true);
+    expect(observed.get).not.toHaveBeenCalled();
+    expect(observed.list.mock.calls.filter(([namespace]) => namespace === "users")).toHaveLength(2);
+    expect(observed.list.mock.calls.filter(([namespace]) => namespace === "memberships")).toHaveLength(2);
+  });
+
+  it("loads each inbox run once and uses the listed threads without fetching them again", async () => {
+    for (const job of run.manifest.jobs) {
+      const view = await reviews.read(owner, run.id, job.id);
+      await reviews.append(owner, run.id, request(view, { action: "comment", reason: "Ready for review" }));
+    }
+    const getRun = vi.spyOn(repository, "getRun");
+    const observed = observedStore(state);
+    const inbox = await new Reviews(repository, observed, auth).inbox(owner, { project: "storefront" });
+    expect(inbox.items).toHaveLength(2);
+    expect(getRun).toHaveBeenCalledExactlyOnceWith(run.id);
+    expect(observed.get).not.toHaveBeenCalled();
+  });
+
+  it("still rejects changed review scope and ambiguous checks when building the inbox from cached runs", async () => {
+    const view = await reviews.read(owner, run.id, "checkout__desktop");
+    await reviews.append(owner, run.id, request(view, { action: "comment", reason: "Inspect this revision" }));
+    run.metadata.commit = "replacement-revision";
+    await expect(reviews.inbox(owner, { project: "storefront" })).rejects.toMatchObject({ status: 409 });
+    run.metadata.commit = view.sourceRevision;
+    run.manifest.jobs.push(structuredClone(run.manifest.jobs[0]!));
+    await expect(reviews.inbox(owner, { project: "storefront" })).rejects.toMatchObject({ status: 409 });
   });
 
   it("filters assignment inboxes without turning a missing page into a false all-clear", async () => {

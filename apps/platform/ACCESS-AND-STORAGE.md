@@ -25,7 +25,7 @@ The administrator is created once. Changing a bootstrap environment password doe
 
 - Workspace administrators create projects/accounts and manage access.
 - Project viewers read assigned project history and evidence.
-- Reviewers can comment, assign checks to eligible reviewers, and record or withdraw job-level visual decisions. See the [F03 review guide](../../docs/COLLABORATIVE-REVIEW.md) for evidence binding and scope.
+- Reviewers retain viewer read access and can comment, assign checks to eligible reviewers, and record or withdraw job-level visual decisions. See the [F03 review guide](../../docs/COLLABORATIVE-REVIEW.md) for evidence binding and scope.
 - Project maintainers manage their project's membership and upload tokens.
 - New company-login users have no project access until assigned, unless explicitly configured as the workspace administrator.
 - Upload tokens are scoped to one project, expire in 1–90 days, are shown only once, and cannot browse project lists, run history, artifacts, or approve changes. The publishing-project lookup reveals only their own project's ID/name to support `visualguard test <project>`.
