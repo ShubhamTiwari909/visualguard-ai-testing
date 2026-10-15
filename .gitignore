@@ -22,3 +22,7 @@ evals/.output/
 
 # Playwright fixture test output
 .pw-output/
+
+# Local dashboard/browser verification
+.playwright-cli/
+output/playwright/

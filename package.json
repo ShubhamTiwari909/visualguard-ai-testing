@@ -7,6 +7,11 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "platform:dev": "pnpm --filter @visualguard/platform dev",
+    "platform:start": "pnpm --filter @visualguard/platform start",
+    "platform:build": "pnpm --filter @visualguard/platform build",
+    "platform:test": "pnpm --filter @visualguard/platform test",
+    "platform:import": "pnpm --filter @visualguard/platform run import",
     "build": "pnpm --filter visualguard build",
     "test": "pnpm --filter visualguard test",
     "typecheck": "pnpm --filter visualguard typecheck",

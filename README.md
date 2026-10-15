@@ -35,6 +35,8 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 
 ## Features
 
+The separate [central dashboard and run history app](apps/platform/README.md) supports persistent projects, imported run evidence, search/filtering, and the existing comparison viewer. Start it with `pnpm platform:dev` from this repository. F01 currently serves a local workspace; organization authentication is planned in F02.
+
 | Capability                 | What you can do                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Live comparisons           | Compare production, staging, localhost or a PR preview, including pages whose paths differ between environments.                                            |
