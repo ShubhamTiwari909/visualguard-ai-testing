@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { MongoClient, type Collection, type Db, type Document } from "mongodb";
 import type { ArtifactStore } from "./artifacts.js";
 import { OBJECT_CHUNK_BYTES, sha256 } from "./artifacts.js";
-import type { PlatformRepository, StateRecord, StateStore } from "./storage-contracts.js";
+import type { EvidenceRepository, StateRecord, StateStore } from "./storage-contracts.js";
+import { ProjectDirectory } from "./project-directory.js";
 import type {
   DeletionResult,
   Project,
@@ -27,8 +28,11 @@ interface MongoObject {
   runRefs?: string[];
 }
 
-export class MongoRepository implements PlatformRepository {
+class MongoEvidenceRepository implements EvidenceRepository {
   constructor(private db: Db) {}
+  async isDeletedProject(id: string) {
+    return Boolean(await this.db.collection("vg_project_tombstones").findOne({ id }));
+  }
   async createProject(id: string, name: string): Promise<Project> {
     return (await this.ensureProject(id, name)).project;
   }
@@ -434,6 +438,12 @@ export class MongoRepository implements PlatformRepository {
       ])
       .toArray();
     return { runs: result?.runs ?? [], total: result?.counts[0]?.count ?? 0, limit, offset };
+  }
+}
+
+export class MongoRepository extends ProjectDirectory {
+  constructor(db: Db) {
+    super(new MongoEvidenceRepository(db), new MongoStateStore(db));
   }
 }
 

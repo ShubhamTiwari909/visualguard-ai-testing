@@ -40,7 +40,9 @@ Start your staging app first and replace the example production and staging URLs
 
 It includes local SQLite, MongoDB/PostgreSQL storage, team login/project permissions, remote CI uploads, portable backups, and deployment generators for Cloud Run/Vercel. No browser installation is needed to host the dashboard. See the [standalone walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/STANDALONE-DASHBOARD-WALKTHROUGH.md), including local release-candidate installation before npm publication.
 
-Create a project ahead of time with `dashboard project create <id> --name "Display name"` (`project add` is an alias). Repeating an existing ID keeps its original name and runs. Use `--server <origin>` for a running dashboard; login-enabled servers require administrator credentials, while upload tokens remain publishing-only. [CLI project setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-CLI-PROJECTS.md).
+Create a project ahead of time with `dashboard project create <id> --name "Display name"` (`project add` is an alias). Repeating an existing ID keeps its current name and runs. Use `--server <origin>` for a running dashboard; login-enabled servers require administrator credentials, while upload tokens remain publishing-only. [CLI project setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-CLI-PROJECTS.md).
+
+Name a dashboard run with `test storefront --run-name "Release smoke"` (using your configured application URLs). Maintainers can edit run names and project names/public IDs in the dashboard. Old project IDs keep working as aliases. The [naming guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-NAMING.md) explains scope, manual setup, and hosted image storage. This follow-up requires a feature-enabled package and has no executed local checks or builds.
 
 ```bash
 # Scan one site: finds routes (sitemap.xml, then links), captures them, checks health,

@@ -76,6 +76,44 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect(repeated.project.runCount).toBe(0);
       expect(await repository.projects([id])).toHaveLength(1);
     });
+    it("renames project labels and IDs without moving evidence keys or transferring aliases", async () => {
+      const id = `${prefix}-names`, other = `${prefix}-other`, alias = `${prefix}-public`;
+      await repository.createProject(id, "Initial project");
+      await repository.createProject(other, "Other project");
+      const updated = await repository.updateProject(id, "Friendly project", alias, 0);
+      expect(updated.id).toBe(id);
+      expect(updated.publicId).toBe(alias);
+      expect(updated.version).toBe(1);
+      expect(await repository.resolveProjectId(alias)).toBe(id);
+      expect(await repository.resolveProjectId(id)).toBe(id);
+      const repeat = await repository.ensureProject(alias, "Must not rename");
+      expect(repeat.created).toBe(false);
+      expect(repeat.project.name).toBe("Friendly project");
+      await expect(repository.updateProject(id, "Stale", alias, 0)).rejects.toMatchObject({ status: 409 });
+      await expect(repository.updateProject(other, "Steal alias", alias, 0)).rejects.toMatchObject({ status: 409 });
+      await expect(repository.updateProject(id, "Steal stable key", other, 1)).rejects.toMatchObject({ status: 409 });
+      await repository.deleteProject(id, 0);
+      await expect(repository.ensureProject(alias, "Reuse deleted alias")).rejects.toMatchObject({ status: 409 });
+      await expect(repository.ensureProject(id, "Reuse original ID")).rejects.toMatchObject({ status: 409 });
+      await state.remove("project-ids", id); // Simulate a tombstone written before naming support.
+      await expect(repository.updateProject(other, "Reuse legacy tombstone", id, 0)).rejects.toMatchObject({ status: 409 });
+    });
+    it("rejects racing project edits and publishes only the winning aliases", async () => {
+      const id = `${prefix}-race`, aliasA = `${prefix}-race-a`, aliasB = `${prefix}-race-b`;
+      await repository.createProject(id, "Before edit");
+      const results = await Promise.allSettled([
+        repository.updateProject(id, "Version A", aliasA, 0),
+        repository.updateProject(id, "Version B", aliasB, 0),
+      ]);
+      expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+      const [current] = await repository.projects([id]);
+      const inactive = current!.publicId === aliasA ? aliasB : aliasA;
+      expect(current!.version).toBe(1);
+      expect(await repository.resolveProjectId(current!.publicId!)).toBe(id);
+      expect(await repository.resolveProjectId(inactive)).toBe(inactive);
+      await repository.updateProject(id, "After refresh", inactive, 1);
+      expect(await repository.resolveProjectId(inactive)).toBe(id);
+    });
     it("round-trips a multi-chunk image object and deduplicates concurrent writes", async () => {
       const bytes = randomBytes(5 * 1024 * 1024 + 17);
       const [a, b] = await Promise.all([store.put(bytes), store.put(bytes)]);

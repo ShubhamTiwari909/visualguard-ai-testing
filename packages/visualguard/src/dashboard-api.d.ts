@@ -14,6 +14,9 @@ export interface DashboardMetadata {
 }
 export interface DashboardProject {
   id: string;
+  publicId?: string;
+  aliases?: string[];
+  version?: number;
   name: string;
   createdAt: string;
   runCount: number;

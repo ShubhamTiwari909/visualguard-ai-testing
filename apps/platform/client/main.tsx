@@ -99,7 +99,8 @@ function Metadata({ run }: { run: StoredRun }) {
 
 function Shell({ projects, children }: { projects: Project[]; children: ReactNode }) {
   const session = useSession();
-  const selected = new URLSearchParams(window.location.search).get("project");
+  const selector = new URLSearchParams(window.location.search).get("project");
+  const selected = projects.find((project) => project.id === selector || project.publicId === selector || project.aliases?.includes(selector ?? ""))?.id ?? selector;
   useEffect(() => {
     document.documentElement.dataset.theme = "light";
   }, []);
@@ -348,7 +349,7 @@ function RunHistory({
             </label>
             <label>
               <span className="vg-sr-only">Project</span>
-              <select name="project" defaultValue={params.get("project") ?? ""}>
+              <select name="project" defaultValue={projects.find((project) => project.id === params.get("project") || project.publicId === params.get("project") || project.aliases?.includes(params.get("project") ?? ""))?.id ?? params.get("project") ?? ""}>
                 <option value="">All projects</option>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
@@ -874,7 +875,7 @@ function Platform() {
         </div>
       )}
       {location.path === "/settings" ? (
-        <Settings projects={projects} onDeleted={deleted} />
+        <Settings projects={projects} onDeleted={deleted} onUpdated={refresh} />
       ) : (
         <RunHistory
           key={revision}

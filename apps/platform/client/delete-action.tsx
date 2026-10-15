@@ -8,12 +8,14 @@ export function DeleteAction({
   id,
   name,
   runCount,
+  displayId,
   onDeleted,
 }: {
   kind: "run" | "project";
   id: string;
   name: string;
   runCount?: number;
+  displayId?: string;
   onDeleted: (result: DeletionResult) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
@@ -24,7 +26,7 @@ export function DeleteAction({
     [error, setError] = useState(""),
     [pending, setPending] = useState(false);
   const [confirmedRunCount, setConfirmedRunCount] = useState(runCount ?? 0);
-  const expected = kind === "project" ? id : "DELETE";
+  const expected = kind === "project" ? displayId ?? id : "DELETE";
   useEffect(() => {
     if (open) dialog.current?.showModal();
   }, [open]);
@@ -98,7 +100,7 @@ export function DeleteAction({
               </p>
               {kind === "project" && (
                 <p>
-                  The project ID <strong>{id}</strong> will stay reserved. Use a new ID for a future
+                  The project ID <strong>{expected}</strong> and its old aliases will stay reserved. Use a new ID for a future
                   project.
                 </p>
               )}

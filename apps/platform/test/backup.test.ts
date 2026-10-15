@@ -90,6 +90,7 @@ describe("portable evidence backups", () => {
   it("restores metadata, screenshots, stable links and digests without exporting auth state", async () => {
     const saved = (await a.runs({})).runs[0]!;
     await a.renameRun(saved.id, "Restored custom title", 0);
+    await a.updateProject("demo", "Renamed demo", "demo-public", 0);
     const path = join(root, "evidence.vgbackup.gz");
     expect((await exportEvidence(a, objectsA, path)).runs).toBe(1);
     const text = gunzipSync(await readFile(path)).toString();
@@ -101,6 +102,10 @@ describe("portable evidence backups", () => {
     expect(restored.digest).toBe(original.digest);
     expect(restored.name).toBe("Restored custom title");
     expect(restored.nameVersion).toBe(1);
+    const [project] = await b.projects();
+    expect(project!.name).toBe("Renamed demo");
+    expect(project!.publicId).toBe("demo-public");
+    expect(await b.resolveProjectId("demo-public")).toBe("demo");
     const detail = await b.getRun(restored.id);
     expect((await objectsB.get(detail.artifacts[0]!.hash)).length).toBeGreaterThan(0);
     expect((await new SqlStateStore(target).list("sessions")).length).toBe(0);

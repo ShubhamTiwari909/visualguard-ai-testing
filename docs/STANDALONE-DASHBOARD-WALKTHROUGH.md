@@ -554,3 +554,7 @@ npx visualguard dashboard project add storefront --name "Storefront Web" \
 ```
 
 The command creates a missing ID and reports `Already exists` for an existing one without renaming it or resetting history. It uses the configured local database unless `--server` or `VISUALGUARD_DASHBOARD_URL` selects a running dashboard. Default loopback mode needs no credentials; a server with login enabled requires an existing password administrator. Project upload tokens cannot create projects. [Full guide and manual acceptance](DASHBOARD-CLI-PROJECTS.md).
+
+## 19. Custom names and editable project IDs
+
+Use `test <project> --run-name "Release smoke"` to label a dashboard run. Maintainers and administrators can use **Edit run name** on a run and **Edit project name & ID** under project access. Public IDs are editable while internal keys remain stable; old IDs keep working as aliases. The [naming guide](DASHBOARD-NAMING.md) covers commands, permissions, manual validation, backups, and where hosted diff images are stored. No checks, builds, or tests were run locally for these naming extensions.

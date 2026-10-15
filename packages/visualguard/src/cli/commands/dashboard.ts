@@ -96,7 +96,7 @@ export function registerDashboardCommand(program: Command) {
         server: options.server,
       });
       console.log(
-        `${result.created ? "Created" : "Already exists"}: ${result.project.name} (${result.project.id})`,
+        `${result.created ? "Created" : "Already exists"}: ${result.project.name} (${result.project.publicId ?? result.project.id})`,
       );
     });
   addMetadata(

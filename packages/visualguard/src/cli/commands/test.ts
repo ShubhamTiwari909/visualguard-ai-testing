@@ -195,7 +195,7 @@ export async function runTestCommand(
       throw new EnvironmentError(`Cannot bind dashboard project: ${errorMessage(error)}`);
     }
     process.stderr.write(
-      `Dashboard project: ${binding.name} (${binding.id}) · ${binding.destination}\n`,
+      `Dashboard project: ${binding.name} (${binding.publicId ?? binding.id}) · ${binding.destination}\n`,
     );
   }
 

@@ -12,7 +12,9 @@ import type {
   RunPage,
   StoredRun,
 } from "../shared/contracts.js";
-import type { PlatformRepository } from "./storage-contracts.js";
+import type { EvidenceRepository } from "./storage-contracts.js";
+import { ProjectDirectory } from "./project-directory.js";
+import { SqlStateStore } from "./state.js";
 
 const brief = ({
   manifest: _manifest,
@@ -21,11 +23,14 @@ const brief = ({
   ...run
 }: RunDetail): StoredRun => run;
 
-export class Repository implements PlatformRepository {
+class SqlEvidenceRepository implements EvidenceRepository {
   constructor(
     readonly db: Database,
     private legacy?: FileArtifactStore,
   ) {}
+  async isDeletedProject(id: string) {
+    return (await this.db.query("SELECT id FROM vg_project_tombstones WHERE id=?", [id])).length > 0;
+  }
 
   async createProject(id: string, name: string): Promise<Project> {
     return (await this.ensureProject(id, name)).project;
@@ -363,5 +368,11 @@ export class Repository implements PlatformRepository {
       limit,
       offset,
     };
+  }
+}
+
+export class Repository extends ProjectDirectory {
+  constructor(readonly db: Database, legacy?: FileArtifactStore) {
+    super(new SqlEvidenceRepository(db, legacy), new SqlStateStore(db));
   }
 }

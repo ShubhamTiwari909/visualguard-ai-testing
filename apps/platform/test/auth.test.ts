@@ -348,6 +348,37 @@ describe("F02 organization access", () => {
       ).status,
     ).toBe(401);
   });
+  it("edits project labels through aliases while preserving roles and upload tokens", async () => {
+    const person = await member();
+    const credential = await (await fetch(`${base}/api/projects/private-a/tokens`, {
+      method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "Before rename", days: 1 }),
+    })).json();
+    const payload = { name: "Friendly project", publicId: "friendly-a", expectedVersion: 0 };
+    const rename = (cookie: string, csrf?: string) => fetch(`${base}/api/projects/private-a`, {
+      method: "PATCH", headers: headers(cookie, csrf), body: JSON.stringify(payload),
+    });
+    for (const role of ["viewer", "reviewer", "maintainer"]) {
+      await fetch(`${base}/api/projects/private-a/members`, { method: "POST", headers: headers(adminCookie, adminCsrf),
+        body: JSON.stringify({ userId: person.user.id, role }) });
+      expect((await rename(person.cookie, person.csrf)).status).toBe(role === "maintainer" ? 200 : 403);
+    }
+    expect((await rename(person.cookie)).status).toBe(403);
+    expect((await rename(person.cookie, person.csrf)).status).toBe(409);
+    expect((await fetch(`${base}/api/projects/friendly-a/members`, { headers: { Cookie: person.cookie } })).status).toBe(200);
+    const lookup = await fetch(`${base}/api/publishing/project?project=friendly-a`, { headers: { Authorization: `Bearer ${credential.token}` } });
+    expect(lookup.status).toBe(200);
+    expect(await lookup.json()).toMatchObject({ id: "private-a", name: "Friendly project", publicId: "friendly-a" });
+    expect((await fetch(`${base}/api/projects/friendly-a`, { method: "PATCH", headers: {
+      "Content-Type": "application/json", Authorization: `Bearer ${credential.token}`,
+    }, body: JSON.stringify({ ...payload, expectedVersion: 1 }) })).status).toBe(403);
+    const cli = await createDashboardProject({ id: "friendly-a", name: "Ignored", server: base, env: {
+      VISUALGUARD_ADMIN_EMAIL: "admin@example.test", VISUALGUARD_ADMIN_PASSWORD: password,
+    } });
+    expect(cli.created).toBe(false);
+    expect(cli.project.id).toBe("private-a");
+    expect(cli.project.name).toBe("Friendly project");
+    expect((await repository.projects(["private-b"]))[0]?.name).toBe("Private B");
+  });
   it("keeps session state across API instances", async () => {
     const auth = new AuthService(state, {
       VISUALGUARD_AUTH_MODE: "login",

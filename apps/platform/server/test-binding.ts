@@ -54,7 +54,7 @@ export async function prepareTestBinding(options: {
       signal: AbortSignal.timeout(30_000),
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    let value: { id?: string; name?: string; error?: string };
+    let value: { id?: string; name?: string; publicId?: string; error?: string };
     try {
       value = (await response.json()) as typeof value;
     } catch {
@@ -74,6 +74,7 @@ export async function prepareTestBinding(options: {
     return {
       id,
       name,
+      publicId: value.publicId === undefined ? id : projectId(value.publicId),
       destination: server.origin,
       async publish(runDir: string) {
         return uploadRun({ server: server.origin, project: id, runDir, metadata, token });
@@ -82,7 +83,7 @@ export async function prepareTestBinding(options: {
   }
   // No listener is needed locally. The same environment/data directory as `dashboard` is used.
   const platform = await openPlatform(env);
-  let selected: { id: string; name: string };
+  let selected: { id: string; name: string; publicId?: string };
   try {
     const existing = findProject(await platform.repository.projects(), selector);
     if (existing) selected = existing;
@@ -97,6 +98,7 @@ export async function prepareTestBinding(options: {
   return {
     id,
     name,
+    publicId: selected.publicId ?? id,
     destination:
       env.VISUALGUARD_DATABASE_URL || env.DATABASE_URL
         ? "configured dashboard database"

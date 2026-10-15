@@ -58,4 +58,15 @@ describe("dashboard project creation command", () => {
         { status: 400 },
       );
   });
+  it("reuses a renamed public ID without creating a second project", async () => {
+    await createDashboardProject({ id: "stable-key", name: "Before rename", env });
+    const platform = await openPlatform(env);
+    try { await platform.repository.updateProject("stable-key", "After rename", "new-public-id", 0); }
+    finally { await platform.close(); }
+    const result = await createDashboardProject({ id: "new-public-id", name: "Must not replace", env });
+    expect(result.created).toBe(false);
+    expect(result.project.id).toBe("stable-key");
+    expect(result.project.publicId).toBe("new-public-id");
+    expect(result.project.name).toBe("After rename");
+  });
 });

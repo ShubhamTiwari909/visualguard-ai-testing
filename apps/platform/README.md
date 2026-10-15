@@ -4,6 +4,8 @@ A separate UI quality evidence app, also distributed through the `visualguard` p
 
 Read the [complete walkthrough](../../docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) for local use, installation in another project, team access, backups/database dumps, CI publishing, and Cloud Run/Vercel hosting. The implementation is a validated local release candidate; npm publication and live cloud deployment have not been performed.
 
+The naming follow-up adds `test <project> --run-name "Release smoke"`, **Edit run name** on run detail, and **Edit project name & ID** in project settings. Public ID edits preserve existing links, upload tokens, and history. See the [naming guide](../../docs/DASHBOARD-NAMING.md) for setup, storage details, suggestions, and manual checks. These extensions have no executed local checks, builds, or tests.
+
 Project/run deletion is now implemented as a follow-up extension, with typed confirmation, maintainer/admin permissions, and shared-artifact cleanup. Open a run to delete it, or use **People & integrations → Project access → Delete project**. See the [deletion guide and manual checklist](../../docs/DASHBOARD-DELETION.md). No build or checks were run for this extension, per the user's instruction.
 
 You can also bind a run while executing tests: `npx visualguard test storefront`, or `npx visualguard test "Storefront Web"`. Use `--dashboard <origin>` or `VISUALGUARD_DASHBOARD_URL` with the applicable upload token for an existing server. See the [project binding guide](../../docs/DASHBOARD-TEST-BINDING.md). No build or checks were run for this follow-up either.

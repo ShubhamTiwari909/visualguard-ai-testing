@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { mutation, useSession } from "./auth";
 import type { Project } from "../shared/contracts";
 import { DeleteAction, deletionMessage } from "./delete-action";
+import { ProjectNameEditor } from "./naming";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
 type Member = { userId: string; role: string };
@@ -16,9 +17,11 @@ async function get<T>(path: string): Promise<T> {
 export function Settings({
   projects,
   onDeleted,
+  onUpdated,
 }: {
   projects: Project[];
   onDeleted: (message: string) => void;
+  onUpdated: () => void;
 }) {
   const session = useSession();
   const managed = projects.filter(
@@ -263,6 +266,11 @@ export function Settings({
             ))}
           </select>
         </label>
+        {managed.find((item) => item.id === project) && <ProjectNameEditor
+          key={`${project}:${managed.find((item) => item.id === project)!.version ?? 0}`}
+          project={managed.find((item) => item.id === project)!}
+          onSaved={() => { setMessage("Project details saved. Old IDs still work."); onUpdated(); }}
+        />}
         {project && (
           <>
             <form
@@ -419,6 +427,7 @@ export function Settings({
             key={project}
             kind="project"
             id={project}
+            displayId={managed.find((item) => item.id === project)!.publicId ?? project}
             name={managed.find((item) => item.id === project)!.name}
             runCount={managed.find((item) => item.id === project)!.runCount}
             onDeleted={(result) => {

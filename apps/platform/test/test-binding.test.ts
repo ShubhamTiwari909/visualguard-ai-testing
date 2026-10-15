@@ -82,6 +82,19 @@ describe("test project binding", () => {
       await platform.close();
     }
   });
+  it("binds both public and original IDs to the same project after a rename", async () => {
+    const platform = await openPlatform(env);
+    try {
+      await platform.repository.createProject("original", "Original name");
+      await platform.repository.updateProject("original", "Friendly name", "friendly-id", 0);
+    } finally { await platform.close(); }
+    for (const project of ["original", "friendly-id", "Friendly name"]) {
+      const binding = await prepareTestBinding({ project, metadata: { environment: "ci", runName: "Named smoke" }, env });
+      expect(binding.id).toBe("original");
+      expect(binding.publicId).toBe("friendly-id");
+      expect(binding.name).toBe("Friendly name");
+    }
+  });
   it("uses scoped remote lookup and rejects unsafe URLs or missing remote credentials", async () => {
     const fetch = vi.fn(
       async (_input: string | URL | Request, _options?: RequestInit) =>

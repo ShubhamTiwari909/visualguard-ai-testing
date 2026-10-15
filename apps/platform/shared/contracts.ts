@@ -4,6 +4,10 @@ import type { RunManifest, Status } from "../../../packages/visualguard/src/core
 export type RunStatus = Status | "incomplete";
 export interface Project {
   id: string;
+  /** Editable public ID; id remains the immutable internal key for access/evidence. */
+  publicId?: string;
+  aliases?: string[];
+  version?: number;
   name: string;
   createdAt: string;
   runCount: number;
