@@ -133,6 +133,15 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect((await repository.runs({}, [])).total).toBe(0);
       expect((await repository.getRun(a.run.id)).manifest).toEqual(manifest);
       expect((await repository.getRun(a.run.id)).metadata.commit).toBeUndefined();
+      const names = await Promise.allSettled([
+        repository.renameRun(a.run.id, "Release one", 0),
+        repository.renameRun(a.run.id, "Release two", 0),
+      ]);
+      expect(names.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+      const renamed = await repository.getRun(a.run.id);
+      expect(renamed.nameVersion).toBe(1);
+      expect(renamed.digest).toBe(input.digest);
+      expect((await repository.runs({ project: projectId, q: renamed.name })).total).toBe(1);
     });
     it("deletes runs while preserving evidence shared across projects", async () => {
       const first = `${prefix}-delete-a`,

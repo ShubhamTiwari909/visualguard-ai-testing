@@ -17,6 +17,19 @@
 .platform a {
   text-decoration: none;
 }
+.vg-name-editor form {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #dfe7e3;
+  background: white;
+  border-radius: 9px;
+  max-width: 380px;
+}
+.vg-name-editor label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
 .platform button,
 .platform a,
 .platform summary {

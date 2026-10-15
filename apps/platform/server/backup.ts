@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path";
 import { createGzip, createGunzip } from "node:zlib";
 import { createInterface } from "node:readline";
 import { once } from "node:events";
+import { z } from "zod";
 import { pipeline } from "node:stream/promises";
 import type { PlatformRepository } from "./storage-contracts.js";
 import type { ArtifactStore } from "./artifacts.js";
@@ -192,6 +193,7 @@ export async function restoreEvidence(
           createProject: repository.createProject.bind(repository),
           projects: repository.projects.bind(repository),
           getRun: repository.getRun.bind(repository),
+          renameRun: repository.renameRun.bind(repository),
           runs: repository.runs.bind(repository),
           deleteRun: repository.deleteRun.bind(repository),
           deleteProject: repository.deleteProject.bind(repository),
@@ -206,7 +208,9 @@ export async function restoreEvidence(
           metadata,
           artifacts: run.artifacts,
         });
-        await repository.insertRun({ ...validated!, importedAt: run.importedAt }, run.id);
+        const name = run.name === undefined ? undefined : z.string().trim().min(1).max(120).parse(run.name);
+        const nameVersion = run.nameVersion === undefined ? undefined : z.number().int().nonnegative().parse(run.nameVersion);
+        await repository.insertRun({ ...validated!, importedAt: run.importedAt, name, nameVersion }, run.id);
         runs++;
       } else if (item.type === "end") {
         if (current || item.runs !== runs || item.objects !== objects)

@@ -12,7 +12,7 @@ import type {
 } from "../shared/contracts.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
-import { runSearchText } from "./run-labels.js";
+import { normalizeRunName, runSearchText } from "./run-labels.js";
 
 const regex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const clean = <T>(doc: Document): T => {
@@ -103,6 +103,18 @@ export class MongoRepository implements PlatformRepository {
     for (const key of ["branch", "commit", "pullRequest", "deployment"] as const)
       if (detail.metadata[key] === null) delete detail.metadata[key];
     return detail;
+  }
+  async renameRun(id: string, name: string, expectedVersion: number): Promise<RunDetail> {
+    const normalized = normalizeRunName(name);
+    const run = await this.getRun(id);
+    const next = { ...run, name: normalized, nameVersion: expectedVersion + 1 };
+    const result = await this.db.collection("vg_runs").updateOne(
+      { id, nameVersion: expectedVersion === 0 ? { $in: [null, 0] } : expectedVersion },
+      { $set: { nameVersion: next.nameVersion, searchText: runSearchText(next), ...(normalized ? { name: normalized } : {}) },
+        ...(normalized ? {} : { $unset: { name: "" } }) },
+    );
+    if (!result.matchedCount) throw new PlatformError(409, "Run name changed or run was removed; refresh before saving again");
+    return next;
   }
   async insertRun(run: Omit<RunDetail, "id">, preserveId?: string) {
     if (

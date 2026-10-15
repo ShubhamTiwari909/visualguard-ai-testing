@@ -17,6 +17,7 @@ import "./styles.css";
 import { AccountMenu, SessionProvider, useSession } from "./auth";
 import { Settings } from "./settings";
 import { DeleteAction, deletionMessage } from "./delete-action";
+import { RunNameEditor } from "./naming";
 
 function navigate(path: string) {
   window.history.pushState(null, "", path);
@@ -641,6 +642,8 @@ function RunView({
             </Link>
             {(session.user?.admin ||
               projects.find((project) => project.id === run.projectId)?.role === "maintainer") && (
+              <>
+              <RunNameEditor run={run} onSaved={setRun} />
               <DeleteAction
                 kind="run"
                 id={run.id}
@@ -650,6 +653,7 @@ function RunView({
                   onDeleted(deletionMessage("run", result), run.projectId);
                 }}
               />
+              </>
             )}
           </div>
         </div>

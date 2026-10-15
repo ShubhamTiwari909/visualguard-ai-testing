@@ -173,6 +173,22 @@ describe("F01 shared evidence history", () => {
     expect(repeated.duplicate).toBe(true);
     expect(repeated.run.name).toBe(result.run.name);
   });
+  it("renames a run independently of its evidence and rejects stale edits", async () => {
+    const original = (await ingest(fixture("rename-run-1"), { environment: "staging", runName: "Initial label" })).run;
+    const renamed = await repository.renameRun(original.id, "  Release smoke  ", 0);
+    expect(renamed.name).toBe("Release smoke");
+    expect(renamed.nameVersion).toBe(1);
+    expect(renamed.digest).toBe(original.digest);
+    expect(renamed.manifest).toEqual(original.manifest);
+    expect(renamed.metadata).toEqual(original.metadata);
+    expect((await repository.runs({ q: "release smoke" })).total).toBe(1);
+    expect((await repository.runs({ q: "initial label" })).total).toBe(0);
+    await expect(repository.renameRun(original.id, "Stale change", 0)).rejects.toMatchObject({ status: 409 });
+    const cleared = await repository.renameRun(original.id, "", 1);
+    expect(cleared.name).toBeUndefined();
+    expect(cleared.nameVersion).toBe(2);
+    expect((await repository.getRun(original.id)).digest).toBe(original.digest);
+  });
 
   it("deduplicates identical imports including concurrent attempts", async () => {
     const runDir = await writeRun();

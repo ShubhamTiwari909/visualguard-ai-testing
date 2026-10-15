@@ -3,7 +3,7 @@ import type { Database, Sql } from "./database.js";
 import type { FileArtifactStore } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
-import { runSearchText } from "./run-labels.js";
+import { normalizeRunName, runSearchText } from "./run-labels.js";
 import type {
   DeletionResult,
   Project,
@@ -141,6 +141,20 @@ export class Repository implements PlatformRepository {
           [document.id, job.id, job.route, job.viewport, job.status],
         );
       return { run: document, duplicate: false };
+    });
+  }
+
+  async renameRun(id: string, name: string, expectedVersion: number): Promise<RunDetail> {
+    const normalized = normalizeRunName(name);
+    return this.db.transaction(async (sql) => {
+      const [row] = await sql.query<{ document: string }>("SELECT document FROM vg_runs WHERE id=?", [id]);
+      if (!row) throw new PlatformError(404, "Run not found");
+      const run = JSON.parse(row.document) as RunDetail;
+      if ((run.nameVersion ?? 0) !== expectedVersion)
+        throw new PlatformError(409, "Run name changed; refresh before saving again");
+      const next = { ...run, name: normalized, nameVersion: expectedVersion + 1 };
+      await sql.query("UPDATE vg_runs SET document=?, search_text=? WHERE id=?", [JSON.stringify(next), runSearchText(next), id]);
+      return next;
     });
   }
 

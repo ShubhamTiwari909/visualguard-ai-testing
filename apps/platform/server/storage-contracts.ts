@@ -11,6 +11,7 @@ export interface PlatformRepository {
   createProject(id: string, name: string): Promise<Project>;
   projects(allowed?: string[]): Promise<Project[]>;
   getRun(id: string): Promise<RunDetail>;
+  renameRun(id: string, name: string, expectedVersion: number): Promise<RunDetail>;
   insertRun(
     run: Omit<RunDetail, "id">,
     preserveId?: string,

@@ -27,6 +27,16 @@ The source repository import/publish commands also accept `--run-name`. The dash
 
 To inspect source changes manually, start `pnpm platform:dev`; an installed package or compiled dashboard needs a manual rebuild/repack before these changes appear. Import a disposable saved run with `--run-name`, find it in history by that name, and verify that its comparison viewer, original number, and verdict remain correct. Repeat the same import to confirm idempotence. Try an empty or overlength initial name and verify rejection before capture/upload.
 
+## Edit an existing run name
+
+Open a run and select **Edit run name**. Project maintainers and workspace administrators can save a custom name; viewers and reviewers retain read-only access to this control. Clear the field to restore the default `Run #…` label. This changes the dashboard label and search index, without changing the immutable manifest, source revision, initial upload metadata, verdict, evidence digest, or screenshots.
+
+The API uses `PATCH /api/runs/RUN_UUID` with `{ "name": "Release smoke", "expectedVersion": 0 }`, using `nameVersion` from the current run (default 0). It requires the existing browser/local action token and maintainer permission. Stale edits return 409; refresh and reconsider the new name before retrying. A successful response contains the run UUID, updated name (`null` for the default), and new name version. Upload credentials cannot rename runs.
+
+Portable exports retain the current display name/version. Re-importing an identical saved run preserves any edits already made to that stored run. Retry uploads with their original initial metadata; use the edit control to rename an existing run.
+
+Manual acceptance: rename a disposable run, search for the new label, refresh/restart, and inspect its comparison viewer and original number. Clear the label and verify the fallback. Open the run in two browsers, rename in one, then save in the other; expect a conflict. Check that viewers/reviewers and upload tokens cannot call the rename API, and that omitting the action token fails. Export and restore into a fresh workspace; the current label should survive. No checks or tests were executed for this extension.
+
 ## Hosted diff-image storage
 
 The dashboard stores all new reference, candidate, diff, crop, and DOM artifacts in the selected database. `vg_objects` holds the checksummed object metadata and `vg_object_chunks` holds immutable 1 MiB chunks. PostgreSQL/SQLite store binary bytes; MongoDB stores base64-encoded chunk data. Objects are deduplicated by content hash.
