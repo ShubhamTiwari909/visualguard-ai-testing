@@ -147,7 +147,7 @@ export async function restoreEvidence(
             for (const alias of [...new Set(aliases.filter((alias) => alias !== publicId)), publicId]) {
               current = await repository.updateProject(project.id, item.name, alias, current.version ?? 0);
             }
-          } else if (project.publicId !== publicId || aliases.some((alias) => !project.aliases?.includes(alias))) {
+          } else if ((project.publicId ?? project.id) !== publicId || aliases.some((alias) => !(project.aliases ?? [project.id]).includes(alias))) {
             throw new Error("Backup project aliases differ from the destination; restore into a fresh workspace");
           }
         }

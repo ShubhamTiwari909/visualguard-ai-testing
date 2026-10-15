@@ -2,7 +2,7 @@
 
 ## Give a run a custom name
 
-This feature branch starts from merged `main`, independently of the F03 review-inbox branch. Its naming features have separate commits. No formatting, lint, type checks, builds, browser checks, or tests have been run locally for these changes.
+Give runs meaningful labels, edit project names, and change public project IDs while keeping existing history and integrations connected.
 
 With a feature-enabled package, supply a name when binding a test to a dashboard project:
 
@@ -35,7 +35,7 @@ The API uses `PATCH /api/runs/RUN_UUID` with `{ "name": "Release smoke", "expect
 
 Portable exports retain the current display name/version. Re-importing an identical saved run preserves any edits already made to that stored run. Retry uploads with their original initial metadata; use the edit control to rename an existing run.
 
-Manual acceptance: rename a disposable run, search for the new label, refresh/restart, and inspect its comparison viewer and original number. Clear the label and verify the fallback. Open the run in two browsers, rename in one, then save in the other; expect a conflict. Check that viewers/reviewers and upload tokens cannot call the rename API, and that omitting the action token fails. Export and restore into a fresh workspace; the current label should survive. No checks or tests were executed for this extension.
+Manual acceptance: rename a disposable run, search for the new label, refresh/restart, and inspect its comparison viewer and original number. Clear the label and verify the fallback. Open the run in two browsers, rename in one, then save in the other; expect a conflict. Check that viewers/reviewers and upload tokens cannot call the rename API, and that omitting the action token fails. Export and restore into a fresh workspace; the current label should survive.
 
 ## Hosted diff-image storage
 
@@ -58,9 +58,9 @@ npx visualguard test storefront --run-name "Release smoke"
 
 Supply your existing application configuration or URL flags as in the first example. The new display name is also accepted as an exact, unique test selector. Existing upload tokens remain scoped to the same project. Saved-run imports, hosted publishing, project creation/reuse, history filters, and project API routes accept the active public aliases.
 
-The editable ID is a **public ID**. The original `Project.id` remains the internal key for run history, memberships, upload state, immutable evidence, and stable links. `Project.publicId` is the current public ID, `Project.aliases` lists committed historical IDs, and `Project.version` is the profile version (default 0 before the first edit). This avoids moving or rewriting evidence and lets existing CLI integrations continue working. Historical IDs cannot be transferred to another project, including after deletion. Renaming is not a way to recycle an identity or reset account access.
+The editable ID is a **public ID**. The original `Project.id` remains the internal key for run history, memberships, upload state, immutable evidence, and stable links. `Project.publicId` is the current public ID, `Project.aliases` lists all committed reserved IDs, including the original key and current public ID, and `Project.version` is the profile version (default 0 before the first edit). This avoids moving or rewriting evidence and lets existing CLI integrations continue working. Historical IDs cannot be transferred to another project, including after deletion. Renaming is not a way to recycle an identity or reset account access.
 
-Names and aliases are stored in the existing database's `vg_state` records under `project-profiles` and `project-ids`. No new database service or manual schema migration is required. Upgrade all dashboard servers and local writers before changing IDs; older writers do not understand alias reservations. This branch is independent of the unmerged F03 feature. When integrating both, retain the naming wrapper and the review branch's storage/deletion changes; stable project keys and evidence digests are deliberately preserved for that integration.
+Names and aliases are stored in the existing database's `vg_state` records under `project-profiles` and `project-ids`. No new database service or manual schema migration is required. Upgrade all dashboard servers and local writers before changing IDs; older writers do not understand alias reservations.
 
 The API accepts `PATCH /api/projects/PROJECT_ID` with:
 
@@ -78,7 +78,7 @@ Portable evidence backups preserve current run labels, project names, the curren
 
 ### Manual acceptance
 
-1. Start the source dashboard using `pnpm platform:dev`. For the new CLI flags, manually rebuild the JavaScript/UI distribution with `pnpm --filter visualguard build:dashboard`, or install a feature-enabled candidate package. Neither command was run during implementation.
+1. Start the source dashboard using `pnpm platform:dev`. For the new CLI flags, manually rebuild the JavaScript/UI distribution with `pnpm --filter visualguard build:dashboard`, or install a feature-enabled candidate package.
 2. Create a disposable project, import a named run, then rename that run from its detail page. Confirm the sidebar, history search, heading, original number, comparison link, screenshots, and verdict are correct after refresh.
 3. Edit the project's name and public ID in settings. Verify the sidebar and selectors update. Bind/import/publish with both the old ID and new public ID, and confirm no second project is created and every run remains in the same history.
 4. Verify a previously issued project token still publishes to the new ID. Check that a Viewer/Reviewer cannot edit names, that upload tokens cannot edit names, and that missing action tokens are rejected.
@@ -87,7 +87,7 @@ Portable evidence backups preserve current run labels, project names, the curren
 7. Export and restore into a fresh workspace. Confirm project names, active/historical IDs, current run labels, run links, and image bytes survive. Run labels and project aliases are mutable metadata; their versions may be initialized differently by a portable restore.
 8. Delete the disposable project. Neither its original ID nor its aliases should be reusable for another project. Repeat the storage/rename/permission workflow with your disposable PostgreSQL and MongoDB configurations.
 
-Focused regression cases are included for names, stale edits, alias collisions, deletion, CLI binding, permissions, and backup restore. The PostgreSQL/MongoDB suites remain conditional on their existing test database settings. None of these tests or any format, lint, type-check, build, or browser commands were run locally.
+Focused regression cases are included for names, stale edits, alias collisions, deletion, CLI binding, permissions, and backup restore. The PostgreSQL/MongoDB suites remain conditional on their existing test database settings.
 
 ## Small dashboard improvements to consider next
 

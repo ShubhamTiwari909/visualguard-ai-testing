@@ -177,6 +177,7 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       ]);
       expect(names.filter((result) => result.status === "fulfilled")).toHaveLength(1);
       const renamed = await repository.getRun(a.run.id);
+      expect(["Release one", "Release two"]).toContain(renamed.name);
       expect(renamed.nameVersion).toBe(1);
       expect(renamed.digest).toBe(input.digest);
       expect((await repository.runs({ project: projectId, q: renamed.name })).total).toBe(1);

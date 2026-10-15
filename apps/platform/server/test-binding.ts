@@ -67,7 +67,8 @@ export async function prepareTestBinding(options: {
         response.status,
         `${value.error ?? "Unable to resolve a permitted dashboard project"}${response.status === 401 || response.status === 403 ? "; set VISUALGUARD_UPLOAD_TOKEN to this project's active upload token" : ""}`,
       );
-    if (typeof value.id !== "string" || typeof value.name !== "string")
+    if (typeof value.id !== "string" || typeof value.name !== "string" ||
+      (value.publicId !== undefined && typeof value.publicId !== "string"))
       throw new Error("Dashboard returned an invalid project");
     const id = projectId(value.id),
       name = value.name;

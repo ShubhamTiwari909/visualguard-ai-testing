@@ -126,6 +126,23 @@ describe("portable evidence backups", () => {
     await expect(restoreEvidence(b, objectsB, path)).rejects.toThrow("incomplete");
     expect((await b.runs({})).total).toBe(0);
   });
+  it("restores default aliases into an existing project without a naming profile", async () => {
+    await a.updateProject("demo", "Edited display name", "demo", 0);
+    await b.createProject("demo", "Keep destination name");
+    const path = join(root, "legacy-destination.gz");
+    await exportEvidence(a, objectsA, path);
+    expect(await restoreEvidence(b, objectsB, path)).toEqual({ runs: 1, objects: 1 });
+    expect((await b.projects())[0]?.name).toBe("Keep destination name");
+    expect((await b.runs({ project: "demo" })).total).toBe(1);
+  });
+  it("still rejects incompatible aliases on an existing legacy destination", async () => {
+    await a.updateProject("demo", "Edited display name", "different-public-id", 0);
+    await b.createProject("demo", "Keep destination name");
+    const path = join(root, "incompatible-aliases.gz");
+    await exportEvidence(a, objectsA, path);
+    await expect(restoreEvidence(b, objectsB, path)).rejects.toThrow("aliases differ");
+    expect((await b.runs({})).total).toBe(0);
+  });
   it("rejects a missing footer instead of reporting success", async () => {
     const path = join(root, "evidence.gz");
     await exportEvidence(a, objectsA, path);
