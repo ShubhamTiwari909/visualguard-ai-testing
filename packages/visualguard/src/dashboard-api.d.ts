@@ -24,9 +24,7 @@ export function createDashboardProject(options: {
   server?: string;
   env?: Record<string, string | undefined>;
 }): Promise<{ project: DashboardProject; created: boolean }>;
-export function createDashboardHandler(
-  options?: DashboardOptions,
-): Promise<{
+export function createDashboardHandler(options?: DashboardOptions): Promise<{
   handle(request: IncomingMessage, response: ServerResponse): Promise<boolean>;
   close(): Promise<void>;
 }>;

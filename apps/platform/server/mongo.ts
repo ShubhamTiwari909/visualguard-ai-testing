@@ -183,21 +183,19 @@ export class MongoRepository implements PlatformRepository {
   private async queueCleanup(hashes: Iterable<string>) {
     for (const hash of new Set(hashes)) {
       try {
-        await this.db
-          .collection("vg_state")
-          .updateOne(
-            { namespace: "artifact-cleanup", id: hash },
-            {
-              $setOnInsert: {
-                namespace: "artifact-cleanup",
-                id: hash,
-                value: { hash },
-                expiresAt: null,
-              },
-              $inc: { version: 1 },
+        await this.db.collection("vg_state").updateOne(
+          { namespace: "artifact-cleanup", id: hash },
+          {
+            $setOnInsert: {
+              namespace: "artifact-cleanup",
+              id: hash,
+              value: { hash },
+              expiresAt: null,
             },
-            { upsert: true },
-          );
+            $inc: { version: 1 },
+          },
+          { upsert: true },
+        );
       } catch (error) {
         if (!(error && typeof error === "object" && "code" in error && error.code === 11000))
           throw error;
@@ -210,12 +208,10 @@ export class MongoRepository implements PlatformRepository {
       await this.db
         .collection("vg_state")
         .deleteMany({ namespace: { $in: ["memberships", "tokens"] }, "value.projectId": project });
-    const uploads = this.db
-      .collection("vg_state")
-      .find({
-        namespace: "uploads",
-        ...(project ? { "value.projectId": project } : { "value.result.id": runId }),
-      });
+    const uploads = this.db.collection("vg_state").find({
+      namespace: "uploads",
+      ...(project ? { "value.projectId": project } : { "value.result.id": runId }),
+    });
     for await (const upload of uploads) {
       const prefix = { $regex: `^${regex(upload.id)}:` };
       const files = await this.db
@@ -250,13 +246,11 @@ export class MongoRepository implements PlatformRepository {
           continue;
         }
         if (
-          await this.db
-            .collection("vg_state")
-            .findOne({
-              namespace: "upload-files",
-              "value.hash": hash,
-              $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date().toISOString() } }],
-            })
+          await this.db.collection("vg_state").findOne({
+            namespace: "upload-files",
+            "value.hash": hash,
+            $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date().toISOString() } }],
+          })
         ) {
           cleanupPending = true;
           continue;
@@ -265,21 +259,19 @@ export class MongoRepository implements PlatformRepository {
         if (current) {
           const id = `${hash}:${current.generation ?? "legacy"}`;
           try {
-            await this.db
-              .collection("vg_state")
-              .updateOne(
-                { namespace: "artifact-generations", id },
-                {
-                  $setOnInsert: {
-                    namespace: "artifact-generations",
-                    id,
-                    value: { hash, generation: current.generation ?? null },
-                    version: 1,
-                    expiresAt: null,
-                  },
+            await this.db.collection("vg_state").updateOne(
+              { namespace: "artifact-generations", id },
+              {
+                $setOnInsert: {
+                  namespace: "artifact-generations",
+                  id,
+                  value: { hash, generation: current.generation ?? null },
+                  version: 1,
+                  expiresAt: null,
                 },
-                { upsert: true },
-              );
+              },
+              { upsert: true },
+            );
           } catch (error) {
             if (!(error && typeof error === "object" && "code" in error && error.code === 11000))
               throw error;
@@ -287,13 +279,11 @@ export class MongoRepository implements PlatformRepository {
         }
         const object =
           current &&
-          (await this.db
-            .collection<MongoObject>("vg_objects")
-            .findOneAndDelete({
-              hash,
-              generation: current.generation ?? { $exists: false },
-              $or: [{ runRefs: { $exists: false } }, { runRefs: { $size: 0 } }],
-            }));
+          (await this.db.collection<MongoObject>("vg_objects").findOneAndDelete({
+            hash,
+            generation: current.generation ?? { $exists: false },
+            $or: [{ runRefs: { $exists: false } }, { runRefs: { $size: 0 } }],
+          }));
         if (object) {
           // Generation-scoped chunks allow a concurrent re-upload to create a new copy safely.
           await this.db
@@ -553,23 +543,21 @@ export class MongoArtifactStore implements ArtifactStore {
     for (let index = 0; index < chunks; index++) {
       const key = `${hash}:${generation}:${index}`;
       try {
-        await this.db
-          .collection("vg_object_chunks")
-          .updateOne(
-            { key },
-            {
-              $setOnInsert: {
-                key,
-                hash,
-                generation,
-                chunk: index,
-                data: Buffer.from(
-                  bytes.subarray(index * OBJECT_CHUNK_BYTES, (index + 1) * OBJECT_CHUNK_BYTES),
-                ).toString("base64"),
-              },
+        await this.db.collection("vg_object_chunks").updateOne(
+          { key },
+          {
+            $setOnInsert: {
+              key,
+              hash,
+              generation,
+              chunk: index,
+              data: Buffer.from(
+                bytes.subarray(index * OBJECT_CHUNK_BYTES, (index + 1) * OBJECT_CHUNK_BYTES),
+              ).toString("base64"),
             },
-            { upsert: true },
-          );
+          },
+          { upsert: true },
+        );
       } catch (error) {
         if (!(error && typeof error === "object" && "code" in error && error.code === 11000))
           throw error;
