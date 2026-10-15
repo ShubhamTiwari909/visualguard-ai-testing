@@ -148,3 +148,19 @@
   .vg-filter-row > label { flex: 1 1 calc(50% - 8px); min-width: 0; }
   .vg-filter-row .vg-search { flex: 1 0 100%; }
 }
+/* Destructive actions use an explicit confirmation dialog on desktop and mobile. */
+.vg-button-danger { color: #a51c30; border-color: #e6b7bd; background: #fff5f5; }
+.vg-button-danger:hover:not(:disabled) { background: #ffe6e8; border-color: #ca6874; }
+.vg-delete-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.vg-delete-dialog { width: min(540px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; border: 1px solid #e6b7bd; border-radius: 16px; padding: 24px; color: #222b3a; background: white; box-shadow: 0 24px 80px #14213d33; }
+.vg-delete-dialog::backdrop { background: #10182b88; }
+.vg-delete-dialog h2 { margin: 0 0 16px; font-size: 22px; overflow-wrap: anywhere; }
+.vg-delete-dialog p { line-height: 1.6; }
+.vg-delete-dialog label { display: grid; gap: 8px; margin: 20px 0; }
+.vg-delete-dialog label strong { overflow-wrap: anywhere; }
+.vg-delete-dialog input { width: 100%; box-sizing: border-box; }
+.vg-delete-dialog .vg-delete-actions { justify-content: flex-end; }
+.vg-danger-zone { border-color: #e6b7bd; }
+.vg-deletion-notice { margin: 24px 32px 0; padding: 16px; border: 1px solid #b7d6c6; border-radius: 12px; background: #f0faf4; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.vg-mobile-settings { display: none; }
+@media (max-width: 760px) { .vg-mobile-settings { display: inline; margin-left: auto; margin-right: 12px; } .vg-deletion-notice { margin: 16px 16px 0; } }

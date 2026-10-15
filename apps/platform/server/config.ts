@@ -15,5 +15,6 @@ export async function openPlatform(env: NodeJS.ProcessEnv = process.env) {
   }
   if (url && !/^postgres(?:ql)?:\/\//.test(url)) throw new Error("Database URL must use postgresql://, postgres://, mongodb:// or mongodb+srv://");
   const db = await openDatabase({ url, sqlitePath: env.VISUALGUARD_SQLITE_FILE ? resolve(env.VISUALGUARD_SQLITE_FILE) : resolve(dataDir, "metadata.sqlite") });
-  return { repository: new Repository(db), state: new SqlStateStore(db), store: new FallbackArtifactStore(new SqlArtifactStore(db), new FileArtifactStore(resolve(dataDir, "objects"))), close: () => db.close() };
+  const legacy = new FileArtifactStore(resolve(dataDir, "objects"));
+  return { repository: new Repository(db, legacy), state: new SqlStateStore(db), store: new FallbackArtifactStore(new SqlArtifactStore(db), legacy), close: () => db.close() };
 }

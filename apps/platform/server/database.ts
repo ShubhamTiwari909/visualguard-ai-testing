@@ -12,6 +12,7 @@ export interface Database extends Sql {
 }
 
 const SCHEMA = [
+  "CREATE TABLE IF NOT EXISTS vg_project_tombstones (id TEXT PRIMARY KEY)",
   `CREATE TABLE IF NOT EXISTS vg_projects (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL
   )`,
@@ -61,6 +62,8 @@ export async function openDatabase(options: { url?: string; sqlitePath: string }
         const client = await pool.connect();
         try {
           await client.query("BEGIN");
+          // Serialize evidence publication, object writes and deletion across all dashboard instances.
+          await client.query("SELECT pg_advisory_xact_lock(18473629, 1)");
           const result = await work({
             async query<T extends Record<string, unknown>>(sql: string, values: Value[] = []) {
               return (await client.query(statement(sql), values)).rows as T[];

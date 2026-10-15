@@ -1,13 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { mutation, useSession } from "./auth";
 import type { Project } from "../shared/contracts";
+import { DeleteAction, deletionMessage } from "./delete-action";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
 type Member = { userId: string; role: string };
 type Token = { id: string; name: string; expiresAt: string };
 async function get<T>(path: string): Promise<T> { const response = await fetch(path); const value = await response.json(); if (!response.ok) throw new Error(value.error); return value as T; }
 
-export function Settings({ projects }: { projects: Project[] }) {
+export function Settings({ projects, onDeleted }: { projects: Project[]; onDeleted: (message: string) => void }) {
   const session = useSession();
   const managed = projects.filter((project) => session.user?.admin || project.role === "maintainer");
   const [users, setUsers] = useState<User[]>([]), [members, setMembers] = useState<Member[]>([]), [tokens, setTokens] = useState<Token[]>([]);
@@ -42,5 +43,6 @@ export function Settings({ projects }: { projects: Project[] }) {
         <div className="vg-table-scroll"><table className="vg-table"><thead><tr><th>Name</th><th>Expires</th><th>Action</th></tr></thead><tbody>{tokens.map((token) => <tr key={token.id}><td>{token.name}</td><td>{new Date(token.expiresAt).toLocaleString()}</td><td><button className="vg-button" onClick={() => { void run(() => mutation(`/api/projects/${project}/tokens/${token.id}`, "DELETE"), "Upload credential revoked."); }}>Revoke</button></td></tr>)}</tbody></table></div>
       </>}
     </section>
+    {managed.find((item) => item.id === project) && <section className="vg-panel vg-settings-section vg-danger-zone"><h2>Delete project</h2><p className="vg-muted">Permanently remove this project and its run history. Export a backup first if you need a local copy.</p><DeleteAction key={project} kind="project" id={project} name={managed.find((item) => item.id === project)!.name} runCount={managed.find((item) => item.id === project)!.runCount} onDeleted={(result) => { setIssued(""); onDeleted(deletionMessage("project", result)); }} /></section>}
   </main>;
 }

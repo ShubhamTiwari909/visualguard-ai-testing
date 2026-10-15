@@ -63,5 +63,51 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect((await repository.getRun(a.run.id)).manifest).toEqual(manifest);
       expect((await repository.getRun(a.run.id)).metadata.commit).toBeUndefined();
     });
+    it("deletes runs while preserving evidence shared across projects", async () => {
+      const first = `${prefix}-delete-a`, second = `${prefix}-delete-b`;
+      await repository.createProject(first, "Delete A"); await repository.createProject(second, "Delete B");
+      const bytes = Buffer.from(JSON.stringify({ evidence: randomUUID() })), hash = await store.put(bytes);
+      const manifest = { schemaVersion: 1, id: "delete-run", number: 1, startedAt: "2026-10-15T10:00:00.000Z", durationMs: 0, mode: "compare", tool: { version: "2.0.0" }, config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" }, summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 }, jobs: [] } as RunDetail["manifest"];
+      const input: Omit<RunDetail, "id"> = { envelopeVersion: 1, projectId: first, engineRunId: manifest.id, number: 1, startedAt: manifest.startedAt, importedAt: manifest.startedAt, durationMs: 0, mode: "compare", status: "incomplete", complete: false, completenessReasons: ["No checks"], summary: manifest.summary, metadata: { environment: "deletion" }, digest: randomBytes(32).toString("hex"), jobCount: 0, manifest, artifacts: [{ path: "evidence.json", hash, size: bytes.length, mediaType: "application/json" }] };
+      const a = await repository.insertRun(input), b = await repository.insertRun({ ...input, projectId: second });
+      expect((await repository.deleteRun(a.run.id)).runs).toBe(1);
+      await expect(repository.getRun(a.run.id)).rejects.toMatchObject({ status: 404 });
+      expect((await store.get(hash)).equals(bytes)).toBe(true);
+      expect((await repository.getRun(b.run.id)).digest).toBe(input.digest);
+      expect((await repository.projects([first]))[0]?.runCount).toBe(0);
+      expect((await repository.deleteRun(b.run.id)).artifactsDeleted).toBeGreaterThanOrEqual(1);
+      await expect(store.get(hash)).rejects.toThrow("not found");
+      await store.put(bytes);
+      const c = await repository.insertRun(input);
+      const [deletion, publication] = await Promise.allSettled([repository.deleteRun(c.run.id), repository.insertRun({ ...input, projectId: second })]);
+      expect(deletion.status).toBe("fulfilled");
+      if (publication.status === "fulfilled") {
+        expect((await store.get(hash)).equals(bytes)).toBe(true);
+        expect((await repository.getRun(publication.value.run.id)).artifacts[0]?.hash).toBe(hash);
+      } else expect(publication.reason).toMatchObject({ status: 409 });
+    });
+    it("checks project counts and removes project access and upload state without reusing its ID", async () => {
+      const projectId = `${prefix}-delete-project`, other = `${prefix}-keep-project`;
+      await repository.createProject(projectId, "Delete project"); await repository.createProject(other, "Keep project");
+      const upload = randomBytes(32).toString("hex"), bytes = Buffer.from(JSON.stringify({ temporary: randomUUID() })), hash = await store.put(bytes);
+      await state.create("memberships", `${prefix}:member`, { projectId, userId: "member", role: "maintainer" });
+      await state.create("tokens", `${prefix}:token`, { projectId, ownerId: "member" });
+      await state.create("tokens", `${prefix}:keep`, { projectId: other, ownerId: "member" });
+      await state.create("uploads", upload, { projectId });
+      await state.create("upload-files", `${upload}:file`, { hash, complete: true });
+      await state.create("upload-chunks", `${upload}:file:0`, { data: "temporary" });
+      await expect(repository.deleteProject(projectId, 1)).rejects.toMatchObject({ status: 409 });
+      expect((await repository.projects([projectId]))).toHaveLength(1);
+      expect((await repository.deleteProject(projectId, 0)).runs).toBe(0);
+      expect(await repository.projects([projectId])).toEqual([]);
+      expect(await state.get("memberships", `${prefix}:member`)).toBeUndefined();
+      expect(await state.get("tokens", `${prefix}:token`)).toBeUndefined();
+      expect(await state.get("tokens", `${prefix}:keep`)).toBeDefined();
+      expect(await state.list("upload-files", `${upload}:`)).toEqual([]);
+      expect(await state.list("upload-chunks", `${upload}:`)).toEqual([]);
+      expect(await state.get("uploads", upload)).toBeUndefined();
+      await expect(store.get(hash)).rejects.toThrow("not found");
+      await expect(repository.createProject(projectId, "Reused ID")).rejects.toMatchObject({ status: 409 });
+    });
   });
 }

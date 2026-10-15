@@ -92,7 +92,7 @@ export async function restoreEvidence(repository: PlatformRepository, store: Art
         if (requiredArtifacts(manifest).length !== run.artifacts.length || sha256(canonical({ envelopeVersion: 1, manifest, metadata, artifacts: run.artifacts })) !== run.digest) throw new Error("Backup run digest mismatch");
         // Validate using the normal publisher in a capture-only repository, then preserve the URL ID.
         let validated: Omit<RunDetail, "id"> | undefined;
-        const capture: PlatformRepository = { ...repository, createProject: repository.createProject.bind(repository), projects: repository.projects.bind(repository), getRun: repository.getRun.bind(repository), runs: repository.runs.bind(repository), async insertRun(value) { validated = value; return { run: { ...value, id: run.id }, duplicate: false }; } };
+        const capture: PlatformRepository = { ...repository, createProject: repository.createProject.bind(repository), projects: repository.projects.bind(repository), getRun: repository.getRun.bind(repository), runs: repository.runs.bind(repository), deleteRun: repository.deleteRun.bind(repository), deleteProject: repository.deleteProject.bind(repository), async insertRun(value) { validated = value; return { run: { ...value, id: run.id }, duplicate: false }; } };
         await publishRun(capture, store, { projectId: run.projectId, manifest, metadata, artifacts: run.artifacts });
         await repository.insertRun({ ...validated!, importedAt: run.importedAt }, run.id); runs++;
       } else if (item.type === "end") {

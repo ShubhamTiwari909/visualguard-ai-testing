@@ -122,10 +122,27 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
         if (!input || typeof input !== "object" || !("id" in input) || !("name" in input) || typeof input.id !== "string" || typeof input.name !== "string") throw new PlatformError(400, "Project id and name are required");
         const project = await repository.createProject(input.id, input.name); await auth.audit(actor, "project.created", { projectId: project.id }); json(response, 201, project); return true;
       }
+      const projectDeletion = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)$/);
+      if (request.method === "DELETE" && projectDeletion) {
+        const id = projectDeletion[1]!;
+        await auth.requireRole(actor, id, "maintainer");
+        const input = z.object({ confirmation: z.literal(id), expectedRuns: z.number().int().nonnegative() }).strict().parse(await body(request));
+        const result = await repository.deleteProject(id, input.expectedRuns);
+        await auth.audit(actor, "project.deleted", { projectId: id, ...result }).catch((error) => console.error("Unable to record project deletion audit", error));
+        json(response, 200, result); return true;
+      }
       if (request.method === "GET" && url.pathname === "/api/runs") {
         json(response, 200, await repository.runs(filters(url.searchParams), await auth.projectIds(actor))); return true;
       }
       const match = url.pathname.match(/^\/api\/runs\/([a-f0-9-]{36})(?:\/(.*))?$/);
+      if (request.method === "DELETE" && match && !match[2]) {
+        const id = match[1]!, run = await repository.getRun(id);
+        await auth.requireRole(actor, run.projectId, "maintainer");
+        z.object({ confirmation: z.literal(id) }).strict().parse(await body(request));
+        const result = await repository.deleteRun(id, run.projectId);
+        await auth.audit(actor, "run.deleted", { projectId: run.projectId, runId: id, ...result }).catch((error) => console.error("Unable to record run deletion audit", error));
+        json(response, 200, result); return true;
+      }
       if (request.method === "GET" && match) {
         const run = await repository.getRun(match[1]!);
         await auth.requireRole(actor, run.projectId);

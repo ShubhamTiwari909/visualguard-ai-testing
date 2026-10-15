@@ -4,6 +4,8 @@ A separate UI quality evidence app, also distributed through the `visualguard` p
 
 Read the [complete walkthrough](../../docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) for local use, installation in another project, team access, backups/database dumps, CI publishing, and Cloud Run/Vercel hosting. The implementation is a validated local release candidate; npm publication and live cloud deployment have not been performed.
 
+Project/run deletion is now implemented as a follow-up extension, with typed confirmation, maintainer/admin permissions, and shared-artifact cleanup. Open a run to delete it, or use **People & integrations → Project access → Delete project**. See the [deletion guide and manual checklist](../../docs/DASHBOARD-DELETION.md). No build or checks were run for this extension, per the user's instruction.
+
 ## Start from this repository
 
 ```sh
@@ -47,7 +49,7 @@ Both hosts use database-backed metadata, artifacts, sessions, and upload progres
 
 ## Scope and boundaries
 
-Implemented: F01 history/comparison; F02 password accounts, optional OIDC, project roles, session/password revocation, scoped upload credentials and auditing; F06 chunked remote publishing; portable evidence backups; SQLite file inspection; database adapters; installed-package CLI/API; deployment scaffolds.
+Implemented: F01 history/comparison; F02 password accounts, optional OIDC, project roles, session/password revocation, scoped upload credentials and auditing; F06 chunked remote publishing; portable evidence backups; SQLite file inspection; database adapters; installed-package CLI/API; deployment scaffolds; confirmed project/run deletion.
 
 The shared viewer remains read-only with respect to source code and visual approvals. Collaborative review (F03), approved-baseline promotion (F04), managed browser scheduling, release gates, and automatic artifact retention remain separate features.
 

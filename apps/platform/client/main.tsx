@@ -8,6 +8,7 @@ import { RUN_STATUSES, type Project, type RunDetail, type RunPage, type RunStatu
 import "./styles.css";
 import { AccountMenu, SessionProvider, useSession } from "./auth";
 import { Settings } from "./settings";
+import { DeleteAction, deletionMessage } from "./delete-action";
 
 function navigate(path: string) {
   window.history.pushState(null, "", path);
@@ -62,7 +63,7 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
       </nav>
       <div className="vg-sidebar-footer"><span className="vg-online" /> {session.access === "local" ? "Local workspace" : "Team workspace"}<p>{session.user?.name}</p></div>
     </aside>
-    <div className="vg-workspace-main"><header className="vg-topbar"><span>Workspace <span className="vg-breadcrumb">/</span> Evidence</span><AccountMenu /></header>{children}</div>
+    <div className="vg-workspace-main"><header className="vg-topbar"><span>Workspace <span className="vg-breadcrumb">/</span> Evidence</span><Link className="vg-mobile-settings" href="/settings">Settings</Link><AccountMenu /></header>{children}</div>
   </div>;
 }
 
@@ -151,7 +152,8 @@ function RunHistory({ projects, refreshProjects, search }: { projects: Project[]
   </main>;
 }
 
-function RunView({ id, report, projects }: { id: string; report: boolean; projects: Project[] }) {
+function RunView({ id, report, projects, onDeleted }: { id: string; report: boolean; projects: Project[]; onDeleted: (message: string, project?: string) => void }) {
+  const session = useSession();
   const [run, setRun] = useState<RunDetail>();
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
@@ -169,7 +171,7 @@ function RunView({ id, report, projects }: { id: string; report: boolean; projec
   const jobs = run.manifest.jobs.filter((job) => `${job.route} ${job.name} ${job.viewport} ${job.status}`.toLowerCase().includes(query.toLowerCase()));
   return <Shell projects={projects}><main className="vg-content">
     <Link className="vg-back" href={`/?project=${encodeURIComponent(run.projectId)}`}>← {projects.find((project) => project.id === run.projectId)?.name ?? run.projectId} / Run history</Link>
-    <div className="vg-page-heading"><div><p className="vg-eyebrow">SAVED RUN EVIDENCE</p><h1>Run #{run.number} <Status value={run.status} /></h1><p className="vg-muted"><Timestamp value={run.startedAt} /> · {formatDuration(run.durationMs)} · {run.mode} · {run.metadata.environment}</p><Metadata run={run} /></div><Link className="vg-button vg-button-primary" href={`/runs/${run.id}/report`}>Open comparison viewer ↗</Link></div>
+    <div className="vg-page-heading"><div><p className="vg-eyebrow">SAVED RUN EVIDENCE</p><h1>Run #{run.number} <Status value={run.status} /></h1><p className="vg-muted"><Timestamp value={run.startedAt} /> · {formatDuration(run.durationMs)} · {run.mode} · {run.metadata.environment}</p><Metadata run={run} /></div><div className="vg-delete-actions"><Link className="vg-button vg-button-primary" href={`/runs/${run.id}/report`}>Open comparison viewer ↗</Link>{(session.user?.admin || projects.find((project) => project.id === run.projectId)?.role === "maintainer") && <DeleteAction kind="run" id={run.id} name={`run #${run.number}`} onDeleted={(result) => { releaseArtifacts(run.id); onDeleted(deletionMessage("run", result), run.projectId); }} />}</div></div>
     {!run.complete && <div className="vg-warning" role="alert"><strong>Incomplete evidence</strong><ul>{run.completenessReasons.map((reason) => <li key={reason}>{reason}</li>)}</ul><p>This run cannot establish complete coverage.</p></div>}
     <div className="vg-result-strip">{(["regression", "review", "error", "accepted", "pass"] as const).map((status) => <div key={status}><Status value={status} /><strong>{run.summary[status]}</strong></div>)}</div>
     <section className="vg-panel"><div className="vg-panel-heading"><div><h2>Checks <span className="vg-count">{run.jobCount}</span></h2><p>Inspect an individual state or open the complete comparison viewer.</p></div><label><span className="vg-sr-only">Filter checks</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter checks…" /></label></div>
@@ -185,6 +187,7 @@ function Platform() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [notice, setNotice] = useState("");
   useEffect(() => { const change = () => setLocation({ path: window.location.pathname, search: window.location.search }); window.addEventListener("popstate", change); return () => window.removeEventListener("popstate", change); }, []);
   useEffect(() => {
     const abort = new AbortController(); setError("");
@@ -192,9 +195,10 @@ function Platform() {
     return () => abort.abort();
   }, [revision]);
   const refresh = () => setRevision((value) => value + 1);
+  const deleted = (message: string, project?: string) => { setNotice(message); refresh(); navigate(project ? `/?project=${encodeURIComponent(project)}` : "/"); };
   if (error) return <Shell projects={projects}><main className="vg-content"><ErrorMessage error={error} retry={refresh} /></main></Shell>;
   const match = location.path.match(/^\/runs\/([a-f0-9-]{36})(\/report)?$/);
-  return match ? <RunView key={match[1]} id={match[1]!} report={Boolean(match[2])} projects={projects} /> : <Shell projects={projects}>{location.path === "/settings" ? <Settings projects={projects} /> : <RunHistory projects={projects} refreshProjects={refresh} search={location.search} />}</Shell>;
+  return match ? <RunView key={match[1]} id={match[1]!} report={Boolean(match[2])} projects={projects} onDeleted={deleted} /> : <Shell projects={projects}>{notice && <div role="status" className="vg-deletion-notice">{notice}<button type="button" className="vg-button" onClick={() => setNotice("")}>Dismiss</button></div>}{location.path === "/settings" ? <Settings projects={projects} onDeleted={deleted} /> : <RunHistory key={revision} projects={projects} refreshProjects={refresh} search={location.search} />}</Shell>;
 }
 
 createRoot(document.getElementById("root")!).render(<StrictMode><SessionProvider><Platform /></SessionProvider></StrictMode>);

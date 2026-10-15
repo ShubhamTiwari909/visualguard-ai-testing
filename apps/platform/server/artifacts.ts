@@ -42,6 +42,8 @@ export class FileArtifactStore implements ArtifactStore {
     if (sha256(data) !== hash) throw new Error("Stored artifact checksum mismatch");
     return data;
   }
+
+  async remove(hash: string): Promise<void> { await rm(this.path(hash), { force: true }); }
 }
 
 /** Database-backed objects keep a database dump self-contained and survive ephemeral hosts. */

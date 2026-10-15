@@ -4,6 +4,8 @@
 **Release scope:** F01 dashboard/history, F02 access, F06 remote publishing, database portability, installed-package commands, and deployment scaffolds.  
 **Release status:** implementation and local release-candidate validation are complete. The npm release and live Cloud Run/Vercel deployments have not been performed. Formatting, lint, and type checks remain deferred until after F36 under the user's instruction.
 
+**Deletion extension:** project/run deletion has since been added with confirmation and reference-aware cleanup. No checks or builds were run for that follow-up, as requested. See [deletion usage and the manual checklist](DASHBOARD-DELETION.md); the validation record below describes the preceding dashboard implementation.
+
 ## 1. Choose your setup
 
 | Goal | What to use | Configuration |
@@ -58,7 +60,7 @@ npm install -D /absolute/path/to/visualguard-VERSION.tgz
 npx visualguard dashboard
 ```
 
-Replace `VERSION` with the actual package filename. The current checkout's package version is 2.0.0; the local tarball is a release candidate and does not overwrite an existing npm release.
+Replace `VERSION` with the actual package filename/version in your checkout. A local tarball is a release candidate and does not overwrite an existing npm release. Rebuild/repack after source changes; an earlier tarball does not automatically include later deletion controls.
 
 ### After the dashboard-enabled npm release is published
 
@@ -504,7 +506,7 @@ Troubleshooting:
 
 ## 15. Validation record and release boundary
 
-Recorded during this implementation:
+Recorded before the deletion extension (not rerun for that extension):
 
 - 54 focused tests passed, including live local PostgreSQL and MongoDB adapters, SQLite persistence, permissions, session/password/token revocation, racing writes, chunk integrity, resumable publication, backup/restore, and host scaffolds.
 - JavaScript/UI distribution build passed without running declaration/type checking.
@@ -516,3 +518,11 @@ Recorded during this implementation:
 Not performed: npm publication, live cloud account deployment, Docker image build, actual organization IdP login, full-workspace validation, formatting, lint, or type checking. These are not reported as passed. The final release/cloud rollout must use the target account's configuration and the user's agreed validation schedule.
 
 This standalone release does not implement collaborative approval (F03), baseline promotion (F04), managed runners, or release gates. Those features remain separate commits and releases. The delivered boundary is a centrally accessible, authenticated evidence dashboard with portable storage and remote publishing.
+
+## 16. Delete projects or individual run entries
+
+Open a run and select **Delete run**, then type `DELETE`. To delete a project, open **People & integrations**, select it under **Project access**, and use **Delete project**. The confirmation shows the run count and requires the project ID. These actions require a project maintainer or administrator; the local owner has those permissions.
+
+Deletion is permanent. Shared evidence remains available to other runs; unused artifacts are queued for cleanup. Project deletion also removes memberships, upload tokens, and upload sessions. Deleted project IDs remain reserved; use a fresh ID for a future project, or a fresh workspace to restore an older backup. Original local run folders and exported/native backups are kept.
+
+The [deletion guide](DASHBOARD-DELETION.md) explains concurrency/recovery boundaries, API requests, cleanup-pending messages, and the manual acceptance sequence. No build, browser check, or test was run for this extension at the user's request; rebuild the UI/package manually before inspecting a previously compiled installation.

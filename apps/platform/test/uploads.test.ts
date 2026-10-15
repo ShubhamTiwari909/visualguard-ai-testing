@@ -57,6 +57,31 @@ describe("F06 resumable publishing", () => {
     expect((await repository.runs({})).total).toBe(1);
     expect((await state.list("upload-chunks")).length).toBe(0);
   });
+  it("publishes a new entry after deletion instead of returning a stale completed-upload URL", async () => {
+    const data = await fixture();
+    const original = await uploadRun({ server: base, project: "storefront", runDir: data.runDir, token, metadata });
+    await repository.deleteRun(original.id);
+    const republished = await uploadRun({ server: base, project: "storefront", runDir: data.runDir, token, metadata });
+    expect(republished.id).not.toBe(original.id);
+    expect((await repository.runs({ project: "storefront" })).total).toBe(1);
+    const run = await repository.getRun(republished.id);
+    expect((await store.get(run.artifacts[0]!.hash)).equals(data.png)).toBe(true);
+  });
+  it("recovers a completed file whose shared object was reclaimed before publication", async () => {
+    const { bytes, manifest } = await fixture();
+    const start = await call("/api/projects/storefront/uploads", "POST", { idempotencyKey: "b".repeat(64), manifestHash: sha256(bytes), manifestSize: bytes.length, engineRunId: manifest.id, metadata });
+    const id = start.value.id, descriptor = { path: "manifest.json", hash: sha256(bytes), size: bytes.length, mediaType: "application/json" };
+    const file = await call(`/api/uploads/${id}/files`, "POST", descriptor);
+    await call(`/api/uploads/${id}/files/${file.value.id}/chunks/0`, "PUT", bytes, true);
+    expect((await call(`/api/uploads/${id}/files/${file.value.id}/complete`, "POST")).status).toBe(200);
+    await db.query("DELETE FROM vg_object_chunks WHERE hash=?", [descriptor.hash]);
+    await db.query("DELETE FROM vg_objects WHERE hash=?", [descriptor.hash]);
+    const registered = await call(`/api/uploads/${id}/files`, "POST", descriptor);
+    expect(registered.status).toBe(200); expect(registered.value.complete).toBe(false);
+    await call(`/api/uploads/${id}/files/${file.value.id}/chunks/0`, "PUT", bytes, true);
+    expect((await call(`/api/uploads/${id}/files/${file.value.id}/complete`, "POST")).status).toBe(200);
+    expect((await store.get(descriptor.hash)).equals(bytes)).toBe(true);
+  });
   it("never publishes partial evidence and detects tampered chunk content", async () => {
     const { bytes, manifest } = await fixture();
     const start = await call("/api/projects/storefront/uploads", "POST", { idempotencyKey: "a".repeat(64), manifestHash: sha256(bytes), manifestSize: bytes.length, engineRunId: manifest.id, metadata });

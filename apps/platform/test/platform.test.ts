@@ -38,8 +38,8 @@ describe("F01 shared evidence history", () => {
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), "visualguard-platform-"));
     database = await openDatabase({ sqlitePath: join(root, "metadata.sqlite") });
-    repository = new Repository(database);
     store = new FileArtifactStore(join(root, "objects"));
+    repository = new Repository(database, store);
     await repository.createProject("storefront", "Storefront");
   });
   afterEach(async () => {
@@ -166,7 +166,7 @@ describe("F01 shared evidence history", () => {
     const manifest = { ...fixture(), futureEvidence: { preserved: true } };
     const { run } = await ingest(manifest);
     await database.close();
-    database = await openDatabase({ sqlitePath: join(root, "metadata.sqlite") }); repository = new Repository(database);
+    database = await openDatabase({ sqlitePath: join(root, "metadata.sqlite") }); repository = new Repository(database, store);
     expect((await repository.getRun(run.id)).manifest).toEqual(manifest);
   });
 

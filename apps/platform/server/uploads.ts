@@ -39,10 +39,14 @@ export class Uploads {
     const id = match[1]!, entry = await this.state.get<UploadSession>("uploads", id);
     if (!entry) throw new PlatformError(404, "Upload session missing or expired; start a new upload");
     const session = entry.value;
+    if (!(await this.repository.projects([session.projectId])).length) throw new PlatformError(404, "Project not found; this upload is no longer available");
     if (session.owner !== owner(actor) || (actor.credentialId ? actor.uploadProject !== session.projectId : !await this.auth.hasRole(actor, session.projectId, "maintainer"))) throw new PlatformError(403, "Upload session belongs to another credential or project");
     if (request.method === "GET" && !match[2]) { json(response, 200, { id, result: session.result, expiresAt: entry.expiresAt }); return true; }
     if (request.method === "POST" && match[5]) {
-      if (session.result) { json(response, 200, { ...session.result, duplicate: true }); return true; }
+      if (session.result) {
+        await this.repository.getRun(session.result.id);
+        json(response, 200, { ...session.result, duplicate: true }); return true;
+      }
       const files = await this.state.list<FileState>("upload-files", `${id}:`, MAX_RUN_ARTIFACTS + 2);
       const manifest = files.find((row) => row.value.path === "manifest.json")?.value;
       if (!manifest?.complete || manifest.hash !== session.manifestHash || manifest.size !== session.manifestSize) throw new PlatformError(409, "Manifest is not completely uploaded");
@@ -74,6 +78,17 @@ export class Uploads {
       }
       const record = (await this.state.get<FileState>("upload-files", key))!;
       if (record.value.hash !== file.hash || record.value.size !== file.size || record.value.mediaType !== file.mediaType) throw new PlatformError(409, "File path is bound to different bytes");
+      if (record.value.complete) {
+        try { if (this.store.getChunk) await this.store.getChunk(record.value.hash, 0); else await this.store.get(record.value.hash); }
+        catch (error) {
+          const missing = error instanceof Error && error.message === "Artifact object not found" || error && typeof error === "object" && "code" in error && error.code === "ENOENT";
+          if (!missing) throw error;
+          // A deletion can reclaim a shared object just before a new upload registers it.
+          // Let a repeated publish send those bytes again instead of trusting a stale flag.
+          record.value.complete = false;
+          if (!await this.state.replace("upload-files", record)) throw new PlatformError(409, "Upload changed during recovery; retry publishing");
+        }
+      }
       json(response, 200, { id: fileId, complete: record.value.complete }); return true;
     }
     const fileId = match[2];

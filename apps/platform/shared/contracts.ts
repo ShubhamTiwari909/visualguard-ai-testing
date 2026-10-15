@@ -64,4 +64,9 @@ export interface RunPage {
   limit: number;
   offset: number;
 }
+export interface DeletionResult {
+  runs: number;
+  artifactsDeleted: number;
+  cleanupPending: boolean;
+}
 export const RUN_STATUSES: RunStatus[] = ["incomplete", "error", "regression", "review", "accepted", "pass"];

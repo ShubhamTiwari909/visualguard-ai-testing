@@ -103,4 +103,42 @@ describe("F02 organization access", () => {
   it("does not allow local authentication on a publicly exposed origin", () => {
     expect(() => new AuthService(state, { VISUALGUARD_AUTH_MODE: "local", VISUALGUARD_PUBLIC_URL: "https://dashboard.example.test" })).toThrow("cannot be exposed");
   });
+  it("requires maintainer access, CSRF and exact confirmation to delete projects", async () => {
+    const person = await member();
+    await fetch(`${base}/api/projects/private-a/members`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ userId: person.user.id, role: "viewer" }) });
+    const payload = JSON.stringify({ confirmation: "private-a", expectedRuns: 0 });
+    expect((await fetch(`${base}/api/projects/private-a`, { method: "DELETE", headers: headers(person.cookie, person.csrf), body: payload })).status).toBe(403);
+    expect((await fetch(`${base}/api/projects/private-a`, { method: "DELETE", headers: headers(adminCookie), body: payload })).status).toBe(403);
+    expect((await fetch(`${base}/api/projects/private-a`, { method: "DELETE", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ confirmation: "wrong-project", expectedRuns: 0 }) })).status).toBe(400);
+    await fetch(`${base}/api/projects/private-a/members`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ userId: person.user.id, role: "maintainer" }) });
+    expect((await fetch(`${base}/api/projects/private-a`, { method: "DELETE", headers: headers(person.cookie, person.csrf), body: payload })).status).toBe(200);
+    expect(await repository.projects(["private-a"])).toEqual([]);
+    expect((await repository.projects(["private-b"]))).toHaveLength(1);
+    const events = (await state.list<{ action: string }>("audit")).map((row) => row.value.action);
+    expect(events).toContain("project.deleted");
+  });
+  it("denies upload credentials permission to delete projects", async () => {
+    const minted = await fetch(`${base}/api/projects/private-a/tokens`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "CI", days: 1 }) });
+    const credential = await minted.json();
+    const request = { method: "DELETE", headers: { "Content-Type": "application/json", Authorization: `Bearer ${credential.token}` }, body: JSON.stringify({ confirmation: "private-a", expectedRuns: 0 }) };
+    expect((await fetch(`${base}/api/projects/private-a`, request)).status).toBe(403);
+    expect((await fetch(`${base}/api/projects/private-a`, { ...request, headers: headers(adminCookie, adminCsrf) })).status).toBe(200);
+    expect((await fetch(`${base}/api/session`, { headers: { Authorization: `Bearer ${credential.token}` } }).then((response) => response.json())).user).toBeNull();
+    expect((await state.list("tokens"))).toEqual([]);
+  });
+  it("allows maintainers to delete a run while denying reviewers and preserving the project", async () => {
+    const person = await member();
+    const hash = await store.put(Buffer.from('{"deletable":true}'));
+    const manifest = { schemaVersion: 1, id: "deletion-api", number: 1, startedAt: "2026-10-15T10:00:00.000Z", durationMs: 0, mode: "compare", tool: { version: "2.0.0" }, config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" }, summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 }, jobs: [] } as import("../shared/contracts.js").RunDetail["manifest"];
+    const { run } = await repository.insertRun({ envelopeVersion: 1, projectId: "private-a", engineRunId: manifest.id, number: 1, startedAt: manifest.startedAt, importedAt: manifest.startedAt, durationMs: 0, mode: "compare", status: "incomplete", complete: false, completenessReasons: ["No checks"], summary: manifest.summary, metadata: { environment: "deletion" }, digest: "d".repeat(64), jobCount: 0, manifest, artifacts: [{ path: "evidence.json", hash, size: 18, mediaType: "application/json" }] });
+    const role = async (role: string) => fetch(`${base}/api/projects/private-a/members`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ userId: person.user.id, role }) });
+    const remove = (confirmation = run.id) => fetch(`${base}/api/runs/${run.id}`, { method: "DELETE", headers: headers(person.cookie, person.csrf), body: JSON.stringify({ confirmation }) });
+    await role("reviewer"); expect((await remove()).status).toBe(403);
+    await role("maintainer"); expect((await remove("wrong-run")).status).toBe(400);
+    expect((await repository.getRun(run.id)).digest).toBe("d".repeat(64));
+    expect((await remove()).status).toBe(200);
+    expect((await fetch(`${base}/api/runs/${run.id}`, { headers: { Cookie: adminCookie } })).status).toBe(404);
+    expect((await repository.projects(["private-a"]))[0]?.runCount).toBe(0);
+    await expect(store.get(hash)).rejects.toThrow("not found");
+  });
 });

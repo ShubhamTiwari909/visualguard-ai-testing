@@ -1,4 +1,4 @@
-import type { Project, RunDetail, RunFilters, RunPage } from "../shared/contracts.js";
+import type { DeletionResult, Project, RunDetail, RunFilters, RunPage } from "../shared/contracts.js";
 
 export interface PlatformRepository {
   createProject(id: string, name: string): Promise<Project>;
@@ -6,6 +6,8 @@ export interface PlatformRepository {
   getRun(id: string): Promise<RunDetail>;
   insertRun(run: Omit<RunDetail, "id">, preserveId?: string): Promise<{ run: RunDetail; duplicate: boolean }>;
   runs(filters: RunFilters, allowed?: string[]): Promise<RunPage>;
+  deleteRun(id: string, expectedProject?: string): Promise<DeletionResult>;
+  deleteProject(id: string, expectedRuns: number): Promise<DeletionResult>;
 }
 
 export interface StateRecord<T = unknown> { id: string; value: T; version: number; expiresAt?: string }
