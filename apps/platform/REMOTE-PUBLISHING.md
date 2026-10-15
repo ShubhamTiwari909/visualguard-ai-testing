@@ -4,6 +4,8 @@ Run the existing VisualGuard engine on a developer machine or in CI; publish its
 
 Create a project in the dashboard. Under **People & integrations**, choose the project and create a named upload token. Store it in the CI system's secret store as `VISUALGUARD_UPLOAD_TOKEN`; it is shown once, scoped to that project, and revocable.
 
+To capture and publish in one command, use `npx visualguard test storefront --dashboard https://dashboard.example.com`, or set `VISUALGUARD_DASHBOARD_URL` and use `npx visualguard test storefront`. Exact unique project display names are supported too. The [project binding guide](../../docs/DASHBOARD-TEST-BINDING.md) explains local defaults, preflight, exit codes, and recovery. This follow-up was not built or tested at the user's request. The original saved-run publishing command below remains available.
+
 ```sh
 pnpm platform:publish \
   --server https://dashboard.example.com \

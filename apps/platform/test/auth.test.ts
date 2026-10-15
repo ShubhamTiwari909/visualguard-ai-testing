@@ -126,6 +126,19 @@ describe("F02 organization access", () => {
     expect((await fetch(`${base}/api/session`, { headers: { Authorization: `Bearer ${credential.token}` } }).then((response) => response.json())).user).toBeNull();
     expect((await state.list("tokens"))).toEqual([]);
   });
+  it("resolves a publishing project without exposing other projects to an upload token", async () => {
+    const response = await fetch(`${base}/api/projects/private-a/tokens`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "Project binding", days: 1 }) });
+    const credential = await response.json(), uploadHeaders = { Authorization: `Bearer ${credential.token}` };
+    const allowed = await fetch(`${base}/api/publishing/project?project=Private+A`, { headers: uploadHeaders });
+    expect(allowed.status).toBe(200); expect(await allowed.json()).toEqual({ id: "private-a", name: "Private A" });
+    expect((await fetch(`${base}/api/publishing/project?project=private-b`, { headers: uploadHeaders })).status).toBe(404);
+    expect((await fetch(`${base}/api/projects`, { headers: uploadHeaders })).status).toBe(403);
+    const person = await member();
+    await fetch(`${base}/api/projects/private-a/members`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ userId: person.user.id, role: "viewer" }) });
+    expect((await fetch(`${base}/api/publishing/project?project=private-a`, { headers: { Cookie: person.cookie } })).status).toBe(404);
+    await fetch(`${base}/api/projects/private-a/members`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ userId: person.user.id, role: "maintainer" }) });
+    expect((await fetch(`${base}/api/publishing/project?project=private-a`, { headers: { Cookie: person.cookie } })).status).toBe(200);
+  });
   it("allows maintainers to delete a run while denying reviewers and preserving the project", async () => {
     const person = await member();
     const hash = await store.put(Buffer.from('{"deletable":true}'));

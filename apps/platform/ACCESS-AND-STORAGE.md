@@ -26,7 +26,7 @@ The administrator is created once. Changing a bootstrap environment password doe
 - Reviewers have the same read access until collaborative review is implemented in F03.
 - Project maintainers manage their project's membership and upload tokens.
 - New company-login users have no project access until assigned, unless explicitly configured as the workspace administrator.
-- Upload tokens are scoped to one project, expire in 1–90 days, are shown only once, and cannot browse projects or approve changes.
+- Upload tokens are scoped to one project, expire in 1–90 days, are shown only once, and cannot browse project lists, run history, artifacts, or approve changes. The publishing-project lookup reveals only their own project's ID/name to support `visualguard test <project>`.
 
 Use **People & integrations** to create accounts, assign project roles, disable accounts, and create/revoke upload tokens. Initial account passwords must be shared privately; the dashboard does not send emails. Login sessions are persisted with a 12-hour lifetime. Cross-origin mutations are rejected; browser mutations also require the session action token.
 

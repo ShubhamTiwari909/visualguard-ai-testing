@@ -11,6 +11,8 @@
 
 **Standalone follow-up:** confirmed project/run deletion with project permissions, access/upload cleanup, and preservation of shared evidence is implemented separately. See the [deletion guide](DASHBOARD-DELETION.md). No build, formatting, lint, type checking, or tests were run for that follow-up, per the user's updated instruction.
 
+**CLI follow-up:** `visualguard test [project]` binds new evidence to a local or hosted project by ID or exact permitted name. See the [project binding guide](DASHBOARD-TEST-BINDING.md). It is a separate feature commit with no executed checks or builds, per the same instruction.
+
 Grow VisualGuard into **an internal UI quality platform that helps teams understand, review, and resolve changes before and after release**.
 
 The existing engine is already substantial. The next adoption barrier is organizational: multiple projects need one place to see results, an accountable way to approve changes, stable references, ownership, and predictable execution. Add that foundation before investing heavily in more autonomous AI.

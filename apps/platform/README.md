@@ -6,6 +6,8 @@ Read the [complete walkthrough](../../docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) 
 
 Project/run deletion is now implemented as a follow-up extension, with typed confirmation, maintainer/admin permissions, and shared-artifact cleanup. Open a run to delete it, or use **People & integrations → Project access → Delete project**. See the [deletion guide and manual checklist](../../docs/DASHBOARD-DELETION.md). No build or checks were run for this extension, per the user's instruction.
 
+You can also bind a run while executing tests: `npx visualguard test storefront`, or `npx visualguard test "Storefront Web"`. Use `--dashboard <origin>` or `VISUALGUARD_DASHBOARD_URL` with the applicable upload token for an existing server. See the [project binding guide](../../docs/DASHBOARD-TEST-BINDING.md). No build or checks were run for this follow-up either.
+
 ## Start from this repository
 
 ```sh

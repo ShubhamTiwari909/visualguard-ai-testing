@@ -52,7 +52,8 @@ Examples:
   $ npx visualguard https://example.com                          scan one site
   $ npx visualguard https://example.com https://staging.example.com
   $ npx visualguard init                                         set up a config
-  $ npx visualguard test                                         run the configured comparison`,
+  $ npx visualguard test                                         run the configured comparison
+  $ npx visualguard test storefront                              run and save evidence to a dashboard project`,
     );
 
   registerZeroConfigCommand(program);

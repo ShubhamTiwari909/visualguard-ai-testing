@@ -6,6 +6,8 @@
 
 **Deletion extension:** project/run deletion has since been added with confirmation and reference-aware cleanup. No checks or builds were run for that follow-up, as requested. See [deletion usage and the manual checklist](DASHBOARD-DELETION.md); the validation record below describes the preceding dashboard implementation.
 
+**Test binding extension:** `visualguard test [project]` now saves the resulting evidence to a local or hosted project automatically. See the [binding setup and manual checklist](DASHBOARD-TEST-BINDING.md). This follow-up also has no executed checks or regenerated package build.
+
 ## 1. Choose your setup
 
 | Goal | What to use | Configuration |
@@ -453,6 +455,7 @@ Cloud Run requires listening on the supplied port/all interfaces and treats cont
 | `VISUALGUARD_PLATFORM_PORT` / `PORT` | HTTP listener port; default 4400 |
 | `VISUALGUARD_HOST` | Loopback locally; hosted entry listens on all interfaces |
 | `VISUALGUARD_UPLOAD_TOKEN` | Publishing credential; never a browser login |
+| `VISUALGUARD_DASHBOARD_URL` | Client destination for `test <project>`; `--dashboard` overrides it |
 | `VISUALGUARD_OIDC_*` | Optional issuer/client credentials and admin subject allowlist |
 
 No separate session-signing secret is required: sessions are opaque random tokens with hashed server-side records. Authentication, revocation, and upload progress are persisted in the selected database. The generated examples do not contain real credentials.
@@ -506,7 +509,7 @@ Troubleshooting:
 
 ## 15. Validation record and release boundary
 
-Recorded before the deletion extension (not rerun for that extension):
+Recorded before the deletion and test-binding extensions (not rerun for either extension):
 
 - 54 focused tests passed, including live local PostgreSQL and MongoDB adapters, SQLite persistence, permissions, session/password/token revocation, racing writes, chunk integrity, resumable publication, backup/restore, and host scaffolds.
 - JavaScript/UI distribution build passed without running declaration/type checking.
@@ -526,3 +529,15 @@ Open a run and select **Delete run**, then type `DELETE`. To delete a project, o
 Deletion is permanent. Shared evidence remains available to other runs; unused artifacts are queued for cleanup. Project deletion also removes memberships, upload tokens, and upload sessions. Deleted project IDs remain reserved; use a fresh ID for a future project, or a fresh workspace to restore an older backup. Original local run folders and exported/native backups are kept.
 
 The [deletion guide](DASHBOARD-DELETION.md) explains concurrency/recovery boundaries, API requests, cleanup-pending messages, and the manual acceptance sequence. No build, browser check, or test was run for this extension at the user's request; rebuild the UI/package manually before inspecting a previously compiled installation.
+
+## 17. Bind tests to a project automatically
+
+```sh
+npx visualguard test storefront
+# Or use an existing exact project name:
+npx visualguard test "Storefront Web"
+```
+
+Without a configured dashboard URL, the command imports into the same local database as `visualguard dashboard`, creating a missing valid project ID. Set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN` once for an existing hosted project, or use `--dashboard <origin>`. `test` without a project remains offline, and `--list` does not create or upload anything.
+
+Project resolution happens before capture. The exact new run is imported/published afterward, including failing/incomplete evidence. A publishing failure preserves local evidence and returns a nonzero result. [Full setup, labels, exit codes, and manual acceptance](DASHBOARD-TEST-BINDING.md). Both CLI and dashboard server need the feature-enabled version; earlier tarballs/builds remain unchanged until rebuilt.

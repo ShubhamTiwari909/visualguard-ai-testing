@@ -9,6 +9,7 @@ import { RUN_STATUSES, type RunFilters, type RunStatus } from "../shared/contrac
 import { body, json } from "./transport.js";
 import { Uploads, UPLOAD_CHUNK_BYTES } from "./uploads.js";
 import { sha256 } from "./artifacts.js";
+import { findProject, projectSelector } from "./project-selector.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -69,6 +70,13 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
       if (!actor) throw new PlatformError(401, "Sign in to access this dashboard");
       if (request.method !== "GET" && request.method !== "HEAD") auth.csrf(request, actor);
       if (await uploads.handle(request, response, url, actor)) return true;
+      if (request.method === "GET" && url.pathname === "/api/publishing/project") {
+        const selector = projectSelector(url.searchParams.get("project") ?? "");
+        const access = actor.credentialId ? [actor.uploadProject!] : actor.admin ? undefined : (await auth.projectAccess(actor))?.filter((item) => item.role === "maintainer").map((item) => item.projectId);
+        const project = findProject(await repository.projects(access), selector);
+        if (!project) throw new PlatformError(404, "Project not found or not permitted; use an existing project ID and its upload token");
+        json(response, 200, { id: project.id, name: project.name }); return true;
+      }
       if (request.method === "POST" && url.pathname === "/api/auth/logout") { await auth.logout(actor, response); json(response, 200, { ok: true }); return true; }
       if (actor.credentialId) throw new PlatformError(403, "Upload credentials cannot browse or administer the dashboard");
       if (request.method === "POST" && url.pathname === "/api/auth/password") {
