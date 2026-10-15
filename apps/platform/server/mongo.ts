@@ -32,13 +32,15 @@ export class MongoRepository implements PlatformRepository {
     const run = await this.db.collection("vg_runs").findOne({ id });
     if (!run) throw new PlatformError(404, "Run not found");
     const { searchText: _search, ...detail } = clean<RunDetail & { searchText: string }>(run);
+    // Early F02 builds used the driver's default undefined-to-null encoding for metadata.
+    for (const key of ["branch", "commit", "pullRequest", "deployment"] as const) if (detail.metadata[key] === null) delete detail.metadata[key];
     return detail;
   }
-  async insertRun(run: Omit<RunDetail, "id">) {
+  async insertRun(run: Omit<RunDetail, "id">, preserveId?: string) {
     if (!await this.db.collection("vg_projects").findOne({ id: run.projectId })) throw new PlatformError(404, "Project not found");
     // Leave headroom below MongoDB's BSON document limit for indexes and future envelope fields.
     if (Buffer.byteLength(JSON.stringify(run)) > 12 * 1024 * 1024) throw new PlatformError(413, "MongoDB run envelope exceeds the 12 MiB limit; split this execution into smaller complete runs");
-    const document: RunDetail = { ...run, id: randomUUID() };
+    const document: RunDetail = { ...run, id: preserveId ?? randomUUID() };
     const searchText = [run.engineRunId, run.metadata.branch, run.metadata.commit, run.metadata.deployment, ...run.manifest.jobs.flatMap((job) => [job.route, job.name, job.viewport])].filter(Boolean).join(" ").toLowerCase();
     try {
       await this.db.collection("vg_runs").insertOne({ ...document, searchText });
@@ -69,7 +71,7 @@ export class MongoRepository implements PlatformRepository {
   }
 }
 
-type MongoState = { namespace: string; id: string; value: unknown; version: number; expiresAt: string | null };
+type MongoState = { namespace: string; id: string; value: unknown; version: number; expiresAt: string | null; expiresOn?: Date | null };
 export class MongoStateStore implements StateStore {
   private collection: Collection<MongoState>;
   constructor(db: Db) { this.collection = db.collection<MongoState>("vg_state"); }
@@ -80,16 +82,21 @@ export class MongoStateStore implements StateStore {
   }
   async create<T>(namespace: string, id: string, value: T, expiresAt?: string) {
     await this.collection.deleteOne({ namespace, id, expiresAt: { $ne: null, $lte: new Date().toISOString() } });
-    try { await this.collection.insertOne({ namespace, id, value, version: 1, expiresAt: expiresAt ?? null }); return true; }
+    try { await this.collection.insertOne({ namespace, id, value, version: 1, expiresAt: expiresAt ?? null, expiresOn: expiresAt ? new Date(expiresAt) : null }); return true; }
     catch (error) { if (error && typeof error === "object" && "code" in error && error.code === 11000) return false; throw error; }
   }
   async replace<T>(namespace: string, item: StateRecord<T>) {
-    return (await this.collection.updateOne({ namespace, id: item.id, version: item.version, ...this.live() }, { $set: { value: item.value, expiresAt: item.expiresAt ?? null }, $inc: { version: 1 } })).modifiedCount === 1;
+    return (await this.collection.updateOne({ namespace, id: item.id, version: item.version, ...this.live() }, { $set: { value: item.value, expiresAt: item.expiresAt ?? null, expiresOn: item.expiresAt ? new Date(item.expiresAt) : null }, $inc: { version: 1 } })).modifiedCount === 1;
   }
   async remove(namespace: string, id: string, version?: number) { return (await this.collection.deleteOne({ namespace, id, ...(version === undefined ? {} : { version }) })).deletedCount === 1; }
   async list<T>(namespace: string, prefix = "", limit = 1000): Promise<StateRecord<T>[]> {
     const rows = await this.collection.find({ namespace, id: { $regex: `^${regex(prefix)}` }, ...this.live() }).sort({ id: 1 }).limit(limit).toArray();
     return rows.map((row) => ({ id: row.id, value: row.value as T, version: row.version, expiresAt: row.expiresAt ?? undefined }));
+  }
+  async pruneExpired(limit = 250) {
+    const rows = await this.collection.find({ expiresAt: { $ne: null, $lte: new Date().toISOString() } }).limit(limit).toArray();
+    if (!rows.length) return 0;
+    return (await this.collection.deleteMany({ _id: { $in: rows.map((row) => row._id) }, expiresAt: { $ne: null, $lte: new Date().toISOString() } })).deletedCount;
   }
 }
 
@@ -115,10 +122,18 @@ export class MongoArtifactStore implements ArtifactStore {
     if (rows.length !== meta.chunks || data.length !== meta.size || sha256(data) !== hash) throw new Error("Stored artifact checksum mismatch");
     return data;
   }
+  async getChunk(hash: string, index: number) {
+    if (!/^[a-f0-9]{64}$/.test(hash) || !Number.isSafeInteger(index) || index < 0) throw new Error("Invalid artifact chunk");
+    const [meta, row] = await Promise.all([this.db.collection("vg_objects").findOne({ hash }), this.db.collection("vg_object_chunks").findOne({ key: `${hash}:${index}` })]);
+    if (!meta || !row || index >= meta.chunks) throw new Error("Artifact object not found");
+    const bytes = Buffer.from(row.data, "base64");
+    if (bytes.length !== Math.min(OBJECT_CHUNK_BYTES, meta.size - index * OBJECT_CHUNK_BYTES)) throw new Error("Stored artifact chunk length mismatch");
+    return bytes;
+  }
 }
 
 export async function openMongo(url: string) {
-  const client = new MongoClient(url, { maxPoolSize: 5, serverSelectionTimeoutMS: 10_000 });
+  const client = new MongoClient(url, { maxPoolSize: 5, serverSelectionTimeoutMS: 10_000, ignoreUndefined: true });
   try {
     await client.connect();
     const name = decodeURIComponent(url.match(/^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]+)/)?.[1] ?? "");
@@ -130,6 +145,7 @@ export async function openMongo(url: string) {
       db.collection("vg_runs").createIndex({ projectId: 1, engineRunId: 1 }, { unique: true }),
       db.collection("vg_runs").createIndex({ projectId: 1, startedAt: -1, id: -1 }),
       db.collection("vg_state").createIndex({ namespace: 1, id: 1 }, { unique: true }),
+      db.collection("vg_state").createIndex({ expiresOn: 1 }, { expireAfterSeconds: 0 }),
       db.collection("vg_objects").createIndex({ hash: 1 }, { unique: true }),
       db.collection("vg_object_chunks").createIndex({ key: 1 }, { unique: true }),
     ]);

@@ -23,6 +23,7 @@ export default defineConfig({
     cli: "src/cli/main.ts",
     "diff-worker": "src/diff/worker.ts",
     playwright: "src/playwright/index.ts",
+    dashboard: "src/dashboard.ts",
   },
   format: ["esm"],
   target: "node22",
@@ -33,8 +34,9 @@ export default defineConfig({
   // Tests rebuild while other tests read dist/report-app, so they skip the clean step.
   clean: !process.env.TSUP_NO_CLEAN,
   splitting: true,
+  removeNodeProtocol: false,
   // Playwright is an optional peer dependency, loaded lazily at runtime.
-  external: ["playwright", "@playwright/test"],
+  external: ["playwright", "@playwright/test", "pg", "mongodb", "openid-client", "vite"],
   // Replace this identifier during bundling; source code does not read package.json at runtime.
   define: {
     __VISUALGUARD_VERSION__: JSON.stringify(pkg.version),

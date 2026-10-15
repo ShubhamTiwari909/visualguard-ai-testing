@@ -20,7 +20,7 @@ The publisher registers small file descriptors and transfers 1 MiB binary chunks
 
 Repeating the exact command resumes the same credential-bound upload for up to 24 hours. Completed files are skipped. Transient network/server errors use bounded retries; rejected credentials and invalid evidence do not. An interrupted upload does not create a green dashboard entry. Changes to screenshot bytes affect upload identity even if manifest paths stay the same; conflicting reuse of an engine-run ID preserves original evidence and fails.
 
-Progress, sessions, revocation, and temporary chunks are database-backed, so requests may reach different instances. Successful file completion removes temporary chunk records. Abandoned sessions expire logically after 24 hours; periodic expired-state cleanup is part of hosting operations. Unreferenced final objects require reference-aware cleanup rather than blind age deletion.
+Progress, sessions, revocation, and temporary chunks are database-backed, so requests may reach different instances. Successful file completion removes temporary chunk records. Abandoned sessions expire logically after 24 hours; new uploads prune bounded batches of expired state, and MongoDB also has a TTL index. Unreferenced final objects require reference-aware cleanup rather than blind age deletion.
 
 Upload credentials cannot browse run history or artifacts, create projects, grant access, or approve changes. Removing a token or disabling/removing its owner's applicable access invalidates subsequent requests, including attempts to resume a session.
 
@@ -28,4 +28,4 @@ The dashboard also transfers large manifests and artifacts in 1 MiB responses, v
 
 Run limits: 4096 referenced artifacts, 32 MiB per artifact, 16 MiB raw manifest, and 512 MiB total referenced artifacts. MongoDB additionally limits the complete metadata envelope to 12 MiB. Split exceptionally large executions into appropriately scoped complete runs.
 
-The final standalone walkthrough covers installed-package commands, hosting, database restoration, and CI examples.
+The [standalone walkthrough](../../docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) covers installed-package commands, hosting, database restoration, and CI examples.

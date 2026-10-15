@@ -11,6 +11,7 @@ export const sha256 = (data: Uint8Array | string) => createHash("sha256").update
 export interface ArtifactStore {
   put(data: Uint8Array): Promise<string>;
   get(hash: string): Promise<Buffer>;
+  getChunk?(hash: string, index: number): Promise<Buffer>;
 }
 
 export class FileArtifactStore implements ArtifactStore {
@@ -69,6 +70,14 @@ export class SqlArtifactStore implements ArtifactStore {
     if (rows.length !== meta.chunks || data.length !== meta.size || sha256(data) !== hash) throw new Error("Stored artifact checksum mismatch");
     return data;
   }
+  async getChunk(hash: string, index: number): Promise<Buffer> {
+    if (!/^[a-f0-9]{64}$/.test(hash) || !Number.isSafeInteger(index) || index < 0) throw new Error("Invalid artifact chunk");
+    const [row] = await this.db.query<{ data: string; size: number; chunks: number }>("SELECT c.data, o.size, o.chunks FROM vg_object_chunks c JOIN vg_objects o ON o.hash=c.hash WHERE c.hash=? AND c.chunk=?", [hash, index]);
+    if (!row || index >= row.chunks) throw new Error("Artifact object not found");
+    const bytes = Buffer.from(row.data, "base64");
+    if (bytes.length !== Math.min(OBJECT_CHUNK_BYTES, row.size - index * OBJECT_CHUNK_BYTES)) throw new Error("Stored artifact chunk length mismatch");
+    return bytes;
+  }
 }
 
 /** Preserve pre-release F01 file artifacts while moving new writes into the database. */
@@ -82,5 +91,9 @@ export class FallbackArtifactStore implements ArtifactStore {
       if (error instanceof Error && error.message === "Artifact object not found") return this.fallback.get(hash);
       throw error;
     }
+  }
+  async getChunk(hash: string, index: number) {
+    try { return this.primary.getChunk ? await this.primary.getChunk(hash, index) : (await this.primary.get(hash)).subarray(index * OBJECT_CHUNK_BYTES, (index + 1) * OBJECT_CHUNK_BYTES); }
+    catch (error) { if (error instanceof Error && error.message === "Artifact object not found") return (await this.fallback.get(hash)).subarray(index * OBJECT_CHUNK_BYTES, (index + 1) * OBJECT_CHUNK_BYTES); throw error; }
   }
 }

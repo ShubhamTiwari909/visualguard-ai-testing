@@ -35,7 +35,7 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 
 ## Features
 
-The separate [central dashboard and run history app](apps/platform/README.md) supports persistent projects, imported run evidence, search/filtering, and the existing comparison viewer. Start it with `pnpm platform:dev` from this repository. F01 currently serves a local workspace; organization authentication is planned in F02.
+The [standalone dashboard](docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) adds shared run history, password/OIDC access, project permissions, remote CI publishing, MongoDB/PostgreSQL storage, portable local backups, and Cloud Run/Vercel deployment templates. Local use needs no database setup. Start the source app with `pnpm platform:dev`; dashboard-enabled package releases provide `npx visualguard dashboard` in any project. See the walkthrough for release-candidate installation and hosting.
 
 | Capability                 | What you can do                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |

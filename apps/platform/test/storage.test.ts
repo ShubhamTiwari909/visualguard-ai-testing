@@ -38,17 +38,21 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect(await state.get(prefix, "expired")).toBeUndefined();
       expect(await state.create(prefix, "expired", { renewed: true })).toBe(true);
       expect((await state.list(prefix)).length).toBe(2);
+      await state.create(prefix, "prune", {}, "2000-01-01T00:00:00.000Z");
+      expect(await state.pruneExpired()).toBeGreaterThanOrEqual(1);
     });
     it("round-trips a multi-chunk image object and deduplicates concurrent writes", async () => {
       const bytes = randomBytes(5 * 1024 * 1024 + 17);
       const [a, b] = await Promise.all([store.put(bytes), store.put(bytes)]);
       expect(a).toBe(b); expect((await store.get(a)).equals(bytes)).toBe(true);
+      expect(store.getChunk).toBeTypeOf("function");
+      expect((await store.getChunk!(a, 2)).equals(bytes.subarray(2 * 1024 * 1024, 3 * 1024 * 1024))).toBe(true);
     });
     it("keeps projects scoped and history immutable under racing imports", async () => {
       const projectId = `${prefix}-a`, other = `${prefix}-b`;
       await repository.createProject(projectId, "Storage test A"); await repository.createProject(other, "Storage test B");
       const manifest = { schemaVersion: 1, id: prefix, number: 1, startedAt: "2026-10-15T10:00:00.000Z", durationMs: 0, mode: "compare", tool: { version: "2.0.0" }, config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" }, summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 }, jobs: [] } as RunDetail["manifest"];
-      const input: Omit<RunDetail, "id"> = { envelopeVersion: 1, projectId, engineRunId: prefix, number: 1, startedAt: manifest.startedAt, importedAt: manifest.startedAt, durationMs: 0, mode: "compare", status: "incomplete", complete: false, completenessReasons: ["No checks"], summary: manifest.summary, metadata: { environment: "validation", branch: "literal%[x]" }, digest: randomBytes(32).toString("hex"), jobCount: 0, manifest, artifacts: [] };
+      const input: Omit<RunDetail, "id"> = { envelopeVersion: 1, projectId, engineRunId: prefix, number: 1, startedAt: manifest.startedAt, importedAt: manifest.startedAt, durationMs: 0, mode: "compare", status: "incomplete", complete: false, completenessReasons: ["No checks"], summary: manifest.summary, metadata: { environment: "validation", branch: "literal%[x]", commit: undefined }, digest: randomBytes(32).toString("hex"), jobCount: 0, manifest, artifacts: [] };
       const [a, b] = await Promise.all([repository.insertRun(input), repository.insertRun(input)]);
       expect(a.run.id).toBe(b.run.id);
       await expect(repository.insertRun({ ...input, digest: "0".repeat(64) })).rejects.toMatchObject({ status: 409 });
@@ -57,6 +61,7 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect(await repository.projects([])).toEqual([]);
       expect((await repository.runs({}, [])).total).toBe(0);
       expect((await repository.getRun(a.run.id)).manifest).toEqual(manifest);
+      expect((await repository.getRun(a.run.id)).metadata.commit).toBeUndefined();
     });
   });
 }

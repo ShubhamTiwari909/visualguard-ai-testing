@@ -1,11 +1,13 @@
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { openDatabase } from "./database.js";
 import { FallbackArtifactStore, FileArtifactStore, SqlArtifactStore } from "./artifacts.js";
 import { Repository } from "./repository.js";
 import { SqlStateStore } from "./state.js";
 
 export async function openPlatform(env: NodeJS.ProcessEnv = process.env) {
-  const dataDir = resolve(env.VISUALGUARD_PLATFORM_DATA_DIR ?? resolve(env.INIT_CWD ?? process.cwd(), ".visualguard/platform"));
+  const [major, minor] = process.versions.node.split(".").map(Number);
+  if (major! < 22 || (major === 22 && minor! < 12)) throw new Error("The dashboard requires Node.js 22.12 or newer. Switch your project to a supported Node version and retry.");
+  const dataDir = resolve(env.VISUALGUARD_PLATFORM_DATA_DIR || (env.VISUALGUARD_SQLITE_FILE ? dirname(resolve(env.VISUALGUARD_SQLITE_FILE)) : resolve(env.INIT_CWD ?? process.cwd(), ".visualguard/platform")));
   const url = env.VISUALGUARD_DATABASE_URL ?? env.DATABASE_URL;
   if (url?.startsWith("mongodb")) {
     const { openMongo } = await import("./mongo.js");

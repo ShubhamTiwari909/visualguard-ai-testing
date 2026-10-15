@@ -27,6 +27,15 @@ npx visualguard test
 
 ## Try it without a config
 
+The standalone dashboard is also available in dashboard-enabled releases:
+
+```sh
+npx visualguard dashboard
+npx visualguard dashboard import /absolute/path/to/run --project storefront
+```
+
+It includes local SQLite, MongoDB/PostgreSQL storage, team login/project permissions, remote CI uploads, portable backups, and deployment generators for Cloud Run/Vercel. No browser installation is needed to host the dashboard. See the [standalone walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/STANDALONE-DASHBOARD-WALKTHROUGH.md), including local release-candidate installation before npm publication.
+
 ```bash
 # Scan one site: finds routes (sitemap.xml, then links), captures them, checks health,
 # and saves snapshots. The next scan compares against them.

@@ -5,7 +5,7 @@
 **Status:** proposed product and engineering plan; new capabilities below are not shipped APIs.  
 **Planning audience:** project owner, frontend leads, QA, designers, platform engineering, and engineering management.
 
-**Implementation update, 15 October 2026:** F01's dashboard/history foundation is implemented in [the platform app](../apps/platform/README.md), with local SQLite or PostgreSQL metadata, immutable artifact import, filters, run details, and the existing comparison viewer. It currently binds to loopback; organizational access and remote ingestion remain scoped to F02 and F06. Feature commits are kept separate. Formatting, linting, and type checks are deferred until after F36 at the user's request; focused behavior tests and feature builds are used during implementation.
+**Implementation update, 15 October 2026:** The standalone dashboard release candidate now includes F01 history, F02 access, F06 upload scope, MongoDB/PostgreSQL and local SQLite storage, evidence export/restore, package commands, and hosting scaffolds. See the [complete walkthrough](STANDALONE-DASHBOARD-WALKTHROUGH.md) for local use, installation in another project, and deployment. Feature commits remain separate. Formatting, linting, and type checks are deferred until after F36 at the user's request; focused behavior tests and JavaScript/UI builds are used during implementation. Public npm publication and live cloud deployment have not been performed.
 
 ## 1. The recommendation
 

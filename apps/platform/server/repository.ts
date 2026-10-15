@@ -31,11 +31,11 @@ export class Repository implements PlatformRepository {
     return JSON.parse(row.document) as RunDetail;
   }
 
-  async insertRun(run: Omit<RunDetail, "id">): Promise<{ run: RunDetail; duplicate: boolean }> {
+  async insertRun(run: Omit<RunDetail, "id">, preserveId?: string): Promise<{ run: RunDetail; duplicate: boolean }> {
     return this.db.transaction(async (sql) => {
       const [project] = await sql.query("SELECT id FROM vg_projects WHERE id=?", [run.projectId]);
       if (!project) throw new PlatformError(404, "Project not found; create it before importing runs");
-      const document: RunDetail = { ...run, id: randomUUID() };
+      const document: RunDetail = { ...run, id: preserveId ?? randomUUID() };
       const searchable = [run.engineRunId, run.metadata.branch, run.metadata.commit, run.metadata.deployment, ...run.manifest.jobs.flatMap((job) => [job.route, job.name, job.viewport])].filter(Boolean).join(" ").toLowerCase();
       const inserted = await sql.query(
         "INSERT INTO vg_runs(id, project_id, engine_run_id, digest, started_at, status, environment, branch, revision, pull_request, deployment, document, search_text) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(project_id, engine_run_id) DO NOTHING RETURNING id",

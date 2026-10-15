@@ -3,6 +3,7 @@ import type { Project, RunDetail, RunPage } from "../shared/contracts";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, options);
   const result = await response.json();
+  if (response.status === 401) window.dispatchEvent(new Event("visualguard-auth-expired"));
   if (!response.ok) throw new Error(result.error ?? `Request failed (${response.status})`);
   return result as T;
 }
@@ -17,10 +18,14 @@ export const api = {
       run.manifest = JSON.parse(new TextDecoder().decode(bytes)) as RunDetail["manifest"];
     }
     // Large objects use bounded responses on every deployment, including Vercel.
+    const shared = new Map<string, string>();
     for (const artifact of run.artifacts) if (artifact.size > 2 * 1024 * 1024) {
+      const cached = shared.get(artifact.hash);
+      if (cached) { urls.set(`${id}:${artifact.path}`, cached); continue; }
       const bytes = await download(rawArtifactUrl(id, artifact.path), artifact.size, artifact.hash, signal);
       signal.throwIfAborted();
-      urls.set(`${id}:${artifact.path}`, URL.createObjectURL(new Blob([bytes], { type: artifact.mediaType })));
+      const url = URL.createObjectURL(new Blob([bytes], { type: artifact.mediaType }));
+      shared.set(artifact.hash, url); urls.set(`${id}:${artifact.path}`, url);
     }
     return run;
   },

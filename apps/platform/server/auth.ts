@@ -50,7 +50,10 @@ export class AuthService {
     const email = this.env.VISUALGUARD_ADMIN_EMAIL, password = this.env.VISUALGUARD_ADMIN_PASSWORD;
     if (email && password) {
       const id = `password-${sha256(emailAddress(email))}`;
-      if (!await this.state.get("users", id)) await this.createUser({ email, password, name: "Workspace administrator", role: "admin" });
+      if (!await this.state.get("users", id)) {
+        try { await this.createUser({ email, password, name: "Workspace administrator", role: "admin" }); }
+        catch (error) { if (!(error instanceof PlatformError && error.status === 409 && await this.state.get("users", id))) throw error; }
+      }
     }
     const admins = (await this.state.list<User>("users", "", 10_000)).some((row) => row.value.role === "admin" && !row.value.disabled);
     if (!admins && !(this.env.VISUALGUARD_OIDC_ISSUER && (this.env.VISUALGUARD_ADMIN_EMAIL || this.env.VISUALGUARD_OIDC_ADMIN_SUBJECTS))) throw new Error("Configure VISUALGUARD_ADMIN_EMAIL and VISUALGUARD_ADMIN_PASSWORD (12+ characters), or an OIDC administrator");
@@ -62,7 +65,7 @@ export class AuthService {
     try { url = new URL(request.url ?? "/", this.publicUrl?.origin ?? `http://${host}`); }
     catch { throw new PlatformError(400, "Invalid request URL"); }
     if (this.publicUrl) {
-      if (host !== this.publicUrl.host) throw new PlatformError(403, "Use the configured dashboard URL");
+      if (host !== this.publicUrl.host || url.origin !== this.publicUrl.origin) throw new PlatformError(403, "Use the configured dashboard URL");
     } else if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) throw new PlatformError(403, "Local workspace access is restricted to loopback hosts");
     if (request.headers.origin && request.headers.origin !== url.origin) throw new PlatformError(403, "Cross-origin API access is not allowed");
     return url;
@@ -99,6 +102,10 @@ export class AuthService {
     if (actor.credentialId) return [];
     if (actor.admin) return undefined;
     return (await this.state.list<Membership>("memberships", `${actor.id}:`, 10_000)).map((row) => row.value.projectId);
+  }
+  async projectAccess(actor: Actor): Promise<Membership[] | undefined> {
+    if (actor.admin && !actor.credentialId) return undefined;
+    return (await this.state.list<Membership>("memberships", `${actor.id}:`, 10_000)).map((row) => row.value);
   }
   async hasRole(actor: Actor, projectId: string, minimum: ProjectRole): Promise<boolean> {
     if (actor.credentialId) return false;
@@ -169,6 +176,20 @@ export class AuthService {
   async logout(actor: Actor, response: ServerResponse) {
     if (actor.sessionId) await this.state.remove("sessions", actor.sessionId);
     response.setHeader("Set-Cookie", `vg_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${this.publicUrl?.protocol === "https:" ? "; Secure" : ""}`);
+  }
+  async changePassword(actor: Actor, current: string, password: string, response: ServerResponse) {
+    if (actor.credentialId) throw new PlatformError(403, "Browser account required");
+    const row = await this.state.get<User>("users", actor.id);
+    if (!row?.value.passwordHash) throw new PlatformError(400, "Manage your company-login password through your identity provider");
+    if (password.length < 12 || password.length > 256) throw new PlatformError(400, "Password must contain 12–256 characters");
+    await this.throttle(sha256(`password-change:${actor.id}`));
+    const [, salt, expected] = row.value.passwordHash.split("$");
+    const actual = await scrypt(current.slice(0, 257), salt!, 64) as Buffer;
+    if (!expected || !matches(actual.toString("hex"), expected)) throw new PlatformError(401, "Current password is incorrect");
+    const nextSalt = secret(), nextHash = await scrypt(password, nextSalt, 64) as Buffer;
+    row.value.passwordHash = `scrypt$${nextSalt}$${nextHash.toString("hex")}`; row.value.authVersion++;
+    if (!await this.state.replace("users", row)) throw new PlatformError(409, "Account changed; sign in again");
+    await this.issueSession(row.value, response); await this.audit(actor, "password.changed", {});
   }
   async assign(actor: Actor, projectId: string, userId: string, role: ProjectRole | null) {
     await this.requireRole(actor, projectId, "maintainer");
@@ -244,4 +265,5 @@ export class MemoryStateStore implements StateStore {
   async replace<T>(namespace: string, record: StateRecord<T>) { const prior = await this.get(namespace, record.id); if (!prior || prior.version !== record.version) return false; this.entries.set(`${namespace}:${record.id}`, structuredClone({ ...record, version: record.version + 1 })); return true; }
   async remove(namespace: string, id: string, version?: number) { const prior = await this.get(namespace, id); return Boolean(prior && (version === undefined || prior.version === version) && this.entries.delete(`${namespace}:${id}`)); }
   async list<T>(namespace: string, prefix = "", limit = 1000) { const keys = [...this.entries.keys()].filter((key) => key.startsWith(`${namespace}:${prefix}`)).sort().slice(0, limit); const rows = await Promise.all(keys.map((key) => this.get<T>(namespace, key.slice(namespace.length + 1)))); return rows.filter((row): row is StateRecord<T> => Boolean(row)); }
+  async pruneExpired(limit = 250) { let removed = 0; for (const [key, value] of this.entries) if (value.expiresAt && value.expiresAt <= new Date().toISOString() && removed < limit) { this.entries.delete(key); removed++; } return removed; }
 }

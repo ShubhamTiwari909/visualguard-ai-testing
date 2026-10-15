@@ -27,4 +27,7 @@ export class SqlStateStore implements StateStore {
     const rows = await this.db.query<Row>("SELECT id, value, version, expires_at FROM vg_state WHERE namespace=? AND id LIKE ? ESCAPE '!' AND (expires_at IS NULL OR expires_at>?) ORDER BY id LIMIT ?", [namespace, `${escaped}%`, new Date().toISOString(), limit]);
     return rows.map(record<T>);
   }
+  async pruneExpired(limit = 250) {
+    return (await this.db.query("DELETE FROM vg_state WHERE (namespace, id) IN (SELECT namespace, id FROM vg_state WHERE expires_at IS NOT NULL AND expires_at<=? LIMIT ?) RETURNING id", [new Date().toISOString(), limit])).length;
+  }
 }

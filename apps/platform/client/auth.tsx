@@ -17,7 +17,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const load = () => fetch("/api/session").then(async (response) => { const value = await response.json(); if (!response.ok) throw new Error(value.error); setSession(value); }).catch((problem: Error) => setError(problem.message));
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { const expired = () => { void load(); }; void load(); window.addEventListener("visualguard-auth-expired", expired); return () => window.removeEventListener("visualguard-auth-expired", expired); }, []);
   const login = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const form = new FormData(event.currentTarget); setPending(true); setError("");
     try {

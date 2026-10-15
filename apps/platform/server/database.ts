@@ -41,6 +41,7 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS vg_objects (
     hash TEXT PRIMARY KEY, size INTEGER NOT NULL, chunks INTEGER NOT NULL
   )`,
+  "CREATE INDEX IF NOT EXISTS vg_state_expiry ON vg_state(expires_at)",
 ];
 
 export async function openDatabase(options: { url?: string; sqlitePath: string }): Promise<Database> {

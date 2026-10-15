@@ -160,6 +160,16 @@ importers:
       zod:
         specifier: ^4.6.5
         version: 4.6.5
+    optionalDependencies:
+      mongodb:
+        specifier: ^6.21.0
+        version: 6.21.0(gcp-metadata@8.1.2)
+      openid-client:
+        specifier: ^6.8.1
+        version: 6.8.8
+      pg:
+        specifier: ^8.16.3
+        version: 8.23.1
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.13.0

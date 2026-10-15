@@ -71,6 +71,10 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
       if (await uploads.handle(request, response, url, actor)) return true;
       if (request.method === "POST" && url.pathname === "/api/auth/logout") { await auth.logout(actor, response); json(response, 200, { ok: true }); return true; }
       if (actor.credentialId) throw new PlatformError(403, "Upload credentials cannot browse or administer the dashboard");
+      if (request.method === "POST" && url.pathname === "/api/auth/password") {
+        const input = z.object({ current: z.string().max(256), password: z.string().min(12).max(256) }).parse(await body(request));
+        await auth.changePassword(actor, input.current, input.password, response); json(response, 200, { ok: true }); return true;
+      }
       if (url.pathname === "/api/users") {
         if (!actor.admin) throw new PlatformError(403, "Administrator access required");
         if (request.method === "GET") { json(response, 200, { users: await auth.users() }); return true; }
@@ -108,7 +112,9 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
         }
       }
       if (request.method === "GET" && url.pathname === "/api/projects") {
-        json(response, 200, { projects: await repository.projects(await auth.projectIds(actor)) }); return true;
+        const access = await auth.projectAccess(actor), roles = new Map(access?.map((item) => [item.projectId, item.role]));
+        const projects = await repository.projects(access?.map((item) => item.projectId));
+        json(response, 200, { projects: projects.map((project) => ({ ...project, role: actor.admin ? "maintainer" : roles.get(project.id) })) }); return true;
       }
       if (request.method === "POST" && url.pathname === "/api/projects") {
         if (!actor.admin) throw new PlatformError(403, "Administrator access required to create projects");
@@ -138,12 +144,15 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
           catch { throw new PlatformError(400, "Invalid artifact path"); }
           const artifact = run.artifacts.find((item) => item.path === path);
           if (!artifact) throw new PlatformError(404, "Artifact is not part of this run");
-          let data = await store.get(artifact.hash);
+          let data: Buffer;
           const isChunk = url.searchParams.has("chunk");
           if (isChunk) {
-            const index = integer(url.searchParams.get("chunk"), 0, 0, Math.max(0, Math.ceil(data.length / UPLOAD_CHUNK_BYTES) - 1));
-            data = data.subarray(index * UPLOAD_CHUNK_BYTES, (index + 1) * UPLOAD_CHUNK_BYTES);
-          } else if (auth.env.VERCEL && data.length > 3 * UPLOAD_CHUNK_BYTES) throw new PlatformError(413, "Use chunked artifact downloads on Vercel; the dashboard handles this automatically");
+            const index = integer(url.searchParams.get("chunk"), 0, 0, Math.max(0, Math.ceil(artifact.size / UPLOAD_CHUNK_BYTES) - 1));
+            data = store.getChunk ? await store.getChunk(artifact.hash, index) : (await store.get(artifact.hash)).subarray(index * UPLOAD_CHUNK_BYTES, (index + 1) * UPLOAD_CHUNK_BYTES);
+          } else {
+            if (auth.env.VERCEL && artifact.size > 3 * UPLOAD_CHUNK_BYTES) throw new PlatformError(413, "Use chunked artifact downloads on Vercel; the dashboard handles this automatically");
+            data = await store.get(artifact.hash);
+          }
           response.writeHead(200, {
             "Content-Type": isChunk ? "application/octet-stream" : artifact.mediaType, "Content-Length": data.length,
             "Cache-Control": "private, no-store", ETag: `"${artifact.hash}"`,

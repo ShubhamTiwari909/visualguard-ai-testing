@@ -7,6 +7,7 @@ export interface Project {
   name: string;
   createdAt: string;
   runCount: number;
+  role?: "viewer" | "reviewer" | "maintainer";
 }
 export interface RunMetadata {
   environment: string;

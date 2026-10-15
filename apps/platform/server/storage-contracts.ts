@@ -4,7 +4,7 @@ export interface PlatformRepository {
   createProject(id: string, name: string): Promise<Project>;
   projects(allowed?: string[]): Promise<Project[]>;
   getRun(id: string): Promise<RunDetail>;
-  insertRun(run: Omit<RunDetail, "id">): Promise<{ run: RunDetail; duplicate: boolean }>;
+  insertRun(run: Omit<RunDetail, "id">, preserveId?: string): Promise<{ run: RunDetail; duplicate: boolean }>;
   runs(filters: RunFilters, allowed?: string[]): Promise<RunPage>;
 }
 
@@ -16,4 +16,5 @@ export interface StateStore {
   replace<T>(namespace: string, record: StateRecord<T>): Promise<boolean>;
   remove(namespace: string, id: string, version?: number): Promise<boolean>;
   list<T>(namespace: string, prefix?: string, limit?: number): Promise<StateRecord<T>[]>;
+  pruneExpired(limit?: number): Promise<number>;
 }

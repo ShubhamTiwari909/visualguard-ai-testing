@@ -25,6 +25,7 @@ export class Uploads {
       const projectId = start[1]!;
       if (actor.credentialId ? actor.uploadProject !== projectId : !await this.auth.hasRole(actor, projectId, "maintainer")) throw new PlatformError(403, "Upload credential does not permit this project");
       if (!(await this.repository.projects([projectId])).length) throw new PlatformError(404, "Project not found");
+      await this.state.pruneExpired();
       const input = z.object({ idempotencyKey: hashSchema, manifestHash: hashSchema, manifestSize: z.number().int().positive().max(MAX_MANIFEST_BYTES), engineRunId: z.string().min(1).max(300), metadata: z.unknown() }).parse(await body(request));
       const metadata = parseMetadata(input.metadata), id = sha256(`${projectId}:${owner(actor)}:${input.idempotencyKey}`);
       const value: UploadSession = { projectId, owner: owner(actor), metadata, manifestHash: input.manifestHash, manifestSize: input.manifestSize, engineRunId: input.engineRunId };

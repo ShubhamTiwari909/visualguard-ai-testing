@@ -60,6 +60,14 @@ describe("F02 organization access", () => {
     expect((await fetch(`${base}/api/projects`, { method: "POST", headers: headers(person.cookie, person.csrf), body: JSON.stringify({ id: "other", name: "Other" }) })).status).toBe(403);
     expect((await (await fetch(`${base}/api/runs?project=private-b`, { headers: { Cookie: person.cookie } })).json()).total).toBe(0);
   });
+  it("protects run details and artifact bytes from a member without project access", async () => {
+    const person = await member();
+    const hash = await store.put(Buffer.from('{"private":true}'));
+    const manifest = { schemaVersion: 1, id: "private-run", number: 1, startedAt: "2026-10-15T10:00:00.000Z", durationMs: 0, mode: "compare", tool: { version: "2.0.0" }, config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" }, summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 }, jobs: [] } as import("../../../packages/visualguard/src/core/types.js").RunManifest;
+    const result = await repository.insertRun({ envelopeVersion: 1, projectId: "private-b", engineRunId: manifest.id, number: 1, startedAt: manifest.startedAt, importedAt: manifest.startedAt, durationMs: 0, mode: "compare", status: "incomplete", complete: false, completenessReasons: ["No checks"], summary: manifest.summary, metadata: { environment: "private" }, digest: "a".repeat(64), jobCount: 0, manifest, artifacts: [{ path: "private.json", hash, size: 16, mediaType: "application/json" }] });
+    expect((await fetch(`${base}/api/runs/${result.run.id}`, { headers: { Cookie: person.cookie } })).status).toBe(403);
+    expect((await fetch(`${base}/api/runs/${result.run.id}/artifacts/private.json`, { headers: { Cookie: person.cookie } })).status).toBe(403);
+  });
   it("protects mutations, rejects cross-origin calls, and revokes logged-out sessions", async () => {
     expect((await fetch(`${base}/api/auth/logout`, { method: "POST", headers: headers(adminCookie) })).status).toBe(403);
     expect((await fetch(`${base}/api/auth/logout`, { method: "POST", headers: { ...headers(adminCookie, adminCsrf), Origin: "https://attacker.test" } })).status).toBe(403);
@@ -70,6 +78,13 @@ describe("F02 organization access", () => {
     const person = await member();
     expect((await fetch(`${base}/api/users/${person.user.id}`, { method: "PATCH", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ disabled: true }) })).status).toBe(200);
     expect((await fetch(`${base}/api/projects`, { headers: { Cookie: person.cookie } })).status).toBe(401);
+  });
+  it("supports password rotation and revokes the previous browser session", async () => {
+    const response = await fetch(`${base}/api/auth/password`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ current: password, password: "rotated-test-password-long" }) });
+    expect(response.status).toBe(200); expect(response.headers.get("set-cookie")).toContain("HttpOnly");
+    expect((await fetch(`${base}/api/projects`, { headers: { Cookie: adminCookie } })).status).toBe(401);
+    const next = response.headers.get("set-cookie")!.split(";")[0]!;
+    expect((await fetch(`${base}/api/projects`, { headers: { Cookie: next } })).status).toBe(200);
   });
   it("issues hashed project upload credentials and revokes them immediately", async () => {
     const response = await fetch(`${base}/api/projects/private-a/tokens`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "CI", days: 1 }) });

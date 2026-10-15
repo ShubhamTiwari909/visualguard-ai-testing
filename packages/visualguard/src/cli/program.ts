@@ -16,6 +16,7 @@ import { registerAnalyzeCommand } from "./commands/analyze.js";
 import { registerAuthCommand } from "./commands/auth.js";
 import { registerCommentCommand } from "./commands/comment.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerFixCommand } from "./commands/fix.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMergeCommand } from "./commands/merge.js";
@@ -57,6 +58,7 @@ Examples:
   registerZeroConfigCommand(program);
   registerInitCommand(program);
   registerDoctorCommand(program);
+  registerDashboardCommand(program);
   registerTestCommand(program);
   registerMergeCommand(program);
   registerMonitorCommand(program);

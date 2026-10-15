@@ -38,6 +38,11 @@
       "import": "./dist/playwright.js",
       "default": "./dist/playwright.js"
     },
+    "./dashboard": {
+      "types": "./dist/dashboard.d.ts",
+      "import": "./dist/dashboard.js",
+      "default": "./dist/dashboard.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -47,7 +52,8 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "tsup && vite build --config report-app/vite.config.ts --logLevel warn",
+    "build": "tsup && vite build --config report-app/vite.config.ts --logLevel warn && pnpm run build:dashboard",
+    "build:dashboard": "node scripts/build-dashboard.mjs",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit && tsc --noEmit -p report-app",
     "test": "vitest run",
@@ -68,6 +74,11 @@
     "pngjs": "^7.0.0",
     "sirv": "^3.0.2",
     "zod": "^4.6.5"
+  },
+  "optionalDependencies": {
+    "pg": "^8.16.3",
+    "mongodb": "^6.21.0",
+    "openid-client": "^6.8.1"
   },
   "peerDependencies": {
     "@playwright/test": ">=1.45.0",
