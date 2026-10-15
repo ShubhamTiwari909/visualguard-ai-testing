@@ -30,7 +30,7 @@ interface Session {
   authVersion: number;
   csrf: string;
 }
-interface Membership {
+export interface Membership {
   userId: string;
   projectId: string;
   role: ProjectRole;

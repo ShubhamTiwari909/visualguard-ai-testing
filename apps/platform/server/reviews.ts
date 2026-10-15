@@ -5,8 +5,8 @@ import type { RunDetail } from "../shared/contracts.js";
 import type {
   ReviewEvent, ReviewInboxItem, ReviewInboxPage, ReviewPerson, ReviewThread, ReviewView,
 } from "../shared/reviews.js";
-import type { PlatformRepository, StateStore } from "./storage-contracts.js";
-import { AuthService, type Actor, type User } from "./auth.js";
+import type { PlatformRepository, StateRecord, StateStore } from "./storage-contracts.js";
+import { AuthService, type Actor, type Membership, type User } from "./auth.js";
 import { sha256 } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
 
@@ -40,12 +40,16 @@ export class Reviews {
   private async evidence(actor: Actor, runId: string, jobId: string, write = false) {
     const run = await this.repository.getRun(runId);
     await this.auth.requireRole(actor, run.projectId, write ? "reviewer" : "viewer");
+    return { run, ...this.checkEvidence(run, jobId) };
+  }
+
+  private checkEvidence(run: RunDetail, jobId: string) {
     const jobs = run.manifest.jobs.filter((item) => item.id === jobId);
     if (!jobs.length) throw new PlatformError(404, "Check not found in this run");
     if (jobs.length !== 1) throw new PlatformError(409, "Check identity is ambiguous in this run");
     const job = jobs[0]!;
     const scopeDigest = sha256(JSON.stringify({ runId: run.id, digest: run.digest, revision: run.metadata.commit, job }));
-    return { run, job, scopeDigest };
+    return { job, scopeDigest };
   }
 
   private async eligible(projectId: string, id: string): Promise<ReviewPerson | undefined> {
@@ -61,14 +65,28 @@ export class Reviews {
     await this.auth.requireRole(actor, projectId);
     if (!(await this.repository.projects([projectId])).length) throw new PlatformError(404, "Project not found");
     if (this.auth.mode === "local") return [{ id: "local-owner", name: "Local workspace" }];
-    // Read accounts in bounded pages; expose only eligible project reviewers' IDs/names.
+    // Membership keys start with user IDs, so page them once instead of re-reading
+    // each account and membership separately for every user in the picker.
+    const eligibleIds = new Set<string>();
+    let membershipAfter = "";
+    for (;;) {
+      const memberships = await this.state.list<Membership>("memberships", "", 100, membershipAfter);
+      for (const { value } of memberships) {
+        if (value.projectId === projectId && (value.role === "reviewer" || value.role === "maintainer"))
+          eligibleIds.add(value.userId);
+      }
+      if (memberships.length < 100) break;
+      membershipAfter = memberships[memberships.length - 1]!.id;
+    }
+    // Expose only active eligible reviewers' IDs/names; assignment writes still
+    // revalidate current account and project access through eligible().
     const people: ReviewPerson[] = [];
     let after = "";
     for (;;) {
       const users = await this.state.list<User>("users", "", 100, after);
-      for (const user of users) {
-        const candidate = await this.eligible(projectId, user.id);
-        if (candidate) people.push(candidate);
+      for (const { value: user } of users) {
+        if (!user.disabled && (user.role === "admin" || eligibleIds.has(user.id)))
+          people.push(person(user));
       }
       if (people.length > 1000) throw new PlatformError(413, "Too many project reviewers to list");
       if (users.length < 100) return people;
@@ -101,6 +119,10 @@ export class Reviews {
   async read(actor: Actor, runId: string, jobId: string) {
     const { run, job, scopeDigest } = await this.evidence(actor, runId, jobId);
     const row = await this.state.get<ReviewThread>("reviews", this.key(run, job.id));
+    return this.threadView(actor, run, job, scopeDigest, row);
+  }
+
+  private threadView(actor: Actor, run: RunDetail, job: JobResult, scopeDigest: string, row?: StateRecord<ReviewThread>) {
     if (row && (row.value.scopeDigest !== scopeDigest || row.value.evidenceDigest !== run.digest))
       throw new PlatformError(409, "Review evidence changed; this history cannot approve the current capture");
     return this.view(actor, run, job, row?.value ?? this.empty(run, job, scopeDigest), row?.version ?? 0);
@@ -122,6 +144,8 @@ export class Reviews {
     // A full discussion must never trap an approval that a reviewer needs to withdraw.
     const finalWithdrawal = input.event.action === "withdraw_decision" && previousDecision &&
       previousDecision.action !== "withdraw_decision";
+    if (input.event.action === "withdraw_decision" && !finalWithdrawal)
+      throw new PlatformError(400, "There is no active decision to withdraw");
     if (thread.events.length >= 200 && !finalWithdrawal)
       throw new PlatformError(413, "This check has reached its review limit; withdraw an existing decision or start a new capture");
     const event: ReviewEvent = { id: randomUUID(), actor: person(actor), at: new Date().toISOString(),
@@ -184,9 +208,9 @@ export class Reviews {
         runs.set(run.id, run);
       }
       if (run.projectId !== options.project) continue;
-      const job = run.manifest.jobs.find((item) => item.id === row.value.jobId);
-      if (!job || run.digest !== row.value.evidenceDigest) continue;
-      const view = await this.read(actor, run.id, job.id);
+      if (!run.manifest.jobs.some((item) => item.id === row.value.jobId) || run.digest !== row.value.evidenceDigest) continue;
+      const { job, scopeDigest } = this.checkEvidence(run, row.value.jobId);
+      const view = await this.threadView(actor, run, job, scopeDigest, row);
       if (options.owner === "mine" && view.assignee?.id !== actor.id) continue;
       if (options.owner === "unassigned" && view.assignee) continue;
       if (options.status === "open" && view.status === "approved") continue;

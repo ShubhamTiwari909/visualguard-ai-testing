@@ -121,7 +121,7 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
           </div>
         </div>
         <p className="vg-nav-heading">QUALITY</p>
-        <Link className={`vg-nav-link ${!selected && window.location.pathname === "/" ? "is-active" : ""}`} href="/">
+        <Link className={`vg-nav-link ${!selected && (window.location.pathname === "/" || window.location.pathname.startsWith("/runs/")) ? "is-active" : ""}`} href="/">
           <span aria-hidden="true">▦</span> Run history
         </Link>
         <Link className={`vg-nav-link ${window.location.pathname === "/reviews" ? "is-active" : ""}`} href="/reviews">
