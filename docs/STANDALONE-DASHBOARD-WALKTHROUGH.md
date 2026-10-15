@@ -201,7 +201,7 @@ After signing in:
 5. Members can change their password in the account settings. Company-login passwords remain managed by the identity provider.
 6. Disable an account to revoke its active sessions and owner-bound upload access.
 
-Workspace administrators manage all projects and accounts. Viewers see assigned projects only. Reviewers currently have read access; collaborative approval remains F03. Maintainers manage their project's membership/upload tokens. The settings page offers project controls only for projects the user can maintain.
+Workspace administrators manage all projects and accounts. Viewers see assigned projects and read review threads. Reviewers can comment, assign reviewers/deadlines, and record job-level visual decisions through **Team review** and **Review inbox**. Maintainers also manage their project's membership/upload tokens. The settings page offers project controls only for projects the user can maintain. See the [F03 review guide](COLLABORATIVE-REVIEW.md) for scope and manual validation.
 
 Sessions last up to 12 hours, are persisted server-side, and use HttpOnly cookies. Hosted HTTPS cookies are Secure. Password changes invalidate previous sessions. Browser-session mutations require the session action token. Upload mutations authenticate with project-scoped bearer tokens and are exempt from the session action-token check; upload tokens cannot browse or administer the dashboard. Account and permission changes create audit events; administrators can inspect `GET /api/audit` from an authenticated session.
 
@@ -522,7 +522,7 @@ Recorded before the deletion, test-binding, and project-CLI extensions (not reru
 
 Not performed: npm publication, live cloud account deployment, Docker image build, actual organization IdP login, full-workspace validation, formatting, lint, or type checking. These are not reported as passed. The final release/cloud rollout must use the target account's configuration and the user's agreed validation schedule.
 
-This standalone release does not implement collaborative approval (F03), baseline promotion (F04), managed runners, or release gates. Those features remain separate commits and releases. The delivered boundary is a centrally accessible, authenticated evidence dashboard with portable storage and remote publishing.
+The F03 follow-up adds exact job-level visual decisions, discussion, assignments, deadlines, and an inbox in its own commit; it has no executed local checks, builds, or tests. Baseline promotion (F04), managed runners, and release gates remain separate features. The delivered boundary is a centrally accessible, authenticated evidence dashboard with portable storage, remote publishing, and a review ledger that does not change engine results or approve releases.
 
 ## 16. Delete projects or individual run entries
 

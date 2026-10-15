@@ -10,6 +10,7 @@ import { SqlArtifactStore, sha256 } from "../server/artifacts.js";
 import { createApi } from "../server/http.js";
 import { AuthService } from "../server/auth.js";
 import { createDashboardProject } from "../server/project-command.js";
+import { reviewRun } from "./fixtures/review-run.js";
 
 describe("F02 organization access", () => {
   let root: string, db: Database, server: Server, base: string;
@@ -114,6 +115,54 @@ describe("F02 organization access", () => {
     ).toBe(401);
     const stored = await state.list<{ passwordHash: string }>("users");
     expect(stored[0]?.value.passwordHash).toMatch(/^scrypt\$/);
+  });
+  it("isolates reviews, requires reviewer role and CSRF, and excludes upload credentials", async () => {
+    const person = await member();
+    const input = reviewRun();
+    input.projectId = "private-a";
+    const { id: _id, ...document } = input;
+    const { run } = await repository.insertRun(document);
+    const endpoint = `${base}/api/runs/${run.id}/reviews`;
+    const threadUrl = `${endpoint}?job=checkout__desktop`;
+    expect((await fetch(threadUrl)).status).toBe(401);
+    expect((await fetch(threadUrl, { headers: { Cookie: person.cookie } })).status).toBe(403);
+    const setRole = async (role: string | null) => {
+      const response = await fetch(`${base}/api/projects/private-a/members`, {
+        method: "POST", headers: headers(adminCookie, adminCsrf),
+        body: JSON.stringify({ userId: person.user.id, role }),
+      });
+      expect(response.status).toBe(200);
+    };
+    await setRole("viewer");
+    const viewer = await (await fetch(threadUrl, { headers: { Cookie: person.cookie } })).json();
+    expect(viewer.canReview).toBe(false);
+    const payload = { jobId: viewer.jobId, evidenceDigest: viewer.evidenceDigest,
+      scopeDigest: viewer.scopeDigest, expectedVersion: 0,
+      event: { action: "comment", reason: "Check the checkout action" } };
+    const post = (cookie: string, csrf?: string) => fetch(endpoint, {
+      method: "POST", headers: headers(cookie, csrf), body: JSON.stringify(payload),
+    });
+    expect((await post(person.cookie, person.csrf)).status).toBe(403);
+    await setRole("reviewer");
+    expect((await post(person.cookie)).status).toBe(403);
+    expect((await fetch(endpoint, { method: "POST", headers: { ...headers(person.cookie, person.csrf), Origin: "https://attacker.test" }, body: JSON.stringify(payload) })).status).toBe(403);
+    const saved = await post(person.cookie, person.csrf);
+    expect(saved.status).toBe(200);
+    expect((await saved.json()).events[0].actor.id).toBe(person.user.id);
+    expect((await post(person.cookie, person.csrf)).status).toBe(409);
+    const people = await (await fetch(`${base}/api/projects/private-a/reviewers`, { headers: { Cookie: person.cookie } })).json();
+    expect(people.reviewers.some((item: { id: string }) => item.id === person.user.id)).toBe(true);
+    expect(JSON.stringify(people)).not.toContain("scrypt$");
+    expect(JSON.stringify(people)).not.toContain("member@example.test");
+    expect((await fetch(`${base}/api/reviews?project=private-b`, { headers: { Cookie: person.cookie } })).status).toBe(403);
+    const token = await (await fetch(`${base}/api/projects/private-a/tokens`, {
+      method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "Reviews must be denied", days: 1 }),
+    })).json();
+    const upload = { Authorization: `Bearer ${token.token}` };
+    expect((await fetch(threadUrl, { headers: upload })).status).toBe(403);
+    expect((await fetch(endpoint, { method: "POST", headers: { ...upload, "Content-Type": "application/json" }, body: JSON.stringify(payload) })).status).toBe(403);
+    await setRole(null);
+    expect((await fetch(threadUrl, { headers: { Cookie: person.cookie } })).status).toBe(403);
   });
   it("creates a project from a temporary CLI administrator session and safely reuses existing IDs", async () => {
     const env = {
