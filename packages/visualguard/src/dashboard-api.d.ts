@@ -2,6 +2,8 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 export interface DashboardOptions { env?: Record<string, string | undefined>; dataDir?: string }
 export interface DashboardMetadata { environment: string; branch?: string; commit?: string; pullRequest?: number; deployment?: string }
+export interface DashboardProject { id: string; name: string; createdAt: string; runCount: number; role?: "viewer" | "reviewer" | "maintainer" }
+export function createDashboardProject(options: { id: string; name?: string; server?: string; env?: Record<string, string | undefined> }): Promise<{ project: DashboardProject; created: boolean }>;
 export function createDashboardHandler(options?: DashboardOptions): Promise<{ handle(request: IncomingMessage, response: ServerResponse): Promise<boolean>; close(): Promise<void> }>;
 export function startDashboard(options?: DashboardOptions & { port?: number; host?: string; assetDir?: string }): Promise<{ url: string; port: number; close(): Promise<void> }>;
 export function copyDashboardAssets(out: string): Promise<string>;

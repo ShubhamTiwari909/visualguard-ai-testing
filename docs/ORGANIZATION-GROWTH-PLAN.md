@@ -13,6 +13,8 @@
 
 **CLI follow-up:** `visualguard test [project]` binds new evidence to a local or hosted project by ID or exact permitted name. See the [project binding guide](DASHBOARD-TEST-BINDING.md). It is a separate feature commit with no executed checks or builds, per the same instruction.
 
+**Project setup follow-up:** idempotent `visualguard dashboard project create <id>`/`project add` adds projects from the CLI, locally or through an authorized administrator session. See the [setup guide](DASHBOARD-CLI-PROJECTS.md). This is another separate feature commit with no executed checks or builds.
+
 Grow VisualGuard into **an internal UI quality platform that helps teams understand, review, and resolve changes before and after release**.
 
 The existing engine is already substantial. The next adoption barrier is organizational: multiple projects need one place to see results, an accountable way to approve changes, stable references, ownership, and predictable execution. Add that foundation before investing heavily in more autonomous AI.

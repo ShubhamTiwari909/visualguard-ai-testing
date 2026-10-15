@@ -41,6 +41,18 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       await state.create(prefix, "prune", {}, "2000-01-01T00:00:00.000Z");
       expect(await state.pruneExpired()).toBeGreaterThanOrEqual(1);
     });
+    it("creates a project once under racing requests and preserves its existing name", async () => {
+      const id = `${prefix}-ensure`;
+      const results = await Promise.all([repository.ensureProject(id, "Initial name"), repository.ensureProject(id, "Other initial name")]);
+      expect(results.filter((result) => result.created)).toHaveLength(1);
+      expect(results.map((result) => result.project.id)).toEqual([id, id]);
+      const original = results.find((result) => result.created)!.project;
+      const repeated = await repository.ensureProject(id, "Should not rename");
+      expect(repeated.created).toBe(false); expect(repeated.project.name).toBe(original.name);
+      expect(repeated.project.createdAt).toBe(original.createdAt);
+      expect(repeated.project.runCount).toBe(0);
+      expect(await repository.projects([id])).toHaveLength(1);
+    });
     it("round-trips a multi-chunk image object and deduplicates concurrent writes", async () => {
       const bytes = randomBytes(5 * 1024 * 1024 + 17);
       const [a, b] = await Promise.all([store.put(bytes), store.put(bytes)]);

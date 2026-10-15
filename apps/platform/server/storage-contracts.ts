@@ -1,6 +1,7 @@
 import type { DeletionResult, Project, RunDetail, RunFilters, RunPage } from "../shared/contracts.js";
 
 export interface PlatformRepository {
+  ensureProject(id: string, name: string): Promise<{ project: Project; created: boolean }>;
   createProject(id: string, name: string): Promise<Project>;
   projects(allowed?: string[]): Promise<Project[]>;
   getRun(id: string): Promise<RunDetail>;

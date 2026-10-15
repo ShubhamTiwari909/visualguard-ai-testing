@@ -29,6 +29,7 @@ pnpm platform:start
 After installing a dashboard-enabled release or a local candidate tarball:
 
 ```sh
+npx visualguard dashboard project create storefront --name "Storefront Web"
 npx visualguard dashboard
 npx visualguard dashboard import /absolute/path/to/run --project storefront
 npx visualguard dashboard export evidence.vgbackup.gz
@@ -37,6 +38,8 @@ npx visualguard dashboard --data-dir ./review
 ```
 
 There is no repository source, Vite, React install, browser install, or AI key requirement in the consuming/hosting project. See the walkthrough's release-candidate section before using public npm commands.
+
+The [CLI project creation guide](../../docs/DASHBOARD-CLI-PROJECTS.md) covers `project create`/`project add`, existing IDs, `--server`, and administrator login. This follow-up has no executed checks or regenerated distribution build.
 
 ## Shared hosting
 

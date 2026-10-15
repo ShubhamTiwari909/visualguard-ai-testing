@@ -2,10 +2,11 @@ import type { Command } from "commander";
 import { VERSION } from "../../core/version.js";
 import { resolve } from "node:path";
 import { statSync } from "node:fs";
+import { loadEnvFiles } from "../../config/load.js";
 
 const metadata = (options: { environment?: string; branch?: string; commit?: string; pr?: string; deployment?: string }) => ({ environment: options.environment ?? "staging", branch: options.branch, commit: options.commit, pullRequest: options.pr === undefined ? undefined : Number(options.pr), deployment: options.deployment });
 export function registerDashboardCommand(program: Command) {
-  const dashboard = program.command("dashboard").description("Run, import, publish, back up, or scaffold a standalone evidence dashboard")
+  const dashboard = program.command("dashboard").description("Run a dashboard, manage projects, import/publish evidence, or generate hosting files")
     .option("--port <number>", "HTTP port (default: PORT or 4400)").option("--host <host>", "Listener address; external access requires login")
     .option("--data-dir <directory>", "Local data directory").option("--file <sqlite-file>", "Open a local SQLite database file").option("--env-file <file>", "Load dashboard environment settings from a file")
     .hook("preAction", (command) => {
@@ -26,6 +27,17 @@ export function registerDashboardCommand(program: Command) {
       const stop = () => { void server.close(); }; process.once("SIGINT", stop); process.once("SIGTERM", stop);
     });
   const addMetadata = (command: Command) => command.option("--environment <name>", "Environment label", "staging").option("--branch <name>", "Branch label").option("--commit <sha>", "Source revision").option("--pr <number>", "Pull request number").option("--deployment <id>", "Deployment label");
+  const project = dashboard.command("project").description("Manage dashboard projects");
+  project.command("create <id>").alias("add").description("Create a project if its ID is not already present")
+    .option("--name <name>", "Project display name (defaults to its ID)")
+    .option("--server <url>", "Dashboard origin (or VISUALGUARD_DASHBOARD_URL); otherwise use the configured local database")
+    .action(async (id: string, options: { name?: string; server?: string }, command: Command) => {
+      loadEnvFiles(process.cwd());
+      if (command.parent?.parent?.opts().file && (process.env.VISUALGUARD_DATABASE_URL || process.env.DATABASE_URL)) throw new Error("Unset the database URL to open a local SQLite file");
+      const { createDashboardProject } = await import("../../dashboard.js");
+      const result = await createDashboardProject({ id, name: options.name, server: options.server });
+      console.log(`${result.created ? "Created" : "Already exists"}: ${result.project.name} (${result.project.id})`);
+    });
   addMetadata(dashboard.command("import <run-directory>").description("Import a saved run into the configured database").requiredOption("--project <id>", "Project slug").option("--name <name>", "Project display name"))
     .action(async (runDirectory, options) => { const runtime = await import("../../dashboard.js"); const result = await runtime.importDashboardRun({ project: options.project, name: options.name, runDir: runDirectory, metadata: metadata(options) }); console.log(`${result.duplicate ? "Already imported" : "Imported"}: /runs/${result.run.id} [${result.run.status}]`); });
   addMetadata(dashboard.command("publish <run-directory>").description("Publish using VISUALGUARD_UPLOAD_TOKEN").requiredOption("--project <id>", "Project slug").requiredOption("--server <url>", "Dashboard origin"))

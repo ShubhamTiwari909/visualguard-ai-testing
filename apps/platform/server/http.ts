@@ -128,7 +128,9 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
         if (!actor.admin) throw new PlatformError(403, "Administrator access required to create projects");
         const input = await body(request);
         if (!input || typeof input !== "object" || !("id" in input) || !("name" in input) || typeof input.id !== "string" || typeof input.name !== "string") throw new PlatformError(400, "Project id and name are required");
-        const project = await repository.createProject(input.id, input.name); await auth.audit(actor, "project.created", { projectId: project.id }); json(response, 201, project); return true;
+        const { project, created } = await repository.ensureProject(input.id, input.name);
+        if (created) await auth.audit(actor, "project.created", { projectId: project.id });
+        json(response, created ? 201 : 200, { ...project, created }); return true;
       }
       const projectDeletion = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)$/);
       if (request.method === "DELETE" && projectDeletion) {

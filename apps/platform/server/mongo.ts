@@ -14,10 +14,14 @@ interface MongoObject { hash: string; size: number; chunks: number; generation?:
 export class MongoRepository implements PlatformRepository {
   constructor(private db: Db) {}
   async createProject(id: string, name: string): Promise<Project> {
+    return (await this.ensureProject(id, name)).project;
+  }
+  async ensureProject(id: string, name: string): Promise<{ project: Project; created: boolean }> {
     projectId(id);
     if (!name.trim() || name.length > 120) throw new PlatformError(400, "Project name must contain 1–120 characters");
     if (await this.db.collection("vg_project_tombstones").findOne({ id })) throw new PlatformError(409, "This project ID was deleted; choose a new project ID");
-    try { await this.db.collection("vg_projects").updateOne({ id }, { $setOnInsert: { id, name: name.trim(), createdAt: new Date().toISOString() } }, { upsert: true }); }
+    let created = false;
+    try { created = (await this.db.collection("vg_projects").updateOne({ id }, { $setOnInsert: { id, name: name.trim(), createdAt: new Date().toISOString() } }, { upsert: true })).upsertedCount === 1; }
     catch (error) { if (!(error && typeof error === "object" && "code" in error && error.code === 11000)) throw error; }
     const project = await this.db.collection("vg_projects").findOne({ id });
     if (await this.db.collection("vg_project_tombstones").findOne({ id })) {
@@ -25,7 +29,9 @@ export class MongoRepository implements PlatformRepository {
       throw new PlatformError(409, "This project ID was deleted; choose a new project ID");
     }
     if (!project || project.deleting) throw new PlatformError(409, "Project deletion is in progress; choose a new project ID");
-    return (await this.projects([id]))[0]!;
+    const [result] = await this.projects([id]);
+    if (!result) throw new PlatformError(409, "Project was deleted during creation; choose a new project ID");
+    return { project: result, created };
   }
   async projects(allowed?: string[]) {
     if (allowed?.length === 0) return [];

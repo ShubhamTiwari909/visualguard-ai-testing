@@ -12,13 +12,19 @@ export class Repository implements PlatformRepository {
   constructor(readonly db: Database, private legacy?: FileArtifactStore) {}
 
   async createProject(id: string, name: string): Promise<Project> {
+    return (await this.ensureProject(id, name)).project;
+  }
+
+  async ensureProject(id: string, name: string): Promise<{ project: Project; created: boolean }> {
     projectId(id);
     if (!name.trim() || name.length > 120) throw new PlatformError(400, "Project name must contain 1–120 characters");
-    await this.db.transaction(async (sql) => {
+    const created = await this.db.transaction(async (sql) => {
       if ((await sql.query("SELECT id FROM vg_project_tombstones WHERE id=?", [id])).length) throw new PlatformError(409, "This project ID was deleted; choose a new project ID");
-      await sql.query("INSERT INTO vg_projects(id, name, created_at) VALUES(?, ?, ?) ON CONFLICT(id) DO NOTHING", [id, name.trim(), new Date().toISOString()]);
+      return (await sql.query("INSERT INTO vg_projects(id, name, created_at) VALUES(?, ?, ?) ON CONFLICT(id) DO NOTHING RETURNING id", [id, name.trim(), new Date().toISOString()])).length === 1;
     });
-    return (await this.projects()).find((project) => project.id === id)!;
+    const [project] = await this.projects([id]);
+    if (!project) throw new PlatformError(409, "Project was deleted during creation; choose a new project ID");
+    return { project, created };
   }
 
   async projects(allowed?: string[]): Promise<Project[]> {

@@ -30,6 +30,7 @@ npx visualguard test
 The standalone dashboard is also available in dashboard-enabled releases:
 
 ```sh
+npx visualguard dashboard project create storefront --name "Storefront Web"
 npx visualguard test storefront
 npx visualguard dashboard
 npx visualguard dashboard import /absolute/path/to/run --project storefront
@@ -38,6 +39,8 @@ npx visualguard dashboard import /absolute/path/to/run --project storefront
 `test storefront` runs the configured tests and saves their evidence to that local dashboard project. Use an exact, quoted project name too: `test "Storefront Web"`. For a shared dashboard, set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN`, or pass `--dashboard https://your-dashboard.example.com`. A plain `test` stays offline. See the [project binding guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-TEST-BINDING.md) for setup, labels, and retrying saved runs. This extension requires a rebuilt feature-enabled package and server; it has not been validated or built in this change.
 
 It includes local SQLite, MongoDB/PostgreSQL storage, team login/project permissions, remote CI uploads, portable backups, and deployment generators for Cloud Run/Vercel. No browser installation is needed to host the dashboard. See the [standalone walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/STANDALONE-DASHBOARD-WALKTHROUGH.md), including local release-candidate installation before npm publication.
+
+Create a project ahead of time with `dashboard project create <id> --name "Display name"` (`project add` is an alias). Repeating an existing ID keeps its original name and runs. Use `--server <origin>` for a running dashboard; login-enabled servers require administrator credentials, while upload tokens remain publishing-only. [CLI project setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-CLI-PROJECTS.md).
 
 ```bash
 # Scan one site: finds routes (sitemap.xml, then links), captures them, checks health,

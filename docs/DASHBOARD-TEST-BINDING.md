@@ -31,6 +31,8 @@ The usual `VISUALGUARD_PLATFORM_DATA_DIR`, `VISUALGUARD_SQLITE_FILE`, and databa
 
 ## Connect to an already-running dashboard
 
+Create the project from the CLI first if needed: `npx visualguard dashboard project create storefront --name "Storefront Web" --server http://127.0.0.1:4400`. Repeating that ID preserves the project. [Project creation and hosted administrator setup](DASHBOARD-CLI-PROJECTS.md).
+
 Use this when the dashboard runs in another local directory or on another computer:
 
 ```sh

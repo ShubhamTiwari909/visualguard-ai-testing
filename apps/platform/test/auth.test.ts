@@ -9,6 +9,7 @@ import { SqlStateStore } from "../server/state.js";
 import { SqlArtifactStore } from "../server/artifacts.js";
 import { createApi } from "../server/http.js";
 import { AuthService } from "../server/auth.js";
+import { createDashboardProject } from "../server/project-command.js";
 
 describe("F02 organization access", () => {
   let root: string, db: Database, server: Server, base: string;
@@ -49,6 +50,23 @@ describe("F02 organization access", () => {
     expect(users).not.toContain("scrypt$"); expect(users).not.toContain(password);
     expect(adminCookie).toMatch(/^vg_session=/);
     const stored = await state.list<{ passwordHash: string }>("users"); expect(stored[0]?.value.passwordHash).toMatch(/^scrypt\$/);
+  });
+  it("creates a project from a temporary CLI administrator session and safely reuses existing IDs", async () => {
+    const env = { VISUALGUARD_ADMIN_EMAIL: "admin@example.test", VISUALGUARD_ADMIN_PASSWORD: password };
+    const before = (await state.list("sessions")).length;
+    const created = await createDashboardProject({ id: "cli-project", name: "CLI Project", server: base, env });
+    expect(created.created).toBe(true); expect(created.project.name).toBe("CLI Project");
+    const repeated = await createDashboardProject({ id: "cli-project", name: "Should not rename", server: base, env });
+    expect(repeated.created).toBe(false); expect(repeated.project.name).toBe("CLI Project");
+    expect((await state.list("sessions")).length).toBe(before);
+    const events = (await state.list<{ action: string; details: { projectId?: string } }>("audit")).filter((row) => row.value.action === "project.created" && row.value.details.projectId === "cli-project");
+    expect(events).toHaveLength(1);
+  });
+  it("does not let project upload tokens create projects through the CLI", async () => {
+    const credential = await (await fetch(`${base}/api/projects/private-a/tokens`, { method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "CI", days: 1 }) })).json();
+    await expect(createDashboardProject({ id: "forbidden-project", server: base, env: { VISUALGUARD_UPLOAD_TOKEN: credential.token } })).rejects.toMatchObject({ status: 401 });
+    expect(await repository.projects(["forbidden-project"])).toEqual([]);
+    expect((await fetch(`${base}/api/projects`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${credential.token}` }, body: JSON.stringify({ id: "forbidden-project", name: "Forbidden" }) })).status).toBe(403);
   });
   it("limits a member to explicitly assigned projects, including filters", async () => {
     const person = await member();

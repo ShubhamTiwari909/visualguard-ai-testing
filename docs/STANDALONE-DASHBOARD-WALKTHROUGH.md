@@ -8,6 +8,8 @@
 
 **Test binding extension:** `visualguard test [project]` now saves the resulting evidence to a local or hosted project automatically. See the [binding setup and manual checklist](DASHBOARD-TEST-BINDING.md). This follow-up also has no executed checks or regenerated package build.
 
+**Project CLI extension:** `visualguard dashboard project create <id>` (alias `add`) creates a missing project and preserves an existing ID. [Local/server setup and manual checklist](DASHBOARD-CLI-PROJECTS.md). No checks or builds were run for this follow-up either.
+
 ## 1. Choose your setup
 
 | Goal | What to use | Configuration |
@@ -509,7 +511,7 @@ Troubleshooting:
 
 ## 15. Validation record and release boundary
 
-Recorded before the deletion and test-binding extensions (not rerun for either extension):
+Recorded before the deletion, test-binding, and project-CLI extensions (not rerun for those extensions):
 
 - 54 focused tests passed, including live local PostgreSQL and MongoDB adapters, SQLite persistence, permissions, session/password/token revocation, racing writes, chunk integrity, resumable publication, backup/restore, and host scaffolds.
 - JavaScript/UI distribution build passed without running declaration/type checking.
@@ -541,3 +543,14 @@ npx visualguard test "Storefront Web"
 Without a configured dashboard URL, the command imports into the same local database as `visualguard dashboard`, creating a missing valid project ID. Set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN` once for an existing hosted project, or use `--dashboard <origin>`. `test` without a project remains offline, and `--list` does not create or upload anything.
 
 Project resolution happens before capture. The exact new run is imported/published afterward, including failing/incomplete evidence. A publishing failure preserves local evidence and returns a nonzero result. [Full setup, labels, exit codes, and manual acceptance](DASHBOARD-TEST-BINDING.md). Both CLI and dashboard server need the feature-enabled version; earlier tarballs/builds remain unchanged until rebuilt.
+
+## 18. Create a project from the CLI
+
+```sh
+npx visualguard dashboard project create storefront --name "Storefront Web"
+# Or target an existing local server:
+npx visualguard dashboard project add storefront --name "Storefront Web" \
+  --server http://127.0.0.1:4400
+```
+
+The command creates a missing ID and reports `Already exists` for an existing one without renaming it or resetting history. It uses the configured local database unless `--server` or `VISUALGUARD_DASHBOARD_URL` selects a running dashboard. Default loopback mode needs no credentials; a server with login enabled requires an existing password administrator. Project upload tokens cannot create projects. [Full guide and manual acceptance](DASHBOARD-CLI-PROJECTS.md).
