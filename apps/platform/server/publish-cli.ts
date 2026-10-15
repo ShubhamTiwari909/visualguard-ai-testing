@@ -7,6 +7,7 @@ async function main() {
       server: { type: "string" },
       project: { type: "string" },
       run: { type: "string" },
+      "run-name": { type: "string" },
       environment: { type: "string", default: "staging" },
       branch: { type: "string" },
       commit: { type: "string" },
@@ -17,7 +18,7 @@ async function main() {
   });
   if (values.help) {
     console.log(
-      "pnpm platform:publish --server https://dashboard.example.com --project storefront --run /absolute/run [--environment staging] [--branch name] [--commit sha] [--pr 42] [--deployment id]\nRead upload credentials from VISUALGUARD_UPLOAD_TOKEN.",
+      "pnpm platform:publish --server https://dashboard.example.com --project storefront --run /absolute/run [--run-name <name>] [--environment staging] [--branch name] [--commit sha] [--pr 42] [--deployment id]\nRead upload credentials from VISUALGUARD_UPLOAD_TOKEN.",
     );
     return;
   }
@@ -29,6 +30,7 @@ async function main() {
     runDir: values.run,
     token: process.env.VISUALGUARD_UPLOAD_TOKEN,
     metadata: {
+      runName: values["run-name"],
       environment: values.environment ?? "staging",
       branch: values.branch,
       commit: values.commit,

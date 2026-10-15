@@ -121,12 +121,14 @@ export async function createDashboardProject(
       !value ||
       typeof value !== "object" ||
       !("id" in value) ||
-      value.id !== id ||
+      typeof value.id !== "string" ||
+      (value.id !== id && !("aliases" in value && Array.isArray(value.aliases) && value.aliases.includes(id))) ||
       !("name" in value) ||
       typeof value.name !== "string"
     )
       throw new Error("Dashboard returned an invalid project");
     const project = value as Project & { created?: boolean };
+    projectId(project.id);
     if (typeof project.created !== "boolean")
       throw new Error(
         "Upgrade the dashboard server to a version supporting idempotent CLI project creation",

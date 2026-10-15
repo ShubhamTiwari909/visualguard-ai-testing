@@ -189,7 +189,10 @@ export function ReviewInbox({ projects, search }: { projects: Project[]; search:
   const [revision, setRevision] = useState(0);
   useEffect(() => { document.title = "Review inbox · VisualGuard"; }, []);
   useEffect(() => {
-    if (!project && projects.length) setProject(projects[0]!.id);
+    const selected = projects.find((item) => item.id === project || item.publicId === project || item.aliases?.includes(project));
+    if (selected && selected.id !== project) {
+      setProject(selected.id); setAfter(""); setPrevious([]);
+    } else if (!project && projects.length) setProject(projects[0]!.id);
   }, [project, projects]);
   useEffect(() => {
     if (!project) return;

@@ -11,6 +11,7 @@ import { importRun } from "../server/ingest.js";
 import { createApi } from "../server/http.js";
 import { parseManifest } from "../server/validation.js";
 import { reportManifest } from "../client/api.js";
+import type { RunMetadata } from "../shared/contracts.js";
 
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=",
@@ -122,7 +123,7 @@ describe("F01 shared evidence history", () => {
     );
     return dir;
   }
-  async function ingest(manifest = fixture(), metadata = { environment: "staging" }) {
+  async function ingest(manifest = fixture(), metadata: RunMetadata = { environment: "staging" }) {
     return importRun(repository, store, {
       projectId: "storefront",
       runDir: await writeRun(manifest),
@@ -160,6 +161,33 @@ describe("F01 shared evidence history", () => {
     expect(detail.artifacts.some((artifact) => artifact.path === "index.html")).toBe(false);
     for (const artifact of detail.artifacts)
       expect(sha256(await store.get(artifact.hash))).toBe(artifact.hash);
+  });
+  it("keeps an optional dashboard run name searchable without changing engine evidence", async () => {
+    const manifest = fixture("named-run-1");
+    const result = await ingest(manifest, { environment: "staging", runName: "Checkout release smoke" });
+    expect(result.run.name).toBe("Checkout release smoke");
+    expect(result.run.manifest).toEqual(manifest);
+    expect((await repository.runs({ q: "release smoke" })).total).toBe(1);
+    const repeated = await importRun(repository, store, { projectId: "storefront",
+      runDir: join(root, manifest.id), metadata: { environment: "staging", runName: "Checkout release smoke" } });
+    expect(repeated.duplicate).toBe(true);
+    expect(repeated.run.name).toBe(result.run.name);
+  });
+  it("renames a run independently of its evidence and rejects stale edits", async () => {
+    const original = (await ingest(fixture("rename-run-1"), { environment: "staging", runName: "Initial label" })).run;
+    const renamed = await repository.renameRun(original.id, "  Release smoke  ", 0);
+    expect(renamed.name).toBe("Release smoke");
+    expect(renamed.nameVersion).toBe(1);
+    expect(renamed.digest).toBe(original.digest);
+    expect(renamed.manifest).toEqual(original.manifest);
+    expect(renamed.metadata).toEqual(original.metadata);
+    expect((await repository.runs({ q: "release smoke" })).total).toBe(1);
+    expect((await repository.runs({ q: "initial label" })).total).toBe(0);
+    await expect(repository.renameRun(original.id, "Stale change", 0)).rejects.toMatchObject({ status: 409 });
+    const cleared = await repository.renameRun(original.id, "", 1);
+    expect(cleared.name).toBeUndefined();
+    expect(cleared.nameVersion).toBe(2);
+    expect((await repository.getRun(original.id)).digest).toBe(original.digest);
   });
 
   it("deduplicates identical imports including concurrent attempts", async () => {

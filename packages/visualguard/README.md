@@ -42,7 +42,9 @@ It includes local SQLite, MongoDB/PostgreSQL storage, team login/project permiss
 
 The F03 follow-up adds **Team review** on each run and a **Review inbox** for assignments, deadlines, comments, and job-level visual approvals/rejections tied to exact evidence. Visual approval leaves engine failures and release decisions separate. See the [review setup and manual walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/COLLABORATIVE-REVIEW.md). This follow-up has not been built or tested locally.
 
-Create a project ahead of time with `dashboard project create <id> --name "Display name"` (`project add` is an alias). Repeating an existing ID keeps its original name and runs. Use `--server <origin>` for a running dashboard; login-enabled servers require administrator credentials, while upload tokens remain publishing-only. [CLI project setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-CLI-PROJECTS.md).
+Create a project ahead of time with `dashboard project create <id> --name "Display name"` (`project add` is an alias). Repeating an existing ID keeps its current name and runs. Use `--server <origin>` for a running dashboard; login-enabled servers require administrator credentials, while upload tokens remain publishing-only. [CLI project setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-CLI-PROJECTS.md).
+
+Name a dashboard run with `test storefront --run-name "Release smoke"` (using your configured application URLs). Maintainers can edit run names and project names/public IDs in the dashboard. Old project IDs keep working as aliases. The [naming guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-NAMING.md) explains scope, manual setup, and hosted image storage. This follow-up requires a feature-enabled package and has no executed local checks or builds.
 
 ```bash
 # Scan one site: finds routes (sitemap.xml, then links), captures them, checks health,

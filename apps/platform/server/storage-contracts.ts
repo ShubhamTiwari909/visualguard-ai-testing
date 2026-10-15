@@ -6,11 +6,13 @@ import type {
   RunPage,
 } from "../shared/contracts.js";
 
-export interface PlatformRepository {
+export interface EvidenceRepository {
+  isDeletedProject(id: string): Promise<boolean>;
   ensureProject(id: string, name: string): Promise<{ project: Project; created: boolean }>;
   createProject(id: string, name: string): Promise<Project>;
   projects(allowed?: string[]): Promise<Project[]>;
   getRun(id: string): Promise<RunDetail>;
+  renameRun(id: string, name: string, expectedVersion: number): Promise<RunDetail>;
   insertRun(
     run: Omit<RunDetail, "id">,
     preserveId?: string,
@@ -18,6 +20,11 @@ export interface PlatformRepository {
   runs(filters: RunFilters, allowed?: string[]): Promise<RunPage>;
   deleteRun(id: string, expectedProject?: string): Promise<DeletionResult>;
   deleteProject(id: string, expectedRuns: number): Promise<DeletionResult>;
+}
+
+export interface PlatformRepository extends EvidenceRepository {
+  resolveProjectId(id: string): Promise<string>;
+  updateProject(id: string, name: string, publicId: string, expectedVersion: number): Promise<Project>;
 }
 
 export interface StateRecord<T = unknown> {

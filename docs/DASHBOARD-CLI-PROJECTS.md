@@ -109,7 +109,7 @@ No formatting, lint, type checks, builds, browser checks, or tests were run for 
 
 1. Create a new local project, refresh the dashboard, and check its ID, name, and zero-run count.
 2. Repeat the same command. Expect `Already exists`, with one project remaining.
-3. Repeat with a different `--name`. The original name must remain unchanged.
+3. Repeat with a different `--name`. The current name must remain unchanged by the create command. Use dashboard project settings to edit it deliberately.
 4. Bind a visual test to the ID and confirm the run appears under that project.
 5. Repeat creation after a run exists. Confirm the count, evidence, and permissions remain.
 6. Use `--server` with the running local dashboard; verify the same idempotency behavior.
@@ -118,3 +118,5 @@ No formatting, lint, type checks, builds, browser checks, or tests were run for 
 9. Point the database settings at disposable PostgreSQL and MongoDB databases and repeat.
 
 See the [standalone walkthrough](STANDALONE-DASHBOARD-WALKTHROUGH.md) for package installation, storage, and hosting.
+
+See the [naming guide](DASHBOARD-NAMING.md) for editable project names/public IDs, historical aliases, and run labels.

@@ -88,6 +88,9 @@ describe("portable evidence backups", () => {
     if (root) await rm(root, { recursive: true, force: true });
   });
   it("restores metadata, screenshots, stable links and digests without exporting auth state", async () => {
+    const saved = (await a.runs({})).runs[0]!;
+    await a.renameRun(saved.id, "Restored custom title", 0);
+    await a.updateProject("demo", "Renamed demo", "demo-public", 0);
     const path = join(root, "evidence.vgbackup.gz");
     expect((await exportEvidence(a, objectsA, path)).runs).toBe(1);
     const text = gunzipSync(await readFile(path)).toString();
@@ -97,6 +100,12 @@ describe("portable evidence backups", () => {
       restored = (await b.runs({})).runs[0]!;
     expect(restored.id).toBe(original.id);
     expect(restored.digest).toBe(original.digest);
+    expect(restored.name).toBe("Restored custom title");
+    expect(restored.nameVersion).toBe(1);
+    const [project] = await b.projects();
+    expect(project!.name).toBe("Renamed demo");
+    expect(project!.publicId).toBe("demo-public");
+    expect(await b.resolveProjectId("demo-public")).toBe("demo");
     const detail = await b.getRun(restored.id);
     expect((await objectsB.get(detail.artifacts[0]!.hash)).length).toBeGreaterThan(0);
     expect((await new SqlStateStore(target).list("sessions")).length).toBe(0);
@@ -115,6 +124,23 @@ describe("portable evidence backups", () => {
     chunk.data = Buffer.from("corrupt").toString("base64");
     await writeFile(path, gzipSync(lines.map((line) => JSON.stringify(line)).join("\n")));
     await expect(restoreEvidence(b, objectsB, path)).rejects.toThrow("incomplete");
+    expect((await b.runs({})).total).toBe(0);
+  });
+  it("restores default aliases into an existing project without a naming profile", async () => {
+    await a.updateProject("demo", "Edited display name", "demo", 0);
+    await b.createProject("demo", "Keep destination name");
+    const path = join(root, "legacy-destination.gz");
+    await exportEvidence(a, objectsA, path);
+    expect(await restoreEvidence(b, objectsB, path)).toEqual({ runs: 1, objects: 1 });
+    expect((await b.projects())[0]?.name).toBe("Keep destination name");
+    expect((await b.runs({ project: "demo" })).total).toBe(1);
+  });
+  it("still rejects incompatible aliases on an existing legacy destination", async () => {
+    await a.updateProject("demo", "Edited display name", "different-public-id", 0);
+    await b.createProject("demo", "Keep destination name");
+    const path = join(root, "incompatible-aliases.gz");
+    await exportEvidence(a, objectsA, path);
+    await expect(restoreEvidence(b, objectsB, path)).rejects.toThrow("aliases differ");
     expect((await b.runs({})).total).toBe(0);
   });
   it("rejects a missing footer instead of reporting success", async () => {

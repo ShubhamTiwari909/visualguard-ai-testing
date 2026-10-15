@@ -10,7 +10,7 @@ export function projectSelector(value: string): string {
 
 /** Stable IDs win; duplicate display names must never silently select a project. */
 export function findProject(projects: Project[], selector: string): Project | undefined {
-  const exactId = projects.find((project) => project.id === selector);
+  const exactId = projects.find((project) => project.id === selector || project.publicId === selector || project.aliases?.includes(selector));
   if (exactId) return exactId;
   const names = projects.filter((project) => project.name === selector);
   if (names.length > 1)

@@ -3,6 +3,7 @@ import type { Database, Sql } from "./database.js";
 import type { FileArtifactStore } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
+import { normalizeRunName, runSearchText } from "./run-labels.js";
 import type {
   DeletionResult,
   Project,
@@ -11,7 +12,9 @@ import type {
   RunPage,
   StoredRun,
 } from "../shared/contracts.js";
-import type { PlatformRepository } from "./storage-contracts.js";
+import type { EvidenceRepository } from "./storage-contracts.js";
+import { ProjectDirectory } from "./project-directory.js";
+import { SqlStateStore } from "./state.js";
 
 const brief = ({
   manifest: _manifest,
@@ -20,11 +23,14 @@ const brief = ({
   ...run
 }: RunDetail): StoredRun => run;
 
-export class Repository implements PlatformRepository {
+class SqlEvidenceRepository implements EvidenceRepository {
   constructor(
     readonly db: Database,
     private legacy?: FileArtifactStore,
   ) {}
+  async isDeletedProject(id: string) {
+    return (await this.db.query("SELECT id FROM vg_project_tombstones WHERE id=?", [id])).length > 0;
+  }
 
   async createProject(id: string, name: string): Promise<Project> {
     return (await this.ensureProject(id, name)).project;
@@ -103,16 +109,7 @@ export class Repository implements PlatformRepository {
         }
       }
       const document: RunDetail = { ...run, id: preserveId ?? randomUUID() };
-      const searchable = [
-        run.engineRunId,
-        run.metadata.branch,
-        run.metadata.commit,
-        run.metadata.deployment,
-        ...run.manifest.jobs.flatMap((job) => [job.route, job.name, job.viewport]),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      const searchable = runSearchText(run);
       const inserted = await sql.query(
         "INSERT INTO vg_runs(id, project_id, engine_run_id, digest, started_at, status, environment, branch, revision, pull_request, deployment, document, search_text) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(project_id, engine_run_id) DO NOTHING RETURNING id",
         [
@@ -149,6 +146,20 @@ export class Repository implements PlatformRepository {
           [document.id, job.id, job.route, job.viewport, job.status],
         );
       return { run: document, duplicate: false };
+    });
+  }
+
+  async renameRun(id: string, name: string, expectedVersion: number): Promise<RunDetail> {
+    const normalized = normalizeRunName(name);
+    return this.db.transaction(async (sql) => {
+      const [row] = await sql.query<{ document: string }>("SELECT document FROM vg_runs WHERE id=?", [id]);
+      if (!row) throw new PlatformError(404, "Run not found");
+      const run = JSON.parse(row.document) as RunDetail;
+      if ((run.nameVersion ?? 0) !== expectedVersion)
+        throw new PlatformError(409, "Run name changed; refresh before saving again");
+      const next = { ...run, name: normalized, nameVersion: expectedVersion + 1 };
+      await sql.query("UPDATE vg_runs SET document=?, search_text=? WHERE id=?", [JSON.stringify(next), runSearchText(next), id]);
+      return next;
     });
   }
 
@@ -363,5 +374,11 @@ export class Repository implements PlatformRepository {
       limit,
       offset,
     };
+  }
+}
+
+export class Repository extends ProjectDirectory {
+  constructor(readonly db: Database, legacy?: FileArtifactStore) {
+    super(new SqlEvidenceRepository(db, legacy), new SqlStateStore(db));
   }
 }

@@ -219,6 +219,7 @@ export function parseManifest(value: unknown): RunManifest {
 const metadataSchema = z
   .object({
     environment: z.string().trim().min(1).max(100),
+    runName: z.string().trim().min(1).max(120).optional(),
     branch: z.string().max(300).optional(),
     commit: z.string().max(200).optional(),
     pullRequest: z.number().int().positive().max(2_147_483_647).optional(),
@@ -229,7 +230,7 @@ const metadataSchema = z
 export function parseMetadata(value: unknown): RunMetadata {
   const result = metadataSchema.safeParse(value);
   if (!result.success)
-    throw new PlatformError(400, "Invalid environment, branch, commit, PR, or deployment metadata");
+    throw new PlatformError(400, "Invalid run name, environment, branch, commit, PR, or deployment metadata");
   return result.data;
 }
 

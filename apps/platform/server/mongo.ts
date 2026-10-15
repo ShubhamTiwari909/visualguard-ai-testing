@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { MongoClient, type Collection, type Db, type Document } from "mongodb";
 import type { ArtifactStore } from "./artifacts.js";
 import { OBJECT_CHUNK_BYTES, sha256 } from "./artifacts.js";
-import type { PlatformRepository, StateRecord, StateStore } from "./storage-contracts.js";
+import type { EvidenceRepository, StateRecord, StateStore } from "./storage-contracts.js";
+import { ProjectDirectory } from "./project-directory.js";
 import type {
   DeletionResult,
   Project,
@@ -12,6 +13,7 @@ import type {
 } from "../shared/contracts.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
+import { normalizeRunName, runSearchText } from "./run-labels.js";
 
 const regex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const clean = <T>(doc: Document): T => {
@@ -26,8 +28,11 @@ interface MongoObject {
   runRefs?: string[];
 }
 
-export class MongoRepository implements PlatformRepository {
+class MongoEvidenceRepository implements EvidenceRepository {
   constructor(private db: Db) {}
+  async isDeletedProject(id: string) {
+    return Boolean(await this.db.collection("vg_project_tombstones").findOne({ id }));
+  }
   async createProject(id: string, name: string): Promise<Project> {
     return (await this.ensureProject(id, name)).project;
   }
@@ -103,6 +108,18 @@ export class MongoRepository implements PlatformRepository {
       if (detail.metadata[key] === null) delete detail.metadata[key];
     return detail;
   }
+  async renameRun(id: string, name: string, expectedVersion: number): Promise<RunDetail> {
+    const normalized = normalizeRunName(name);
+    const run = await this.getRun(id);
+    const next = { ...run, name: normalized, nameVersion: expectedVersion + 1 };
+    const result = await this.db.collection("vg_runs").updateOne(
+      { id, nameVersion: expectedVersion === 0 ? { $in: [null, 0] } : expectedVersion },
+      { $set: { nameVersion: next.nameVersion, searchText: runSearchText(next), ...(normalized ? { name: normalized } : {}) },
+        ...(normalized ? {} : { $unset: { name: "" } }) },
+    );
+    if (!result.matchedCount) throw new PlatformError(409, "Run name changed or run was removed; refresh before saving again");
+    return next;
+  }
   async insertRun(run: Omit<RunDetail, "id">, preserveId?: string) {
     if (
       !(await this.db
@@ -118,16 +135,7 @@ export class MongoRepository implements PlatformRepository {
         "MongoDB run envelope exceeds the 12 MiB limit; split this execution into smaller complete runs",
       );
     const document: RunDetail = { ...run, id: preserveId ?? randomUUID() };
-    const searchText = [
-      run.engineRunId,
-      run.metadata.branch,
-      run.metadata.commit,
-      run.metadata.deployment,
-      ...run.manifest.jobs.flatMap((job) => [job.route, job.name, job.viewport]),
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+    const searchText = runSearchText(run);
     const artifactRef = randomUUID();
     let published = false;
     try {
@@ -434,6 +442,12 @@ export class MongoRepository implements PlatformRepository {
       ])
       .toArray();
     return { runs: result?.runs ?? [], total: result?.counts[0]?.count ?? 0, limit, offset };
+  }
+}
+
+export class MongoRepository extends ProjectDirectory {
+  constructor(db: Db) {
+    super(new MongoEvidenceRepository(db), new MongoStateStore(db));
   }
 }
 

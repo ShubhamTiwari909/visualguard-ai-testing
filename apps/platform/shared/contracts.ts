@@ -4,12 +4,17 @@ import type { RunManifest, Status } from "../../../packages/visualguard/src/core
 export type RunStatus = Status | "incomplete";
 export interface Project {
   id: string;
+  /** Editable public ID; id remains the immutable internal key for access/evidence. */
+  publicId?: string;
+  aliases?: string[];
+  version?: number;
   name: string;
   createdAt: string;
   runCount: number;
   role?: "viewer" | "reviewer" | "maintainer";
 }
 export interface RunMetadata {
+  runName?: string;
   environment: string;
   branch?: string;
   commit?: string;
@@ -24,6 +29,8 @@ export interface ArtifactDescriptor {
 }
 export interface StoredRun {
   id: string;
+  name?: string;
+  nameVersion?: number;
   projectId: string;
   engineRunId: string;
   number: number;
@@ -63,6 +70,9 @@ export interface RunPage {
   total: number;
   limit: number;
   offset: number;
+}
+export function runLabel(run: Pick<StoredRun, "name" | "number">): string {
+  return run.name || `Run #${run.number}`;
 }
 export interface DeletionResult {
   runs: number;
