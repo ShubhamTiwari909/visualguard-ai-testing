@@ -12,6 +12,7 @@
     "platform:build": "pnpm --filter @visualguard/platform build",
     "platform:test": "pnpm --filter @visualguard/platform test",
     "platform:import": "pnpm --filter @visualguard/platform run import",
+    "platform:publish": "pnpm --filter @visualguard/platform run publish:run",
     "build": "pnpm --filter visualguard build",
     "test": "pnpm --filter visualguard test",
     "typecheck": "pnpm --filter visualguard typecheck",

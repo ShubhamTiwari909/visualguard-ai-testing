@@ -6,11 +6,9 @@ import { AuthService, MemoryStateStore, type ProjectRole } from "./auth.js";
 import { z } from "zod";
 import { artifactPath } from "./validation.js";
 import { RUN_STATUSES, type RunFilters, type RunStatus } from "../shared/contracts.js";
-
-export function json(response: ServerResponse, status: number, value: unknown): void {
-  response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-  response.end(JSON.stringify(value));
-}
+import { body, json } from "./transport.js";
+import { Uploads, UPLOAD_CHUNK_BYTES } from "./uploads.js";
+import { sha256 } from "./artifacts.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -43,30 +41,11 @@ function filters(params: URLSearchParams): RunFilters {
   return result;
 }
 
-export async function readBytes(request: IncomingMessage, limit: number): Promise<Buffer> {
-  const parsed = (request as IncomingMessage & { body?: unknown }).body;
-  if (parsed !== undefined) {
-    const data = Buffer.isBuffer(parsed) ? parsed : Buffer.from(typeof parsed === "string" ? parsed : JSON.stringify(parsed));
-    if (data.length > limit) throw new PlatformError(413, "Request body too large");
-    return data;
-  }
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of request) { size += chunk.length; if (size > limit) throw new PlatformError(413, "Request body too large"); chunks.push(Buffer.from(chunk)); }
-  return Buffer.concat(chunks);
-}
-
-export async function body(request: IncomingMessage): Promise<unknown> {
-  if (!request.headers["content-type"]?.startsWith("application/json")) throw new PlatformError(415, "Expected application/json");
-  const data = await readBytes(request, 16_384);
-  try { return JSON.parse(data.toString("utf8")); }
-  catch { throw new PlatformError(400, "Invalid JSON body"); }
-}
-
 export interface ApiOptions { state?: StateStore; env?: NodeJS.ProcessEnv }
 export function createApi(repository: PlatformRepository, store: ArtifactStore, options: ApiOptions = {}) {
   const auth = new AuthService(options.state ?? new MemoryStateStore(), options.env ?? process.env);
   if (auth.mode === "login" && !options.state) throw new Error("Hosted access requires persistent authentication state");
+  const uploads = new Uploads(repository, store, auth.state, auth);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -89,6 +68,7 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
       if (request.method === "GET" && url.pathname === "/api/auth/callback") { await auth.finishOidc(request, response, url); return true; }
       if (!actor) throw new PlatformError(401, "Sign in to access this dashboard");
       if (request.method !== "GET" && request.method !== "HEAD") auth.csrf(request, actor);
+      if (await uploads.handle(request, response, url, actor)) return true;
       if (request.method === "POST" && url.pathname === "/api/auth/logout") { await auth.logout(actor, response); json(response, 200, { ok: true }); return true; }
       if (actor.credentialId) throw new PlatformError(403, "Upload credentials cannot browse or administer the dashboard");
       if (url.pathname === "/api/users") {
@@ -143,16 +123,29 @@ export function createApi(repository: PlatformRepository, store: ArtifactStore, 
       if (request.method === "GET" && match) {
         const run = await repository.getRun(match[1]!);
         await auth.requireRole(actor, run.projectId);
-        if (!match[2]) { json(response, 200, run); return true; }
+        if (!match[2]) {
+          const bytes = Buffer.from(JSON.stringify(run.manifest));
+          json(response, 200, bytes.length > 2 * UPLOAD_CHUNK_BYTES ? { ...run, manifest: undefined, manifestTransfer: { size: bytes.length, hash: sha256(bytes), chunks: Math.ceil(bytes.length / UPLOAD_CHUNK_BYTES) } } : run); return true;
+        }
+        if (match[2] === "manifest") {
+          const bytes = Buffer.from(JSON.stringify(run.manifest)), index = integer(url.searchParams.get("chunk"), 0, 0, Math.max(0, Math.ceil(bytes.length / UPLOAD_CHUNK_BYTES) - 1));
+          const chunk = bytes.subarray(index * UPLOAD_CHUNK_BYTES, (index + 1) * UPLOAD_CHUNK_BYTES);
+          response.writeHead(200, { "Content-Type": "application/octet-stream", "Cache-Control": "private, no-store" }); response.end(chunk); return true;
+        }
         if (match[2].startsWith("artifacts/")) {
           let path: string;
           try { path = artifactPath(decodeURIComponent(match[2].slice("artifacts/".length))); }
           catch { throw new PlatformError(400, "Invalid artifact path"); }
           const artifact = run.artifacts.find((item) => item.path === path);
           if (!artifact) throw new PlatformError(404, "Artifact is not part of this run");
-          const data = await store.get(artifact.hash);
+          let data = await store.get(artifact.hash);
+          const isChunk = url.searchParams.has("chunk");
+          if (isChunk) {
+            const index = integer(url.searchParams.get("chunk"), 0, 0, Math.max(0, Math.ceil(data.length / UPLOAD_CHUNK_BYTES) - 1));
+            data = data.subarray(index * UPLOAD_CHUNK_BYTES, (index + 1) * UPLOAD_CHUNK_BYTES);
+          } else if (auth.env.VERCEL && data.length > 3 * UPLOAD_CHUNK_BYTES) throw new PlatformError(413, "Use chunked artifact downloads on Vercel; the dashboard handles this automatically");
           response.writeHead(200, {
-            "Content-Type": artifact.mediaType, "Content-Length": data.length,
+            "Content-Type": isChunk ? "application/octet-stream" : artifact.mediaType, "Content-Length": data.length,
             "Cache-Control": "private, no-store", ETag: `"${artifact.hash}"`,
             "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
           });

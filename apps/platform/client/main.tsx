@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import type { FormEvent, MouseEvent, ReactNode } from "react";
 import { App as ReportApp } from "../../../packages/visualguard/report-app/src/App";
 import { formatDuration, jobSummary } from "../../../packages/visualguard/report-app/src/data";
-import { api, artifactUrl, reportManifest } from "./api";
+import { api, artifactUrl, reportManifest, releaseArtifacts } from "./api";
 import { RUN_STATUSES, type Project, type RunDetail, type RunPage, type RunStatus, type StoredRun } from "../shared/contracts";
 import "./styles.css";
 import { AccountMenu, SessionProvider, useSession } from "./auth";
@@ -160,7 +160,7 @@ function RunView({ id, report, projects }: { id: string; report: boolean; projec
     const abort = new AbortController();
     setRun(undefined); setError("");
     api.run(id, abort.signal).then((result) => { if (!abort.signal.aborted) setRun(result); }).catch((problem: Error) => { if (!abort.signal.aborted) setError(problem.message); });
-    return () => abort.abort();
+    return () => { abort.abort(); releaseArtifacts(id); };
   }, [id, revision]);
   useEffect(() => { if (run && !report) document.title = `Run #${run.number} · VisualGuard`; }, [run, report]);
   if (error) return <Shell projects={projects}><main className="vg-content"><Link href="/" className="vg-back">← Run history</Link><ErrorMessage error={error} retry={() => setRevision((value) => value + 1)} /></main></Shell>;

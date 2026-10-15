@@ -12,9 +12,10 @@ import { artifactPath, parseManifest, parseMetadata } from "./validation.js";
 
 export const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
 export const MAX_ARTIFACT_BYTES = 32 * 1024 * 1024;
-const MAX_RUN_BYTES = 512 * 1024 * 1024;
+export const MAX_RUN_BYTES = 512 * 1024 * 1024;
+export const MAX_RUN_ARTIFACTS = 4096;
 
-function canonical(value: unknown): string {
+export function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (value && typeof value === "object") return `{${Object.keys(value).filter((key) => (value as Record<string, unknown>)[key] !== undefined).sort().map((key) => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(",")}}`;
   return JSON.stringify(value) ?? "null";
@@ -30,6 +31,32 @@ export function requiredArtifacts(manifest: RunManifest): string[] {
     for (const region of job.regions) for (const path of Object.values(region.crops ?? {})) paths.add(artifactPath(path));
   }
   return [...paths].sort();
+}
+
+export function evidenceType(path: string, data: Buffer): ArtifactDescriptor["mediaType"] {
+  if (path.endsWith(".png") && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return "image/png";
+  if (path.endsWith(".json")) { JSON.parse(data.toString("utf8")); return "application/json"; }
+  throw new PlatformError(400, `Unsupported evidence type: ${path}; only PNG and JSON artifacts are imported`);
+}
+
+/** Both local imports and remote uploads use the same immutable publication contract. */
+export async function publishRun(repository: PlatformRepository, store: ArtifactStore, input: { projectId: string; manifest: RunManifest; metadata: RunMetadata; artifacts: ArtifactDescriptor[]; actorId?: string }) {
+  const manifest = parseManifest(input.manifest);
+  const metadata = parseMetadata({ ...input.metadata, commit: input.metadata.commit ?? manifest.provenance?.sourceRevision });
+  const required = requiredArtifacts(manifest);
+  if (required.length > MAX_RUN_ARTIFACTS) throw new PlatformError(413, `A run may reference at most ${MAX_RUN_ARTIFACTS} artifacts`);
+  const artifacts = [...input.artifacts].sort((a, b) => a.path.localeCompare(b.path));
+  if (new Set(artifacts.map((item) => item.path)).size !== artifacts.length || artifacts.length !== required.length || required.some((path) => !artifacts.some((item) => item.path === path))) throw new PlatformError(400, "Published artifacts do not exactly match required run evidence");
+  let bytes = 0;
+  for (const item of artifacts) {
+    const data = await store.get(item.hash); bytes += data.length;
+    if (data.length !== item.size || data.length > MAX_ARTIFACT_BYTES || bytes > MAX_RUN_BYTES || evidenceType(item.path, data) !== item.mediaType) throw new PlatformError(400, "Artifact size, type, or run budget mismatch");
+  }
+  const reasons = completeness(manifest), summary = { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 };
+  for (const job of manifest.jobs) summary[job.status]++;
+  const status: RunStatus = reasons.length ? "incomplete" : statuses.find((value) => summary[value] > 0) ?? "incomplete";
+  const digest = sha256(canonical({ envelopeVersion: 1, manifest, metadata, artifacts }));
+  return repository.insertRun({ envelopeVersion: 1, projectId: input.projectId, engineRunId: manifest.id, number: manifest.number, startedAt: new Date(manifest.startedAt).toISOString(), importedAt: new Date().toISOString(), durationMs: manifest.durationMs, mode: manifest.mode, status, complete: reasons.length === 0, completenessReasons: reasons, summary, metadata, digest, jobCount: manifest.jobs.length, manifest, artifacts });
 }
 
 export function completeness(manifest: RunManifest): string[] {
@@ -76,22 +103,8 @@ export async function importRun(repository: PlatformRepository, store: ArtifactS
     const data = await readRunFile(root, path, MAX_ARTIFACT_BYTES);
     bytes += data.length;
     if (bytes > MAX_RUN_BYTES) throw new PlatformError(400, "Run exceeds the 512 MB artifact budget");
-    let mediaType: ArtifactDescriptor["mediaType"];
-    if (path.endsWith(".png") && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) mediaType = "image/png";
-    else if (path.endsWith(".json")) { JSON.parse(data.toString("utf8")); mediaType = "application/json"; }
-    else throw new PlatformError(400, `Unsupported evidence type: ${path}; only PNG and JSON artifacts are imported`);
+    const mediaType = evidenceType(path, data);
     artifacts.push({ path, hash: await store.put(data), size: data.length, mediaType });
   }
-  const reasons = completeness(manifest);
-  const summary = { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 };
-  for (const job of manifest.jobs) summary[job.status]++;
-  const status: RunStatus = reasons.length ? "incomplete" : statuses.find((value) => summary[value] > 0) ?? "incomplete";
-  const digest = sha256(canonical({ envelopeVersion: 1, manifest, metadata, artifacts }));
-  return repository.insertRun({
-    envelopeVersion: 1, projectId: input.projectId, engineRunId: manifest.id,
-    number: manifest.number, startedAt: new Date(manifest.startedAt).toISOString(), importedAt: new Date().toISOString(),
-    durationMs: manifest.durationMs, mode: manifest.mode, status, complete: reasons.length === 0,
-    completenessReasons: reasons, summary, metadata, digest, jobCount: manifest.jobs.length,
-    manifest, artifacts,
-  });
+  return publishRun(repository, store, { projectId: input.projectId, manifest, metadata, artifacts });
 }
