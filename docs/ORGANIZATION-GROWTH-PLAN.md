@@ -170,6 +170,8 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 ### 6.2 F02 — Identity, permissions, and accountable actors
 
+**Planned extension:** [Google sign-in, invitations, and user administration](TEAM-ONBOARDING-PLAN.md) defines a separate implementation branch after F03, including identity continuity, invitation acceptance, administrator controls, storage atomicity, and validation. It is planning only and does not expand PR #13's implementation scope.
+
 **Problem:** local action tokens do not tell the organization who reviewed a change or who may change project policy.
 
 **First scope:** one organizational identity provider through OIDC; project memberships; authenticated review actors; short-lived project-scoped CI upload credentials; administrative audit events. Reuse an identity provider/library rather than implementing passwords. Add SAML or automated provisioning only when required by the organization.
