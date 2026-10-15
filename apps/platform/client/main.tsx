@@ -6,6 +6,7 @@ import { formatDuration, jobSummary } from "../../../packages/visualguard/report
 import { api, artifactUrl, reportManifest, releaseArtifacts } from "./api";
 import {
   RUN_STATUSES,
+  runLabel,
   type Project,
   type RunDetail,
   type RunPage,
@@ -468,9 +469,10 @@ function RunHistory({
                   <tr key={run.id}>
                     <td>
                       <Link className="vg-run-link" href={`/runs/${run.id}`}>
-                        Run #{run.number}
+                        {runLabel(run)}
                       </Link>
                       <small className="vg-table-secondary">
+                        {run.name ? `Run #${run.number} · ` : ""}
                         {projects.find((item) => item.id === run.projectId)?.name ?? run.projectId}
                       </small>
                     </td>
@@ -496,7 +498,7 @@ function RunHistory({
                     </td>
                     <td>
                       <Link className="vg-row-arrow" href={`/runs/${run.id}`}>
-                        <span className="vg-sr-only">Open run {run.number}</span>↗
+                        <span className="vg-sr-only">Open {runLabel(run)}</span>↗
                       </Link>
                     </td>
                   </tr>
@@ -572,7 +574,7 @@ function RunView({
     };
   }, [id, revision]);
   useEffect(() => {
-    if (run && !report) document.title = `Run #${run.number} · VisualGuard`;
+    if (run && !report) document.title = `${runLabel(run)} · VisualGuard`;
   }, [run, report]);
   if (error)
     return (
@@ -597,7 +599,7 @@ function RunView({
     return (
       <div className="vg-report-layout">
         <div className="vg-report-bar">
-          <Link href={`/runs/${run.id}`}>← Run #{run.number}</Link>
+          <Link href={`/runs/${run.id}`}>← {runLabel(run)}</Link>
           <span>Read-only saved evidence</span>
         </div>
         <div className="vg-report-app">
@@ -624,9 +626,10 @@ function RunView({
           <div>
             <p className="vg-eyebrow">SAVED RUN EVIDENCE</p>
             <h1>
-              Run #{run.number} <Status value={run.status} />
+              {runLabel(run)} <Status value={run.status} />
             </h1>
             <p className="vg-muted">
+              {run.name ? `Run #${run.number} · ` : ""}
               <Timestamp value={run.startedAt} /> · {formatDuration(run.durationMs)} · {run.mode} ·{" "}
               {run.metadata.environment}
             </p>
@@ -641,7 +644,7 @@ function RunView({
               <DeleteAction
                 kind="run"
                 id={run.id}
-                name={`run #${run.number}`}
+                name={runLabel(run)}
                 onDeleted={(result) => {
                   releaseArtifacts(run.id);
                   onDeleted(deletionMessage("run", result), run.projectId);

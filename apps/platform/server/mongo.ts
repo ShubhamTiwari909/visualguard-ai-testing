@@ -12,6 +12,7 @@ import type {
 } from "../shared/contracts.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
+import { runSearchText } from "./run-labels.js";
 
 const regex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const clean = <T>(doc: Document): T => {
@@ -118,16 +119,7 @@ export class MongoRepository implements PlatformRepository {
         "MongoDB run envelope exceeds the 12 MiB limit; split this execution into smaller complete runs",
       );
     const document: RunDetail = { ...run, id: preserveId ?? randomUUID() };
-    const searchText = [
-      run.engineRunId,
-      run.metadata.branch,
-      run.metadata.commit,
-      run.metadata.deployment,
-      ...run.manifest.jobs.flatMap((job) => [job.route, job.name, job.viewport]),
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+    const searchText = runSearchText(run);
     const artifactRef = randomUUID();
     let published = false;
     try {

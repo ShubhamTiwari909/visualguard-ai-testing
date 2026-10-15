@@ -3,6 +3,7 @@ import type { Database, Sql } from "./database.js";
 import type { FileArtifactStore } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
+import { runSearchText } from "./run-labels.js";
 import type {
   DeletionResult,
   Project,
@@ -103,16 +104,7 @@ export class Repository implements PlatformRepository {
         }
       }
       const document: RunDetail = { ...run, id: preserveId ?? randomUUID() };
-      const searchable = [
-        run.engineRunId,
-        run.metadata.branch,
-        run.metadata.commit,
-        run.metadata.deployment,
-        ...run.manifest.jobs.flatMap((job) => [job.route, job.name, job.viewport]),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      const searchable = runSearchText(run);
       const inserted = await sql.query(
         "INSERT INTO vg_runs(id, project_id, engine_run_id, digest, started_at, status, environment, branch, revision, pull_request, deployment, document, search_text) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(project_id, engine_run_id) DO NOTHING RETURNING id",
         [

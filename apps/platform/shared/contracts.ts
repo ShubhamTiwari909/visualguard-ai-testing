@@ -10,6 +10,7 @@ export interface Project {
   role?: "viewer" | "reviewer" | "maintainer";
 }
 export interface RunMetadata {
+  runName?: string;
   environment: string;
   branch?: string;
   commit?: string;
@@ -24,6 +25,8 @@ export interface ArtifactDescriptor {
 }
 export interface StoredRun {
   id: string;
+  name?: string;
+  nameVersion?: number;
   projectId: string;
   engineRunId: string;
   number: number;
@@ -63,6 +66,9 @@ export interface RunPage {
   total: number;
   limit: number;
   offset: number;
+}
+export function runLabel(run: Pick<StoredRun, "name" | "number">): string {
+  return run.name || `Run #${run.number}`;
 }
 export interface DeletionResult {
   runs: number;

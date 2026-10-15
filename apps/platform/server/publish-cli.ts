@@ -7,6 +7,7 @@ async function main() {
       server: { type: "string" },
       project: { type: "string" },
       run: { type: "string" },
+      "run-name": { type: "string" },
       environment: { type: "string", default: "staging" },
       branch: { type: "string" },
       commit: { type: "string" },
@@ -29,6 +30,7 @@ async function main() {
     runDir: values.run,
     token: process.env.VISUALGUARD_UPLOAD_TOKEN,
     metadata: {
+      runName: values["run-name"],
       environment: values.environment ?? "staging",
       branch: values.branch,
       commit: values.commit,

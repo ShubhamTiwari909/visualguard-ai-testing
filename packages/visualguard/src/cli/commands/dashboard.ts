@@ -5,12 +5,14 @@ import { statSync } from "node:fs";
 import { loadEnvFiles } from "../../config/load.js";
 
 const metadata = (options: {
+  runName?: string;
   environment?: string;
   branch?: string;
   commit?: string;
   pr?: string;
   deployment?: string;
 }) => ({
+  runName: options.runName,
   environment: options.environment ?? "staging",
   branch: options.branch,
   commit: options.commit,
@@ -65,6 +67,7 @@ export function registerDashboardCommand(program: Command) {
   const addMetadata = (command: Command) =>
     command
       .option("--environment <name>", "Environment label", "staging")
+      .option("--run-name <name>", "Custom dashboard run name")
       .option("--branch <name>", "Branch label")
       .option("--commit <sha>", "Source revision")
       .option("--pr <number>", "Pull request number")

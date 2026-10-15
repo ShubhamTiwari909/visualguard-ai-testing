@@ -34,6 +34,7 @@ import {
 export interface TestFlags extends ConfigFlags {
   project?: string;
   dashboard?: string;
+  runName?: string;
   environment?: string;
   branch?: string;
   commit?: string;
@@ -111,6 +112,7 @@ export function registerTestCommand(program: Command): void {
       "dashboard origin (or VISUALGUARD_DASHBOARD_URL); otherwise use local dashboard storage",
     )
     .option("--environment <name>", "dashboard environment label", "staging")
+    .option("--run-name <name>", "custom dashboard run name (requires a project)")
     .option("--branch <name>", "dashboard branch label")
     .option("--commit <sha>", "dashboard source revision")
     .option("--pr <number>", "dashboard pull request number", parsePositiveInt)
@@ -137,6 +139,8 @@ export async function runTestCommand(
   const config = await loadResolvedConfig(flags);
   if (flags.dashboard !== undefined && flags.project === undefined)
     throw new ConfigError("Provide a project: visualguard test <PROJECT_ID> --dashboard <url>");
+  if (flags.runName !== undefined && flags.project === undefined)
+    throw new ConfigError("Provide a project: visualguard test <PROJECT_ID> --run-name <name>");
   const baseline = config.mode === "baseline";
   if (baseline) {
     if (!config.baseURL.staging) {
@@ -172,6 +176,7 @@ export async function runTestCommand(
         project: flags.project,
         server: flags.dashboard ?? (process.env.VISUALGUARD_DASHBOARD_URL || undefined),
         metadata: {
+          runName: flags.runName,
           environment: flags.environment ?? "staging",
           branch: flags.branch,
           commit: flags.commit,

@@ -10,6 +10,7 @@ async function main() {
       project: { type: "string" },
       name: { type: "string" },
       run: { type: "string" },
+      "run-name": { type: "string" },
       "runs-dir": { type: "string" },
       environment: { type: "string", default: "staging" },
       branch: { type: "string" },
@@ -50,6 +51,7 @@ async function main() {
           projectId: values.project,
           runDir,
           metadata: {
+            runName: values["run-name"],
             environment: values.environment ?? "staging",
             branch: values.branch,
             commit: values.commit,

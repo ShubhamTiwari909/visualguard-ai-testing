@@ -119,6 +119,7 @@ export async function publishRun(
     summary,
     metadata,
     digest,
+    name: metadata.runName,
     jobCount: manifest.jobs.length,
     manifest,
     artifacts,

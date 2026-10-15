@@ -5,6 +5,7 @@ export interface DashboardOptions {
   dataDir?: string;
 }
 export interface DashboardMetadata {
+  runName?: string;
   environment: string;
   branch?: string;
   commit?: string;
