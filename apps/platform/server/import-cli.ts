@@ -22,7 +22,7 @@ async function main() {
   });
   if (values.help) {
     console.log(
-      "pnpm platform:import --project <slug> [--name <name>] (--run <absolute-run-dir> | --runs-dir <absolute-runs-dir>) [--environment staging] [--branch feature] [--commit sha] [--pr 42] [--deployment id]",
+      "pnpm platform:import --project <slug> [--name <name>] (--run <absolute-run-dir> | --runs-dir <absolute-runs-dir>) [--run-name <name>] [--environment staging] [--branch feature] [--commit sha] [--pr 42] [--deployment id]",
     );
     return;
   }

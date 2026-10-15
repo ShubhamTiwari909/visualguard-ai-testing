@@ -305,7 +305,7 @@ export function createApi(
       if (request.method === "PATCH" && match && !match[2]) {
         const run = await repository.getRun(match[1]!);
         await auth.requireRole(actor, run.projectId, "maintainer");
-        const input = z.object({ name: z.string().max(120), expectedVersion: z.number().int().nonnegative() }).strict().parse(await body(request));
+        const input = z.object({ name: z.string().trim().max(120), expectedVersion: z.number().int().nonnegative() }).strict().parse(await body(request));
         const renamed = await repository.renameRun(run.id, input.name, input.expectedVersion);
         await auth.audit(actor, "run.renamed", { projectId: run.projectId, runId: run.id, name: renamed.name ?? null })
           .catch((error) => console.error("Run name saved; unable to record audit event", error));

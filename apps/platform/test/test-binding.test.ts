@@ -95,6 +95,17 @@ describe("test project binding", () => {
       expect(binding.name).toBe("Friendly name");
     }
   });
+  it("rejects non-string public IDs returned by a remote dashboard", async () => {
+    for (const publicId of [42, null, true, ["coerced-id"], { id: "unexpected" }]) {
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+        id: "storefront", name: "Storefront Web", publicId,
+      }), { status: 200, headers: { "Content-Type": "application/json" } })));
+      await expect(prepareTestBinding({
+        project: "storefront", server: "https://dashboard.example.test",
+        metadata: { environment: "ci" }, env: { VISUALGUARD_UPLOAD_TOKEN: "test-upload-token" },
+      })).rejects.toThrow("invalid project");
+    }
+  });
   it("uses scoped remote lookup and rejects unsafe URLs or missing remote credentials", async () => {
     const fetch = vi.fn(
       async (_input: string | URL | Request, _options?: RequestInit) =>

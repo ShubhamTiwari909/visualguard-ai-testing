@@ -572,9 +572,9 @@ describe("F02 organization access", () => {
         body: JSON.stringify({ confirmation }),
       });
     await role("reviewer");
-    const rename = (csrf?: string, expectedVersion = 0) => fetch(`${base}/api/runs/${run.id}`, {
+    const rename = (csrf?: string, expectedVersion = 0, name = "Renamed run") => fetch(`${base}/api/runs/${run.id}`, {
       method: "PATCH", headers: headers(person.cookie, csrf),
-      body: JSON.stringify({ name: "Renamed run", expectedVersion }),
+      body: JSON.stringify({ name, expectedVersion }),
     });
     expect((await rename(person.csrf)).status).toBe(403);
     expect((await remove()).status).toBe(403);
@@ -583,6 +583,9 @@ describe("F02 organization access", () => {
     expect((await rename(person.csrf)).status).toBe(200);
     expect((await repository.getRun(run.id)).name).toBe("Renamed run");
     expect((await rename(person.csrf)).status).toBe(409);
+    expect((await rename(person.csrf, 1, `  ${"n".repeat(120)}  `)).status).toBe(200);
+    expect((await repository.getRun(run.id)).name).toBe("n".repeat(120));
+    expect((await rename(person.csrf, 2, "n".repeat(121))).status).toBe(400);
     expect((await remove("wrong-run")).status).toBe(400);
     expect((await repository.getRun(run.id)).digest).toBe("d".repeat(64));
     expect((await remove()).status).toBe(200);
