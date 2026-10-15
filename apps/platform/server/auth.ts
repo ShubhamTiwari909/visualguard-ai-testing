@@ -341,7 +341,9 @@ export class AuthService {
     return safeUser(row.value);
   }
   private async issueSession(user: User, response: ServerResponse) {
-    const token = secret();
+    // Cookies carry a one-way-derived opaque handle, never the raw generated secret.
+    // Persist a second hash for lookup so a database dump cannot replay the cookie.
+    const token = sha256(secret());
     await this.state.create<Session>(
       "sessions",
       sha256(token),
@@ -466,7 +468,7 @@ export class AuthService {
     const verifier = client.randomPKCECodeVerifier(),
       state = client.randomState(),
       nonce = secret(),
-      browser = secret();
+      browser = sha256(secret());
     await this.state.create("oidc", sha256(browser), { state, nonce, verifier }, expires(600));
     const target = client.buildAuthorizationUrl(config, {
       redirect_uri: `${this.publicUrl!.origin}/api/auth/callback`,

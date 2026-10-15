@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { openDatabase, type Database } from "../server/database.js";
 import { Repository } from "../server/repository.js";
 import { SqlStateStore } from "../server/state.js";
-import { SqlArtifactStore } from "../server/artifacts.js";
+import { SqlArtifactStore, sha256 } from "../server/artifacts.js";
 import { createApi } from "../server/http.js";
 import { AuthService } from "../server/auth.js";
 import { createDashboardProject } from "../server/project-command.js";
@@ -100,7 +100,18 @@ describe("F02 organization access", () => {
     ).text();
     expect(users).not.toContain("scrypt$");
     expect(users).not.toContain(password);
-    expect(adminCookie).toMatch(/^vg_session=/);
+    expect(adminCookie).toMatch(/^vg_session=[a-f0-9]{64}$/);
+    const handle = adminCookie.slice("vg_session=".length);
+    const persisted = await state.list("sessions");
+    expect(persisted.some((entry) => entry.id === sha256(handle))).toBe(true);
+    expect(JSON.stringify(persisted)).not.toContain(handle);
+    expect(
+      (
+        await fetch(`${base}/api/projects`, {
+          headers: { Cookie: `vg_session=${sha256(handle)}` },
+        })
+      ).status,
+    ).toBe(401);
     const stored = await state.list<{ passwordHash: string }>("users");
     expect(stored[0]?.value.passwordHash).toMatch(/^scrypt\$/);
   });
