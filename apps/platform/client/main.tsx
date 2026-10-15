@@ -6,6 +6,8 @@ import { formatDuration, jobSummary } from "../../../packages/visualguard/report
 import { api, artifactUrl, reportManifest } from "./api";
 import { RUN_STATUSES, type Project, type RunDetail, type RunPage, type RunStatus, type StoredRun } from "../shared/contracts";
 import "./styles.css";
+import { AccountMenu, SessionProvider, useSession } from "./auth";
+import { Settings } from "./settings";
 
 function navigate(path: string) {
   window.history.pushState(null, "", path);
@@ -43,22 +45,24 @@ function Metadata({ run }: { run: StoredRun }) {
 }
 
 function Shell({ projects, children }: { projects: Project[]; children: ReactNode }) {
+  const session = useSession();
   const selected = new URLSearchParams(window.location.search).get("project");
   useEffect(() => { document.documentElement.dataset.theme = "light"; }, []);
   return <div className="platform">
     <aside className="vg-sidebar">
       <Link className="vg-brand" href="/"><span className="vg-logo" aria-hidden="true">V</span>VisualGuard<span className="vg-brand-dot">.</span></Link>
-      <div className="vg-workspace"><span className="vg-workspace-icon">W</span><div><strong>Workspace</strong><small>Local evidence library</small></div></div>
+      <div className="vg-workspace"><span className="vg-workspace-icon">W</span><div><strong>Workspace</strong><small>{session.access === "local" ? "Local evidence library" : "Team evidence library"}</small></div></div>
       <p className="vg-nav-heading">QUALITY</p>
       <Link className={`vg-nav-link ${!selected ? "is-active" : ""}`} href="/"><span aria-hidden="true">▦</span> Run history</Link>
+      <Link className="vg-nav-link" href="/settings"><span aria-hidden="true">⚙</span> People & integrations</Link>
       <div className="vg-nav-heading-row"><p className="vg-nav-heading">PROJECTS</p><span>{projects.length}</span></div>
       <nav aria-label="Projects">
         {projects.map((project) => <Link key={project.id} className={`vg-nav-link ${selected === project.id ? "is-active" : ""}`} href={`/?project=${encodeURIComponent(project.id)}`}><span className="vg-project-mark">{project.name[0]?.toUpperCase()}</span><span className="vg-truncate">{project.name}</span><small>{project.runCount}</small></Link>)}
         {!projects.length && <p className="vg-muted vg-small">Your projects will appear here.</p>}
       </nav>
-      <div className="vg-sidebar-footer"><span className="vg-online" /> Local workspace<p>Available on this computer.</p></div>
+      <div className="vg-sidebar-footer"><span className="vg-online" /> {session.access === "local" ? "Local workspace" : "Team workspace"}<p>{session.user?.name}</p></div>
     </aside>
-    <div className="vg-workspace-main"><header className="vg-topbar"><span>Workspace <span className="vg-breadcrumb">/</span> Evidence</span><span className="vg-local-label"><span className="vg-online" /> Local access</span></header>{children}</div>
+    <div className="vg-workspace-main"><header className="vg-topbar"><span>Workspace <span className="vg-breadcrumb">/</span> Evidence</span><AccountMenu /></header>{children}</div>
   </div>;
 }
 
@@ -87,6 +91,7 @@ function ProjectForm({ onCreated }: { onCreated: () => void }) {
 }
 
 function RunHistory({ projects, refreshProjects, search }: { projects: Project[]; refreshProjects: () => void; search: string }) {
+  const session = useSession();
   const [page, setPage] = useState<RunPage>();
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
@@ -108,7 +113,7 @@ function RunHistory({ projects, refreshProjects, search }: { projects: Project[]
   const paginate = (offset: number) => { const next = new URLSearchParams(search); next.set("offset", String(offset)); navigate(`/?${next}`); };
   const refresh = () => { setRevision((value) => value + 1); refreshProjects(); };
   return <main className="vg-content">
-    <div className="vg-page-heading"><div><p className="vg-eyebrow">YOUR UI, OVER TIME</p><h1>Run history</h1><p className="vg-muted">A shared view of what changed, with the evidence to understand it.</p></div><ProjectForm onCreated={refresh} /></div>
+    <div className="vg-page-heading"><div><p className="vg-eyebrow">YOUR UI, OVER TIME</p><h1>Run history</h1><p className="vg-muted">A shared view of what changed, with the evidence to understand it.</p></div>{session.user?.admin && <ProjectForm onCreated={refresh} />}</div>
     <div className="vg-stat-grid">
       <div className="vg-stat"><span>Projects</span><strong>{projects.length}</strong><small>In this workspace</small></div>
       <div className="vg-stat"><span>Stored runs</span><strong>{projects.reduce((sum, item) => sum + item.runCount, 0)}</strong><small>Original evidence preserved</small></div>
@@ -189,7 +194,7 @@ function Platform() {
   const refresh = () => setRevision((value) => value + 1);
   if (error) return <Shell projects={projects}><main className="vg-content"><ErrorMessage error={error} retry={refresh} /></main></Shell>;
   const match = location.path.match(/^\/runs\/([a-f0-9-]{36})(\/report)?$/);
-  return match ? <RunView key={match[1]} id={match[1]!} report={Boolean(match[2])} projects={projects} /> : <Shell projects={projects}><RunHistory projects={projects} refreshProjects={refresh} search={location.search} /></Shell>;
+  return match ? <RunView key={match[1]} id={match[1]!} report={Boolean(match[2])} projects={projects} /> : <Shell projects={projects}>{location.path === "/settings" ? <Settings projects={projects} /> : <RunHistory projects={projects} refreshProjects={refresh} search={location.search} />}</Shell>;
 }
 
-createRoot(document.getElementById("root")!).render(<StrictMode><Platform /></StrictMode>);
+createRoot(document.getElementById("root")!).render(<StrictMode><SessionProvider><Platform /></SessionProvider></StrictMode>);

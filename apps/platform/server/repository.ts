@@ -3,10 +3,11 @@ import type { Database } from "./database.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
 import type { Project, RunDetail, RunFilters, RunPage, StoredRun } from "../shared/contracts.js";
+import type { PlatformRepository } from "./storage-contracts.js";
 
 const brief = ({ manifest: _manifest, artifacts: _artifacts, envelopeVersion: _version, ...run }: RunDetail): StoredRun => run;
 
-export class Repository {
+export class Repository implements PlatformRepository {
   constructor(readonly db: Database) {}
 
   async createProject(id: string, name: string): Promise<Project> {
@@ -16,9 +17,10 @@ export class Repository {
     return (await this.projects()).find((project) => project.id === id)!;
   }
 
-  async projects(): Promise<Project[]> {
+  async projects(allowed?: string[]): Promise<Project[]> {
+    if (allowed?.length === 0) return [];
     const rows = await this.db.query<{ id: string; name: string; created_at: string; run_count: number | string }>(
-      "SELECT p.id, p.name, p.created_at, COUNT(r.id) AS run_count FROM vg_projects p LEFT JOIN vg_runs r ON r.project_id=p.id GROUP BY p.id, p.name, p.created_at ORDER BY p.name, p.id",
+      `SELECT p.id, p.name, p.created_at, COUNT(r.id) AS run_count FROM vg_projects p LEFT JOIN vg_runs r ON r.project_id=p.id${allowed ? ` WHERE p.id IN (${allowed.map(() => "?").join(",")})` : ""} GROUP BY p.id, p.name, p.created_at ORDER BY p.name, p.id`, allowed,
     );
     return rows.map((row) => ({ id: row.id, name: row.name, createdAt: row.created_at, runCount: Number(row.run_count) }));
   }
@@ -50,9 +52,13 @@ export class Repository {
     });
   }
 
-  async runs(filters: RunFilters): Promise<RunPage> {
+  async runs(filters: RunFilters, allowed?: string[]): Promise<RunPage> {
     const clauses: string[] = [];
     const values: Array<string | number | null> = [];
+    if (allowed) {
+      if (!allowed.length) return { runs: [], total: 0, limit: Math.min(100, Math.max(1, filters.limit ?? 25)), offset: Math.max(0, filters.offset ?? 0) };
+      clauses.push(`project_id IN (${allowed.map(() => "?").join(",")})`); values.push(...allowed);
+    }
     const fields = { project: "project_id", status: "status", environment: "environment", branch: "branch", commit: "revision", pullRequest: "pull_request", deployment: "deployment" } as const;
     for (const [key, column] of Object.entries(fields)) {
       const value = filters[key as keyof typeof fields];

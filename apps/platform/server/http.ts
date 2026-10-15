@@ -1,12 +1,13 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { ArtifactStore } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
-import { Repository } from "./repository.js";
+import type { PlatformRepository, StateStore } from "./storage-contracts.js";
+import { AuthService, MemoryStateStore, type ProjectRole } from "./auth.js";
+import { z } from "zod";
 import { artifactPath } from "./validation.js";
 import { RUN_STATUSES, type RunFilters, type RunStatus } from "../shared/contracts.js";
 
-function json(response: ServerResponse, status: number, value: unknown): void {
+export function json(response: ServerResponse, status: number, value: unknown): void {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
   response.end(JSON.stringify(value));
 }
@@ -42,58 +43,106 @@ function filters(params: URLSearchParams): RunFilters {
   return result;
 }
 
-async function body(request: IncomingMessage): Promise<unknown> {
-  if (!request.headers["content-type"]?.startsWith("application/json")) throw new PlatformError(415, "Expected application/json");
+export async function readBytes(request: IncomingMessage, limit: number): Promise<Buffer> {
+  const parsed = (request as IncomingMessage & { body?: unknown }).body;
+  if (parsed !== undefined) {
+    const data = Buffer.isBuffer(parsed) ? parsed : Buffer.from(typeof parsed === "string" ? parsed : JSON.stringify(parsed));
+    if (data.length > limit) throw new PlatformError(413, "Request body too large");
+    return data;
+  }
   const chunks: Buffer[] = [];
   let size = 0;
-  for await (const chunk of request) {
-    size += chunk.length;
-    if (size > 16_384) throw new PlatformError(413, "Request body too large");
-    chunks.push(Buffer.from(chunk));
-  }
-  try { return JSON.parse(Buffer.concat(chunks).toString("utf8")); }
+  for await (const chunk of request) { size += chunk.length; if (size > limit) throw new PlatformError(413, "Request body too large"); chunks.push(Buffer.from(chunk)); }
+  return Buffer.concat(chunks);
+}
+
+export async function body(request: IncomingMessage): Promise<unknown> {
+  if (!request.headers["content-type"]?.startsWith("application/json")) throw new PlatformError(415, "Expected application/json");
+  const data = await readBytes(request, 16_384);
+  try { return JSON.parse(data.toString("utf8")); }
   catch { throw new PlatformError(400, "Invalid JSON body"); }
 }
 
-/** F01 is deliberately loopback-only. This token protects local mutations, not user identity. */
-export function createApi(repository: Repository, store: ArtifactStore) {
-  const token = randomBytes(24).toString("hex");
-  return async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
+export interface ApiOptions { state?: StateStore; env?: NodeJS.ProcessEnv }
+export function createApi(repository: PlatformRepository, store: ArtifactStore, options: ApiOptions = {}) {
+  const auth = new AuthService(options.state ?? new MemoryStateStore(), options.env ?? process.env);
+  if (auth.mode === "login" && !options.state) throw new Error("Hosted access requires persistent authentication state");
+  const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
     response.setHeader("X-Frame-Options", "DENY");
     let url: URL;
-    try { url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`); }
-    catch { json(response, 400, { error: "Invalid URL" }); return true; }
-    if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) {
-      json(response, 403, { error: "F01 only serves loopback hosts; organization access requires F02" });
-      return true;
-    }
+    try { url = auth.url(request); }
+    catch (error) { json(response, error instanceof PlatformError ? error.status : 400, { error: error instanceof Error ? error.message : "Invalid URL" }); return true; }
     if (!url.pathname.startsWith("/api/")) return false;
     try {
-      if (request.headers.origin && request.headers.origin !== url.origin) throw new PlatformError(403, "Cross-origin API access is not allowed");
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        const supplied = Buffer.from(String(request.headers["x-visualguard-platform-token"] ?? ""));
-        const expected = Buffer.from(token);
-        if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) throw new PlatformError(403, "Missing or invalid local action token");
-      }
+      await auth.ready;
+      const actor = await auth.actor(request);
       if (request.method === "GET" && url.pathname === "/api/session") {
-        json(response, 200, { token, access: "local", envelopeVersion: 1 }); return true;
+        json(response, 200, { token: actor?.credentialId ? undefined : actor?.csrf, access: auth.mode, user: actor && !actor.credentialId ? { id: actor.id, name: actor.name, email: actor.email, admin: actor.admin } : null, oidc: Boolean(auth.env.VISUALGUARD_OIDC_ISSUER), envelopeVersion: 1 }); return true;
+      }
+      if (request.method === "POST" && url.pathname === "/api/auth/login") {
+        const input = z.object({ email: z.string().max(254), password: z.string().max(256) }).parse(await body(request));
+        json(response, 200, await auth.login(input.email, input.password, response)); return true;
+      }
+      if (request.method === "GET" && url.pathname === "/api/auth/login") { await auth.beginOidc(response); return true; }
+      if (request.method === "GET" && url.pathname === "/api/auth/callback") { await auth.finishOidc(request, response, url); return true; }
+      if (!actor) throw new PlatformError(401, "Sign in to access this dashboard");
+      if (request.method !== "GET" && request.method !== "HEAD") auth.csrf(request, actor);
+      if (request.method === "POST" && url.pathname === "/api/auth/logout") { await auth.logout(actor, response); json(response, 200, { ok: true }); return true; }
+      if (actor.credentialId) throw new PlatformError(403, "Upload credentials cannot browse or administer the dashboard");
+      if (url.pathname === "/api/users") {
+        if (!actor.admin) throw new PlatformError(403, "Administrator access required");
+        if (request.method === "GET") { json(response, 200, { users: await auth.users() }); return true; }
+        if (request.method === "POST") {
+          const input = z.object({ email: z.string(), password: z.string(), name: z.string(), role: z.enum(["admin", "member"]).optional() }).parse(await body(request));
+          const user = await auth.createUser(input); await auth.audit(actor, "user.created", { userId: user.id }); json(response, 201, user); return true;
+        }
+      }
+      const userMatch = url.pathname.match(/^\/api\/users\/([^/]+)$/);
+      if (request.method === "PATCH" && userMatch) {
+        const input = z.object({ disabled: z.boolean().optional(), role: z.enum(["admin", "member"]).optional(), password: z.string().optional() }).strict().parse(await body(request));
+        json(response, 200, await auth.updateUser(actor, decodeURIComponent(userMatch[1]!), input)); return true;
+      }
+      if (request.method === "GET" && url.pathname === "/api/audit") {
+        if (!actor.admin) throw new PlatformError(403, "Administrator access required");
+        json(response, 200, { events: (await auth.state.list("audit", "", 100)).map((row) => row.value) }); return true;
+      }
+      const access = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/(members|tokens)(?:\/([a-f0-9]{64}))?$/);
+      if (access) {
+        const project = access[1]!; await auth.requireRole(actor, project, "maintainer");
+        if (!(await repository.projects([project])).length) throw new PlatformError(404, "Project not found");
+        if (access[2] === "members") {
+          if (request.method === "GET") { json(response, 200, { members: await auth.members(project) }); return true; }
+          if (request.method === "POST") {
+            const input = z.object({ userId: z.string(), role: z.enum(["viewer", "reviewer", "maintainer"]).nullable() }).parse(await body(request));
+            await auth.assign(actor, project, input.userId, input.role as ProjectRole | null); json(response, 200, { ok: true }); return true;
+          }
+        } else {
+          if (request.method === "GET") { json(response, 200, { tokens: await auth.tokens(project) }); return true; }
+          if (request.method === "POST") {
+            const input = z.object({ name: z.string(), days: z.number().int() }).parse(await body(request));
+            json(response, 201, await auth.mintToken(actor, project, input.name, input.days)); return true;
+          }
+          if (request.method === "DELETE" && access[3]) { await auth.revokeToken(actor, project, access[3]); json(response, 200, { ok: true }); return true; }
+        }
       }
       if (request.method === "GET" && url.pathname === "/api/projects") {
-        json(response, 200, { projects: await repository.projects() }); return true;
+        json(response, 200, { projects: await repository.projects(await auth.projectIds(actor)) }); return true;
       }
       if (request.method === "POST" && url.pathname === "/api/projects") {
+        if (!actor.admin) throw new PlatformError(403, "Administrator access required to create projects");
         const input = await body(request);
         if (!input || typeof input !== "object" || !("id" in input) || !("name" in input) || typeof input.id !== "string" || typeof input.name !== "string") throw new PlatformError(400, "Project id and name are required");
-        json(response, 201, await repository.createProject(input.id, input.name)); return true;
+        const project = await repository.createProject(input.id, input.name); await auth.audit(actor, "project.created", { projectId: project.id }); json(response, 201, project); return true;
       }
       if (request.method === "GET" && url.pathname === "/api/runs") {
-        json(response, 200, await repository.runs(filters(url.searchParams))); return true;
+        json(response, 200, await repository.runs(filters(url.searchParams), await auth.projectIds(actor))); return true;
       }
       const match = url.pathname.match(/^\/api\/runs\/([a-f0-9-]{36})(?:\/(.*))?$/);
       if (request.method === "GET" && match) {
         const run = await repository.getRun(match[1]!);
+        await auth.requireRole(actor, run.projectId);
         if (!match[2]) { json(response, 200, run); return true; }
         if (match[2].startsWith("artifacts/")) {
           let path: string;
@@ -104,7 +153,7 @@ export function createApi(repository: Repository, store: ArtifactStore) {
           const data = await store.get(artifact.hash);
           response.writeHead(200, {
             "Content-Type": artifact.mediaType, "Content-Length": data.length,
-            "Cache-Control": "private, max-age=3600, immutable", ETag: `"${artifact.hash}"`,
+            "Cache-Control": "private, no-store", ETag: `"${artifact.hash}"`,
             "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
           });
           response.end(data); return true;
@@ -112,9 +161,11 @@ export function createApi(repository: Repository, store: ArtifactStore) {
       }
       throw new PlatformError(404, "API endpoint not found");
     } catch (error) {
+      if (error instanceof z.ZodError) { json(response, 400, { error: "Invalid request fields", fields: error.issues.map((issue) => issue.path.join(".")) }); return true; }
       if (!(error instanceof PlatformError)) console.error("Platform API request failed", error);
       json(response, error instanceof PlatformError ? error.status : 500, { error: error instanceof PlatformError ? error.message : "Unable to read platform evidence; check server logs" });
       return true;
     }
   };
+  return Object.assign(handler, { ready: auth.ready });
 }

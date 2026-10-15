@@ -7,7 +7,7 @@ import type { ArtifactDescriptor, RunMetadata, RunStatus } from "../shared/contr
 import type { ArtifactStore } from "./artifacts.js";
 import { sha256 } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
-import { Repository } from "./repository.js";
+import type { PlatformRepository } from "./storage-contracts.js";
 import { artifactPath, parseManifest, parseMetadata } from "./validation.js";
 
 export const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
@@ -66,7 +66,7 @@ export async function readRunFile(root: string, path: string, limit: number): Pr
   } finally { await handle.close(); }
 }
 
-export async function importRun(repository: Repository, store: ArtifactStore, input: { projectId: string; runDir: string; metadata: RunMetadata }) {
+export async function importRun(repository: PlatformRepository, store: ArtifactStore, input: { projectId: string; runDir: string; metadata: RunMetadata }) {
   const root = await realpath(input.runDir);
   const manifest = parseManifest(JSON.parse((await readRunFile(root, "manifest.json", MAX_MANIFEST_BYTES)).toString("utf8")));
   const metadata = parseMetadata({ ...input.metadata, commit: input.metadata.commit ?? manifest.provenance?.sourceRevision });

@@ -12,7 +12,8 @@ async function main() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("VISUALGUARD_PLATFORM_PORT must be between 1 and 65535");
   const platform = await openPlatform();
   let vite: ViteDevServer | undefined;
-  const api = createApi(platform.repository, platform.store);
+  const api = createApi(platform.repository, platform.store, { state: platform.state });
+  await api.ready;
   const root = fileURLToPath(new URL("../dist/client", import.meta.url));
   const indexPath = development ? fileURLToPath(new URL("../client/index.html", import.meta.url)) : resolve(root, "index.html");
   let index: string;
@@ -23,7 +24,7 @@ async function main() {
       if (await api(request, response)) return;
       if (request.method !== "GET" && request.method !== "HEAD") { response.writeHead(405); response.end(); return; }
       const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/" || /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(pathname)) {
+      if (pathname === "/" || pathname === "/settings" || /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(pathname)) {
         const html = vite ? await vite.transformIndexHtml(pathname, await readFile(indexPath, "utf8")) : index;
         response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
         response.end(request.method === "HEAD" ? undefined : html);

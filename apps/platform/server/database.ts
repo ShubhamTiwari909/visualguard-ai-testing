@@ -31,6 +31,16 @@ const SCHEMA = [
   "CREATE INDEX IF NOT EXISTS vg_runs_project_date ON vg_runs(project_id, started_at, id)",
   "CREATE INDEX IF NOT EXISTS vg_runs_status_date ON vg_runs(status, started_at, id)",
   "CREATE INDEX IF NOT EXISTS vg_runs_environment ON vg_runs(environment, started_at)",
+  `CREATE TABLE IF NOT EXISTS vg_state (
+    namespace TEXT NOT NULL, id TEXT NOT NULL, value TEXT NOT NULL,
+    version INTEGER NOT NULL, expires_at TEXT, PRIMARY KEY(namespace, id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS vg_object_chunks (
+    hash TEXT NOT NULL, chunk INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY(hash, chunk)
+  )`,
+  `CREATE TABLE IF NOT EXISTS vg_objects (
+    hash TEXT PRIMARY KEY, size INTEGER NOT NULL, chunks INTEGER NOT NULL
+  )`,
 ];
 
 export async function openDatabase(options: { url?: string; sqlitePath: string }): Promise<Database> {
