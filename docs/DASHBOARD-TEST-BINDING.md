@@ -108,7 +108,7 @@ Preflight rejects invalid metadata, inaccessible projects, missing credentials, 
 
 Finalized runs are published even if they contain regressions, errors, or incomplete coverage. Their engine verdict remains unchanged. Publishing happens after the existing engine/reporters finish; an exception that prevents the engine from returning a saved run is reported through the existing capture/error handling.
 
-If publishing fails after capture, the command prints the saved run directory and preserves the local files. A passing test with failed publishing exits with code **3**. An already-failing test keeps code **1**. Configuration errors use code **2**. The command never reports success when requested publishing fails.
+If publishing fails after capture, the command prints the saved run directory and preserves the local files. A passing test with failed publishing exits with code **3**. An already-failing test keeps code **1**. CLI and metadata validation errors use code **2**; dashboard/database setup failures (including an unsupported database URL) use code **3**. The command never reports success when requested publishing fails.
 
 Retry the saved evidence without recapturing, using the same labels:
 

@@ -15,7 +15,7 @@ pnpm install
 pnpm platform:dev
 ```
 
-Open http://127.0.0.1:4400. The local default needs no database service or login setup. SQLite is stored in the calling project's ignored `.visualguard/platform/metadata.sqlite`; new artifact objects are stored in that database too. Old F01 filesystem objects remain readable.
+Open http://127.0.0.1:4400. The local default needs no database service or login setup. SQLite is stored in the calling project's `.visualguard/platform/metadata.sqlite`; new artifact objects are stored in that database too. Add `.visualguard/` to the consuming project's `.gitignore` before committing files: the dashboard command does not update `.gitignore`, and this directory can contain screenshots, DOM evidence, and authentication state. Old F01 filesystem objects remain readable.
 
 For compiled workspace UI:
 

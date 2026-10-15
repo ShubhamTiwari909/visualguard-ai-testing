@@ -31,12 +31,12 @@ The standalone dashboard is also available in dashboard-enabled releases:
 
 ```sh
 npx visualguard dashboard project create storefront --name "Storefront Web"
-npx visualguard test storefront
+npx visualguard test storefront --production https://example.com --staging http://localhost:3000 --route / --no-ai
 npx visualguard dashboard
 npx visualguard dashboard import /absolute/path/to/run --project storefront
 ```
 
-`test storefront` runs the configured tests and saves their evidence to that local dashboard project. Use an exact, quoted project name too: `test "Storefront Web"`. For a shared dashboard, set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN`, or pass `--dashboard https://your-dashboard.example.com`. A plain `test` stays offline. See the [project binding guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-TEST-BINDING.md) for setup, labels, and retrying saved runs. This extension requires a rebuilt feature-enabled package and server; it has not been validated or built in this change.
+Start your staging app first and replace the example production and staging URLs with your own. The command above supplies both URLs without a config file and saves its evidence to the local dashboard project. Once those URLs are configured, `test storefront` uses the configured tests. Use an exact, quoted project name too: `test "Storefront Web"`. For a shared dashboard, set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN`. You can override the URL with `--dashboard https://your-dashboard.example.com`; the hosted dashboard still requires `VISUALGUARD_UPLOAD_TOKEN`. A plain `test` stays offline. See the [project binding guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-TEST-BINDING.md) for setup, labels, and retrying saved runs. This extension requires a rebuilt feature-enabled package and server; it has not been validated or built in this change.
 
 It includes local SQLite, MongoDB/PostgreSQL storage, team login/project permissions, remote CI uploads, portable backups, and deployment generators for Cloud Run/Vercel. No browser installation is needed to host the dashboard. See the [standalone walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/STANDALONE-DASHBOARD-WALKTHROUGH.md), including local release-candidate installation before npm publication.
 
