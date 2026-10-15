@@ -52,7 +52,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "tsup && vite build --config report-app/vite.config.ts --logLevel warn && pnpm run build:dashboard",
+    "build": "tsup && vite build --config report-app/vite.config.ts --logLevel warn && pnpm run build:dashboard --assets-only",
     "build:dashboard": "node scripts/build-dashboard.mjs",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit && tsc --noEmit -p report-app",

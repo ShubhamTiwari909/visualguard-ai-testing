@@ -54,7 +54,7 @@ pnpm --filter visualguard build:dashboard
 pnpm --dir packages/visualguard pack --pack-destination ../../.visualguard/release
 ```
 
-`build:dashboard` bundles JavaScript and both report/dashboard UI assets, and copies the dashboard declaration file. It does not run formatting, lint, or semantic type checks. Normal release builds remain responsible for the full declaration/validation pipeline. Keep this distinction when preparing a public release.
+`build:dashboard` bundles JavaScript and both report/dashboard UI assets, and copies the dashboard declaration file. It does not run formatting, lint, or semantic type checks. The normal package build runs its existing JavaScript/declaration and report builds once, then invokes `build:dashboard --assets-only` to add the dashboard UI and declaration file without repeating those builds. Normal release builds remain responsible for the full declaration/validation pipeline. Keep this distinction when preparing a public release.
 
 Install the resulting tarball in another project:
 
@@ -203,7 +203,7 @@ After signing in:
 
 Workspace administrators manage all projects and accounts. Viewers see assigned projects only. Reviewers currently have read access; collaborative approval remains F03. Maintainers manage their project's membership/upload tokens. The settings page offers project controls only for projects the user can maintain.
 
-Sessions last up to 12 hours, are persisted server-side, and use HttpOnly cookies. Hosted HTTPS cookies are Secure. Password changes invalidate previous sessions. Mutations require a session action token, and upload tokens cannot browse or administer the dashboard. Account and permission changes create audit events; administrators can inspect `GET /api/audit` from an authenticated session.
+Sessions last up to 12 hours, are persisted server-side, and use HttpOnly cookies. Hosted HTTPS cookies are Secure. Password changes invalidate previous sessions. Browser-session mutations require the session action token. Upload mutations authenticate with project-scoped bearer tokens and are exempt from the session action-token check; upload tokens cannot browse or administer the dashboard. Account and permission changes create audit events; administrators can inspect `GET /api/audit` from an authenticated session.
 
 ### Optional company login
 
@@ -540,7 +540,7 @@ npx visualguard test storefront
 npx visualguard test "Storefront Web"
 ```
 
-Without a configured dashboard URL, the command imports into the same local database as `visualguard dashboard`, creating a missing valid project ID. Set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN` once for an existing hosted project, or use `--dashboard <origin>`. `test` without a project remains offline, and `--list` does not create or upload anything.
+Without a configured dashboard URL, the command imports into the same local database as `visualguard dashboard`, creating a missing valid project ID. For an existing hosted project, set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN`. Alternatively, `--dashboard <origin>` overrides only the URL; the hosted dashboard still requires `VISUALGUARD_UPLOAD_TOKEN`. `test` without a project remains offline, and `--list` does not create or upload anything.
 
 Project resolution happens before capture. The exact new run is imported/published afterward, including failing/incomplete evidence. A publishing failure preserves local evidence and returns a nonzero result. [Full setup, labels, exit codes, and manual acceptance](DASHBOARD-TEST-BINDING.md). Both CLI and dashboard server need the feature-enabled version; earlier tarballs/builds remain unchanged until rebuilt.
 

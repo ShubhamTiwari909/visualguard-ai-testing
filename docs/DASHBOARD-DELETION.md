@@ -29,7 +29,7 @@ Deleted project IDs stay reserved in that database. A future project must use a 
 
 Cleanup considers artifact references across **all** projects. Removing one run does not remove an image/DOM object that another run needs. Active upload file records also retain their evidence until that upload no longer needs it or expires. Existing F01 filesystem objects are supported in SQLite/PostgreSQL workspaces with their configured legacy `objects/` directory.
 
-Deletion queues candidate hashes durably, then attempts a bounded batch of up to 1000 candidates. If cleanup is interrupted or an object is still in use, the successful deletion response displays a cleanup-pending notice. Subsequent deletions retry queued candidates. There is no background scheduler or automatic time-based run retention in this extension. Unrelated abandoned objects are not swept blindly.
+Deletion queues candidate hashes durably, then attempts a bounded batch of up to 1000 candidates. Cleanup interrupted by an error, blocked by an active upload, or left beyond the batch limit produces a cleanup-pending notice on the successful deletion response. Objects referenced by remaining runs are preserved and removed from the cleanup queue; sharing alone does not produce that notice. Subsequent deletions retry queued candidates. There is no background scheduler or automatic time-based run retention in this extension. Unrelated abandoned objects are not swept blindly.
 
 SQLite uses its transaction serialization. PostgreSQL dashboard transactions share an advisory lock so run publication, object writes, and cleanup cannot remove committed evidence out from under each other. MongoDB uses atomic per-object publication references and generation-specific object chunks without requiring replica-set transactions. Older MongoDB objects remain readable. Conservative publication references left by an interrupted process can retain bytes rather than risk deleting evidence; investigate persistent cleanup queues before any manual database cleanup.
 
@@ -46,7 +46,7 @@ Both routes require a browser session (or the local workspace action token), the
 | `DELETE /api/runs/RUN_UUID`       | `{ "confirmation": "RUN_UUID" }`                      |
 | `DELETE /api/projects/PROJECT_ID` | `{ "confirmation": "PROJECT_ID", "expectedRuns": 3 }` |
 
-The browser asks users to type `DELETE` for a run, then submits that run's immutable UUID. Project requests submit the typed project ID and displayed run count. Incorrect confirmation returns 400; missing permission/action token returns 403; a missing entry returns 404; a changed project count returns 409.
+The browser asks users to type `DELETE` for a run, then submits that run's immutable UUID. Project requests submit the typed project ID and displayed run count. Incorrect confirmation returns 400. Missing or expired hosted sessions return 401. Missing permission/action token returns 403; an inaccessible or missing project can also return 403 because project permission is checked before existence. A missing run, or a missing project after permission is granted, returns 404. A changed project count returns 409.
 
 A successful response contains `runs`, `artifactsDeleted`, and `cleanupPending`. Run counts describe removed entries; artifact counts describe cleanup work in that request, potentially including previously queued candidates. A `run.deleted` or `project.deleted` event records the actor and result when audit storage is available. An audit-write failure is logged without misreporting an already-completed deletion as failed.
 

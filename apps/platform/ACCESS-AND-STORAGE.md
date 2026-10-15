@@ -50,4 +50,4 @@ The current release keeps screenshot bytes in the database for minimal hosting s
 
 ## Validation
 
-Focused tests exercise SQLite, a disposable PostgreSQL database, and a disposable MongoDB database, including racing inserts, scoped filters, atomic state updates, multi-chunk artifact round trips, login, cross-project access, and revocation. Formatting, lint, and type checks remain deferred under the user's F01–F36 instruction.
+The storage contract suite always exercises SQLite. PostgreSQL cases run only when `VISUALGUARD_TEST_DATABASE_URL` is set, and MongoDB cases run only when `VISUALGUARD_TEST_MONGODB_URL` is set; otherwise those backend suites are skipped. Use disposable databases. These suites cover racing inserts, scoped repository filters, atomic state updates, multi-chunk artifact round trips, and deletion. Login, HTTP project-access permissions, and session/password/token revocation are covered separately against SQLite; they do not establish live PostgreSQL/MongoDB authentication coverage. Formatting, lint, and type checks remain deferred under the user's F01–F36 instruction.
