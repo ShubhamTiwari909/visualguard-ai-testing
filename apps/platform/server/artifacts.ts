@@ -1,0 +1,144 @@
+/** Private content-addressed object storage. Only indexed run artifacts are served by HTTP. */
+import { createHash, randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import type { Database } from "./database.js";
+
+export const OBJECT_CHUNK_BYTES = 1024 * 1024;
+
+export const sha256 = (data: Uint8Array | string) =>
+  createHash("sha256").update(data).digest("hex");
+
+export interface ArtifactStore {
+  put(data: Uint8Array): Promise<string>;
+  get(hash: string): Promise<Buffer>;
+  getChunk?(hash: string, index: number): Promise<Buffer>;
+}
+
+export class FileArtifactStore implements ArtifactStore {
+  constructor(private root: string) {}
+
+  private path(hash: string): string {
+    if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error("Invalid artifact digest");
+    return join(this.root, hash.slice(0, 2), hash);
+  }
+
+  async put(data: Uint8Array): Promise<string> {
+    const hash = sha256(data);
+    const path = this.path(hash);
+    const temporary = `${path}.${randomUUID()}.tmp`;
+    await mkdir(join(this.root, hash.slice(0, 2)), { recursive: true, mode: 0o700 });
+    try {
+      await writeFile(temporary, data, { flag: "wx", mode: 0o600 });
+      // Identical hashes have identical content; concurrent writes cannot change evidence.
+      await rename(temporary, path);
+    } finally {
+      await rm(temporary, { force: true });
+    }
+    return hash;
+  }
+
+  async get(hash: string): Promise<Buffer> {
+    const data = await readFile(this.path(hash));
+    if (sha256(data) !== hash) throw new Error("Stored artifact checksum mismatch");
+    return data;
+  }
+
+  async remove(hash: string): Promise<void> {
+    await rm(this.path(hash), { force: true });
+  }
+}
+
+/** Database-backed objects keep a database dump self-contained and survive ephemeral hosts. */
+export class SqlArtifactStore implements ArtifactStore {
+  constructor(private db: Database) {}
+  async put(data: Uint8Array): Promise<string> {
+    const hash = sha256(data);
+    await this.db.transaction(async (sql) => {
+      const [existing] = await sql.query("SELECT hash FROM vg_objects WHERE hash=?", [hash]);
+      if (existing) return;
+      const chunks = Math.max(1, Math.ceil(data.length / OBJECT_CHUNK_BYTES));
+      for (let index = 0; index < chunks; index++) {
+        const part = Buffer.from(
+          data.subarray(index * OBJECT_CHUNK_BYTES, (index + 1) * OBJECT_CHUNK_BYTES),
+        );
+        await sql.query(
+          "INSERT INTO vg_object_chunks(hash, chunk, data) VALUES(?, ?, ?) ON CONFLICT(hash, chunk) DO NOTHING",
+          [hash, index, part.toString("base64")],
+        );
+      }
+      await sql.query(
+        "INSERT INTO vg_objects(hash, size, chunks) VALUES(?, ?, ?) ON CONFLICT(hash) DO NOTHING",
+        [hash, data.length, chunks],
+      );
+    });
+    return hash;
+  }
+  async get(hash: string): Promise<Buffer> {
+    if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error("Invalid artifact digest");
+    const [meta] = await this.db.query<{ size: number; chunks: number }>(
+      "SELECT size, chunks FROM vg_objects WHERE hash=?",
+      [hash],
+    );
+    if (!meta) throw new Error("Artifact object not found");
+    const rows = await this.db.query<{ data: string }>(
+      "SELECT data FROM vg_object_chunks WHERE hash=? ORDER BY chunk",
+      [hash],
+    );
+    const data = Buffer.concat(rows.map((row) => Buffer.from(row.data, "base64")));
+    if (rows.length !== meta.chunks || data.length !== meta.size || sha256(data) !== hash)
+      throw new Error("Stored artifact checksum mismatch");
+    return data;
+  }
+  async getChunk(hash: string, index: number): Promise<Buffer> {
+    if (!/^[a-f0-9]{64}$/.test(hash) || !Number.isSafeInteger(index) || index < 0)
+      throw new Error("Invalid artifact chunk");
+    const [row] = await this.db.query<{ data: string; size: number; chunks: number }>(
+      "SELECT c.data, o.size, o.chunks FROM vg_object_chunks c JOIN vg_objects o ON o.hash=c.hash WHERE c.hash=? AND c.chunk=?",
+      [hash, index],
+    );
+    if (!row || index >= row.chunks) throw new Error("Artifact object not found");
+    const bytes = Buffer.from(row.data, "base64");
+    if (bytes.length !== Math.min(OBJECT_CHUNK_BYTES, row.size - index * OBJECT_CHUNK_BYTES))
+      throw new Error("Stored artifact chunk length mismatch");
+    return bytes;
+  }
+}
+
+/** Preserve pre-release F01 file artifacts while moving new writes into the database. */
+export class FallbackArtifactStore implements ArtifactStore {
+  constructor(
+    private primary: ArtifactStore,
+    private fallback: ArtifactStore,
+  ) {}
+  put(data: Uint8Array) {
+    return this.primary.put(data);
+  }
+  async get(hash: string) {
+    try {
+      return await this.primary.get(hash);
+    } catch (error) {
+      // Never hide corrupted primary evidence by silently switching copies.
+      if (error instanceof Error && error.message === "Artifact object not found")
+        return this.fallback.get(hash);
+      throw error;
+    }
+  }
+  async getChunk(hash: string, index: number) {
+    try {
+      return this.primary.getChunk
+        ? await this.primary.getChunk(hash, index)
+        : (await this.primary.get(hash)).subarray(
+            index * OBJECT_CHUNK_BYTES,
+            (index + 1) * OBJECT_CHUNK_BYTES,
+          );
+    } catch (error) {
+      if (error instanceof Error && error.message === "Artifact object not found")
+        return (await this.fallback.get(hash)).subarray(
+          index * OBJECT_CHUNK_BYTES,
+          (index + 1) * OBJECT_CHUNK_BYTES,
+        );
+      throw error;
+    }
+  }
+}

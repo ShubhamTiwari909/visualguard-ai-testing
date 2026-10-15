@@ -1,0 +1,37 @@
+{
+  "name": "@visualguard/platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "jiti server/main.ts --dev",
+    "start": "jiti server/main.ts",
+    "build": "vite build",
+    "import": "jiti server/import-cli.ts",
+    "publish:run": "jiti server/publish-cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "jiti": "^2.7.0",
+    "pg": "^8.16.3",
+    "mongodb": "^6.21.0",
+    "openid-client": "^6.8.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "5.9.3",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
+  }
+}
