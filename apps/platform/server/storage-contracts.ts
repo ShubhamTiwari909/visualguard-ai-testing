@@ -32,6 +32,7 @@ export interface StateStore {
   create<T>(namespace: string, id: string, value: T, expiresAt?: string): Promise<boolean>;
   replace<T>(namespace: string, record: StateRecord<T>): Promise<boolean>;
   remove(namespace: string, id: string, version?: number): Promise<boolean>;
-  list<T>(namespace: string, prefix?: string, limit?: number): Promise<StateRecord<T>[]>;
+  /** Lexicographic keyset pagination; after is an exclusive full record ID. */
+  list<T>(namespace: string, prefix?: string, limit?: number, after?: string): Promise<StateRecord<T>[]>;
   pruneExpired(limit?: number): Promise<number>;
 }

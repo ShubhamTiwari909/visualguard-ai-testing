@@ -9,6 +9,8 @@
 
 ## 1. The recommendation
 
+**Next standalone unit, after merge of PR #9:** the Phase C F03 pilot combines review storage, permission-checked APIs, and the run review/inbox UI on `codex/collaborative-review`, branched from merged `main`. It adds job-level visual decisions, discussion, assignment and deadlines with exact-evidence concurrency checks. See the [implementation boundary and manual walkthrough](COLLABORATIVE-REVIEW.md). No local checks, builds, or tests were run for this follow-up. F05 named checkpoints and F04 approved reference promotion form the next reference-workflow release, with separate feature commits; F07 remains a later informative gate.
+
 **Standalone follow-up:** confirmed project/run deletion with project permissions, access/upload cleanup, and preservation of shared evidence is implemented separately. See the [deletion guide](DASHBOARD-DELETION.md). No build, formatting, lint, type checking, or tests were run for that follow-up, per the user's updated instruction.
 
 **CLI follow-up:** `visualguard test [project]` binds new evidence to a local or hosted project by ID or exact permitted name. See the [project binding guide](DASHBOARD-TEST-BINDING.md). It is a separate feature commit with no executed checks or builds, per the same instruction.
@@ -167,6 +169,8 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 **Measure:** pilot target of under 2 seconds at the 95th percentile for indexed run-list/detail metadata at agreed load. Measure image transfer separately. Dependencies: F02, F06 upload, storage lifecycle.
 
 ### 6.2 F02 — Identity, permissions, and accountable actors
+
+**Planned extension:** [Google sign-in, invitations, and user administration](TEAM-ONBOARDING-PLAN.md) defines a separate implementation branch after F03, including identity continuity, invitation acceptance, administrator controls, storage atomicity, and validation. It is planning only and does not expand PR #13's implementation scope.
 
 **Problem:** local action tokens do not tell the organization who reviewed a change or who may change project policy.
 

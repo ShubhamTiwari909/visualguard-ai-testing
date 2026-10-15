@@ -204,6 +204,10 @@ export class MongoRepository implements PlatformRepository {
   }
 
   private async removeAccessAndUploads(project?: string, runId?: string) {
+    await this.db.collection("vg_state").deleteMany({
+      namespace: "reviews",
+      ...(project ? { "value.projectId": project } : { "value.runId": runId }),
+    });
     if (project)
       await this.db
         .collection("vg_state")
@@ -505,9 +509,9 @@ export class MongoStateStore implements StateStore {
       ).deletedCount === 1
     );
   }
-  async list<T>(namespace: string, prefix = "", limit = 1000): Promise<StateRecord<T>[]> {
+  async list<T>(namespace: string, prefix = "", limit = 1000, after?: string): Promise<StateRecord<T>[]> {
     const rows = await this.collection
-      .find({ namespace, id: { $regex: `^${regex(prefix)}` }, ...this.live() })
+      .find({ namespace, id: { $regex: `^${regex(prefix)}`, ...(after === undefined ? {} : { $gt: after }) }, ...this.live() })
       .sort({ id: 1 })
       .limit(limit)
       .toArray();

@@ -40,6 +40,8 @@ Start your staging app first and replace the example production and staging URLs
 
 It includes local SQLite, MongoDB/PostgreSQL storage, team login/project permissions, remote CI uploads, portable backups, and deployment generators for Cloud Run/Vercel. No browser installation is needed to host the dashboard. See the [standalone walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/STANDALONE-DASHBOARD-WALKTHROUGH.md), including local release-candidate installation before npm publication.
 
+The F03 follow-up adds **Team review** on each run and a **Review inbox** for assignments, deadlines, comments, and job-level visual approvals/rejections tied to exact evidence. Visual approval leaves engine failures and release decisions separate. See the [review setup and manual walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/COLLABORATIVE-REVIEW.md). This follow-up has not been built or tested locally.
+
 Create a project ahead of time with `dashboard project create <id> --name "Display name"` (`project add` is an alias). Repeating an existing ID keeps its original name and runs. Use `--server <origin>` for a running dashboard; login-enabled servers require administrator credentials, while upload tokens remain publishing-only. [CLI project setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-CLI-PROJECTS.md).
 
 ```bash

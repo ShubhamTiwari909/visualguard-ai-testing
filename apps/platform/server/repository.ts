@@ -161,6 +161,12 @@ export class Repository implements PlatformRepository {
   }
 
   private async removeAccessAndUploads(sql: Sql, project?: string, runId?: string) {
+    const escape = (value: string) => value.replace(/[!%_]/g, (character) => `!${character}`);
+    // Match thread keys without loading every project's full discussion history into memory.
+    if (project || runId) await sql.query(
+      "DELETE FROM vg_state WHERE namespace='reviews' AND id LIKE ? ESCAPE '!'",
+      [project ? `${escape(project)}:%` : `%:${escape(runId!)}:%`],
+    );
     const rows = await sql.query<{ namespace: string; id: string; value: string }>(
       "SELECT namespace, id, value FROM vg_state WHERE namespace IN ('memberships', 'tokens', 'uploads')",
     );
