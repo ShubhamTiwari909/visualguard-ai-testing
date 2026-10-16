@@ -715,6 +715,20 @@ export class AuthService {
       provedAt: new Date().toISOString(),
     };
   }
+  private async oidcAttempt(request: IncomingMessage) {
+    const browser = request.headers.cookie
+      ?.split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("vg_oidc="))
+      ?.slice(8);
+    const entry = browser ? await this.state.get<OidcAttempt>("oidc", sha256(browser)) : undefined;
+    return entry;
+  }
+  async oidcFailureLocation(request: IncomingMessage) {
+    const entry = await this.oidcAttempt(request);
+    if (entry?.value.join) return "/invite?signin_error=oidc";
+    return entry?.value.link ? "/settings?identity=error" : "/?signin_error=oidc";
+  }
   async finishOidc(
     request: IncomingMessage,
     response: ServerResponse,
@@ -725,12 +739,7 @@ export class AuthService {
       profile: { email: string; name: string },
     ) => Promise<void>,
   ) {
-    const browser = request.headers.cookie
-      ?.split(";")
-      .map((part) => part.trim())
-      .find((part) => part.startsWith("vg_oidc="))
-      ?.slice(8);
-    const entry = browser ? await this.state.get<OidcAttempt>("oidc", sha256(browser)) : undefined;
+    const entry = await this.oidcAttempt(request);
     if (!entry || !(await this.state.remove("oidc", entry.id, entry.version)))
       throw new PlatformError(401, "Login expired; start again");
     const client = await import("openid-client");

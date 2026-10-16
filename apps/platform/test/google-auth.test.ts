@@ -244,21 +244,24 @@ describe("Google sign-in and identity continuity", () => {
     }
   });
 
-  it("continues to support generic company OIDC without imposing Google-specific email requirements", async () => {
-    provider = oidcProvider("https://identity.example.test");
-    vi.stubGlobal("fetch", provider.fetch);
-    provider.claims = { email_verified: undefined };
-    env.VISUALGUARD_OIDC_ISSUER = provider.issuer;
-    auth = new AuthService(state, env);
-    await auth.ready;
-    expect(auth.oidcProvider).toBe("oidc");
-    const attempt = await loginAttempt();
-    await expect(
-      auth.finishOidc(attempt.request, response().value, attempt.callback),
-    ).resolves.toBeUndefined();
-  });
+  it.each(["https://identity.example.test", "https://identity.example.test/realm/team"])(
+    "supports generic company OIDC issuer %s without Google-specific email requirements",
+    async (issuer) => {
+      provider = oidcProvider(issuer);
+      vi.stubGlobal("fetch", provider.fetch);
+      provider.claims = { email_verified: undefined };
+      env.VISUALGUARD_OIDC_ISSUER = provider.issuer;
+      auth = new AuthService(state, env);
+      await auth.ready;
+      expect(auth.oidcProvider).toBe("oidc");
+      const attempt = await loginAttempt();
+      await expect(
+        auth.finishOidc(attempt.request, response().value, attempt.callback),
+      ).resolves.toBeUndefined();
+    },
+  );
 
-  async function passwordAccount() {
+  async function authenticatedAccount() {
     const password = "current-test-password-long";
     const user = await auth.createUser({
       email: "member@example.test",
@@ -272,7 +275,10 @@ describe("Google sign-in and identity continuity", () => {
     return { user, password, cookie, actor };
   }
   async function linkingAttempt(
-    account: Pick<Awaited<ReturnType<typeof passwordAccount>>, "actor" | "password" | "cookie">,
+    account: Pick<
+      Awaited<ReturnType<typeof authenticatedAccount>>,
+      "actor" | "password" | "cookie"
+    >,
   ) {
     const start = response();
     const { authorizationUrl } = await auth.beginGoogleLink(
@@ -294,7 +300,7 @@ describe("Google sign-in and identity continuity", () => {
   }
 
   it("links Google after current-password proof, keeps the existing account/access, and revokes old sessions", async () => {
-    const account = await passwordAccount();
+    const account = await authenticatedAccount();
     await state.create("memberships", `${account.user.id}:private-project`, {
       userId: account.user.id,
       projectId: "private-project",
@@ -336,7 +342,7 @@ describe("Google sign-in and identity continuity", () => {
   });
 
   it("rejects missing/wrong password proof and browser or upload credential substitution", async () => {
-    const account = await passwordAccount();
+    const account = await authenticatedAccount();
     await expect(
       auth.beginGoogleLink(account.actor, undefined, response().value),
     ).rejects.toMatchObject({ status: 401 });
@@ -364,8 +370,8 @@ describe("Google sign-in and identity continuity", () => {
   });
 
   it("rejects a session swap, logout, disable or password change during the Google handoff", async () => {
-    for (const action of ["swap", "logout", "disable", "version"] as const) {
-      const account = action === "swap" ? await passwordAccount() : undefined;
+    for (const action of ["swap", "logout", "disable", "password"] as const) {
+      const account = action === "swap" ? await authenticatedAccount() : undefined;
       // Subsequent iterations reuse the same password user but receive fresh sessions.
       const password = "current-test-password-long";
       const login = response();
@@ -385,6 +391,13 @@ describe("Google sign-in and identity continuity", () => {
         await auth.login(other.email, password, otherLogin.value);
         attempt.request.headers.cookie = `${otherLogin.headers.get("Set-Cookie")!.split(";")[0]}; ${attempt.oidcCookie}`;
       } else if (action === "logout") await auth.logout(actor, response().value);
+      else if (action === "password")
+        await auth.changePassword(
+          actor,
+          password,
+          "replacement-test-password-long",
+          response().value,
+        );
       else {
         const row = (await state.get<User>("users", actor.id))!;
         await state.replace("users", {
@@ -410,7 +423,7 @@ describe("Google sign-in and identity continuity", () => {
   it("refuses to merge a Google account already used for ordinary sign-in", async () => {
     const existing = await loginAttempt();
     await auth.finishOidc(existing.request, response().value, existing.callback);
-    const account = await passwordAccount(),
+    const account = await authenticatedAccount(),
       attempt = await linkingAttempt(account);
     await expect(
       auth.finishOidc(attempt.request, response().value, attempt.callback),
@@ -472,6 +485,47 @@ describe("Google sign-in and identity continuity", () => {
     return base;
   }
 
+  it.each(["signin", "link"] as const)(
+    "routes a failed %s attempt by its stored intent even with an existing session",
+    async (intent) => {
+      const account = await authenticatedAccount(),
+        base = await httpDashboard();
+      const start =
+        intent === "signin"
+          ? await fetch(`${base}/api/auth/login`, {
+              redirect: "manual",
+              headers: { Cookie: account.cookie },
+            })
+          : await fetch(`${base}/api/auth/identities/google/link`, {
+              method: "POST",
+              headers: {
+                Cookie: account.cookie,
+                Origin: base,
+                "Content-Type": "application/json",
+                "x-visualguard-platform-token": account.actor.csrf,
+              },
+              body: JSON.stringify({ currentPassword: account.password }),
+            });
+      const target = new URL(
+        intent === "signin"
+          ? start.headers.get("location")!
+          : (await start.json()).authorizationUrl,
+      );
+      const callback = new URL(`${base}/api/auth/callback`);
+      callback.searchParams.set("state", target.searchParams.get("state")!);
+      callback.searchParams.set("error", "access_denied");
+      const failed = await fetch(callback, {
+        redirect: "manual",
+        headers: {
+          Cookie: `${account.cookie}; ${start.headers.get("set-cookie")!.split(";")[0]}`,
+        },
+      });
+      expect(failed.headers.get("location")).toBe(
+        intent === "link" ? "/settings?identity=error" : "/?signin_error=oidc",
+      );
+    },
+  );
+
   it("advertises only the configured provider, keeps secrets private, and redirects failed/cancelled browser logins safely", async () => {
     const base = await httpDashboard();
     const session = await fetch(`${base}/api/session`);
@@ -505,7 +559,7 @@ describe("Google sign-in and identity continuity", () => {
   });
 
   it("enforces session/action-token/origin boundaries on the account-link API", async () => {
-    const account = await passwordAccount(),
+    const account = await authenticatedAccount(),
       base = await httpDashboard();
     const endpoint = `${base}/api/auth/identities/google/link`;
     expect((await fetch(`${base}/api/auth/identities`)).status).toBe(401);
@@ -621,6 +675,8 @@ describe("OIDC configuration", () => {
     "https://name:password@identity.example.test",
     "https://identity.example.test?secret=x",
     "https://identity.example.test#fragment",
+    "https://identity.example.test?",
+    "https://identity.example.test#",
   ])("rejects an invalid issuer configuration: %s", (issuer) => {
     expect(() => oidcSettings({ ...complete, VISUALGUARD_OIDC_ISSUER: issuer })).toThrow(
       "VISUALGUARD_OIDC_ISSUER",
