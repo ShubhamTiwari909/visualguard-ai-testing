@@ -18,10 +18,15 @@ export async function startDevDashboard() {
     void (async () => {
       if (await runtime.handle(request, response)) return;
       const path = new URL(request.url ?? "/", "http://localhost").pathname;
+      if (path === "/invite") {
+        response.setHeader("Referrer-Policy", "no-referrer");
+        response.setHeader("Cache-Control", "no-store");
+      }
       if (
         path === "/" ||
         path === "/settings" ||
         path === "/reviews" ||
+        path === "/invite" ||
         /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
       ) {
         const html = await vite!.transformIndexHtml(path, await readFile(index, "utf8"));

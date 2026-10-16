@@ -90,3 +90,14 @@ Existing Vercel deployments need the same entry added to their `vercel.json`
 
 Regenerating a scaffold into a new empty folder also includes the rule. Updating
 the installed package alone does not rewrite an existing deployment's configuration.
+
+## Integration review
+
+The PR #25 review corrected historical pre-release wording in section 2 of the
+walkthrough so it agrees with the published status. Integrating the onboarding
+stack preserves both `/reviews` and `/invite` in development, installed runtime,
+and generated Vercel routes. Five development/runtime/scaffold tests and the
+rebuilt installed-package smoke passed; invitation route checks also verify
+`no-referrer` and `no-store` headers without following redirects. Repository
+lint/format checks, CLI/report/platform type checks, and the dashboard build passed
+under the operator’s explicit authorization for PR cleanup.
