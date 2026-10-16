@@ -212,7 +212,7 @@ export class AuthService {
       !(await this.state.get<{ bootstrapComplete: boolean }>("admission", "current"))?.value
         .bootstrapComplete
     ) {
-      const user = await this.passwordUser({
+      const user = await this.prepareLocalAccount({
         email,
         password,
         name: "Workspace administrator",
@@ -377,7 +377,7 @@ export class AuthService {
     if (!(await this.hasRole(actor, projectId, minimum)))
       throw new PlatformError(403, "You do not have access to this project or action");
   }
-  private async passwordUser(input: {
+  private async prepareLocalAccount(input: {
     email: string;
     password: string;
     name: string;
@@ -408,7 +408,7 @@ export class AuthService {
     name: string;
     role?: "admin" | "member";
   }) {
-    const user = await this.passwordUser(input);
+    const user = await this.prepareLocalAccount(input);
     if (!(await this.state.create("users", user.id, user)))
       throw new PlatformError(409, "An account with this email already exists");
     return safeUser(user);
