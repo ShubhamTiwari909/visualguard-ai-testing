@@ -155,18 +155,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 export function AccountMenu() {
   const session = useSession();
-  if (session.access === "local") return <span className="vg-local-label">Local access</span>;
   return (
     <div className="vg-account">
-      <span>{session.user?.name}</span>
-      <button
-        className="vg-button"
-        onClick={() => {
-          void mutation("/api/auth/logout", "POST").then(() => window.location.reload());
-        }}
-      >
-        Sign out
-      </button>
+      {session.access === "local" ? (
+        <span className="vg-local-label">Local access</span>
+      ) : (
+        <span className="vg-account-name">{session.user?.name}</span>
+      )}
+      <a className="vg-button" href="/settings#profile">
+        Profile
+      </a>
+      {session.access === "login" && (
+        <button
+          className="vg-button"
+          onClick={() => {
+            void mutation("/api/auth/logout", "POST").then(() => window.location.reload());
+          }}
+        >
+          Sign out
+        </button>
+      )}
     </div>
   );
 }

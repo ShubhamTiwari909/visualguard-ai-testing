@@ -23,6 +23,12 @@ Use Node 22.12+. SQLite supports all administration features without an external
 
 Back up storage, stop older dashboard instances and deploy P04 consistently across all instances before using these controls. Older instances do not participate in the shared administrator guard or issue version-bound upload credentials. Mixed-version administration cannot provide the new concurrency guarantees. Existing user IDs, external identity mappings, memberships and review events do not require a destructive rewrite.
 
+## Your own profile
+
+Choose **Profile** in the dashboard header, or open **People & integrations → Your profile** (`/settings#profile`). Every signed-in member can see their own name, email, and workspace role without administrator permissions. The profile uses the existing session account and is read-only; project roles remain separate under project access. Local access shows **Local owner** and explains that no email account is used. Existing Google linking and password controls remain below the profile.
+
+To check locally, sign in once as an administrator and once as a member in separate browsers. Open **Profile** in each browser and verify its name/email and **Workspace administrator** or **Workspace member** role. Also check a local-owner dashboard, a narrow viewport, and a long email address. Profile viewing requires no new environment variables, upload token, database migration, or external database service.
+
 ## Directory and account details
 
 1. Sign in as a workspace administrator and open **People & integrations → Workspace accounts**.

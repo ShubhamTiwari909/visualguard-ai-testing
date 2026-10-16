@@ -6,6 +6,7 @@ import { ProjectNameEditor } from "./naming";
 import { InvitationSettings } from "./invitations";
 import { UserAdministration } from "./users";
 import { AccountIdentity } from "./identities";
+import { Profile } from "./profile";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
 type Member = { userId: string; role: string };
@@ -118,6 +119,7 @@ export function Settings({
           {message}
         </p>
       )}
+      <Profile session={session} />
       {session.access === "login" && <AccountIdentity />}
       {session.access === "login" && session.user?.admin && (
         <InvitationSettings projects={projects} />
