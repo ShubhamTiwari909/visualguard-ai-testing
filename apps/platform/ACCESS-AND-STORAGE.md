@@ -34,6 +34,10 @@ Use **People & integrations** to create accounts, assign project roles, disable 
 
 ## Optional company login
 
+For Google sign-in, follow the [Google setup and local pilot guide](../../docs/GOOGLE-SIGN-IN.md). Use the existing OIDC variable names with issuer `https://accounts.google.com`; the login screen shows Sign in with Google only with complete configuration. Project access is granted through [single-use project invitations](../../docs/TEAM-INVITATIONS.md) or explicit administrator assignment. New hosted installations default to invite-only admission.
+
+P02 implements [explicit Google linking](../../docs/GOOGLE-ACCOUNT-LINKING.md) with transactional identity ownership, legacy-ID migration, current-account proof, and session revocation. The same Google settings apply. No identity is reassigned from another existing account or merged by email. SQLite/PostgreSQL support the transaction boundary; MongoDB linking requires a replica set or sharded deployment. Existing standalone MongoDB sign-in/evidence/review workflows remain supported. [P03 invitations and admission controls](../../docs/TEAM-INVITATIONS.md) are implemented; broader workspace user administration follows in P04.
+
 Set `VISUALGUARD_OIDC_ISSUER`, `VISUALGUARD_OIDC_CLIENT_ID`, and `VISUALGUARD_OIDC_CLIENT_SECRET`, then register `<PUBLIC_URL>/api/auth/callback` with the provider. The client uses authorization-code flow, PKCE, state, and nonce verification. Password login can remain available for the bootstrap administrator.
 
 An OIDC administrator is selected either by the configured `VISUALGUARD_ADMIN_EMAIL` **when the ID token marks that email as verified**, or by an explicit comma-separated `VISUALGUARD_OIDC_ADMIN_SUBJECTS` allowlist. Providers that omit verified-email claims should use the subject allowlist. Other identities must be assigned project access after their first successful sign-in. Existing disabled/edited accounts are not silently re-enabled by login.

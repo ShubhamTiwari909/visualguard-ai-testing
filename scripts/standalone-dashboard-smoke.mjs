@@ -65,6 +65,11 @@ try {
   const reviews = await fetch(`${server.url}/reviews`, { redirect: "manual" });
   assert.equal(reviews.status, 200);
   assert.match(await reviews.text(), /<div id="root">/);
+  const invitation = await fetch(`${server.url}/invite`, { redirect: "manual" });
+  assert.equal(invitation.status, 200);
+  assert.equal(invitation.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(invitation.headers.get("cache-control"), "no-store");
+  assert.match(await invitation.text(), /<div id="root">/);
   const html = await (await fetch(server.url)).text();
   assert.match(html, /<div id="root">/);
   const asset = html.match(/src="([^"]+\.js)"/)?.[1];
@@ -149,11 +154,13 @@ try {
     );
     if (target === "vercel") {
       const config = JSON.parse(await readFile(join(out, "vercel.json"), "utf8"));
-      assert.ok(
-        config.rewrites.some(
-          (rewrite) => rewrite.source === "/reviews" && rewrite.destination === "/index.html",
-        ),
-      );
+      for (const route of ["/reviews", "/invite"]) {
+        assert.ok(
+          config.rewrites.some(
+            (rewrite) => rewrite.source === route && rewrite.destination === "/index.html",
+          ),
+        );
+      }
     }
   }
   await dashboard.copyDashboardAssets(join(consumer, "public"));

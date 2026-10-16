@@ -33,6 +33,11 @@ describe("standalone hosts", () => {
     const reviews = await fetch(`${runtime.url}/reviews`, { redirect: "manual" });
     expect(reviews.status).toBe(200);
     expect(await reviews.text()).toContain("Dashboard test");
+    const invitation = await fetch(`${runtime.url}/invite`, { redirect: "manual" });
+    expect(invitation.status).toBe(200);
+    expect(await invitation.text()).toContain("Dashboard test");
+    expect(invitation.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(invitation.headers.get("cache-control")).toBe("no-store");
     const rewritten = await (await fetch(`${runtime.url}/api/dashboard?__vg_path=projects`)).json();
     expect(rewritten.projects).toEqual([]);
   });
@@ -49,6 +54,20 @@ describe("standalone hosts", () => {
       version: "2.1.0",
     });
     const config = JSON.parse(await readFile(join(vercel, "vercel.json"), "utf8"));
+    expect(config.rewrites).toContainEqual({ source: "/invite", destination: "/index.html" });
+    expect(config.headers).toContainEqual({
+      source: "/invite",
+      headers: [
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "Cache-Control", value: "no-store" },
+      ],
+    });
+    expect(await readFile(join(vercel, ".env.example"), "utf8")).toContain(
+      "VISUALGUARD_USER_ADMISSION=invite",
+    );
+    expect(await readFile(join(vercel, ".env.example"), "utf8")).toContain(
+      "MongoDB requires a replica set",
+    );
     expect(config.outputDirectory).toBe("public");
     expect(config.rewrites[0].destination).toContain("__vg_path");
     expect(config.rewrites).toContainEqual({ source: "/reviews", destination: "/index.html" });

@@ -1,9 +1,31 @@
 # Google sign-in, invitations, and user administration
 
-**Status:** planning only; no onboarding implementation is included in this document's commit.
+**Status:** phased implementation starting 16 October 2026; see the delivery phases below for the current boundary. The original planning commit contained no onboarding implementation.
 **Prepared:** 15 October 2026.
 **Roadmap:** an extension of [F02 identity and permissions](ORGANIZATION-GROWTH-PLAN.md#62-f02--identity-permissions-and-accountable-actors), integrated with [F03 collaborative review](COLLABORATIVE-REVIEW.md).
-**Future implementation branch:** `codex/team-onboarding`, created from updated `main` after PR #13 merges. Keep implementation, documentation, and focused tests together for each feature commit. This plan precedes those commits.
+**Implementation branches:** `codex/team-onboarding` for P01; P02 is stacked on it as `codex/team-onboarding-p02` while PR #20 remains open. P03 is stacked on P02 as `codex/team-invitations-p03` while PR #21 remains open. P01 began from updated `main` after PR #13 merged. Keep implementation, documentation, and focused tests together for each feature commit. The original plan and phased delivery update precede implementation commits.
+
+The operator explicitly authorized formatting, lint, and type checks for the 16 October PR review/merge cleanup. Each reviewed phase records its updated validation in its feature guide; live Google authorization remains an operator pilot.
+
+## Delivery phases agreed on 16 October 2026
+
+The user requested Google sign-in first, on a separate branch from merged `main`. Deliver a small Google pilot using the existing single-record identity/session flow before the transactional invitation work. This does not complete the full T03 admission-policy milestone or change its dependencies.
+
+| Phase            | Scope                                                                                                                                                                   | Boundary / completion evidence                                                                                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P01, implemented | Google sign-in, complete configuration validation, a named login entry point, safe retry after provider errors, exact callback setup, and focused protocol/access tests | Retain current project-role assignment. New Google members have no project access. Real Google pilot needs operator credentials.                                                                          |
+| P02, implemented | Transactional identity foundation and explicit linking (identity boundary of T01/T02)                                                                                   | Preserve legacy actors and IDs; SQLite/PostgreSQL/MongoDB replica-set rollback/uniqueness races tested. Existing account ownership cannot be merged by email. Invitation-specific guards remain P03 work. |
+| P03, implemented | Invitation management and recipient acceptance (remaining T03/T04/T05)                                                                                                  | Add invite-only admission with migration controls; implement copyable single-use links and atomic membership grants.                                                                                      |
+| P04              | Workspace user administration (T06)                                                                                                                                     | User lifecycle, role management, revocation, and last-admin protection with focused tests.                                                                                                                |
+| P05              | Operational rollout (T07)                                                                                                                                               | Audit UI, recovery, migrations, live adapter and Google pilot evidence, and release documentation.                                                                                                        |
+
+P01 is an administrator-managed pilot: it retains the existing ability to create a signed-in member with zero project access. It is not the invitation-only release described below. Keep local/offline access unchanged and preserve generic company OIDC behavior. Use the existing `VISUALGUARD_OIDC_*` names rather than introducing duplicate Google credential variables.
+
+P01 implementation and setup: [Google sign-in guide](GOOGLE-SIGN-IN.md). On 16 October 2026, 45 focused authentication tests and the dashboard UI build passed. Operator-supplied Google credentials are still required for the live browser pilot. Formatting, lint, and type checks were deferred during initial implementation.
+
+P02 setup, migration and validation: [Google account linking](GOOGLE-ACCOUNT-LINKING.md). On 16 October 2026, 138 focused tests passed against SQLite, PostgreSQL, a MongoDB replica set and standalone compatibility; three non-Mongo executions of the MongoDB-only snapshot test were intentionally skipped. The UI build passed. New external users on transaction-capable stores use opaque canonical IDs; password and legacy actor IDs remain unchanged. This phase adds no application environment variables and does not implement invitations, pending-invite indexes, project-deletion guards, or workspace last-admin administration ahead of their phases.
+
+P03 setup, migration, manual checks, storage and limitations: [Invitations and admission](TEAM-INVITATIONS.md). On 16 October 2026, 234 focused tests passed across SQLite, PostgreSQL, a MongoDB replica set and standalone compatibility, with 16 intentional backend-specific skips (Mongo-only snapshot scenarios and the in-memory fake's evidence-deletion scenario). The UI build passed. Real-browser invitation creation, fragment removal, existing-password verification and acceptance were checked against a disposable local workspace. Only `VISUALGUARD_USER_ADMISSION=invite|legacy` is new; use the existing Google client credentials. Live Google browser acceptance still needs operator credentials. Expanded admin/last-admin controls remain P04; formatting, lint and type checks were deferred during initial implementation.
 
 ## 1. Intended outcome and release boundary
 
@@ -146,16 +168,16 @@ Cancellation and acceptance race on the same versioned invitation: exactly one t
 
 Names below describe planned logical records, not changes already implemented.
 
-| Record                   | Key fields / invariants                                                                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Canonical user           | Stable `id`, name, email, `admin\|member`, disabled flag, auth version, created/updated times; existing IDs remain valid                                                       |
-| External identity        | Unique provider/validated issuer/subject key, canonical user ID, link time; one external identity maps to exactly one user                                                     |
-| Invitation               | ID, token hash, normalized target email, project, role, creator ID, created/expiry times, `pending\|accepted\|cancelled`, version, accepted user/time or cancellation metadata |
-| Pending-invitation index | Unique normalized email/project key, pending invitation ID/version; transactional update with create/cancel/accept/reissue                                                     |
-| Onboarding attempt       | Hashed browser handle, invitation ID/version, operation (`join\|link`), OIDC correlation, expiry, optional validated candidate identity                                        |
-| Membership               | Existing `userId:projectId` key; role, update/version metadata sufficient for conflict checking                                                                                |
-| Admin guard              | One workspace guard/version touched by promotions, demotions, disabling admins, admin bootstrap, and invite acceptance authority checks                                        |
-| Audit/outbox             | Operation ID, actor/target IDs, project/invitation IDs, before/after role or state, server timestamp; no secret payloads                                                       |
+| Record                   | Key fields / invariants                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Canonical user           | Stable `id`, name, email, `admin` or `member`, disabled flag, auth version, created/updated times; existing IDs remain valid                                                          |
+| External identity        | Unique provider/validated issuer/subject key, canonical user ID, link time; one external identity maps to exactly one user                                                            |
+| Invitation               | ID, token hash, normalized target email, project, role, creator ID, created/expiry times, `pending`, `accepted`, or `cancelled`, version, accepted user/time or cancellation metadata |
+| Pending-invitation index | Unique normalized email/project key, pending invitation ID/version; transactional update with create/cancel/accept/reissue                                                            |
+| Onboarding attempt       | Hashed browser handle, invitation ID/version, operation (`join` or `link`), OIDC correlation, expiry, optional validated candidate identity                                           |
+| Membership               | Existing `userId:projectId` key; role, update/version metadata sufficient for conflict checking                                                                                       |
+| Admin guard              | One workspace guard/version touched by promotions, demotions, disabling admins, admin bootstrap, and invite acceptance authority checks                                               |
+| Audit/outbox             | Operation ID, actor/target IDs, project/invitation IDs, before/after role or state, server timestamp; no secret payloads                                                              |
 
 An expiry is a computed presentation state for pending invitations. Keep terminal invitation metadata for audit; do not use TTL deletion as the authorization decision or delete the only evidence of consumption. Define eventual cleanup separately from access enforcement.
 
@@ -297,4 +319,4 @@ These are recommended defaults for planning, not reasons to block PR #13:
 
 An invited colleague can join with Google, see only authorized projects, and participate according to role. Admins can control admission, revoke access, and recover administration. Expired/reused links, competing requests, disabled accounts, and project deletion cannot create unintended access. Identity continuity and F03 attribution survive migration. SQLite, PostgreSQL, and transaction-capable MongoDB pass the same acceptance contract, with unsupported configurations explained before enabling onboarding. Documentation includes local setup, hosted setup, backup/recovery, limitations, and actual validation results.
 
-This document does not claim implementation, Google configuration, migration, email delivery, or onboarding tests have already been completed.
+P01/P02/P03 implementation and focused validation are recorded in the delivery-phase update above. The real Google browser pilot, automatic email delivery (out of scope), expanded user administration, and the remaining onboarding acceptance tests are still outstanding for their phases.
