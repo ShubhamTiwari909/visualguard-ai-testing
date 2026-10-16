@@ -34,7 +34,7 @@ export async function scaffoldDashboard(options: {
   );
   await writeFile(
     resolve(out, ".env.example"),
-    "VISUALGUARD_DATABASE_URL=postgresql://USER:PASSWORD@HOST/visualguard\n# Or mongodb://HOST/visualguard / mongodb+srv://USER:PASSWORD@HOST/visualguard\nVISUALGUARD_PUBLIC_URL=https://YOUR-DASHBOARD-HOST\nVISUALGUARD_USER_ADMISSION=invite\nVISUALGUARD_ADMIN_EMAIL=owner@example.com\nVISUALGUARD_ADMIN_PASSWORD=REPLACE-WITH-A-UNIQUE-12-CHARACTER-OR-LONGER-PASSWORD\n",
+    "VISUALGUARD_DATABASE_URL=postgresql://USER:PASSWORD@HOST/visualguard\n# MongoDB requires a replica set or sharded deployment for invite mode.\n# Or mongodb://HOST/visualguard?replicaSet=YOUR-REPLICA-SET / mongodb+srv://USER:PASSWORD@HOST/visualguard\n# Standalone MongoDB must use VISUALGUARD_USER_ADMISSION=legacy; invitations/linking are unavailable.\nVISUALGUARD_PUBLIC_URL=https://YOUR-DASHBOARD-HOST\nVISUALGUARD_USER_ADMISSION=invite\nVISUALGUARD_ADMIN_EMAIL=owner@example.com\nVISUALGUARD_ADMIN_PASSWORD=REPLACE-WITH-A-UNIQUE-12-CHARACTER-OR-LONGER-PASSWORD\n",
   );
   if (options.target === "vercel") {
     await mkdir(resolve(out, "api"));

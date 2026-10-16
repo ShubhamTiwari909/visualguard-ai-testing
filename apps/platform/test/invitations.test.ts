@@ -9,7 +9,7 @@ import { Identities, identityKey } from "../server/identities.js";
 import { openDatabase } from "../server/database.js";
 import { SqlStateStore } from "../server/state.js";
 import { Repository } from "../server/repository.js";
-import { openMongo } from "../server/mongo.js";
+import { isolatedStorage } from "./fixtures/isolated-storage.js";
 import { sha256 } from "../server/artifacts.js";
 import type { PlatformRepository, StateStore } from "../server/storage-contracts.js";
 
@@ -46,10 +46,10 @@ for (const backend of ["memory", "sqlite", "postgres", "mongo"] as const) {
             projects: async (ids?: string[]) => (ids ?? []).map((id) => ({ id, name: "Demo" })),
             isDeletedProject: async () => false,
           } as unknown as PlatformRepository;
-        } else if (backend === "mongo") ({ state, repository, close } = await openMongo(url!));
+        } else if (backend === "mongo" || backend === "postgres")
+          ({ state, repository, close } = await isolatedStorage(backend, url!));
         else {
           const db = await openDatabase({
-            url: backend === "postgres" ? url : undefined,
             sqlitePath: join(root, "invitations.sqlite"),
           });
           state = new SqlStateStore(db);
@@ -92,6 +92,25 @@ for (const backend of ["memory", "sqlite", "postgres", "mongo"] as const) {
           invitations.create(actor, { email: proof.email, projectId, role: "reviewer" });
         return { actor, admin, proof, projectId, invitations, create };
       }
+      it("serializes simultaneous enrollment of different identities using the same verified email", async () => {
+        const first = await setup(),
+          second = await setup();
+        second.proof.email = first.proof.email;
+        await state.create("identity-schema", "current", { version: 1 });
+        const a = await first.create(),
+          b = await second.create();
+        const results = await Promise.allSettled([
+          first.invitations.accept(a.invitation.id, 1, first.proof),
+          second.invitations.accept(b.invitation.id, 1, second.proof),
+        ]);
+        expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+        expect(
+          (await state.list<User>("users", "", 10_000)).filter(
+            (row) => row.value.email === first.proof.email,
+          ),
+        ).toHaveLength(1);
+      });
+
       it("stores only hashes, normalizes email, exposes bounded safe metadata and prevents duplicate pending creates", async () => {
         const f = await setup();
         f.proof.email = `  ${f.proof.email.toUpperCase()}  `;
