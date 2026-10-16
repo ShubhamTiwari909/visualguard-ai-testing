@@ -51,9 +51,13 @@ describe("F06 resumable publishing", () => {
     const admin = (await auth.users())[0]!;
     const loginHeaders = new Map<string, string>();
     await auth.login(admin.email, env.VISUALGUARD_ADMIN_PASSWORD!, {
-      setHeader(name: string, value: string) { loginHeaders.set(name, value); },
+      setHeader(name: string, value: string) {
+        loginHeaders.set(name, value);
+      },
     } as unknown as ServerResponse);
-    actor = (await auth.actor({ headers: { cookie: loginHeaders.get("Set-Cookie")!.split(";")[0] } } as IncomingMessage))!;
+    actor = (await auth.actor({
+      headers: { cookie: loginHeaders.get("Set-Cookie")!.split(";")[0] },
+    } as IncomingMessage))!;
     const credential = await auth.mintToken(actor, "storefront", "CI", 1);
     token = credential.token;
     tokenId = credential.id;
@@ -99,7 +103,7 @@ describe("F06 resumable publishing", () => {
       startedAt: "2026-10-15T10:00:00.000Z",
       durationMs: 10,
       mode: "compare",
-      tool: { version: "2.0.0" },
+      tool: { version: "2.0.0", node: process.versions.node },
       config: {
         baseURL: {},
         viewports: { desktop: { width: 1, height: 1 } },

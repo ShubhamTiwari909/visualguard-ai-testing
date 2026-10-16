@@ -5,27 +5,29 @@
 **Roadmap:** an extension of [F02 identity and permissions](ORGANIZATION-GROWTH-PLAN.md#62-f02--identity-permissions-and-accountable-actors), integrated with [F03 collaborative review](COLLABORATIVE-REVIEW.md).
 **Implementation branches:** `codex/team-onboarding` for P01; P02 is stacked on it as `codex/team-onboarding-p02` while PR #20 remains open. P03 is stacked on P02 as `codex/team-invitations-p03` while PR #21 remains open. P04 is stacked on completed P03 as `codex/team-administration-p04`. P01 began from updated `main` after PR #13 merged. Keep implementation, documentation, and focused tests together for each feature commit. The original plan and phased delivery update precede implementation commits.
 
+The operator explicitly authorized formatting, lint, and type checks for the 16 October PR review/merge cleanup. Each reviewed phase records its updated validation in its feature guide; live Google authorization remains an operator pilot.
+
 ## Delivery phases agreed on 16 October 2026
 
 The user requested Google sign-in first, on a separate branch from merged `main`. Deliver a small Google pilot using the existing single-record identity/session flow before the transactional invitation work. This does not complete the full T03 admission-policy milestone or change its dependencies.
 
-| Phase | Scope | Boundary / completion evidence |
-| --- | --- | --- |
-| P01, implemented | Google sign-in, complete configuration validation, a named login entry point, safe retry after provider errors, exact callback setup, and focused protocol/access tests | Retain current project-role assignment. New Google members have no project access. Real Google pilot needs operator credentials. |
-| P02, implemented | Transactional identity foundation and explicit linking (identity boundary of T01/T02) | Preserve legacy actors and IDs; SQLite/PostgreSQL/MongoDB replica-set rollback/uniqueness races tested. Existing account ownership cannot be merged by email. Invitation-specific guards remain P03 work. |
-| P03, implemented | Invitation management and recipient acceptance (remaining T03/T04/T05) | Add invite-only admission with migration controls; implement copyable single-use links and atomic membership grants. |
-| P04, implemented | Workspace user administration (T06) | User lifecycle, role management, revocation, and last-admin protection with focused tests. |
-| P05 | Operational rollout (T07) | Audit UI, recovery, migrations, live adapter and Google pilot evidence, and release documentation. |
+| Phase            | Scope                                                                                                                                                                   | Boundary / completion evidence                                                                                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P01, implemented | Google sign-in, complete configuration validation, a named login entry point, safe retry after provider errors, exact callback setup, and focused protocol/access tests | Retain current project-role assignment. New Google members have no project access. Real Google pilot needs operator credentials.                                                                          |
+| P02, implemented | Transactional identity foundation and explicit linking (identity boundary of T01/T02)                                                                                   | Preserve legacy actors and IDs; SQLite/PostgreSQL/MongoDB replica-set rollback/uniqueness races tested. Existing account ownership cannot be merged by email. Invitation-specific guards remain P03 work. |
+| P03, implemented | Invitation management and recipient acceptance (remaining T03/T04/T05)                                                                                                  | Add invite-only admission with migration controls; implement copyable single-use links and atomic membership grants.                                                                                      |
+| P04, implemented | Workspace user administration (T06)                                                                                                                                     | User lifecycle, role management, revocation, and last-admin protection with focused tests.                                                                                                                |
+| P05              | Operational rollout (T07)                                                                                                                                               | Audit UI, recovery, migrations, live adapter and Google pilot evidence, and release documentation.                                                                                                        |
 
 P01 is an administrator-managed pilot: it retains the existing ability to create a signed-in member with zero project access. It is not the invitation-only release described below. Keep local/offline access unchanged and preserve generic company OIDC behavior. Use the existing `VISUALGUARD_OIDC_*` names rather than introducing duplicate Google credential variables.
 
-P01 implementation and setup: [Google sign-in guide](GOOGLE-SIGN-IN.md). On 16 October 2026, 45 focused authentication tests and the dashboard UI build passed. Operator-supplied Google credentials are still required for the live browser pilot. Formatting, lint, and type checks remain deferred.
+P01 implementation and setup: [Google sign-in guide](GOOGLE-SIGN-IN.md). On 16 October 2026, 45 focused authentication tests and the dashboard UI build passed. Operator-supplied Google credentials are still required for the live browser pilot. Formatting, lint, and type checks were deferred during initial implementation.
 
 P02 setup, migration and validation: [Google account linking](GOOGLE-ACCOUNT-LINKING.md). On 16 October 2026, 138 focused tests passed against SQLite, PostgreSQL, a MongoDB replica set and standalone compatibility; three non-Mongo executions of the MongoDB-only snapshot test were intentionally skipped. The UI build passed. New external users on transaction-capable stores use opaque canonical IDs; password and legacy actor IDs remain unchanged. This phase adds no application environment variables and does not implement invitations, pending-invite indexes, project-deletion guards, or workspace last-admin administration ahead of their phases.
 
-P03 setup, migration, manual checks, storage and limitations: [Invitations and admission](TEAM-INVITATIONS.md). On 16 October 2026, 234 focused tests passed across SQLite, PostgreSQL, a MongoDB replica set and standalone compatibility, with 16 intentional backend-specific skips (Mongo-only snapshot scenarios and the in-memory fake's evidence-deletion scenario). The UI build passed. Real-browser invitation creation, fragment removal, existing-password verification and acceptance were checked against a disposable local workspace. Only `VISUALGUARD_USER_ADMISSION=invite|legacy` is new; use the existing Google client credentials. Live Google browser acceptance still needs operator credentials. Expanded admin/last-admin controls remain P04; formatting, lint and type checks remain deferred.
+P03 setup, migration, manual checks, storage and limitations: [Invitations and admission](TEAM-INVITATIONS.md). On 16 October 2026, 234 focused tests passed across SQLite, PostgreSQL, a MongoDB replica set and standalone compatibility, with 16 intentional backend-specific skips (Mongo-only snapshot scenarios and the in-memory fake's evidence-deletion scenario). The UI build passed. Real-browser invitation creation, fragment removal, existing-password verification and acceptance were checked against a disposable local workspace. Only `VISUALGUARD_USER_ADMISSION=invite|legacy` is new; use the existing Google client credentials. Live Google browser acceptance still needs operator credentials. Expanded admin/last-admin controls remain P04; formatting, lint and type checks were deferred during initial implementation.
 
-P04 setup, manual checks, API changes and storage guarantees: [User administration](USER-ADMINISTRATION.md). The searchable directory, role changes, disable/restore, password reset, session/upload revocation and shared last-admin guard are implemented together. The focused live-adapter run passed 314 tests with 22 expected backend-specific skips; the UI build passed. No new application environment variables are required. Operational recovery/audit rollout remains P05, and formatting, lint and type checks remain deferred.
+P04 setup, manual checks, API changes and storage guarantees: [User administration](USER-ADMINISTRATION.md). The searchable directory, role changes, disable/restore, password reset, session/upload revocation and shared last-admin guard are implemented together. The focused live-adapter run passed 314 tests with 22 expected backend-specific skips; the UI build passed. No new application environment variables are required. Operational recovery/audit rollout remains P05. Formatting, lint and CLI/platform type checks passed during the authorized merge cleanup, together with a fresh 314-test live-adapter run and the UI build.
 
 ## 1. Intended outcome and release boundary
 
@@ -51,16 +53,16 @@ Automatic invitation emails, login-by-email magic links, public registration, do
 
 ## 2. Existing implementation to extend
 
-| Area | Current behavior | Planned change |
-| --- | --- | --- |
-| `server/auth.ts` | Password accounts; generic OIDC; sessions; account disabling; account-wide `authVersion`; role checks | Separate external identities from canonical users, add admission rules and explicit account linking |
-| `AuthService.beginOidc` / `finishOidc` | Authorization-code exchange, PKCE, state, nonce; automatic OIDC account creation | Retain protocol checks; bind onboarding intent to the login attempt; stop uninvited auto-creation in invitation mode |
-| Users | Password IDs derive from email; OIDC IDs derive from configured issuer and subject | Preserve all existing IDs; use opaque IDs for new users and identity mappings for future sign-ins |
-| Memberships | `userId:projectId`, with Viewer/Reviewer/Maintainer roles | Keep project role semantics and add transactional invitation acceptance |
-| `client/settings.tsx` | People, project access, password-account creation, upload credentials | Add Invitations and improve user lifecycle controls |
-| `server/http.ts` | Session, host/origin checks, action-token checks, account and membership APIs | Reuse these controls for onboarding routes and admin mutations |
-| `server/reviews.ts` | Current reviewer eligibility, persisted actors, decisions, assignments | Reuse current eligibility rules and preserve historical authorship |
-| Storage | SQLite/PostgreSQL SQL adapters and MongoDB; versioned single-record state operations | Add atomic operations for identity linking, invite acceptance, and administrator lifecycle |
+| Area                                   | Current behavior                                                                                      | Planned change                                                                                                       |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `server/auth.ts`                       | Password accounts; generic OIDC; sessions; account disabling; account-wide `authVersion`; role checks | Separate external identities from canonical users, add admission rules and explicit account linking                  |
+| `AuthService.beginOidc` / `finishOidc` | Authorization-code exchange, PKCE, state, nonce; automatic OIDC account creation                      | Retain protocol checks; bind onboarding intent to the login attempt; stop uninvited auto-creation in invitation mode |
+| Users                                  | Password IDs derive from email; OIDC IDs derive from configured issuer and subject                    | Preserve all existing IDs; use opaque IDs for new users and identity mappings for future sign-ins                    |
+| Memberships                            | `userId:projectId`, with Viewer/Reviewer/Maintainer roles                                             | Keep project role semantics and add transactional invitation acceptance                                              |
+| `client/settings.tsx`                  | People, project access, password-account creation, upload credentials                                 | Add Invitations and improve user lifecycle controls                                                                  |
+| `server/http.ts`                       | Session, host/origin checks, action-token checks, account and membership APIs                         | Reuse these controls for onboarding routes and admin mutations                                                       |
+| `server/reviews.ts`                    | Current reviewer eligibility, persisted actors, decisions, assignments                                | Reuse current eligibility rules and preserve historical authorship                                                   |
+| Storage                                | SQLite/PostgreSQL SQL adapters and MongoDB; versioned single-record state operations                  | Add atomic operations for identity linking, invite acceptance, and administrator lifecycle                           |
 
 Current OIDC sign-in can create a user without project access. It is not invitation-only onboarding. Password and OIDC identities with the same email currently produce different user IDs; do not merge these accounts implicitly.
 
@@ -68,16 +70,16 @@ The CLI, offline capture, local report, local dashboard owner, and project-scope
 
 ## 3. Roles and authority
 
-| Capability | Workspace Admin | Project Maintainer | Reviewer | Viewer |
-| --- | --- | --- | --- | --- |
-| Read project evidence and review history | All projects | Assigned projects | Assigned projects | Assigned projects |
-| Comment, assign checks, decide/withdraw visual changes | Yes | Yes | Yes | No |
-| Manage existing memberships and upload credentials | All projects | Own projects, per existing rules | No | No |
-| Create/cancel onboarding invitations | Yes | Deferred | No | No |
-| List all workspace users and invitations | Yes | No | No | No |
-| Disable users or revoke their sessions | Yes | No | No | No |
-| Grant/revoke Workspace Admin | Yes, with recent authentication and last-admin protection | No | No | No |
-| Link a Google identity | Own account only, with recent authentication | Own account | Own account | Own account |
+| Capability                                             | Workspace Admin                                           | Project Maintainer               | Reviewer          | Viewer            |
+| ------------------------------------------------------ | --------------------------------------------------------- | -------------------------------- | ----------------- | ----------------- |
+| Read project evidence and review history               | All projects                                              | Assigned projects                | Assigned projects | Assigned projects |
+| Comment, assign checks, decide/withdraw visual changes | Yes                                                       | Yes                              | Yes               | No                |
+| Manage existing memberships and upload credentials     | All projects                                              | Own projects, per existing rules | No                | No                |
+| Create/cancel onboarding invitations                   | Yes                                                       | Deferred                         | No                | No                |
+| List all workspace users and invitations               | Yes                                                       | No                               | No                | No                |
+| Disable users or revoke their sessions                 | Yes                                                       | No                               | No                | No                |
+| Grant/revoke Workspace Admin                           | Yes, with recent authentication and last-admin protection | No                               | No                | No                |
+| Link a Google identity                                 | Own account only, with recent authentication              | Own account                      | Own account       | Own account       |
 
 Project roles remain cumulative. Workspace Admin is the existing `admin` role, not a new database role named `super_admin`. Project Maintainer does not gain authority over workspace accounts or Google configuration.
 
@@ -141,20 +143,20 @@ For local manual tests, consistently use `http://127.0.0.1:4400` and its exact r
 
 ## 6. Invitation contract
 
-| Property | Proposed behavior |
-| --- | --- |
-| Scope | One deployment/workspace, target email, project ID, and project role |
-| Default lifetime | 72 hours; admin-selectable up to 7 days; server time is authoritative |
-| Secret | At least 256 random bits; only its hash is persisted |
-| Presentation | Raw link returned once; listings never return or reconstruct it |
-| Reissue | Cancel old pending invitation and generate a new secret/record; no reusable old link |
-| Duplicate | One pending invitation per normalized email/project; create races return 409 or the existing non-secret metadata |
-| Role update | Cancel/reissue, or a separate existing-member role operation; never mutate a recipient's already-viewed invitation silently |
-| Consumption | Explicit authenticated POST; opening a URL or an email scanner's GET cannot consume it |
-| Expiry | Enforced on every preview/login handoff/acceptance; independent of background pruning |
+| Property             | Proposed behavior                                                                                                            |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Scope                | One deployment/workspace, target email, project ID, and project role                                                         |
+| Default lifetime     | 72 hours; admin-selectable up to 7 days; server time is authoritative                                                        |
+| Secret               | At least 256 random bits; only its hash is persisted                                                                         |
+| Presentation         | Raw link returned once; listings never return or reconstruct it                                                              |
+| Reissue              | Cancel old pending invitation and generate a new secret/record; no reusable old link                                         |
+| Duplicate            | One pending invitation per normalized email/project; create races return 409 or the existing non-secret metadata             |
+| Role update          | Cancel/reissue, or a separate existing-member role operation; never mutate a recipient's already-viewed invitation silently  |
+| Consumption          | Explicit authenticated POST; opening a URL or an email scanner's GET cannot consume it                                       |
+| Expiry               | Enforced on every preview/login handoff/acceptance; independent of background pruning                                        |
 | Acceptance authority | Recheck inviter is an active admin, project exists, invitation is pending/current, recipient matches, and account is enabled |
-| Revocation | Cancellation, project deletion, or inviter losing admin eligibility prevents later acceptance |
-| Existing access | Do not downgrade it or restore previously disabled access through an invitation |
+| Revocation           | Cancellation, project deletion, or inviter losing admin eligibility prevents later acceptance                                |
+| Existing access      | Do not downgrade it or restore previously disabled access through an invitation                                              |
 
 Normalize surrounding whitespace and email casing consistently with existing accounts. Do not strip dots, plus-tags, or rewrite provider-specific aliases. Email renames require a new invitation; do not broaden the accepted identity set.
 
@@ -168,16 +170,16 @@ Cancellation and acceptance race on the same versioned invitation: exactly one t
 
 Names below describe planned logical records, not changes already implemented.
 
-| Record | Key fields / invariants |
-| --- | --- |
-| Canonical user | Stable `id`, name, email, `admin|member`, disabled flag, auth version, created/updated times; existing IDs remain valid |
-| External identity | Unique provider/validated issuer/subject key, canonical user ID, link time; one external identity maps to exactly one user |
-| Invitation | ID, token hash, normalized target email, project, role, creator ID, created/expiry times, `pending|accepted|cancelled`, version, accepted user/time or cancellation metadata |
-| Pending-invitation index | Unique normalized email/project key, pending invitation ID/version; transactional update with create/cancel/accept/reissue |
-| Onboarding attempt | Hashed browser handle, invitation ID/version, operation (`join|link`), OIDC correlation, expiry, optional validated candidate identity |
-| Membership | Existing `userId:projectId` key; role, update/version metadata sufficient for conflict checking |
-| Admin guard | One workspace guard/version touched by promotions, demotions, disabling admins, admin bootstrap, and invite acceptance authority checks |
-| Audit/outbox | Operation ID, actor/target IDs, project/invitation IDs, before/after role or state, server timestamp; no secret payloads |
+| Record                   | Key fields / invariants                                                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Canonical user           | Stable `id`, name, email, `admin                                                                                                        | member`, disabled flag, auth version, created/updated times; existing IDs remain valid |
+| External identity        | Unique provider/validated issuer/subject key, canonical user ID, link time; one external identity maps to exactly one user              |
+| Invitation               | ID, token hash, normalized target email, project, role, creator ID, created/expiry times, `pending                                      | accepted                                                                               | cancelled`, version, accepted user/time or cancellation metadata |
+| Pending-invitation index | Unique normalized email/project key, pending invitation ID/version; transactional update with create/cancel/accept/reissue              |
+| Onboarding attempt       | Hashed browser handle, invitation ID/version, operation (`join                                                                          | link`), OIDC correlation, expiry, optional validated candidate identity                |
+| Membership               | Existing `userId:projectId` key; role, update/version metadata sufficient for conflict checking                                         |
+| Admin guard              | One workspace guard/version touched by promotions, demotions, disabling admins, admin bootstrap, and invite acceptance authority checks |
+| Audit/outbox             | Operation ID, actor/target IDs, project/invitation IDs, before/after role or state, server timestamp; no secret payloads                |
 
 An expiry is a computed presentation state for pending invitations. Keep terminal invitation metadata for audit; do not use TTL deletion as the authorization decision or delete the only evidence of consumption. Define eventual cleanup separately from access enforcement.
 
@@ -203,18 +205,18 @@ Reads used for transactional acceptance must be protected against concurrent dis
 
 Keep the existing account and membership routes; extend their contract rather than creating a second user directory.
 
-| Request | Permission / result |
-| --- | --- |
-| `GET /api/invitations?project=...&state=...&after=...` | Admin; bounded cursor page of safe invitation metadata |
-| `POST /api/invitations` | Admin + action token; email/project/role/expiry; returns metadata and one-time raw link |
-| `POST /api/invitations/ID/cancel` | Admin + action token + expected version; 409 on concurrent transition |
-| `POST /api/invitations/ID/replace` | Admin + action token + expected version; old invitation cancelled, new link returned once |
-| `POST /api/onboarding/exchange` | Same-origin browser proof + secret; establishes bounded onboarding attempt; grants no project access |
-| Existing OIDC login/callback | Carries server-bound join/link intent, validates identity, then returns to the matching confirmation page |
-| `POST /api/onboarding/accept` | Matching authenticated identity/onboarding proof + action token; consumes one current invitation atomically |
-| `POST /api/auth/identities/google/link` | Existing account + recent reauthentication + action token; begins explicit Google linking |
-| Existing `PATCH /api/users/ID` | Admin + action token + expected version; role/disabled updates with last-admin and concurrency checks |
-| `POST /api/users/ID/revoke-sessions` | Admin + action token + recent authentication; increment auth version, audit, expire affected sessions |
+| Request                                                | Permission / result                                                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `GET /api/invitations?project=...&state=...&after=...` | Admin; bounded cursor page of safe invitation metadata                                                      |
+| `POST /api/invitations`                                | Admin + action token; email/project/role/expiry; returns metadata and one-time raw link                     |
+| `POST /api/invitations/ID/cancel`                      | Admin + action token + expected version; 409 on concurrent transition                                       |
+| `POST /api/invitations/ID/replace`                     | Admin + action token + expected version; old invitation cancelled, new link returned once                   |
+| `POST /api/onboarding/exchange`                        | Same-origin browser proof + secret; establishes bounded onboarding attempt; grants no project access        |
+| Existing OIDC login/callback                           | Carries server-bound join/link intent, validates identity, then returns to the matching confirmation page   |
+| `POST /api/onboarding/accept`                          | Matching authenticated identity/onboarding proof + action token; consumes one current invitation atomically |
+| `POST /api/auth/identities/google/link`                | Existing account + recent reauthentication + action token; begins explicit Google linking                   |
+| Existing `PATCH /api/users/ID`                         | Admin + action token + expected version; role/disabled updates with last-admin and concurrency checks       |
+| `POST /api/users/ID/revoke-sessions`                   | Admin + action token + recent authentication; increment auth version, audit, expire affected sessions       |
 
 Use 400 for invalid schema; 401 for missing/expired authentication; 403 for denied roles or browser proof; 409 for concurrent/stale state; 410 for authenticated expired/cancelled invitations; 429 for throttling. Unauthenticated invalid-secret responses must not reveal whether a target account/project exists. Read-only endpoints cannot consume invitations or change membership.
 
@@ -250,15 +252,15 @@ Document secret rotation, provider outage behavior, bootstrap recovery, native b
 
 Each row is its own feature commit with its documentation and focused tests. Keep the plan as the preceding documentation commit. UI and API for a row should be usable together; do not enable an unfinished admission mode.
 
-| Step | Deliverable | Acceptance evidence |
-| --- | --- | --- |
-| T01 | Transactional onboarding repository, guards, versioned records, migration/capability detection | Atomic success/rollback, identity and pending-invite uniqueness, race tests on all supported onboarding backends |
-| T02 | Canonical identity mappings, legacy-ID continuity, explicit Google linking | Existing authorship unchanged; no email-only merge; concurrent link creates one binding |
-| T03 | Google provider setup and admission policy behind disabled-by-default rollout controls | Mock-provider validation and real Google loopback pilot; unknown identities denied in invitation mode |
-| T04 | Administrator invite creation/list/cancel/replace and copy-link UI | Expiry/role validation, one-time secret visibility, paginated listings, duplicates/cancellation races |
-| T05 | Recipient exchange/login/confirmation/atomic acceptance journey | Correct account joins; wrong/replayed/expired/revoked links grant nothing; crash/retry tests |
-| T06 | User directory, role changes, disable/restore and session revocation controls | Cross-project permissions, concurrent last-admin protection, session/upload revocation, F03 eligibility integration |
-| T07 | Audit presentation, recovery/runbooks, compatibility controls and release walkthrough | Native restore exercise, legacy migration pilot, local/offline smoke, deployment documentation |
+| Step | Deliverable                                                                                    | Acceptance evidence                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| T01  | Transactional onboarding repository, guards, versioned records, migration/capability detection | Atomic success/rollback, identity and pending-invite uniqueness, race tests on all supported onboarding backends    |
+| T02  | Canonical identity mappings, legacy-ID continuity, explicit Google linking                     | Existing authorship unchanged; no email-only merge; concurrent link creates one binding                             |
+| T03  | Google provider setup and admission policy behind disabled-by-default rollout controls         | Mock-provider validation and real Google loopback pilot; unknown identities denied in invitation mode               |
+| T04  | Administrator invite creation/list/cancel/replace and copy-link UI                             | Expiry/role validation, one-time secret visibility, paginated listings, duplicates/cancellation races               |
+| T05  | Recipient exchange/login/confirmation/atomic acceptance journey                                | Correct account joins; wrong/replayed/expired/revoked links grant nothing; crash/retry tests                        |
+| T06  | User directory, role changes, disable/restore and session revocation controls                  | Cross-project permissions, concurrent last-admin protection, session/upload revocation, F03 eligibility integration |
+| T07  | Audit presentation, recovery/runbooks, compatibility controls and release walkthrough          | Native restore exercise, legacy migration pilot, local/offline smoke, deployment documentation                      |
 
 T01-T03 remain inert for invitations until T04/T05 complete. Google linking can be piloted for existing accounts before enabling invitation admission. T06 may ship independently after T01/T02, but the release is not complete until the recipient journey and recovery work pass.
 
@@ -268,18 +270,18 @@ Estimate after T01's storage proof: roughly 3-5 engineer-weeks for implementatio
 
 Use a local fake OIDC issuer for deterministic tests and real Google only for a small manual pilot. Do not make every regression depend on external accounts.
 
-| Boundary | Required cases |
-| --- | --- |
-| OIDC | Invalid issuer/audience/signature/expiry, missing subject, nonce/state/PKCE failure, callback replay, provider error, wrong browser, arbitrary return URL rejected |
-| Invitations | Empty/malformed payloads, target mismatch, unverified email, normalized case, aliases not rewritten, expiry boundary, one-time use, duplicate pending create, cancellation/replacement races |
-| Acceptance | Two browsers accepting once, same identity joining different projects, one identity linking to two users, rollback at every write, retry after successful commit, simultaneous project deletion/admin removal/account disabling |
-| Existing accounts | Password-to-Google linking requires both proofs; disabled user not restored; existing higher membership not downgraded; email collision does not merge histories |
-| Administration | Viewer/Reviewer/Maintainer cannot manage workspace users/invites, outsider cannot enumerate projects, CI tokens denied, two admins concurrently demoting/disabling each other preserve an active admin |
-| Sessions | Logout and explicit revocation, disabled user denied on next request, role changes reflected without relogin, owner-bound upload credentials denied after disabling, linking rotates affected session context |
-| F03 | Revoked decision author becomes effectively pending, unavailable assignee stays visible, restoring role keeps documented semantics, canonical IDs preserve comments and decisions |
-| Storage | Same contract on SQLite/PostgreSQL/Mongo replica set; page beyond 100 users/invites; persistence after reopening; cross-instance conflicting writes; Mongo standalone capability message |
-| Privacy | No raw invitation/client/provider/session secrets in lists/audit/errors/logs; pre-login page does not disclose project/email; no referrer token leak |
-| Compatibility | Offline CLI captures, local owner dashboard, existing password login, scoped CI upload, evidence-only export, native operational restore |
+| Boundary          | Required cases                                                                                                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OIDC              | Invalid issuer/audience/signature/expiry, missing subject, nonce/state/PKCE failure, callback replay, provider error, wrong browser, arbitrary return URL rejected                                                              |
+| Invitations       | Empty/malformed payloads, target mismatch, unverified email, normalized case, aliases not rewritten, expiry boundary, one-time use, duplicate pending create, cancellation/replacement races                                    |
+| Acceptance        | Two browsers accepting once, same identity joining different projects, one identity linking to two users, rollback at every write, retry after successful commit, simultaneous project deletion/admin removal/account disabling |
+| Existing accounts | Password-to-Google linking requires both proofs; disabled user not restored; existing higher membership not downgraded; email collision does not merge histories                                                                |
+| Administration    | Viewer/Reviewer/Maintainer cannot manage workspace users/invites, outsider cannot enumerate projects, CI tokens denied, two admins concurrently demoting/disabling each other preserve an active admin                          |
+| Sessions          | Logout and explicit revocation, disabled user denied on next request, role changes reflected without relogin, owner-bound upload credentials denied after disabling, linking rotates affected session context                   |
+| F03               | Revoked decision author becomes effectively pending, unavailable assignee stays visible, restoring role keeps documented semantics, canonical IDs preserve comments and decisions                                               |
+| Storage           | Same contract on SQLite/PostgreSQL/Mongo replica set; page beyond 100 users/invites; persistence after reopening; cross-instance conflicting writes; Mongo standalone capability message                                        |
+| Privacy           | No raw invitation/client/provider/session secrets in lists/audit/errors/logs; pre-login page does not disclose project/email; no referrer token leak                                                                            |
+| Compatibility     | Offline CLI captures, local owner dashboard, existing password login, scoped CI upload, evidence-only export, native operational restore                                                                                        |
 
 Run only suites relevant to each feature while implementing. Formatting, lint, and type-check commands remain deferred until after F36 unless the user changes that instruction. Feature-specific builds and focused behavior/browser tests may be used. Record actual commands/results and explicitly identify skipped live adapters and untested provider setup.
 

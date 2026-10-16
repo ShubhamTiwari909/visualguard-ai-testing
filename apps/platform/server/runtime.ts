@@ -10,7 +10,7 @@ export interface RuntimeOptions {
   dataDir?: string;
 }
 export async function createDashboardHandler(options: RuntimeOptions = {}) {
-  const env = {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     ...options.env,
     ...(options.dataDir ? { VISUALGUARD_PLATFORM_DATA_DIR: resolve(options.dataDir) } : {}),
@@ -116,11 +116,15 @@ export async function startDashboard(
           return;
         }
         const path = new URL(request.url ?? "/", "http://localhost").pathname;
-        if (path === "/invite") { response.setHeader("Referrer-Policy", "no-referrer"); response.setHeader("Cache-Control", "no-store"); }
+        if (path === "/invite") {
+          response.setHeader("Referrer-Policy", "no-referrer");
+          response.setHeader("Cache-Control", "no-store");
+        }
         if (
           path === "/" ||
           path === "/settings" ||
           path === "/invite" ||
+          path === "/reviews" ||
           /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
         ) {
           const html = index;

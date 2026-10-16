@@ -75,13 +75,13 @@ This action cannot add a new password credential to a provider-only canonical ac
 
 ## API contract changes
 
-| Route | Contract |
-| --- | --- |
-| `GET /api/users?query=&role=&status=&after=` | Administrator directory; up to 50 safe users, optional next `after`, and `administrationAvailable` |
-| `GET /api/users/ID?after=` | Safe user/version/sign-in methods and up to 50 explicit memberships; cursor must belong to this account |
-| `POST /api/users` | Member creation only; administrator session + action token; `role=admin` returns 400 |
-| `PATCH /api/users/ID` | Required `expectedVersion`; `disabled`, `role`, or password reset; optional `currentPassword`, required for password administrators |
-| `POST /api/users/ID/revoke-sessions` | Required `expectedVersion`, administrator proof and action token; revokes browser sessions and owned upload credentials |
+| Route                                        | Contract                                                                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/users?query=&role=&status=&after=` | Administrator directory; up to 50 safe users, optional next `after`, and `administrationAvailable`                                  |
+| `GET /api/users/ID?after=`                   | Safe user/version/sign-in methods and up to 50 explicit memberships; cursor must belong to this account                             |
+| `POST /api/users`                            | Member creation only; administrator session + action token; `role=admin` returns 400                                                |
+| `PATCH /api/users/ID`                        | Required `expectedVersion`; `disabled`, `role`, or password reset; optional `currentPassword`, required for password administrators |
+| `POST /api/users/ID/revoke-sessions`         | Required `expectedVersion`, administrator proof and action token; revokes browser sessions and owned upload credentials             |
 
 Obtain the target's `version` from a fresh directory/detail response. A stale target returns 409; refresh details and explicitly retry rather than silently overwriting another administrator's action. Missing version/invalid schema returns 400; missing session 401; denied authority/origin/CSRF 403; stale authentication 401; unsupported transactional storage 503. Upload credentials cannot use these routes. Existing generic JSON size, host/origin and no-store controls apply.
 
@@ -101,4 +101,4 @@ On 16 October 2026, Node 22.14, PostgreSQL 17.5 and MongoDB 8.3.4 were used for 
 
 New coverage includes concurrent cross-demotion/disable, stale target versions, authority/session revocation after Mongo snapshot reads, rollback after credential deletion, paged credentials and directory filters, current-password/recent-OIDC proof, cross-project role isolation, provider-only reset rejection, in-flight token invalidation and F03 history/effective decisions after disable/restore. The dashboard UI build passes. Real-browser checks cover the management and confirmation screens. Live Google consent/browser testing still requires operator credentials from the preceding phases.
 
-Formatting, lint and type-check commands remain unrun per the user's instruction. P05 is the remaining operational rollout phase.
+During merge cleanup, the operator authorized formatting, lint, and type checks. All passed, alongside the dashboard build and a fresh run of the same 314 tests with 22 intentional skips against the reviewed P01–P03/released dashboard baseline. P05 is the remaining operational rollout phase.

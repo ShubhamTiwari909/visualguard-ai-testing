@@ -10,12 +10,12 @@ P02 is on `codex/team-onboarding-p02`, stacked on the P01 Google sign-in branch 
 
 **No new application environment variables or Google credentials are required.** Keep the [P01 configuration](GOOGLE-SIGN-IN.md): `VISUALGUARD_AUTH_MODE=login`, the exact `VISUALGUARD_PUBLIC_URL`, `VISUALGUARD_OIDC_ISSUER=https://accounts.google.com`, and the existing Google web client ID/secret. The callback stays `<VISUALGUARD_PUBLIC_URL>/api/auth/callback`.
 
-| Backend | Google sign-in | Explicit linking |
-| --- | --- | --- |
-| SQLite | Supported | Supported; no database service needed |
-| PostgreSQL | Supported | Supported with the existing connection URL |
-| MongoDB replica set/sharded deployment | Supported | Supported through multi-document transactions |
-| Standalone MongoDB | Existing sign-in remains supported | Unavailable; API rejects it before granting/changing access |
+| Backend                                | Google sign-in                     | Explicit linking                                            |
+| -------------------------------------- | ---------------------------------- | ----------------------------------------------------------- |
+| SQLite                                 | Supported                          | Supported; no database service needed                       |
+| PostgreSQL                             | Supported                          | Supported with the existing connection URL                  |
+| MongoDB replica set/sharded deployment | Supported                          | Supported through multi-document transactions               |
+| Standalone MongoDB                     | Existing sign-in remains supported | Unavailable; API rejects it before granting/changing access |
 
 The account card detects transaction support and explains unavailable linking. MongoDB needs a replica set or sharded deployment for this multi-record operation; see [MongoDB transactions](https://www.mongodb.com/docs/manual/core/transactions/). Existing capture, publishing, history, review, password-login, and local-owner workflows remain usable on standalone MongoDB. Local owner mode does not expose account linking.
 
@@ -68,11 +68,11 @@ The generic transaction boundary is the P03 foundation. Invitation records, pend
 
 ## API boundary
 
-| Route | Result |
-| --- | --- |
-| `GET /api/auth/identities` | Own account's `googleLinked`, `googleConfigured`, `linkingAvailable`, `requiresPassword`, and `reauthenticationRequired` flags |
+| Route                                   | Result                                                                                                                                                                                        |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/auth/identities`              | Own account's `googleLinked`, `googleConfigured`, `linkingAvailable`, `requiresPassword`, and `reauthenticationRequired` flags                                                                |
 | `POST /api/auth/identities/google/link` | Own authenticated browser account plus existing action token; optional `currentPassword` field, required for a password account; returns the authorization URL and browser correlation cookie |
-| Existing Google callback | Verifies Google identity and one-time correlation; verifies the initiating account/session/auth version again; commits linking and returns to `/settings?identity=linked` |
+| Existing Google callback                | Verifies Google identity and one-time correlation; verifies the initiating account/session/auth version again; commits linking and returns to `/settings?identity=linked`                     |
 
 The POST body cannot select a target user. A different-origin request, missing action token, upload credential, local-owner credential, stale session, invalid password, or unsupported storage cannot begin an effective link. Metadata is `no-store` and exposes no provider subject, mapping key, session ID, client secret, or password hash. The existing session/host/origin/JSON limits still apply.
 
@@ -91,7 +91,7 @@ The run used disposable PostgreSQL, MongoDB replica-set, and standalone MongoDB 
 
 Coverage includes atomic rollback, CAS across transactions, concurrent sign-in uniqueness, conflicting link owners, legacy ID preservation, email collisions without merges, audit-failure rollback, stale/expired/revoked sessions, disabled accounts, two-account link races, MongoDB snapshot write-skew protection, and ordinary standalone MongoDB sign-in with linking rejected. OIDC tests use the real library with a simulated signed-token provider; they also exercise password proof, browser/session substitution, callback replay, API CSRF/origin/credential boundaries, and post-link session revocation.
 
-The separate publishing and local-project command suites also passed **10 tests**, for **148 passing focused tests in total**. `pnpm platform:build` passed. No real Google browser authorization or production database migration was performed. Formatting, lint, and type checks remain deferred under the repository instructions.
+The separate publishing and local-project command suites also passed **10 tests**, for **148 passing focused tests in total**. `pnpm platform:build` passed. No real Google browser authorization or production database migration was performed. During merge review, the same eight focused suites passed 148 tests with 3 intentional skips against the released dashboard baseline and live disposable adapters. The operator authorized lifting the check deferral for this cleanup; formatting, lint, CLI/report/platform type checks, and the dashboard build passed. CI now supplies both a writable single-member MongoDB replica set for transaction tests and a standalone instance for compatibility tests, using the test-only URLs above.
 
 ## Manual acceptance and recovery
 
