@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { sha256 } from "./artifacts.js";
+import { touchAdministratorGuard } from "./administration.js";
 import { PlatformError } from "./errors.js";
 import { Identities, type ExternalIdentity } from "./identities.js";
 import type { Actor, Membership, ProjectRole, User } from "./auth.js";
@@ -58,7 +59,7 @@ export class Invitations {
   private async transaction<T>(work: (store: StateStore) => Promise<T>) {
     if (!await this.available()) throw new PlatformError(503, "Invitations require SQLite, PostgreSQL, or a MongoDB replica set");
     for (let attempt = 0; ; attempt++) {
-      try { return await this.state.transaction!(work); }
+      try { return await this.state.transaction!(async (store) => { await touchAdministratorGuard(store); return work(store); }); }
       catch (error) {
         if (!(error instanceof PlatformError && error.status === 409 && attempt < 2)) throw error;
       }

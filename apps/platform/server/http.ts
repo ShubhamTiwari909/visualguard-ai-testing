@@ -262,7 +262,12 @@ export function createApi(
       if (url.pathname === "/api/users") {
         if (!actor.admin) throw new PlatformError(403, "Administrator access required");
         if (request.method === "GET") {
-          json(response, 200, { users: await auth.users() });
+          if (auth.mode === "local") json(response, 200, { users: await auth.users(), administrationAvailable: false });
+          else {
+            const input = z.object({ query: z.string().max(120).optional(), role: z.enum(["admin", "member"]).optional(),
+              status: z.enum(["active", "disabled"]).optional(), after: z.string().max(200).optional() }).strict().parse(Object.fromEntries(url.searchParams));
+            json(response, 200, await auth.administration.directory(actor, input));
+          }
           return true;
         }
         if (request.method === "POST") {
@@ -274,19 +279,30 @@ export function createApi(
               role: z.enum(["admin", "member"]).optional(),
             })
             .parse(await body(request));
-          const user = await auth.createUser(input);
-          await auth.audit(actor, "user.created", { userId: user.id });
+          const user = await auth.createManagedUser(actor, input);
+          if (auth.mode === "local") await auth.audit(actor, "user.created", { userId: user.id });
           json(response, 201, user);
           return true;
         }
       }
       const userMatch = url.pathname.match(/^\/api\/users\/([^/]+)$/);
+      if (request.method === "GET" && userMatch) {
+        const input = z.object({ after: z.string().max(500).optional() }).strict().parse(Object.fromEntries(url.searchParams));
+        json(response, 200, await auth.administration.detail(actor, decodeURIComponent(userMatch[1]!), input.after)); return true;
+      }
+      const revokeSessions = url.pathname.match(/^\/api\/users\/([^/]+)\/revoke-sessions$/);
+      if (request.method === "POST" && revokeSessions) {
+        const input = z.object({ expectedVersion: z.number().int().positive(), currentPassword: z.string().max(256).optional() }).strict().parse(await body(request));
+        json(response, 200, await auth.updateUser(actor, decodeURIComponent(revokeSessions[1]!), { ...input, revoke: true })); return true;
+      }
       if (request.method === "PATCH" && userMatch) {
         const input = z
           .object({
+            expectedVersion: z.number().int().positive(),
+            currentPassword: z.string().max(256).optional(),
             disabled: z.boolean().optional(),
             role: z.enum(["admin", "member"]).optional(),
-            password: z.string().optional(),
+            password: z.string().min(12).max(256).optional(),
           })
           .strict()
           .parse(await body(request));

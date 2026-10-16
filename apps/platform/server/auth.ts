@@ -6,6 +6,7 @@ import { PlatformError } from "./errors.js";
 import type { StateRecord, StateStore } from "./storage-contracts.js";
 import { oidcSettings, type OidcSettings } from "./oidc-config.js";
 import type { OnboardingBinding } from "./onboarding.js";
+import { Administration, touchAdministratorGuard } from "./administration.js";
 import { Identities, type LinkProof } from "./identities.js";
 
 const scrypt = promisify(deriveKey);
@@ -45,6 +46,7 @@ export interface Membership {
   role: ProjectRole;
 }
 interface UploadToken {
+  authVersion?: number;
   projectId: string;
   ownerId: string;
   name: string;
@@ -83,6 +85,7 @@ export class AuthService {
   readonly oidcProvider: "google" | "oidc" | null;
   private readonly oidcSettings?: OidcSettings;
   private identities: Identities;
+  readonly administration: Administration;
   private localToken = secret();
   constructor(
     readonly state: StateStore,
@@ -122,6 +125,7 @@ export class AuthService {
     this.oidcSettings = mode === "login" ? oidcSettings(env) : undefined;
     this.oidcProvider = this.oidcSettings?.provider ?? null;
     this.identities = new Identities(state);
+    this.administration = new Administration(state);
     this.ready = this.bootstrap();
   }
 
@@ -148,6 +152,7 @@ export class AuthService {
       const user = await this.passwordUser({ email, password, name: "Workspace administrator", role: "admin" });
       if (await this.identities.available()) {
         await this.state.transaction!(async (store) => {
+          await touchAdministratorGuard(store);
           const policy = (await store.get<{ version: number; mode: string; bootstrapComplete: boolean }>("admission", "current"))!;
           if (policy.value.bootstrapComplete) return;
           policy.value.bootstrapComplete = true;
@@ -218,7 +223,7 @@ export class AuthService {
       const entry = await this.state.get<UploadToken>("tokens", id);
       if (!entry) return undefined;
       const owner = await this.state.get<User>("users", entry.value.ownerId);
-      if (!owner || owner.value.disabled) return undefined;
+      if (!owner || owner.value.disabled || (entry.value.authVersion !== undefined && entry.value.authVersion !== owner.value.authVersion)) return undefined;
       const actor: Actor = {
         id: owner.value.id,
         name: owner.value.name,
@@ -232,7 +237,7 @@ export class AuthService {
         !owner.value.role ||
         (owner.value.role !== "admin" &&
           !(await this.hasRole(
-            { ...actor, uploadProject: undefined },
+            { ...actor, uploadProject: undefined, credentialId: undefined },
             entry.value.projectId,
             "maintainer",
           )))
@@ -318,41 +323,33 @@ export class AuthService {
   }
   async createUser(input: { email: string; password: string; name: string; role?: "admin" | "member" }) {
     const user = await this.passwordUser(input);
-    if (!(await this.state.create("users", user.id, user)))
-      throw new PlatformError(409, "An account with this email already exists");
+    const save = async (store: StateStore) => {
+      if (user.role === "admin") await touchAdministratorGuard(store);
+      if (!await store.create("users", user.id, user)) throw new PlatformError(409, "An account with this email already exists");
+    };
+    if (user.role === "admin" && await this.administration.available()) await this.state.transaction!(save);
+    else if (!await this.state.create("users", user.id, user)) throw new PlatformError(409, "An account with this email already exists");
     return safeUser(user);
+  }
+  async createManagedUser(actor: Actor, input: { email: string; password: string; name: string; role?: "admin" | "member" }) {
+    if (this.mode === "local") return this.createUser(input);
+    if (input.role === "admin") throw new PlatformError(400, "Create a member first, then explicitly promote that account");
+    return this.administration.createMember(actor, await this.passwordUser({ ...input, role: "member" }));
   }
   async users() {
     return (await this.state.list<User>("users", "", 10_000)).map((row) => safeUser(row.value));
   }
-  async updateUser(
-    actor: Actor,
-    id: string,
-    input: { disabled?: boolean; role?: "admin" | "member"; password?: string },
-  ) {
-    if (!actor.admin || actor.credentialId)
-      throw new PlatformError(403, "Administrator access required");
-    if (id === actor.id && (input.disabled || input.role === "member"))
-      throw new PlatformError(400, "You cannot disable or demote your own administrator account");
-    const row = await this.state.get<User>("users", id);
-    if (!row) throw new PlatformError(404, "Account not found");
-    if (input.password) {
-      if (input.password.length < 12 || input.password.length > 256)
-        throw new PlatformError(400, "Password must contain 12–256 characters");
-      const salt = secret(),
-        hash = (await scrypt(input.password, salt, 64)) as Buffer;
-      row.value.passwordHash = `scrypt$${salt}$${hash.toString("hex")}`;
+  async updateUser(actor: Actor, id: string, input: { expectedVersion: number; disabled?: boolean; role?: "admin" | "member"; password?: string; currentPassword?: string; revoke?: boolean }) {
+    if (!actor.admin || actor.credentialId || this.mode !== "login") throw new PlatformError(403, "Administrator access required");
+    const proof = await this.proveAccount(actor, input.currentPassword);
+    let passwordHash: string | undefined;
+    if (input.password !== undefined) {
+      if (input.password.length < 12 || input.password.length > 256) throw new PlatformError(400, "Password must contain 12–256 characters");
+      const salt = secret(), hash = (await scrypt(input.password, salt, 64)) as Buffer;
+      passwordHash = `scrypt$${salt}$${hash.toString("hex")}`;
     }
-    row.value = {
-      ...row.value,
-      disabled: input.disabled ?? row.value.disabled,
-      role: input.role ?? row.value.role,
-      authVersion: row.value.authVersion + 1,
-    };
-    if (!(await this.state.replace("users", row)))
-      throw new PlatformError(409, "Account changed; refresh and retry");
-    await this.audit(actor, "user.updated", { userId: id });
-    return safeUser(row.value);
+    return this.administration.change(actor, id, { expectedVersion: input.expectedVersion, disabled: input.disabled, role: input.role, passwordHash, revoke: input.revoke },
+      { userId: proof.userId, sessionId: proof.sessionId!, authVersion: proof.authVersion, provedAt: proof.provedAt });
   }
 
   async throttle(id: string, limit = 10) {
@@ -437,7 +434,9 @@ export class AuthService {
   }
   async assign(actor: Actor, projectId: string, userId: string, role: ProjectRole | null) {
     await this.requireRole(actor, projectId, "maintainer");
-    if (!(await this.state.get("users", userId))) throw new PlatformError(404, "Account not found");
+    const account = await this.state.get<User>("users", userId);
+    if (!account) throw new PlatformError(404, "Account not found");
+    if (role && account.value.disabled) throw new PlatformError(400, "Restore this account before granting new project access");
     const id = `${userId}:${projectId}`,
       row = await this.state.get<Membership>("memberships", id);
     if (!role) await this.state.remove("memberships", id);
@@ -460,15 +459,23 @@ export class AuthService {
     await this.requireRole(actor, projectId, "maintainer");
     if (!name.trim() || name.length > 120 || !Number.isInteger(days) || days < 1 || days > 90)
       throw new PlatformError(400, "Use a token name and expiry of 1–90 days");
+    let ownerVersion: number | undefined;
+    if (this.mode === "login") {
+      const owner = await this.state.get<User>("users", actor.id);
+      const session = actor.sessionId ? await this.state.get<Session>("sessions", actor.sessionId) : undefined;
+      if (!owner || owner.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== owner.value.authVersion)
+        throw new PlatformError(401, "Sign in again before creating upload credentials");
+      ownerVersion = owner.value.authVersion;
+    }
     const token = `vg_upload_${secret()}`,
       id = sha256(token),
       expiresAt = expires(days * 86400);
-    await this.state.create<UploadToken>(
+    if (!await this.state.create<UploadToken>(
       "tokens",
       id,
-      { ownerId: actor.id, projectId, name, createdAt: new Date().toISOString() },
+      { ownerId: actor.id, projectId, name, createdAt: new Date().toISOString(), ...(ownerVersion === undefined ? {} : { authVersion: ownerVersion }) },
       expiresAt,
-    );
+    )) throw new PlatformError(409, "Unable to create upload credential; retry");
     await this.audit(actor, "upload-token.created", { projectId, tokenId: id });
     return { id, token, expiresAt };
   }
@@ -586,11 +593,13 @@ export class AuthService {
     if (!user || user.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== user.value.authVersion)
       throw new PlatformError(401, "Sign in again");
     if (user.value.passwordHash) {
-      await this.throttle(sha256(`invite-proof:${actor.id}`));
+      const attemptKey = sha256(`account-proof:${actor.id}`);
+      await this.throttle(attemptKey);
       const [, salt, expected] = user.value.passwordHash.split("$");
       const actual = (await scrypt((password ?? "").slice(0, 257), salt!, 64)) as Buffer;
       if (!expected || !matches(actual.toString("hex"), expected)) throw new PlatformError(401, "Current password is incorrect");
-    } else if (!recentlyAuthenticated(session.value)) throw new PlatformError(401, "Sign in again before accepting");
+      await this.state.remove("login-attempts", attemptKey);
+    } else if (!recentlyAuthenticated(session.value)) throw new PlatformError(401, "Sign in again to verify your account");
     return { email: user.value.email, name: user.value.name, userId: user.value.id, authVersion: user.value.authVersion,
       sessionId: actor.sessionId, provedAt: new Date().toISOString() };
   }
@@ -647,6 +656,7 @@ export class AuthService {
       const policy = (await this.state.get<{ version: number; mode: string; bootstrapComplete: boolean }>("admission", "current"))!;
       if (admin && !policy.value.bootstrapComplete && await this.identities.available()) {
         user = await this.state.transaction!(async (store) => {
+          await touchAdministratorGuard(store);
           const current = (await store.get<typeof policy.value>("admission", "current"))!;
           if (current.value.bootstrapComplete) throw new PlatformError(403, "An invitation is required");
           if (await this.identities.known(identity, store)) throw new PlatformError(409, "Account changed; sign in again");

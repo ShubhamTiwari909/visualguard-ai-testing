@@ -342,7 +342,7 @@ describe("F02 organization access", () => {
         await fetch(`${base}/api/users/${person.user.id}`, {
           method: "PATCH",
           headers: headers(adminCookie, adminCsrf),
-          body: JSON.stringify({ disabled: true }),
+          body: JSON.stringify({ disabled: true, currentPassword: password, expectedVersion: (await state.get("users", person.user.id))!.version }),
         })
       ).status,
     ).toBe(200);
