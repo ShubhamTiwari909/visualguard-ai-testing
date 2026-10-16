@@ -114,10 +114,20 @@ class MongoEvidenceRepository implements EvidenceRepository {
     const next = { ...run, name: normalized, nameVersion: expectedVersion + 1 };
     const result = await this.db.collection("vg_runs").updateOne(
       { id, nameVersion: expectedVersion === 0 ? { $in: [null, 0] } : expectedVersion },
-      { $set: { nameVersion: next.nameVersion, searchText: runSearchText(next), ...(normalized ? { name: normalized } : {}) },
-        ...(normalized ? {} : { $unset: { name: "" } }) },
+      {
+        $set: {
+          nameVersion: next.nameVersion,
+          searchText: runSearchText(next),
+          ...(normalized ? { name: normalized } : {}),
+        },
+        ...(normalized ? {} : { $unset: { name: "" } }),
+      },
     );
-    if (!result.matchedCount) throw new PlatformError(409, "Run name changed or run was removed; refresh before saving again");
+    if (!result.matchedCount)
+      throw new PlatformError(
+        409,
+        "Run name changed or run was removed; refresh before saving again",
+      );
     return next;
   }
   async insertRun(run: Omit<RunDetail, "id">, preserveId?: string) {
@@ -462,52 +472,86 @@ type MongoState = {
 export class MongoStateStore implements StateStore {
   private collection: Collection<MongoState>;
   private transactionCapability?: Promise<boolean>;
-  constructor(private db: Db, private client?: MongoClient, private session?: ClientSession) {
+  constructor(
+    private db: Db,
+    private client?: MongoClient,
+    private session?: ClientSession,
+  ) {
     this.collection = db.collection<MongoState>("vg_state");
   }
   async supportsTransactions(): Promise<boolean> {
     if (this.session) return true;
     if (!this.client) return false;
-    this.transactionCapability ??= this.db.admin().command({ hello: 1 }).then((hello) =>
-      Boolean(typeof hello.logicalSessionTimeoutMinutes === "number" && (hello.setName || hello.msg === "isdbgrid")),
-    ).catch((error) => { this.transactionCapability = undefined; throw error; });
+    this.transactionCapability ??= this.db
+      .admin()
+      .command({ hello: 1 })
+      .then((hello) =>
+        Boolean(
+          typeof hello.logicalSessionTimeoutMinutes === "number" &&
+          (hello.setName || hello.msg === "isdbgrid"),
+        ),
+      )
+      .catch((error) => {
+        this.transactionCapability = undefined;
+        throw error;
+      });
     return this.transactionCapability;
   }
   async transaction<T>(work: (store: StateStore) => Promise<T>): Promise<T> {
     if (this.session) return work(this);
-    if (!await this.supportsTransactions())
-      throw new PlatformError(503, "Account linking requires a MongoDB replica set or sharded deployment");
+    if (!(await this.supportsTransactions()))
+      throw new PlatformError(
+        503,
+        "Account linking requires a MongoDB replica set or sharded deployment",
+      );
     const session = this.client!.startSession();
     try {
-      return await session.withTransaction(() => work(new MongoStateStore(this.db, this.client, session)), {
-        readConcern: { level: "snapshot" }, writeConcern: { w: "majority" }, readPreference: "primary", timeoutMS: 10_000,
-      });
-    } finally { await session.endSession(); }
+      return await session.withTransaction(
+        () => work(new MongoStateStore(this.db, this.client, session)),
+        {
+          readConcern: { level: "snapshot" },
+          writeConcern: { w: "majority" },
+          readPreference: "primary",
+          timeoutMS: 10_000,
+        },
+      );
+    } finally {
+      await session.endSession();
+    }
   }
   private live() {
     return { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date().toISOString() } }] };
   }
   async get<T>(namespace: string, id: string): Promise<StateRecord<T> | undefined> {
-    const row = await this.collection.findOne({ namespace, id, ...this.live() }, { session: this.session });
+    const row = await this.collection.findOne(
+      { namespace, id, ...this.live() },
+      { session: this.session },
+    );
     return row
       ? { id, value: row.value as T, version: row.version, expiresAt: row.expiresAt ?? undefined }
       : undefined;
   }
   async create<T>(namespace: string, id: string, value: T, expiresAt?: string) {
-    await this.collection.deleteOne({
-      namespace,
-      id,
-      expiresAt: { $ne: null, $lte: new Date().toISOString() },
-    }, { session: this.session });
-    try {
-      await this.collection.insertOne({
+    await this.collection.deleteOne(
+      {
         namespace,
         id,
-        value,
-        version: 1,
-        expiresAt: expiresAt ?? null,
-        expiresOn: expiresAt ? new Date(expiresAt) : null,
-      }, { session: this.session });
+        expiresAt: { $ne: null, $lte: new Date().toISOString() },
+      },
+      { session: this.session },
+    );
+    try {
+      await this.collection.insertOne(
+        {
+          namespace,
+          id,
+          value,
+          version: 1,
+          expiresAt: expiresAt ?? null,
+          expiresOn: expiresAt ? new Date(expiresAt) : null,
+        },
+        { session: this.session },
+      );
       return true;
     } catch (error) {
       if (error && typeof error === "object" && "code" in error && error.code === 11000)
@@ -536,17 +580,32 @@ export class MongoStateStore implements StateStore {
   async remove(namespace: string, id: string, version?: number) {
     return (
       (
-        await this.collection.deleteOne({
-          namespace,
-          id,
-          ...(version === undefined ? {} : { version }),
-        }, { session: this.session })
+        await this.collection.deleteOne(
+          {
+            namespace,
+            id,
+            ...(version === undefined ? {} : { version }),
+          },
+          { session: this.session },
+        )
       ).deletedCount === 1
     );
   }
-  async list<T>(namespace: string, prefix = "", limit = 1000, after?: string): Promise<StateRecord<T>[]> {
+  async list<T>(
+    namespace: string,
+    prefix = "",
+    limit = 1000,
+    after?: string,
+  ): Promise<StateRecord<T>[]> {
     const rows = await this.collection
-      .find({ namespace, id: { $regex: `^${regex(prefix)}`, ...(after === undefined ? {} : { $gt: after }) }, ...this.live() }, { session: this.session })
+      .find(
+        {
+          namespace,
+          id: { $regex: `^${regex(prefix)}`, ...(after === undefined ? {} : { $gt: after }) },
+          ...this.live(),
+        },
+        { session: this.session },
+      )
       .sort({ id: 1 })
       .limit(limit)
       .toArray();
@@ -564,10 +623,13 @@ export class MongoStateStore implements StateStore {
       .toArray();
     if (!rows.length) return 0;
     return (
-      await this.collection.deleteMany({
-        _id: { $in: rows.map((row) => row._id) },
-        expiresAt: { $ne: null, $lte: new Date().toISOString() },
-      }, { session: this.session })
+      await this.collection.deleteMany(
+        {
+          _id: { $in: rows.map((row) => row._id) },
+          expiresAt: { $ne: null, $lte: new Date().toISOString() },
+        },
+        { session: this.session },
+      )
     ).deletedCount;
   }
 }

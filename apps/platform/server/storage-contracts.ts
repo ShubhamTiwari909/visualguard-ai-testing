@@ -24,7 +24,12 @@ export interface EvidenceRepository {
 
 export interface PlatformRepository extends EvidenceRepository {
   resolveProjectId(id: string): Promise<string>;
-  updateProject(id: string, name: string, publicId: string, expectedVersion: number): Promise<Project>;
+  updateProject(
+    id: string,
+    name: string,
+    publicId: string,
+    expectedVersion: number,
+  ): Promise<Project>;
 }
 
 export interface StateRecord<T = unknown> {
@@ -43,6 +48,11 @@ export interface StateStore {
   replace<T>(namespace: string, record: StateRecord<T>): Promise<boolean>;
   remove(namespace: string, id: string, version?: number): Promise<boolean>;
   /** Lexicographic keyset pagination; after is an exclusive full record ID. */
-  list<T>(namespace: string, prefix?: string, limit?: number, after?: string): Promise<StateRecord<T>[]>;
+  list<T>(
+    namespace: string,
+    prefix?: string,
+    limit?: number,
+    after?: string,
+  ): Promise<StateRecord<T>[]>;
   pruneExpired(limit?: number): Promise<number>;
 }

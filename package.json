@@ -16,7 +16,7 @@
     "platform:publish": "pnpm --filter @visualguard/platform run publish:run",
     "build": "pnpm --filter visualguard build",
     "test": "pnpm --filter visualguard test",
-    "typecheck": "pnpm --filter visualguard typecheck",
+    "typecheck": "pnpm --filter visualguard typecheck && pnpm --filter @visualguard/platform typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
