@@ -54,7 +54,13 @@ export async function exportEvidence(
       createdAt: new Date().toISOString(),
     });
     for (const project of await repository.projects()) {
-      await write({ type: "project", id: project.id, name: project.name, publicId: project.publicId, aliases: project.aliases });
+      await write({
+        type: "project",
+        id: project.id,
+        name: project.name,
+        publicId: project.publicId,
+        aliases: project.aliases,
+      });
       let offset = 0;
       while (true) {
         const page = await repository.runs({ project: project.id, limit: 100, offset });
@@ -137,18 +143,35 @@ export async function restoreEvidence(
         if (typeof item.id !== "string" || typeof item.name !== "string")
           throw new Error("Invalid backup project");
         const { project, created } = await repository.ensureProject(item.id, item.name);
-        if (project.id !== item.id) throw new Error("Backup project key is reserved by another project's public ID");
+        if (project.id !== item.id)
+          throw new Error("Backup project key is reserved by another project's public ID");
         if (item.publicId !== undefined || item.aliases !== undefined) {
           const publicId = z.string().min(1).max(63).parse(item.publicId);
-          const aliases = z.array(z.string().min(1).max(63)).max(1000).parse(item.aliases ?? [publicId]);
+          const aliases = z
+            .array(z.string().min(1).max(63))
+            .max(1000)
+            .parse(item.aliases ?? [publicId]);
           // Existing destination labels win; a restore must not silently rename a live project.
           if (created) {
             let current = project;
-            for (const alias of [...new Set(aliases.filter((alias) => alias !== publicId)), publicId]) {
-              current = await repository.updateProject(project.id, item.name, alias, current.version ?? 0);
+            for (const alias of [
+              ...new Set(aliases.filter((alias) => alias !== publicId)),
+              publicId,
+            ]) {
+              current = await repository.updateProject(
+                project.id,
+                item.name,
+                alias,
+                current.version ?? 0,
+              );
             }
-          } else if ((project.publicId ?? project.id) !== publicId || aliases.some((alias) => !(project.aliases ?? [project.id]).includes(alias))) {
-            throw new Error("Backup project aliases differ from the destination; restore into a fresh workspace");
+          } else if (
+            (project.publicId ?? project.id) !== publicId ||
+            aliases.some((alias) => !(project.aliases ?? [project.id]).includes(alias))
+          ) {
+            throw new Error(
+              "Backup project aliases differ from the destination; restore into a fresh workspace",
+            );
           }
         }
       } else if (item.type === "object-chunk") {
@@ -225,9 +248,16 @@ export async function restoreEvidence(
           metadata,
           artifacts: run.artifacts,
         });
-        const name = run.name === undefined ? undefined : z.string().trim().min(1).max(120).parse(run.name);
-        const nameVersion = run.nameVersion === undefined ? undefined : z.number().int().nonnegative().parse(run.nameVersion);
-        await repository.insertRun({ ...validated!, importedAt: run.importedAt, name, nameVersion }, run.id);
+        const name =
+          run.name === undefined ? undefined : z.string().trim().min(1).max(120).parse(run.name);
+        const nameVersion =
+          run.nameVersion === undefined
+            ? undefined
+            : z.number().int().nonnegative().parse(run.nameVersion);
+        await repository.insertRun(
+          { ...validated!, importedAt: run.importedAt, name, nameVersion },
+          run.id,
+        );
         runs++;
       } else if (item.type === "end") {
         if (current || item.runs !== runs || item.objects !== objects)

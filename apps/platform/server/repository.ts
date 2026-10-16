@@ -29,7 +29,9 @@ class SqlEvidenceRepository implements EvidenceRepository {
     private legacy?: FileArtifactStore,
   ) {}
   async isDeletedProject(id: string) {
-    return (await this.db.query("SELECT id FROM vg_project_tombstones WHERE id=?", [id])).length > 0;
+    return (
+      (await this.db.query("SELECT id FROM vg_project_tombstones WHERE id=?", [id])).length > 0
+    );
   }
 
   async createProject(id: string, name: string): Promise<Project> {
@@ -152,13 +154,20 @@ class SqlEvidenceRepository implements EvidenceRepository {
   async renameRun(id: string, name: string, expectedVersion: number): Promise<RunDetail> {
     const normalized = normalizeRunName(name);
     return this.db.transaction(async (sql) => {
-      const [row] = await sql.query<{ document: string }>("SELECT document FROM vg_runs WHERE id=?", [id]);
+      const [row] = await sql.query<{ document: string }>(
+        "SELECT document FROM vg_runs WHERE id=?",
+        [id],
+      );
       if (!row) throw new PlatformError(404, "Run not found");
       const run = JSON.parse(row.document) as RunDetail;
       if ((run.nameVersion ?? 0) !== expectedVersion)
         throw new PlatformError(409, "Run name changed; refresh before saving again");
       const next = { ...run, name: normalized, nameVersion: expectedVersion + 1 };
-      await sql.query("UPDATE vg_runs SET document=?, search_text=? WHERE id=?", [JSON.stringify(next), runSearchText(next), id]);
+      await sql.query("UPDATE vg_runs SET document=?, search_text=? WHERE id=?", [
+        JSON.stringify(next),
+        runSearchText(next),
+        id,
+      ]);
       return next;
     });
   }
@@ -174,10 +183,10 @@ class SqlEvidenceRepository implements EvidenceRepository {
   private async removeAccessAndUploads(sql: Sql, project?: string, runId?: string) {
     const escape = (value: string) => value.replace(/[!%_]/g, (character) => `!${character}`);
     // Match thread keys without loading every project's full discussion history into memory.
-    if (project || runId) await sql.query(
-      "DELETE FROM vg_state WHERE namespace='reviews' AND id LIKE ? ESCAPE '!'",
-      [project ? `${escape(project)}:%` : `%:${escape(runId!)}:%`],
-    );
+    if (project || runId)
+      await sql.query("DELETE FROM vg_state WHERE namespace='reviews' AND id LIKE ? ESCAPE '!'", [
+        project ? `${escape(project)}:%` : `%:${escape(runId!)}:%`,
+      ]);
     const rows = await sql.query<{ namespace: string; id: string; value: string }>(
       "SELECT namespace, id, value FROM vg_state WHERE namespace IN ('memberships', 'tokens', 'uploads')",
     );
@@ -378,7 +387,10 @@ class SqlEvidenceRepository implements EvidenceRepository {
 }
 
 export class Repository extends ProjectDirectory {
-  constructor(readonly db: Database, legacy?: FileArtifactStore) {
+  constructor(
+    readonly db: Database,
+    legacy?: FileArtifactStore,
+  ) {
     super(new SqlEvidenceRepository(db, legacy), new SqlStateStore(db));
   }
 }

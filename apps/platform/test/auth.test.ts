@@ -128,7 +128,8 @@ describe("F02 organization access", () => {
     expect((await fetch(threadUrl, { headers: { Cookie: person.cookie } })).status).toBe(403);
     const setRole = async (role: string | null) => {
       const response = await fetch(`${base}/api/projects/private-a/members`, {
-        method: "POST", headers: headers(adminCookie, adminCsrf),
+        method: "POST",
+        headers: headers(adminCookie, adminCsrf),
         body: JSON.stringify({ userId: person.user.id, role }),
       });
       expect(response.status).toBe(200);
@@ -136,31 +137,65 @@ describe("F02 organization access", () => {
     await setRole("viewer");
     const viewer = await (await fetch(threadUrl, { headers: { Cookie: person.cookie } })).json();
     expect(viewer.canReview).toBe(false);
-    const payload = { jobId: viewer.jobId, evidenceDigest: viewer.evidenceDigest,
-      scopeDigest: viewer.scopeDigest, expectedVersion: 0,
-      event: { action: "comment", reason: "Check the checkout action" } };
-    const post = (cookie: string, csrf?: string) => fetch(endpoint, {
-      method: "POST", headers: headers(cookie, csrf), body: JSON.stringify(payload),
-    });
+    const payload = {
+      jobId: viewer.jobId,
+      evidenceDigest: viewer.evidenceDigest,
+      scopeDigest: viewer.scopeDigest,
+      expectedVersion: 0,
+      event: { action: "comment", reason: "Check the checkout action" },
+    };
+    const post = (cookie: string, csrf?: string) =>
+      fetch(endpoint, {
+        method: "POST",
+        headers: headers(cookie, csrf),
+        body: JSON.stringify(payload),
+      });
     expect((await post(person.cookie, person.csrf)).status).toBe(403);
     await setRole("reviewer");
     expect((await post(person.cookie)).status).toBe(403);
-    expect((await fetch(endpoint, { method: "POST", headers: { ...headers(person.cookie, person.csrf), Origin: "https://attacker.test" }, body: JSON.stringify(payload) })).status).toBe(403);
+    expect(
+      (
+        await fetch(endpoint, {
+          method: "POST",
+          headers: { ...headers(person.cookie, person.csrf), Origin: "https://attacker.test" },
+          body: JSON.stringify(payload),
+        })
+      ).status,
+    ).toBe(403);
     const saved = await post(person.cookie, person.csrf);
     expect(saved.status).toBe(200);
     expect((await saved.json()).events[0].actor.id).toBe(person.user.id);
     expect((await post(person.cookie, person.csrf)).status).toBe(409);
-    const people = await (await fetch(`${base}/api/projects/private-a/reviewers`, { headers: { Cookie: person.cookie } })).json();
+    const people = await (
+      await fetch(`${base}/api/projects/private-a/reviewers`, {
+        headers: { Cookie: person.cookie },
+      })
+    ).json();
     expect(people.reviewers.some((item: { id: string }) => item.id === person.user.id)).toBe(true);
     expect(JSON.stringify(people)).not.toContain("scrypt$");
     expect(JSON.stringify(people)).not.toContain("member@example.test");
-    expect((await fetch(`${base}/api/reviews?project=private-b`, { headers: { Cookie: person.cookie } })).status).toBe(403);
-    const token = await (await fetch(`${base}/api/projects/private-a/tokens`, {
-      method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "Reviews must be denied", days: 1 }),
-    })).json();
+    expect(
+      (await fetch(`${base}/api/reviews?project=private-b`, { headers: { Cookie: person.cookie } }))
+        .status,
+    ).toBe(403);
+    const token = await (
+      await fetch(`${base}/api/projects/private-a/tokens`, {
+        method: "POST",
+        headers: headers(adminCookie, adminCsrf),
+        body: JSON.stringify({ name: "Reviews must be denied", days: 1 }),
+      })
+    ).json();
     const upload = { Authorization: `Bearer ${token.token}` };
     expect((await fetch(threadUrl, { headers: upload })).status).toBe(403);
-    expect((await fetch(endpoint, { method: "POST", headers: { ...upload, "Content-Type": "application/json" }, body: JSON.stringify(payload) })).status).toBe(403);
+    expect(
+      (
+        await fetch(endpoint, {
+          method: "POST",
+          headers: { ...upload, "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      ).status,
+    ).toBe(403);
     await setRole(null);
     expect((await fetch(threadUrl, { headers: { Cookie: person.cookie } })).status).toBe(403);
   });
@@ -274,7 +309,7 @@ describe("F02 organization access", () => {
       startedAt: "2026-10-15T10:00:00.000Z",
       durationMs: 0,
       mode: "compare",
-      tool: { version: "2.0.0" },
+      tool: { version: "2.0.0", node: process.versions.node },
       config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" },
       summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 },
       jobs: [],
@@ -399,30 +434,69 @@ describe("F02 organization access", () => {
   });
   it("edits project labels through aliases while preserving roles and upload tokens", async () => {
     const person = await member();
-    const credential = await (await fetch(`${base}/api/projects/private-a/tokens`, {
-      method: "POST", headers: headers(adminCookie, adminCsrf), body: JSON.stringify({ name: "Before rename", days: 1 }),
-    })).json();
+    const credential = await (
+      await fetch(`${base}/api/projects/private-a/tokens`, {
+        method: "POST",
+        headers: headers(adminCookie, adminCsrf),
+        body: JSON.stringify({ name: "Before rename", days: 1 }),
+      })
+    ).json();
     const payload = { name: "Friendly project", publicId: "friendly-a", expectedVersion: 0 };
-    const rename = (cookie: string, csrf?: string) => fetch(`${base}/api/projects/private-a`, {
-      method: "PATCH", headers: headers(cookie, csrf), body: JSON.stringify(payload),
-    });
+    const rename = (cookie: string, csrf?: string) =>
+      fetch(`${base}/api/projects/private-a`, {
+        method: "PATCH",
+        headers: headers(cookie, csrf),
+        body: JSON.stringify(payload),
+      });
     for (const role of ["viewer", "reviewer", "maintainer"]) {
-      await fetch(`${base}/api/projects/private-a/members`, { method: "POST", headers: headers(adminCookie, adminCsrf),
-        body: JSON.stringify({ userId: person.user.id, role }) });
-      expect((await rename(person.cookie, person.csrf)).status).toBe(role === "maintainer" ? 200 : 403);
+      await fetch(`${base}/api/projects/private-a/members`, {
+        method: "POST",
+        headers: headers(adminCookie, adminCsrf),
+        body: JSON.stringify({ userId: person.user.id, role }),
+      });
+      expect((await rename(person.cookie, person.csrf)).status).toBe(
+        role === "maintainer" ? 200 : 403,
+      );
     }
     expect((await rename(person.cookie)).status).toBe(403);
     expect((await rename(person.cookie, person.csrf)).status).toBe(409);
-    expect((await fetch(`${base}/api/projects/friendly-a/members`, { headers: { Cookie: person.cookie } })).status).toBe(200);
-    const lookup = await fetch(`${base}/api/publishing/project?project=friendly-a`, { headers: { Authorization: `Bearer ${credential.token}` } });
+    expect(
+      (
+        await fetch(`${base}/api/projects/friendly-a/members`, {
+          headers: { Cookie: person.cookie },
+        })
+      ).status,
+    ).toBe(200);
+    const lookup = await fetch(`${base}/api/publishing/project?project=friendly-a`, {
+      headers: { Authorization: `Bearer ${credential.token}` },
+    });
     expect(lookup.status).toBe(200);
-    expect(await lookup.json()).toMatchObject({ id: "private-a", name: "Friendly project", publicId: "friendly-a" });
-    expect((await fetch(`${base}/api/projects/friendly-a`, { method: "PATCH", headers: {
-      "Content-Type": "application/json", Authorization: `Bearer ${credential.token}`,
-    }, body: JSON.stringify({ ...payload, expectedVersion: 1 }) })).status).toBe(403);
-    const cli = await createDashboardProject({ id: "friendly-a", name: "Ignored", server: base, env: {
-      VISUALGUARD_ADMIN_EMAIL: "admin@example.test", VISUALGUARD_ADMIN_PASSWORD: password,
-    } });
+    expect(await lookup.json()).toMatchObject({
+      id: "private-a",
+      name: "Friendly project",
+      publicId: "friendly-a",
+    });
+    expect(
+      (
+        await fetch(`${base}/api/projects/friendly-a`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${credential.token}`,
+          },
+          body: JSON.stringify({ ...payload, expectedVersion: 1 }),
+        })
+      ).status,
+    ).toBe(403);
+    const cli = await createDashboardProject({
+      id: "friendly-a",
+      name: "Ignored",
+      server: base,
+      env: {
+        VISUALGUARD_ADMIN_EMAIL: "admin@example.test",
+        VISUALGUARD_ADMIN_PASSWORD: password,
+      },
+    });
     expect(cli.created).toBe(false);
     expect(cli.project.id).toBe("private-a");
     expect(cli.project.name).toBe("Friendly project");
@@ -584,7 +658,7 @@ describe("F02 organization access", () => {
       startedAt: "2026-10-15T10:00:00.000Z",
       durationMs: 0,
       mode: "compare",
-      tool: { version: "2.0.0" },
+      tool: { version: "2.0.0", node: process.versions.node },
       config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" },
       summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 },
       jobs: [],
@@ -621,10 +695,12 @@ describe("F02 organization access", () => {
         body: JSON.stringify({ confirmation }),
       });
     await role("reviewer");
-    const rename = (csrf?: string, expectedVersion = 0, name = "Renamed run") => fetch(`${base}/api/runs/${run.id}`, {
-      method: "PATCH", headers: headers(person.cookie, csrf),
-      body: JSON.stringify({ name, expectedVersion }),
-    });
+    const rename = (csrf?: string, expectedVersion = 0, name = "Renamed run") =>
+      fetch(`${base}/api/runs/${run.id}`, {
+        method: "PATCH",
+        headers: headers(person.cookie, csrf),
+        body: JSON.stringify({ name, expectedVersion }),
+      });
     expect((await rename(person.csrf)).status).toBe(403);
     expect((await remove()).status).toBe(403);
     await role("maintainer");

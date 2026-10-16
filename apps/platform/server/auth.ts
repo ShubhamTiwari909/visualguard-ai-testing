@@ -453,17 +453,22 @@ export class AuthService {
   private oidcConfiguration?: Promise<import("openid-client").Configuration>;
   private oidc() {
     const settings = this.oidcSettings;
-    if (!settings)
-      throw new PlatformError(400, "Single sign-on is not configured");
-    this.oidcConfiguration ??= import("openid-client").then(async (client) => {
-      const config = await client.discovery(new URL(settings.issuer), settings.clientId, settings.clientSecret);
-      if (settings.provider === "google") client.enableNonRepudiationChecks(config);
-      return config;
-    }).catch((error) => {
-      // A transient provider outage must not poison discovery until the next restart.
-      this.oidcConfiguration = undefined;
-      throw error;
-    });
+    if (!settings) throw new PlatformError(400, "Single sign-on is not configured");
+    this.oidcConfiguration ??= import("openid-client")
+      .then(async (client) => {
+        const config = await client.discovery(
+          new URL(settings.issuer),
+          settings.clientId,
+          settings.clientSecret,
+        );
+        if (settings.provider === "google") client.enableNonRepudiationChecks(config);
+        return config;
+      })
+      .catch((error) => {
+        // A transient provider outage must not poison discovery until the next restart.
+        this.oidcConfiguration = undefined;
+        throw error;
+      });
     return this.oidcConfiguration;
   }
   async beginOidc(response: ServerResponse) {
@@ -560,8 +565,12 @@ export class MemoryStateStore implements StateStore {
   }
   async replace<T>(namespace: string, record: StateRecord<T>) {
     const prior = this.entries.get(`${namespace}:${record.id}`);
-    if (!prior || prior.version !== record.version ||
-      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())) return false;
+    if (
+      !prior ||
+      prior.version !== record.version ||
+      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())
+    )
+      return false;
     this.entries.set(
       `${namespace}:${record.id}`,
       structuredClone({ ...record, version: record.version + 1 }),
@@ -579,9 +588,13 @@ export class MemoryStateStore implements StateStore {
   }
   async list<T>(namespace: string, prefix = "", limit = 1000, after?: string) {
     const keys = [...this.entries.keys()]
-      .filter((key) => key.startsWith(`${namespace}:${prefix}`) &&
-        (after === undefined || key.slice(namespace.length + 1) > after) &&
-        (!this.entries.get(key)!.expiresAt || this.entries.get(key)!.expiresAt! > new Date().toISOString()))
+      .filter(
+        (key) =>
+          key.startsWith(`${namespace}:${prefix}`) &&
+          (after === undefined || key.slice(namespace.length + 1) > after) &&
+          (!this.entries.get(key)!.expiresAt ||
+            this.entries.get(key)!.expiresAt! > new Date().toISOString()),
+      )
       .sort()
       .slice(0, limit);
     const rows = await Promise.all(
