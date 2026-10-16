@@ -34,7 +34,9 @@ Use **People & integrations** to create accounts, assign project roles, disable 
 
 ## Optional company login
 
-For the first Google sign-in phase, follow the [Google setup and local pilot guide](../../docs/GOOGLE-SIGN-IN.md). Use the existing OIDC variable names with issuer `https://accounts.google.com`; the login screen shows Sign in with Google only with complete configuration. This phase retains administrator-assigned project access; invitations and password/Google account linking follow separately.
+For Google sign-in, follow the [Google setup and local pilot guide](../../docs/GOOGLE-SIGN-IN.md). Use the existing OIDC variable names with issuer `https://accounts.google.com`; the login screen shows Sign in with Google only with complete configuration. Project access remains administrator-assigned; invitations follow separately.
+
+P02 implements [explicit Google linking](../../docs/GOOGLE-ACCOUNT-LINKING.md) with transactional identity ownership, legacy-ID migration, current-account proof, and session revocation. The same Google settings apply. No identity is reassigned from another existing account or merged by email. SQLite/PostgreSQL support the transaction boundary; MongoDB linking requires a replica set or sharded deployment. Existing standalone MongoDB sign-in/evidence/review workflows remain supported. Invitations and broader user administration stay in later phases.
 
 Set `VISUALGUARD_OIDC_ISSUER`, `VISUALGUARD_OIDC_CLIENT_ID`, and `VISUALGUARD_OIDC_CLIENT_SECRET`, then register `<PUBLIC_URL>/api/auth/callback` with the provider. The client uses authorization-code flow, PKCE, state, and nonce verification. Password login can remain available for the bootstrap administrator.
 

@@ -3,6 +3,7 @@ import { mutation, useSession } from "./auth";
 import type { Project } from "../shared/contracts";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { ProjectNameEditor } from "./naming";
+import { AccountIdentity } from "./identities";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
 type Member = { userId: string; role: string };
@@ -113,6 +114,9 @@ export function Settings({
         <p role="status" className="vg-settings-note">
           {message}
         </p>
+      )}
+      {session.access === "login" && (
+        <AccountIdentity />
       )}
       {session.access === "login" && (
         <section className="vg-panel vg-settings-section">

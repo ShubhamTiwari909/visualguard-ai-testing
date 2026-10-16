@@ -35,6 +35,9 @@ export interface StateRecord<T = unknown> {
 }
 /** Compare-and-swap makes sessions, revocation and upload progress work across instances. */
 export interface StateStore {
+  /** Optional multi-record boundary. Standalone MongoDB deliberately reports false. */
+  supportsTransactions?(): Promise<boolean>;
+  transaction?<T>(work: (store: StateStore) => Promise<T>): Promise<T>;
   get<T>(namespace: string, id: string): Promise<StateRecord<T> | undefined>;
   create<T>(namespace: string, id: string, value: T, expiresAt?: string): Promise<boolean>;
   replace<T>(namespace: string, record: StateRecord<T>): Promise<boolean>;
