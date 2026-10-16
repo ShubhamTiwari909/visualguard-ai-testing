@@ -623,6 +623,8 @@ describe("OIDC configuration", () => {
     "https://name:password@identity.example.test",
     "https://identity.example.test?secret=x",
     "https://identity.example.test#fragment",
+    "https://identity.example.test?",
+    "https://identity.example.test#",
   ])("rejects an invalid issuer configuration: %s", (issuer) => {
     expect(() => oidcSettings({ ...complete, VISUALGUARD_OIDC_ISSUER: issuer })).toThrow(
       "VISUALGUARD_OIDC_ISSUER",
