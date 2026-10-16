@@ -153,3 +153,6 @@ The local account builder is named `prepareLocalAccount`: it returns a user
 record, not a password. This avoids CodeQL classifying every returned field
 (including email and session-routing data) as a password source. Actual password
 hashing remains salted scrypt, and no scanning rule is suppressed.
+
+Isolated MongoDB tests preserve the driver's resolved authentication database
+(including SRV settings) while selecting a disposable data database.

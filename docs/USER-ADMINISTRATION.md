@@ -120,3 +120,8 @@ After the additional review corrections, the combined platform passed **369
 tests in 18 suites**, with **22 intentional backend-specific skips**, using live
 PostgreSQL, replica-set MongoDB, and standalone MongoDB. Lint, format,
 CLI/report/platform type checks, and the dashboard build passed.
+
+The final late-review run passed **376 tests in 18 suites** with the same **22
+intentional skips**, including audit-failure session rejection, omitted Google
+verification claims, and exact same-account session binding. Formatting, lint,
+CLI/report/platform type checks, and the dashboard build passed.
