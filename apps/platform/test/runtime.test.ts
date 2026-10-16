@@ -30,7 +30,9 @@ describe("standalone hosts", () => {
     cleanups.push(runtime.close);
     expect((await fetch(`${runtime.url}/api/health`)).status).toBe(200);
     expect(await (await fetch(`${runtime.url}/settings`)).text()).toContain("Dashboard test");
-    expect(await (await fetch(`${runtime.url}/reviews`)).text()).toContain("Dashboard test");
+    const reviews = await fetch(`${runtime.url}/reviews`, { redirect: "manual" });
+    expect(reviews.status).toBe(200);
+    expect(await reviews.text()).toContain("Dashboard test");
     const rewritten = await (await fetch(`${runtime.url}/api/dashboard?__vg_path=projects`)).json();
     expect(rewritten.projects).toEqual([]);
   });
@@ -49,6 +51,7 @@ describe("standalone hosts", () => {
     const config = JSON.parse(await readFile(join(vercel, "vercel.json"), "utf8"));
     expect(config.outputDirectory).toBe("public");
     expect(config.rewrites[0].destination).toContain("__vg_path");
+    expect(config.rewrites).toContainEqual({ source: "/reviews", destination: "/index.html" });
     expect(await readFile(join(vercel, "api/dashboard.mjs"), "utf8")).toContain(
       'from "visualguard/dashboard"',
     );

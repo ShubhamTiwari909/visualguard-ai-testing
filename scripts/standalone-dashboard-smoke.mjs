@@ -62,7 +62,7 @@ try {
   };
   server = await dashboard.startDashboard({ port: 0, host: "127.0.0.1", env });
   assert.equal((await fetch(`${server.url}/api/health`)).status, 200);
-  const reviews = await fetch(`${server.url}/reviews`);
+  const reviews = await fetch(`${server.url}/reviews`, { redirect: "manual" });
   assert.equal(reviews.status, 200);
   assert.match(await reviews.text(), /<div id="root">/);
   const html = await (await fetch(server.url)).text();
@@ -147,6 +147,14 @@ try {
       JSON.parse(await readFile(join(out, "package.json"), "utf8")).dependencies.visualguard,
       "file:./visualguard.tgz",
     );
+    if (target === "vercel") {
+      const config = JSON.parse(await readFile(join(out, "vercel.json"), "utf8"));
+      assert.ok(
+        config.rewrites.some(
+          (rewrite) => rewrite.source === "/reviews" && rewrite.destination === "/index.html",
+        ),
+      );
+    }
   }
   await dashboard.copyDashboardAssets(join(consumer, "public"));
   await stat(join(consumer, "public/index.html"));

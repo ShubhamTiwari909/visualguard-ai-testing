@@ -2,7 +2,7 @@
 
 **Prepared:** 15 October 2026.  
 **Release scope:** F01 dashboard/history, F02 access, F06 remote publishing, database portability, installed-package commands, and deployment scaffolds.  
-**Release status:** implementation and local release-candidate validation are complete. The npm release and live Cloud Run/Vercel deployments have not been performed. Formatting, lint, and type checks remain deferred until after F36 under the user's instruction.
+**Release status:** 3.1.0 is published on npm. Release formatting, lint, type checks, builds, and local validation passed; see the [release validation report](RELEASE-3.1.0-VALIDATION.md). Live Cloud Run/Vercel deployments have not been validated.
 
 **Deletion extension:** project/run deletion has since been added with confirmation and reference-aware cleanup. No checks or builds were run for that follow-up, as requested. See [deletion usage and the manual checklist](DASHBOARD-DELETION.md); the validation record below describes the preceding dashboard implementation.
 
@@ -382,6 +382,8 @@ npx visualguard dashboard init --target vercel \
 The tarball is copied into the generated project and referenced through `file:./visualguard.tgz`, so the deployment does not accidentally install an older registry release.
 
 The generator creates a small `package.json`, `.env.example`, `api/dashboard.mjs`, and `vercel.json`. It refuses to overwrite a nonempty directory. The Vercel build copies the package's prebuilt UI into `public/`; the Node function serves the API. Rewrites route browser pages to the UI and preserve nested API paths/queries for the shared handler.
+
+For scaffolds generated with 3.1.0, add `{ "source": "/reviews", "destination": "/index.html" }` to the `rewrites` array in `vercel.json` before any catch-all rule, then redeploy. This enables opening or refreshing the review inbox directly. The next patch includes this rule in newly generated scaffolds; upgrading the package does not modify an existing `vercel.json`.
 
 In Vercel:
 

@@ -21,6 +21,7 @@ export async function startDevDashboard() {
       if (
         path === "/" ||
         path === "/settings" ||
+        path === "/reviews" ||
         /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
       ) {
         const html = await vite!.transformIndexHtml(path, await readFile(index, "utf8"));
