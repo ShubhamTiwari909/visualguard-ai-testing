@@ -518,8 +518,8 @@ export class AuthService {
     if (!row || row.value.disabled || !expected || !matches(actual.toString("hex"), expected))
       throw new PlatformError(401, "Email or password is incorrect");
     await this.state.remove("login-attempts", key);
-    await this.issueSession(row.value, response, "password");
     await this.audit({ id: row.value.id }, "user.login", {});
+    await this.issueSession(row.value, response, "password");
     return safeUser(row.value);
   }
   async issueSession(user: User, response: ServerResponse, authentication: "password" | "oidc") {
@@ -656,12 +656,15 @@ export class AuthService {
   }
   async audit(actor: Pick<Actor, "id">, action: string, details: Record<string, unknown>) {
     const id = `${String(9_999_999_999_999 - Date.now()).padStart(13, "0")}:${randomUUID()}`;
-    await this.state.create(
-      "audit",
-      id,
-      { actorId: actor.id, action, details, at: new Date().toISOString() },
-      expires(90 * 86400),
-    );
+    if (
+      !(await this.state.create(
+        "audit",
+        id,
+        { actorId: actor.id, action, details, at: new Date().toISOString() },
+        expires(90 * 86400),
+      ))
+    )
+      throw new PlatformError(503, "Unable to record account action; retry later");
   }
 
   private oidcConfiguration?: Promise<import("openid-client").Configuration>;
@@ -955,8 +958,8 @@ export class AuthService {
       const candidate = user;
       user = await this.legacyAdministrator(user.id, async () => candidate);
     }
-    await this.issueSession(user, response, "oidc");
     await this.audit({ id: user.id }, "user.login", { provider: this.oidcProvider });
+    await this.issueSession(user, response, "oidc");
     response.writeHead(302, { Location: "/" });
     response.end();
   }

@@ -50,6 +50,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       })
       .catch((problem: Error) => setError(problem.message));
   useEffect(() => {
+    const current = new URL(window.location.href);
+    if (current.searchParams.has("signin_error")) {
+      current.searchParams.delete("signin_error");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${current.pathname}${current.search}${current.hash}`,
+      );
+    }
     const expired = () => {
       void load();
     };

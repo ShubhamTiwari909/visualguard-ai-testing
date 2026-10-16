@@ -54,6 +54,11 @@ function filters(params: URLSearchParams): RunFilters {
   return result;
 }
 
+const logOidcFailure = (stage: "start" | "callback", error: unknown) => {
+  if (!(error instanceof PlatformError) || error.status >= 500)
+    console.error(`Platform OIDC ${stage} failed`);
+};
+
 export interface ApiOptions {
   state?: StateStore;
   env?: NodeJS.ProcessEnv;
@@ -129,6 +134,7 @@ export function createApi(
             json(response, 429, { error: error.message });
             return true;
           }
+          logOidcFailure("start", error);
           response.writeHead(302, { Location: "/?signin_error=oidc" });
           response.end();
         }
@@ -141,7 +147,8 @@ export function createApi(
           await auth.finishOidc(request, response, url, (binding, identity, profile) =>
             onboarding.complete(request, binding, identity, profile),
           );
-        } catch {
+        } catch (error) {
+          logOidcFailure("callback", error);
           // Provider errors can contain authorization codes or credential details.
           // Send a fixed error code to the login page, never the provider response.
           response.writeHead(302, {

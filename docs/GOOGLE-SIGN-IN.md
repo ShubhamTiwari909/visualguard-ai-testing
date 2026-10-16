@@ -112,3 +112,10 @@ pnpm --filter @visualguard/platform exec vitest run \
 Validation on 16 October 2026 using Node 22.14: the three focused suites passed **45 tests**, including SQLite reopening and Google/generic OIDC cases, and `pnpm platform:build` passed. A real Google browser pilot requires operator credentials and consent/client setup; it has not been run. Live PostgreSQL/MongoDB identity flows and the full invitation release are not established by the simulated-provider tests. The merge review reran all 45 focused tests and the dashboard build against the released dashboard baseline. With the operator’s explicit approval to lift the deferred-check restriction for PR cleanup, repository formatting, lint, and CLI/platform type checks also passed.
 
 P02 implements the [transactional identity foundation and explicit linking](GOOGLE-ACCOUNT-LINKING.md). Next, P03 adds invitations and admission migration; P04 expands user administration; P05 completes operational rollout. Keep each requested feature's implementation, documentation and focused tests in its own commit.
+
+Final review requires the login audit write to succeed before either password or
+OIDC login can issue a session cookie; rejected/failed audit writes leave the
+browser unauthenticated by that attempt. Unexpected OIDC failures log only a
+fixed operation marker, without provider/storage error details. The login page
+consumes the `signin_error` parameter once while preserving other URL state.
+Google tests also reject an omitted `email_verified` claim.
