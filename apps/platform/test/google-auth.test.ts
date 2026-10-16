@@ -34,7 +34,7 @@ describe("Google sign-in and identity continuity", () => {
     vi.stubGlobal("fetch", provider.fetch);
     state = new MemoryStateStore();
     env = {
-      VISUALGUARD_AUTH_MODE: "login", VISUALGUARD_PUBLIC_URL: "https://dashboard.example.test",
+      VISUALGUARD_USER_ADMISSION: "legacy", VISUALGUARD_AUTH_MODE: "login", VISUALGUARD_PUBLIC_URL: "https://dashboard.example.test",
       VISUALGUARD_OIDC_ISSUER: provider.issuer, VISUALGUARD_OIDC_CLIENT_ID: provider.clientId,
       VISUALGUARD_OIDC_CLIENT_SECRET: provider.clientSecret, VISUALGUARD_ADMIN_EMAIL: "owner@example.test",
     };

@@ -30,6 +30,10 @@ describe("standalone hosts", () => {
     cleanups.push(runtime.close);
     expect((await fetch(`${runtime.url}/api/health`)).status).toBe(200);
     expect(await (await fetch(`${runtime.url}/settings`)).text()).toContain("Dashboard test");
+    const invitation = await fetch(`${runtime.url}/invite`);
+    expect(await invitation.text()).toContain("Dashboard test");
+    expect(invitation.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(invitation.headers.get("cache-control")).toBe("no-store");
     const rewritten = await (await fetch(`${runtime.url}/api/dashboard?__vg_path=projects`)).json();
     expect(rewritten.projects).toEqual([]);
   });
@@ -46,6 +50,9 @@ describe("standalone hosts", () => {
       version: "2.1.0",
     });
     const config = JSON.parse(await readFile(join(vercel, "vercel.json"), "utf8"));
+    expect(config.rewrites).toContainEqual({ source: "/invite", destination: "/index.html" });
+    expect(config.headers).toContainEqual({ source: "/invite", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "no-store" }] });
+    expect(await readFile(join(vercel, ".env.example"), "utf8")).toContain("VISUALGUARD_USER_ADMISSION=invite");
     expect(config.outputDirectory).toBe("public");
     expect(config.rewrites[0].destination).toContain("__vg_path");
     expect(await readFile(join(vercel, "api/dashboard.mjs"), "utf8")).toContain(

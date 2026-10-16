@@ -45,11 +45,11 @@ The [CLI project creation guide](../../docs/DASHBOARD-CLI-PROJECTS.md) covers `p
 
 ## Shared hosting
 
-Google sign-in is available as the first phase of team onboarding. See the [Google sign-in guide](../../docs/GOOGLE-SIGN-IN.md) for the required environment values, OAuth callback registration, recovery administrator, local setup, and phase boundaries. New Google members need administrator-assigned project access; invitations follow later.
+Google sign-in is available as the first phase of team onboarding. See the [Google sign-in guide](../../docs/GOOGLE-SIGN-IN.md) for the required environment values, OAuth callback registration, recovery administrator, local setup, and phase boundaries. P03 adds [invitations and invite-only admission](../../docs/TEAM-INVITATIONS.md); unknown identities join through an administrator-created link. Existing installations must explicitly choose `VISUALGUARD_USER_ADMISSION=invite|legacy` when upgrading.
 
-P02 now adds [explicit Google account linking and identity continuity](../../docs/GOOGLE-ACCOUNT-LINKING.md) under Your sign-in methods. It preserves account IDs and review authorship, requires current-account proof, and rotates sessions after linking. SQLite/PostgreSQL and transactional MongoDB are supported; standalone MongoDB keeps ordinary sign-in while reporting linking unavailable. Invitations remain P03 work.
+P02 now adds [explicit Google account linking and identity continuity](../../docs/GOOGLE-ACCOUNT-LINKING.md) under Your sign-in methods. It preserves account IDs and review authorship, requires current-account proof, and rotates sessions after linking. SQLite/PostgreSQL and transactional MongoDB are supported; standalone MongoDB keeps ordinary sign-in while reporting linking unavailable. P03 now adds invitation management and atomic recipient acceptance on transactional storage.
 
-Configure four settings: `VISUALGUARD_DATABASE_URL`, `VISUALGUARD_PUBLIC_URL`, `VISUALGUARD_ADMIN_EMAIL`, and `VISUALGUARD_ADMIN_PASSWORD`. PostgreSQL and MongoDB are selected from the URL automatically. The hosted public origin enables login and project permissions. Use a host secret store for credentials.
+Configure the database, public URL, administrator credentials, and admission policy: `VISUALGUARD_DATABASE_URL`, `VISUALGUARD_PUBLIC_URL`, `VISUALGUARD_ADMIN_EMAIL`, `VISUALGUARD_ADMIN_PASSWORD`, and `VISUALGUARD_USER_ADMISSION=invite`. PostgreSQL and MongoDB are selected from the URL automatically. The hosted public origin enables login and project permissions. Use a host secret store for credentials.
 
 ```sh
 npx visualguard dashboard init --target vercel --out visualguard-dashboard

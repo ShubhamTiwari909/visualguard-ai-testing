@@ -1,6 +1,8 @@
 import type { Project, RunDetail, RunFilters } from "../shared/contracts.js";
 import type { EvidenceRepository, PlatformRepository, StateStore } from "./storage-contracts.js";
 import { PlatformError } from "./errors.js";
+import type { ProjectGuard } from "./invitations.js";
+import { randomUUID } from "node:crypto";
 import { projectId } from "./validation.js";
 
 interface Profile { name: string; publicId: string; aliases: string[] }
@@ -97,7 +99,19 @@ export class ProjectDirectory implements PlatformRepository {
   deleteRun(id: string, expectedProject?: string) { return this.evidence.deleteRun(id, expectedProject); }
   async deleteProject(id: string, expectedRuns: number) {
     id = await this.resolveProjectId(id);
-    const result = await this.evidence.deleteProject(id, expectedRuns);
+    await this.names.create<ProjectGuard>("invitation-projects", id, { status: "active" });
+    const guard = await this.names.get<ProjectGuard>("invitation-projects", id);
+    if (!guard || guard.value.status !== "active") throw new PlatformError(409, "Project deletion is already in progress");
+    guard.value = { status: "deleting", operation: randomUUID() };
+    if (!await this.names.replace("invitation-projects", guard)) throw new PlatformError(409, "Project changed; retry deletion");
+    let result;
+    try { result = await this.evidence.deleteProject(id, expectedRuns); }
+    catch (error) {
+      // A failed confirmation has made no destructive changes. Other failures stay closed for recovery.
+      if (error instanceof PlatformError && error.status === 409 && !await this.evidence.isDeletedProject(id))
+        await this.names.replace("invitation-projects", { ...guard, version: guard.version + 1, value: { status: "active" } });
+      throw error;
+    }
     await this.names.remove("project-profiles", id);
     // Reservations deliberately survive deletion, preventing old aliases from changing owners.
     return result;

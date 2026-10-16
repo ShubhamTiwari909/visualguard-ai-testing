@@ -3,7 +3,7 @@
 **Status:** phased implementation starting 16 October 2026; see the delivery phases below for the current boundary. The original planning commit contained no onboarding implementation.
 **Prepared:** 15 October 2026.
 **Roadmap:** an extension of [F02 identity and permissions](ORGANIZATION-GROWTH-PLAN.md#62-f02--identity-permissions-and-accountable-actors), integrated with [F03 collaborative review](COLLABORATIVE-REVIEW.md).
-**Implementation branches:** `codex/team-onboarding` for P01; P02 is stacked on it as `codex/team-onboarding-p02` while PR #20 remains open. P01 began from updated `main` after PR #13 merged. Keep implementation, documentation, and focused tests together for each feature commit. The original plan and phased delivery update precede implementation commits.
+**Implementation branches:** `codex/team-onboarding` for P01; P02 is stacked on it as `codex/team-onboarding-p02` while PR #20 remains open. P03 is stacked on P02 as `codex/team-onboarding-p03` while PR #21 remains open. P01 began from updated `main` after PR #13 merged. Keep implementation, documentation, and focused tests together for each feature commit. The original plan and phased delivery update precede implementation commits.
 
 ## Delivery phases agreed on 16 October 2026
 
@@ -13,7 +13,7 @@ The user requested Google sign-in first, on a separate branch from merged `main`
 | --- | --- | --- |
 | P01, implemented | Google sign-in, complete configuration validation, a named login entry point, safe retry after provider errors, exact callback setup, and focused protocol/access tests | Retain current project-role assignment. New Google members have no project access. Real Google pilot needs operator credentials. |
 | P02, implemented | Transactional identity foundation and explicit linking (identity boundary of T01/T02) | Preserve legacy actors and IDs; SQLite/PostgreSQL/MongoDB replica-set rollback/uniqueness races tested. Existing account ownership cannot be merged by email. Invitation-specific guards remain P03 work. |
-| P03 | Invitation management and recipient acceptance (remaining T03/T04/T05) | Add invite-only admission with migration controls; implement copyable single-use links and atomic membership grants. |
+| P03, implemented | Invitation management and recipient acceptance (remaining T03/T04/T05) | Add invite-only admission with migration controls; implement copyable single-use links and atomic membership grants. |
 | P04 | Workspace user administration (T06) | User lifecycle, role management, revocation, and last-admin protection with focused tests. |
 | P05 | Operational rollout (T07) | Audit UI, recovery, migrations, live adapter and Google pilot evidence, and release documentation. |
 
@@ -22,6 +22,8 @@ P01 is an administrator-managed pilot: it retains the existing ability to create
 P01 implementation and setup: [Google sign-in guide](GOOGLE-SIGN-IN.md). On 16 October 2026, 45 focused authentication tests and the dashboard UI build passed. Operator-supplied Google credentials are still required for the live browser pilot. Formatting, lint, and type checks remain deferred.
 
 P02 setup, migration and validation: [Google account linking](GOOGLE-ACCOUNT-LINKING.md). On 16 October 2026, 138 focused tests passed against SQLite, PostgreSQL, a MongoDB replica set and standalone compatibility; three non-Mongo executions of the MongoDB-only snapshot test were intentionally skipped. The UI build passed. New external users on transaction-capable stores use opaque canonical IDs; password and legacy actor IDs remain unchanged. This phase adds no application environment variables and does not implement invitations, pending-invite indexes, project-deletion guards, or workspace last-admin administration ahead of their phases.
+
+P03 setup, migration, manual checks, storage and limitations: [Invitations and admission](TEAM-INVITATIONS.md). On 16 October 2026, 233 focused tests passed across SQLite, PostgreSQL, a MongoDB replica set and standalone compatibility, with 16 intentional backend-specific skips (Mongo-only snapshot scenarios and the in-memory fake's evidence-deletion scenario). The UI build passed. Real-browser invitation creation, fragment removal, existing-password verification and acceptance were checked against a disposable local workspace. Only `VISUALGUARD_USER_ADMISSION=invite|legacy` is new; use the existing Google client credentials. Live Google browser acceptance still needs operator credentials. Expanded admin/last-admin controls remain P04; formatting, lint and type checks remain deferred.
 
 ## 1. Intended outcome and release boundary
 
@@ -315,4 +317,4 @@ These are recommended defaults for planning, not reasons to block PR #13:
 
 An invited colleague can join with Google, see only authorized projects, and participate according to role. Admins can control admission, revoke access, and recover administration. Expired/reused links, competing requests, disabled accounts, and project deletion cannot create unintended access. Identity continuity and F03 attribution survive migration. SQLite, PostgreSQL, and transaction-capable MongoDB pass the same acceptance contract, with unsupported configurations explained before enabling onboarding. Documentation includes local setup, hosted setup, backup/recovery, limitations, and actual validation results.
 
-P01/P02 implementation and focused validation are recorded in the delivery-phase update above. The real Google browser pilot, invitation-specific migration/grants, email delivery, expanded user administration, and the remaining onboarding acceptance tests are still outstanding for their phases.
+P01/P02/P03 implementation and focused validation are recorded in the delivery-phase update above. The real Google browser pilot, automatic email delivery (out of scope), expanded user administration, and the remaining onboarding acceptance tests are still outstanding for their phases.

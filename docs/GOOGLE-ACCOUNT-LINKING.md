@@ -1,5 +1,7 @@
 # Phase 2 — identity continuity and explicit Google linking
 
+**P03 upgrade:** follow [Invitations and admission](TEAM-INVITATIONS.md) for current setup and migration behavior. Fresh hosted installs now default to invite-only; existing installs must explicitly choose an admission policy. The descriptions below record the earlier phase boundary.
+
 P02 adds a transactional identity repository and **People & integrations → Your sign-in methods → Link Google account**. It connects a fresh Google identity to the account you are already using, preserving that account's ID, roles, project memberships, and existing review authorship. It does not merge two existing accounts or implement invitations.
 
 P02 is on `codex/team-onboarding-p02`, stacked on the P01 Google sign-in branch while PR #20 remains open. The [delivery plan](TEAM-ONBOARDING-PLAN.md#delivery-phases-agreed-on-16-october-2026) keeps invitations/admission in P03 and expanded workspace administration in P04.

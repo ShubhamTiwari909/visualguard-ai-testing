@@ -66,6 +66,42 @@ export class Identities {
   async googleLinked(userId: string) {
     return Boolean(await this.state.get("google-identities", userId));
   }
+  async known(identity: ExternalIdentity, store: StateStore = this.state): Promise<User | undefined> {
+    const mapping = await this.mapping(store, identity);
+    if (mapping) return (await this.account(store, mapping.value.userId)).value;
+    const legacy = await store.get<User>("users", legacyIdentityId(identity));
+    if (legacy?.value.disabled) throw new PlatformError(403, "Account is unavailable");
+    return legacy?.value;
+  }
+  /** Called inside invitation acceptance; never opens a nested transaction. */
+  async enroll(store: StateStore, identity: ExternalIdentity, profile: Pick<User, "email" | "name">) {
+    await this.schema(store);
+    const known = await this.known(identity, store);
+    if (known) {
+      if (!await this.mapping(store, identity)) {
+        const account = await this.account(store, known.id);
+        if (!await store.replace("users", account)) throw new PlatformError(409, "Account changed; retry");
+        await this.bind(store, identity, known.id);
+        await this.audit(store, known.id, "identity.migrated", identity.provider);
+      }
+      return known;
+    }
+    // Email is a routing hint, never proof of ownership of an existing account.
+    let after: string | undefined;
+    for (;;) {
+      const page = await store.list<User>("users", "", 100, after);
+      if (page.some((row) => row.value.email.trim().toLowerCase() === profile.email))
+        throw new PlatformError(409, "Sign in with your existing account and link Google in Settings first");
+      if (page.length < 100) break;
+      after = page.at(-1)!.id;
+    }
+    const user: User = { ...profile, id: `user-${randomUUID()}`, role: "member", disabled: false,
+      authVersion: 1, createdAt: new Date().toISOString() };
+    if (!await store.create("users", user.id, user)) throw new PlatformError(409, "Account changed; retry");
+    await this.bind(store, identity, user.id);
+    await this.audit(store, user.id, "identity.created", identity.provider);
+    return user;
+  }
   async resolve(identity: ExternalIdentity, profile: Pick<User, "email" | "name" | "role">): Promise<User> {
     const existing = await this.mapping(this.state, identity);
     if (existing) return (await this.account(this.state, existing.value.userId)).value;
