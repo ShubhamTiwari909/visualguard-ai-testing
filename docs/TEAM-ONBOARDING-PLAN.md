@@ -168,16 +168,16 @@ Cancellation and acceptance race on the same versioned invitation: exactly one t
 
 Names below describe planned logical records, not changes already implemented.
 
-| Record                   | Key fields / invariants                                                                                                                 |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Canonical user           | Stable `id`, name, email, `admin                                                                                                        | member`, disabled flag, auth version, created/updated times; existing IDs remain valid |
-| External identity        | Unique provider/validated issuer/subject key, canonical user ID, link time; one external identity maps to exactly one user              |
-| Invitation               | ID, token hash, normalized target email, project, role, creator ID, created/expiry times, `pending                                      | accepted                                                                               | cancelled`, version, accepted user/time or cancellation metadata |
-| Pending-invitation index | Unique normalized email/project key, pending invitation ID/version; transactional update with create/cancel/accept/reissue              |
-| Onboarding attempt       | Hashed browser handle, invitation ID/version, operation (`join                                                                          | link`), OIDC correlation, expiry, optional validated candidate identity                |
-| Membership               | Existing `userId:projectId` key; role, update/version metadata sufficient for conflict checking                                         |
-| Admin guard              | One workspace guard/version touched by promotions, demotions, disabling admins, admin bootstrap, and invite acceptance authority checks |
-| Audit/outbox             | Operation ID, actor/target IDs, project/invitation IDs, before/after role or state, server timestamp; no secret payloads                |
+| Record                   | Key fields / invariants                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Canonical user           | Stable `id`, name, email, `admin` or `member`, disabled flag, auth version, created/updated times; existing IDs remain valid                                                          |
+| External identity        | Unique provider/validated issuer/subject key, canonical user ID, link time; one external identity maps to exactly one user                                                            |
+| Invitation               | ID, token hash, normalized target email, project, role, creator ID, created/expiry times, `pending`, `accepted`, or `cancelled`, version, accepted user/time or cancellation metadata |
+| Pending-invitation index | Unique normalized email/project key, pending invitation ID/version; transactional update with create/cancel/accept/reissue                                                            |
+| Onboarding attempt       | Hashed browser handle, invitation ID/version, operation (`join` or `link`), OIDC correlation, expiry, optional validated candidate identity                                           |
+| Membership               | Existing `userId:projectId` key; role, update/version metadata sufficient for conflict checking                                                                                       |
+| Admin guard              | One workspace guard/version touched by promotions, demotions, disabling admins, admin bootstrap, and invite acceptance authority checks                                               |
+| Audit/outbox             | Operation ID, actor/target IDs, project/invitation IDs, before/after role or state, server timestamp; no secret payloads                                                              |
 
 An expiry is a computed presentation state for pending invitations. Keep terminal invitation metadata for audit; do not use TTL deletion as the authorization decision or delete the only evidence of consumption. Define eventual cleanup separately from access enforcement.
 
