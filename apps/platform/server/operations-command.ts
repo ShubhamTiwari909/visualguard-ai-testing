@@ -11,10 +11,8 @@ export async function readRecoveryPassword(path: string) {
     );
   if (typeof constants.O_NOFOLLOW !== "number")
     throw new Error("This host cannot verify password-file symlinks safely");
-  const file = await open(
-    path,
-    constants.O_RDONLY | constants.O_NOFOLLOW | (constants.O_NONBLOCK ?? 0),
-  );
+  const flags = constants.O_RDONLY | constants.O_NOFOLLOW | (constants.O_NONBLOCK ?? 0);
+  const file = await open(path, flags);
   try {
     const info = await file.stat();
     if (!info.isFile() || info.size > 1024)
@@ -57,7 +55,8 @@ export async function operationsCommand(args: string[], env: NodeJS.ProcessEnv =
   });
   if (values.help)
     return {
-      usage: "pnpm platform:operations <status|admins|preview|recover> [--user ID] [--after CURSOR]",
+      usage:
+        "pnpm platform:operations <status|admins|preview|recover> [--user ID] [--after CURSOR]",
       recovery:
         "recover --user ID --version PREVIEW_VERSION --confirm ID --backup-confirmed --reason REASON --password-file PRIVATE_FILE",
       warning:

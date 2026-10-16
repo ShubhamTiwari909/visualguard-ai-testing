@@ -4,11 +4,9 @@ This feature completes the implementable operations work following Google sign-i
 
 ## One feature, three delivery parts
 
-| Part | Scope | Acceptance |
-| --- | --- | --- |
-| P05-A: audit history | Administrator-only, paginated audit history with actor/action/date filters and safe event details | Members and upload credentials cannot read it; filters paginate through sparse matches without exposing credential material |
-| P05-B: administrator recovery | An explicit host-side command to reset and restore an existing password administrator | Preview by stable account ID, version-bound confirmation, backup acknowledgement, private password file; account update, credential revocation and audit commit atomically |
-| P05-C: rollout readiness | Read-only storage/identity/admission readiness, recovery and native-backup runbooks, focused persistence/restore checks | Report unsupported transactions, unknown identity schemas and missing password administrators; preserve local/offline workflows and existing identity/review records |
+- **P05-A: audit history.** Administrator-only, paginated history with actor/action/date filters and safe event details. Members and upload credentials cannot read it; sparse filters paginate without exposing credential material.
+- **P05-B: administrator recovery.** A host-side command resets and restores an existing password administrator. Require a stable account ID, version-bound confirmation, backup acknowledgement and private password file. Account update, revocation and audit commit atomically.
+- **P05-C: rollout readiness.** Read-only storage/identity/admission checks, native-backup/recovery runbooks and persistence tests. Report unsupported transactions, unknown schemas and missing password administrators while preserving local/offline workflows and identity/review records.
 
 Keep this plan in a preceding documentation commit. Implement all three parts, their documentation, Changeset and focused tests in one subsequent feature commit. Do not run formatting, lint, or type checks; focused behavior tests and the dashboard UI build are allowed.
 
