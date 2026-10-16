@@ -125,3 +125,6 @@ The final late-review run passed **376 tests in 18 suites** with the same **22
 intentional skips**, including audit-failure session rejection, omitted Google
 verification claims, and exact same-account session binding. Formatting, lint,
 CLI/report/platform type checks, and the dashboard build passed.
+
+Final main-branch ancestry was integrated before the Phase 4 merge; source,
+package, workflow, and smoke-test files remain identical to the validated tree.
