@@ -6,7 +6,7 @@ import { PlatformError } from "./errors.js";
 import type { StateRecord, StateStore } from "./storage-contracts.js";
 import { oidcSettings, type OidcSettings } from "./oidc-config.js";
 import type { OnboardingBinding } from "./onboarding.js";
-import { Identities, type LinkProof } from "./identities.js";
+import { Identities, legacyIdentityId, type LinkProof } from "./identities.js";
 
 const scrypt = promisify(deriveKey);
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -128,6 +128,40 @@ export class AuthService {
     this.ready = this.bootstrap();
   }
 
+  private async legacyAdministrator(id: string, create: () => Promise<User>) {
+    let policy = (await this.state.get<{ bootstrapComplete: boolean; bootstrapUserId?: string }>(
+      "admission",
+      "current",
+    ))!;
+    if (
+      policy.value.bootstrapComplete ||
+      (policy.value.bootstrapUserId && policy.value.bootstrapUserId !== id)
+    )
+      throw new PlatformError(
+        409,
+        "Administrator setup is already claimed; retry with the original administrator",
+      );
+    if (!policy.value.bootstrapUserId) {
+      policy.value.bootstrapUserId = id;
+      if (!(await this.state.replace("admission", policy)))
+        throw new PlatformError(409, "Administrator setup changed; retry");
+    }
+    // Reserve one identity first, but complete only after its account is durable.
+    // A failed create/completion write can be resumed without adding another administrator.
+    const user = await create();
+    if (user.disabled || user.role !== "admin")
+      throw new PlatformError(409, "Administrator account is unavailable");
+    policy = (await this.state.get<typeof policy.value>("admission", "current"))!;
+    if (policy.value.bootstrapUserId !== id)
+      throw new PlatformError(409, "Administrator setup changed; retry");
+    if (!policy.value.bootstrapComplete) {
+      policy.value.bootstrapComplete = true;
+      if (!(await this.state.replace("admission", policy)))
+        throw new PlatformError(409, "Administrator setup changed; retry");
+    }
+    return user;
+  }
+
   private async bootstrap() {
     if (this.mode === "local") return;
     const existing = await this.state.get<{
@@ -200,16 +234,13 @@ export class AuthService {
             throw new Error("Administrator setup changed; restart dashboard");
         });
       } else {
-        // Explicit legacy mode on standalone MongoDB retains single-record bootstrap.
-        const policy = (await this.state.get<{ bootstrapComplete: boolean }>(
-          "admission",
-          "current",
-        ))!;
-        policy.value.bootstrapComplete = true;
-        if (!(await this.state.replace("admission", policy)))
-          throw new Error("Administrator setup changed; restart dashboard");
-        if (!(await this.state.create("users", user.id, user)))
-          throw new Error("Administrator setup changed; restart dashboard");
+        await this.legacyAdministrator(user.id, async () => {
+          if (await this.state.create("users", user.id, user)) return user;
+          const existing = await this.state.get<User>("users", user.id);
+          if (!existing)
+            throw new PlatformError(409, "Administrator setup changed; restart dashboard");
+          return existing.value;
+        });
       }
     }
     const admins = (await this.state.list<User>("users", "", 10_000)).some(
@@ -715,6 +746,29 @@ export class AuthService {
       provedAt: new Date().toISOString(),
     };
   }
+  private async oidcAttempt(request: IncomingMessage) {
+    const browser = request.headers.cookie
+      ?.split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("vg_oidc="))
+      ?.slice(8);
+    const entry = browser ? await this.state.get<OidcAttempt>("oidc", sha256(browser)) : undefined;
+    return entry;
+  }
+  async oidcFailureLocation(request: IncomingMessage) {
+    const entry = await this.oidcAttempt(request);
+    const joinHandle = request.headers.cookie
+      ?.split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("vg_join="))
+      ?.slice(8);
+    if ((!entry || entry.value.join) && joinHandle) {
+      const ticket = await this.state.get("onboarding", sha256(joinHandle));
+      if (ticket && (!entry?.value.join || entry.value.join.ticketId === ticket.id))
+        return "/invite?signin_error=oidc";
+    }
+    return entry?.value.link ? "/settings?identity=error" : "/?signin_error=oidc";
+  }
   async finishOidc(
     request: IncomingMessage,
     response: ServerResponse,
@@ -725,12 +779,7 @@ export class AuthService {
       profile: { email: string; name: string },
     ) => Promise<void>,
   ) {
-    const browser = request.headers.cookie
-      ?.split(";")
-      .map((part) => part.trim())
-      .find((part) => part.startsWith("vg_oidc="))
-      ?.slice(8);
-    const entry = browser ? await this.state.get<OidcAttempt>("oidc", sha256(browser)) : undefined;
+    const entry = await this.oidcAttempt(request);
     if (!entry || !(await this.state.remove("oidc", entry.id, entry.version)))
       throw new PlatformError(401, "Login expired; start again");
     const client = await import("openid-client");
@@ -811,20 +860,27 @@ export class AuthService {
       } else if (policy.value.mode === "legacy") {
         // Standalone Mongo retains its explicitly selected pilot workflow.
         const bootstrap = admin && !policy.value.bootstrapComplete;
-        if (bootstrap) {
-          policy.value.bootstrapComplete = true;
-          if (!(await this.state.replace("admission", policy)))
-            throw new PlatformError(409, "Administrator setup changed; retry");
-        }
-        user = await this.identities.resolve(identity, {
-          ...profile,
-          role: bootstrap ? "admin" : "member",
-        });
+        user = bootstrap
+          ? await this.legacyAdministrator(legacyIdentityId(identity), () =>
+              this.identities.resolve(identity, { ...profile, role: "admin" }),
+            )
+          : await this.identities.resolve(identity, { ...profile, role: "member" });
       } else
         throw new PlatformError(
           403,
           "Ask an administrator for an invitation before joining this workspace",
         );
+    }
+    const pendingBootstrap = await this.state.get<{
+      bootstrapComplete: boolean;
+      bootstrapUserId?: string;
+    }>("admission", "current");
+    if (
+      !pendingBootstrap?.value.bootstrapComplete &&
+      pendingBootstrap?.value.bootstrapUserId === user.id
+    ) {
+      const candidate = user;
+      user = await this.legacyAdministrator(user.id, async () => candidate);
     }
     await this.issueSession(user, response, "oidc");
     await this.audit({ id: user.id }, "user.login", { provider: this.oidcProvider });

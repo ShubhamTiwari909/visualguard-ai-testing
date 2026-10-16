@@ -127,6 +127,16 @@ export class Identities {
       }
       return known;
     }
+    // Serialize enrollments for the same email before the snapshot scan. This is
+    // a write fence, never an email-based account link or a global login constraint.
+    const emailKey = sha256(profile.email.trim().toLowerCase());
+    const emailGuard = await store.get("enrollment-emails", emailKey);
+    if (
+      !(emailGuard
+        ? await store.replace("enrollment-emails", emailGuard)
+        : await store.create("enrollment-emails", emailKey, {}))
+    )
+      throw new PlatformError(409, "Account changed; verify again");
     // Email is a routing hint, never proof of ownership of an existing account.
     let after: string | undefined;
     for (;;) {

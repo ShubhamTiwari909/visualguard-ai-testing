@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { randomUUID } from "node:crypto";
 import { createServer, type Server, type ServerResponse, type IncomingMessage } from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -12,7 +11,7 @@ import { SqlArtifactStore, sha256 } from "../server/artifacts.js";
 import { createApi } from "../server/http.js";
 import { Identities, legacyIdentityId } from "../server/identities.js";
 import { Invitations } from "../server/invitations.js";
-import { openMongo } from "../server/mongo.js";
+import { isolatedStorage } from "./fixtures/isolated-storage.js";
 import type { PlatformRepository } from "../server/storage-contracts.js";
 import { oidcProvider } from "./fixtures/oidc-provider.js";
 
@@ -295,6 +294,51 @@ describe("invitation browser API and admission policy", () => {
     expect(await state.list("users")).toHaveLength(2);
     expect(await state.list("external-identities")).toHaveLength(0);
   });
+  it.each(["expired", "signed-out"] as const)(
+    "returns an invitation to verification after %s account proof",
+    async (reason) => {
+      await req(admin, "/api/users", "POST", {
+        email: "member@example.test",
+        name: "Member",
+        password,
+      });
+      await exchange();
+      await req(recipient, "/api/auth/login", "POST", { email: "member@example.test", password });
+      await req(recipient, "/api/session");
+      expect(
+        (await req(recipient, "/api/onboarding/prove", "POST", { currentPassword: password }))
+          .status,
+      ).toBe(200);
+      expect((await req(recipient, "/api/onboarding")).value.invitation).toBeDefined();
+      if (reason === "signed-out") await req(recipient, "/api/auth/logout", "POST", {});
+      else {
+        const ticket = (await state.get<{ proof: { provedAt: string } }>(
+          "onboarding",
+          sha256(recipient.cookies.get("vg_join")!),
+        ))!;
+        ticket.value.proof.provedAt = new Date(Date.now() - 301_000).toISOString();
+        await state.replace("onboarding", ticket);
+      }
+      const page = await req(recipient, "/api/onboarding");
+      expect(page.value.exchanged).toBe(true);
+      expect(page.value.invitation).toBeUndefined();
+      expect(
+        (await req(recipient, "/api/onboarding/accept", "POST", { confirmed: true })).status,
+      ).toBe(401);
+      if (reason === "signed-out") {
+        await req(recipient, "/api/auth/login", "POST", { email: "member@example.test", password });
+        await req(recipient, "/api/session");
+      }
+      expect(
+        (await req(recipient, "/api/onboarding/prove", "POST", { currentPassword: password }))
+          .status,
+      ).toBe(200);
+      expect(
+        (await req(recipient, "/api/onboarding/accept", "POST", { confirmed: true })).status,
+      ).toBe(200);
+    },
+  );
+
   it("lets a new invitation replace a completed browser ticket", async () => {
     await exchange();
     await verify();
@@ -400,6 +444,136 @@ describe("admission upgrades and bootstrap", () => {
     VISUALGUARD_ADMIN_EMAIL: "admin@example.test",
     VISUALGUARD_ADMIN_PASSWORD: "test-only-password-long",
   };
+  it.each(["account", "completion"] as const)(
+    "resumes standalone password bootstrap after a failed %s write",
+    async (stage) => {
+      const state = new MemoryStateStore();
+      state.supportsTransactions = async () => false;
+      let failed = false;
+      const create = state.create.bind(state),
+        replace = state.replace.bind(state);
+      vi.spyOn(state, "create").mockImplementation(async (namespace, ...args) => {
+        if (!failed && stage === "account" && namespace === "users") {
+          failed = true;
+          throw new Error("injected account failure");
+        }
+        return create(namespace, ...args);
+      });
+      vi.spyOn(state, "replace").mockImplementation(async (namespace, record) => {
+        if (
+          !failed &&
+          stage === "completion" &&
+          namespace === "admission" &&
+          (record.value as { bootstrapComplete?: boolean }).bootstrapComplete
+        ) {
+          failed = true;
+          throw new Error("injected completion failure");
+        }
+        return replace(namespace, record);
+      });
+      const settings = { ...env, VISUALGUARD_USER_ADMISSION: "legacy" };
+      await expect(new AuthService(state, settings).ready).rejects.toThrow("injected");
+      expect(
+        (await state.get<{ bootstrapComplete: boolean }>("admission", "current"))!.value
+          .bootstrapComplete,
+      ).toBe(false);
+      const previousHash = (await state.list<User>("users"))[0]?.value.passwordHash;
+      await expect(
+        new AuthService(state, { ...settings, VISUALGUARD_ADMIN_EMAIL: "other@example.test" })
+          .ready,
+      ).rejects.toThrow("already claimed");
+      await new AuthService(state, settings).ready;
+      const users = await state.list<User>("users");
+      expect(users).toHaveLength(1);
+      expect(users[0]!.value.role).toBe("admin");
+      if (previousHash) expect(users[0]!.value.passwordHash).toBe(previousHash);
+      expect(
+        (await state.get<{ bootstrapComplete: boolean }>("admission", "current"))!.value
+          .bootstrapComplete,
+      ).toBe(true);
+    },
+  );
+
+  it.each(["account", "completion"] as const)(
+    "resumes standalone Google bootstrap after a failed %s write",
+    async (stage) => {
+      const state = new MemoryStateStore(),
+        provider = oidcProvider();
+      state.supportsTransactions = async () => false;
+      vi.stubGlobal("fetch", provider.fetch);
+      try {
+        const auth = new AuthService(state, {
+          ...env,
+          VISUALGUARD_USER_ADMISSION: "legacy",
+          VISUALGUARD_ADMIN_PASSWORD: undefined,
+          VISUALGUARD_OIDC_ISSUER: provider.issuer,
+          VISUALGUARD_OIDC_CLIENT_ID: provider.clientId,
+          VISUALGUARD_OIDC_CLIENT_SECRET: provider.clientSecret,
+        });
+        await auth.ready;
+        let failed = false;
+        const create = state.create.bind(state),
+          replace = state.replace.bind(state);
+        vi.spyOn(state, "create").mockImplementation(async (namespace, ...args) => {
+          if (!failed && stage === "account" && namespace === "users") {
+            failed = true;
+            throw new Error("injected account failure");
+          }
+          return create(namespace, ...args);
+        });
+        vi.spyOn(state, "replace").mockImplementation(async (namespace, record) => {
+          if (
+            !failed &&
+            stage === "completion" &&
+            namespace === "admission" &&
+            (record.value as { bootstrapComplete?: boolean }).bootstrapComplete
+          ) {
+            failed = true;
+            throw new Error("injected completion failure");
+          }
+          return replace(namespace, record);
+        });
+        const attempt = async () => {
+          const headers = new Map<string, string>();
+          const response = {
+            setHeader: (key: string, value: string) => headers.set(key, value),
+            writeHead: (_status: number, values: Record<string, string>) => {
+              for (const [key, value] of Object.entries(values)) headers.set(key, value);
+            },
+            end() {},
+          } as unknown as ServerResponse;
+          await auth.beginOidc(response);
+          const target = new URL(headers.get("Location")!);
+          const callback = new URL(
+            `${env.VISUALGUARD_PUBLIC_URL}/api/auth/callback?code=${provider.authorize(target)}&state=${target.searchParams.get("state")}`,
+          );
+          return auth.finishOidc(
+            { headers: { cookie: headers.get("Set-Cookie")!.split(";")[0] } } as IncomingMessage,
+            response,
+            callback,
+          );
+        };
+        provider.claims = { email: env.VISUALGUARD_ADMIN_EMAIL };
+        await expect(attempt()).rejects.toThrow("injected");
+        expect(
+          (await state.get<{ bootstrapComplete: boolean }>("admission", "current"))!.value
+            .bootstrapComplete,
+        ).toBe(false);
+        provider.claims = { email: env.VISUALGUARD_ADMIN_EMAIL, sub: "another-eligible-admin" };
+        await expect(attempt()).rejects.toThrow("already claimed");
+        provider.claims = { email: env.VISUALGUARD_ADMIN_EMAIL };
+        await attempt();
+        expect(await state.list("users")).toHaveLength(1);
+        expect(
+          (await state.get<{ bootstrapComplete: boolean }>("admission", "current"))!.value
+            .bootstrapComplete,
+        ).toBe(true);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    },
+  );
+
   it("requires an explicit policy for pre-policy installations and persists the chosen policy", async () => {
     const state = new MemoryStateStore();
     const initial = new AuthService(state, env);
@@ -481,9 +655,10 @@ describe("admission upgrades and bootstrap", () => {
   it.skipIf(!process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL)(
     "keeps standalone Mongo legacy login available and fails before partial invitation grants",
     async () => {
-      const target = new URL(process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL!);
-      target.pathname = `/vg_onboarding_${randomUUID().replaceAll("-", "")}`;
-      const { state, close } = await openMongo(target.href);
+      const { state, close } = await isolatedStorage(
+        "mongo",
+        process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL!,
+      );
       try {
         await expect(
           new AuthService(state, { ...env, VISUALGUARD_USER_ADMISSION: "invite" }).ready,

@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { sha256 } from "./artifacts.js";
-import { AuthService, type Actor } from "./auth.js";
+import { AuthService, type Actor, type User } from "./auth.js";
 import { Identities, type ExternalIdentity } from "./identities.js";
 import { Invitations, type JoinProof } from "./invitations.js";
 import { PlatformError } from "./errors.js";
@@ -69,13 +69,33 @@ export class Onboarding {
     }
     const proof = row.value.proof;
     let invitation, notice;
-    if (proof && row.value.invitationId) {
+    if (row.value.invitationId) {
       try {
-        invitation = await this.invitations.preview(
-          row.value.invitationId,
-          row.value.invitationVersion!,
-          proof,
-        );
+        await this.invitations.checkAttempt(row.value.invitationId, row.value.invitationVersion!);
+        if (proof) {
+          const age = Date.now() - Date.parse(proof.provedAt);
+          const actor = await this.auth.actor(request);
+          const account = proof.userId
+            ? await this.auth.state.get<User>("users", proof.userId)
+            : undefined;
+          const current =
+            Number.isFinite(age) &&
+            age >= 0 &&
+            age <= 300_000 &&
+            (!proof.userId ||
+              (account &&
+                !account.value.disabled &&
+                account.value.authVersion === proof.authVersion)) &&
+            (!proof.sessionId ||
+              (actor?.sessionId === proof.sessionId && actor.id === proof.userId)) &&
+            (!actor || actor.id === proof.userId);
+          if (current)
+            invitation = await this.invitations.preview(
+              row.value.invitationId,
+              row.value.invitationVersion!,
+              proof,
+            );
+        }
       } catch (error) {
         if (!(error instanceof PlatformError)) throw error;
         // Keep the form token available so a NEW fragment can replace a completed/stale ticket.

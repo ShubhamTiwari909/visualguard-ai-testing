@@ -135,7 +135,9 @@ export function createApi(
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/callback") {
+        let failureLocation = "/?signin_error=oidc";
         try {
+          failureLocation = await auth.oidcFailureLocation(request);
           await auth.finishOidc(request, response, url, (binding, identity, profile) =>
             onboarding.complete(request, binding, identity, profile),
           );
@@ -143,11 +145,7 @@ export function createApi(
           // Provider errors can contain authorization codes or credential details.
           // Send a fixed error code to the login page, never the provider response.
           response.writeHead(302, {
-            Location: request.headers.cookie?.includes("vg_join=")
-              ? "/invite?signin_error=oidc"
-              : actor && !actor.credentialId
-                ? "/settings?identity=error"
-                : "/?signin_error=oidc",
+            Location: failureLocation,
           });
           response.end();
         }

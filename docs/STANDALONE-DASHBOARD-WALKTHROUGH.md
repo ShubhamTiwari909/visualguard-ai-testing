@@ -371,7 +371,7 @@ cd visualguard-dashboard
 npm install
 ```
 
-Before the npm release, supply the candidate explicitly:
+For unreleased repository changes, supply the local package candidate explicitly:
 
 ```sh
 npx visualguard dashboard init --target vercel \
@@ -408,7 +408,7 @@ npx visualguard dashboard init --target cloud-run --out visualguard-dashboard
 cd visualguard-dashboard
 ```
 
-Use `--package /absolute/path/to/visualguard-VERSION.tgz` before the dashboard-enabled npm release, as with Vercel.
+To test unreleased repository changes, use `--package /absolute/path/to/visualguard-VERSION.tgz` with a freshly built local candidate, as with Vercel. Published versions can use the registry package directly.
 
 The generated Dockerfile installs the package, runs as the Node user, and starts `visualguard dashboard --host 0.0.0.0`. It needs no browser install or UI compilation. Cloud Run supplies `PORT`; durable state goes to the external database. The generated `.dockerignore` excludes environment files and local workspace data.
 
@@ -532,7 +532,7 @@ Open a run and select **Delete run**, then type `DELETE`. To delete a project, o
 
 Deletion is permanent. Shared evidence remains available to other runs; unused artifacts are queued for cleanup. Project deletion also removes memberships, upload tokens, and upload sessions. Deleted project IDs remain reserved; use a fresh ID for a future project, or a fresh workspace to restore an older backup. Original local run folders and exported/native backups are kept.
 
-The [deletion guide](DASHBOARD-DELETION.md) explains concurrency/recovery boundaries, API requests, cleanup-pending messages, and the manual acceptance sequence. No build, browser check, or test was run for this extension at the user's request; rebuild the UI/package manually before inspecting a previously compiled installation.
+The [deletion guide](DASHBOARD-DELETION.md) explains concurrency/recovery boundaries, API requests, cleanup-pending messages, and the manual acceptance sequence. Checks were deferred during initial implementation; current results are recorded in the [release validation report](RELEASE-3.1.0-VALIDATION.md). Rebuild the UI/package to inspect newer repository changes.
 
 ## 17. Bind tests to a project automatically
 
