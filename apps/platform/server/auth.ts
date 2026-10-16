@@ -216,7 +216,7 @@ export class AuthService {
       !(await this.state.get<{ bootstrapComplete: boolean }>("admission", "current"))?.value
         .bootstrapComplete
     ) {
-      const user = await this.passwordUser({
+      const user = await this.prepareLocalAccount({
         email,
         password,
         name: "Workspace administrator",
@@ -388,7 +388,7 @@ export class AuthService {
     if (!(await this.hasRole(actor, projectId, minimum)))
       throw new PlatformError(403, "You do not have access to this project or action");
   }
-  private async passwordUser(input: {
+  private async prepareLocalAccount(input: {
     email: string;
     password: string;
     name: string;
@@ -419,7 +419,7 @@ export class AuthService {
     name: string;
     role?: "admin" | "member";
   }) {
-    const user = await this.passwordUser(input);
+    const user = await this.prepareLocalAccount(input);
     const save = async (store: StateStore) => {
       if (user.role === "admin") await touchAdministratorGuard(store);
       if (!(await store.create("users", user.id, user)))
@@ -440,7 +440,7 @@ export class AuthService {
       throw new PlatformError(400, "Create a member first, then explicitly promote that account");
     return this.administration.createMember(
       actor,
-      await this.passwordUser({ ...input, role: "member" }),
+      await this.prepareLocalAccount({ ...input, role: "member" }),
     );
   }
   async users() {

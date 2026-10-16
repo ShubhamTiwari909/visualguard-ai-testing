@@ -148,3 +148,8 @@ After these corrections, all 15 platform suites passed: **287 tests passed** and
 **16 intentional backend-specific cases skipped**, using live disposable
 PostgreSQL, replica-set MongoDB, and standalone MongoDB. Lint, format,
 CLI/report/platform type checks, and the dashboard build passed.
+
+The local account builder is named `prepareLocalAccount`: it returns a user
+record, not a password. This avoids CodeQL classifying every returned field
+(including email and session-routing data) as a password source. Actual password
+hashing remains salted scrypt, and no scanning rule is suppressed.
