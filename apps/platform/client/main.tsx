@@ -15,6 +15,7 @@ import {
 } from "../shared/contracts";
 import "./styles.css";
 import { AccountMenu, SessionProvider, useSession } from "./auth";
+import { InvitationPage } from "./invitations";
 import { Settings } from "./settings";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { RunNameEditor } from "./naming";
@@ -924,8 +925,12 @@ function Platform() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <SessionProvider>
-      <Platform />
-    </SessionProvider>
+    {window.location.pathname === "/invite" ? (
+      <InvitationPage />
+    ) : (
+      <SessionProvider>
+        <Platform />
+      </SessionProvider>
+    )}
   </StrictMode>,
 );

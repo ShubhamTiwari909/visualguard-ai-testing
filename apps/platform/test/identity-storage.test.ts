@@ -13,7 +13,7 @@ import {
 } from "../server/identities.js";
 import { openDatabase } from "../server/database.js";
 import { SqlStateStore } from "../server/state.js";
-import { openMongo } from "../server/mongo.js";
+import { isolatedStorage } from "./fixtures/isolated-storage.js";
 import type { StateStore } from "../server/storage-contracts.js";
 
 export function forwardingState(state: StateStore): StateStore {
@@ -49,10 +49,10 @@ for (const backend of ["memory", "sqlite", "postgres", "mongo"] as const) {
         if (backend === "memory") {
           state = new MemoryStateStore();
           close = async () => {};
-        } else if (backend === "mongo") ({ state, close } = await openMongo(url!));
+        } else if (backend === "mongo" || backend === "postgres")
+          ({ state, close } = await isolatedStorage(backend, url!));
         else {
           const db = await openDatabase({
-            url: backend === "postgres" ? url : undefined,
             sqlitePath: join(root, "identity.sqlite"),
           });
           state = new SqlStateStore(db);
@@ -346,7 +346,10 @@ describe.skipIf(!process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL)(
   () => {
     let state: StateStore, close: () => Promise<void>;
     beforeAll(async () => {
-      ({ state, close } = await openMongo(process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL!));
+      ({ state, close } = await isolatedStorage(
+        "mongo",
+        process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL!,
+      ));
     });
     afterAll(async () => {
       await close?.();

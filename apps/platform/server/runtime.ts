@@ -116,9 +116,14 @@ export async function startDashboard(
           return;
         }
         const path = new URL(request.url ?? "/", "http://localhost").pathname;
+        if (path === "/invite") {
+          response.setHeader("Referrer-Policy", "no-referrer");
+          response.setHeader("Cache-Control", "no-store");
+        }
         if (
           path === "/" ||
           path === "/settings" ||
+          path === "/invite" ||
           path === "/reviews" ||
           /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
         ) {

@@ -1,5 +1,7 @@
 # Google sign-in pilot — P01
 
+**P03 upgrade:** follow [Invitations and admission](TEAM-INVITATIONS.md) for current setup and migration behavior. Fresh hosted installs now default to invite-only; existing installs must explicitly choose an admission policy. The descriptions below record the earlier phase boundary.
+
 P01 adds a named Google sign-in entry point to the existing dashboard login, validates complete OIDC configuration before startup, verifies Google email and token signatures, and returns provider failures to a safe retry screen. It uses the existing database-backed accounts, sessions, revocation, project roles, and audit records.
 
 This is the first phase of the [team onboarding plan](TEAM-ONBOARDING-PLAN.md#delivery-phases-agreed-on-16-october-2026). P02 now adds [explicit Google account linking](GOOGLE-ACCOUNT-LINKING.md) and identity continuity. Invitations, invitation-required admission, and expanded user administration remain later phases. An ordinary Google user initially has no project access; an administrator must grant it.
@@ -54,7 +56,7 @@ Load it explicitly in the terminal that will run the dashboard:
 unset VISUALGUARD_DATABASE_URL DATABASE_URL VISUALGUARD_SQLITE_FILE
 
 set -a
-source apps/platform/.env.local
+. apps/platform/.env.local
 set +a
 
 # Optional isolated data directory; reuse it for persistence testing.
@@ -69,12 +71,14 @@ Open the configured origin and select **Sign in with Google**. Password login re
 
 ## 4. Exercise multiple users
 
+These steps describe the P01 open-admission pilot. On P03 or newer builds, the supplied template defaults to invitation admission: use the [invitation flow](TEAM-INVITATIONS.md) for additional Google users. To repeat this older exercise on a disposable database, explicitly set `VISUALGUARD_USER_ADMISSION=legacy` after loading the environment file, then restart the server. Keep normal team onboarding in invite mode.
+
 1. In a fresh database, sign in with the verified account configured as `VISUALGUARD_ADMIN_EMAIL`. Confirm it can open People & integrations. A successful Google login is audited as provider `google`.
 2. Import/publish evidence into a disposable project using the existing workflow.
 3. In a separate browser profile/private window, sign in using a second Google account permitted by your Google application's audience. It initially sees no private projects.
 4. As administrator, find that account under People & integrations and grant Viewer, Reviewer, or Maintainer on the test project.
 5. Refresh the second browser and verify the expected project access. Viewer cannot comment/decide; Reviewer can use Team review; Maintainer retains the existing project administration rights.
-6. Remove membership or disable the account and retry its requests/sign-in. Access must be denied. Prior comments and review attribution remain stored.
+6. Remove project membership and retry that project’s requests: they must be denied, while account sign-in remains available. Disable the account separately to deny sign-in and invalidate its sessions. Prior comments and review attribution remain stored.
 7. Restart the dashboard with the same database and verify identities/sessions persist. Repeated Google login reuses the existing issuer/subject identity and does not automatically restore disabled accounts or edited roles.
 8. Cancel the Google consent/account-selection flow, or retry after an invalid/expired callback. The browser should return to the login screen with a generic retry message rather than displaying provider details.
 
