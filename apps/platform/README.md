@@ -45,6 +45,8 @@ The [CLI project creation guide](../../docs/DASHBOARD-CLI-PROJECTS.md) covers `p
 
 ## Shared hosting
 
+Google sign-in is available as the first phase of team onboarding. See the [Google sign-in guide](../../docs/GOOGLE-SIGN-IN.md) for the required environment values, OAuth callback registration, recovery administrator, local setup, and phase boundaries. New Google members need administrator-assigned project access; invitations and explicit account linking follow later.
+
 Configure four settings: `VISUALGUARD_DATABASE_URL`, `VISUALGUARD_PUBLIC_URL`, `VISUALGUARD_ADMIN_EMAIL`, and `VISUALGUARD_ADMIN_PASSWORD`. PostgreSQL and MongoDB are selected from the URL automatically. The hosted public origin enables login and project permissions. Use a host secret store for credentials.
 
 ```sh

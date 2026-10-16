@@ -80,6 +80,8 @@ export function createApi(
       return true;
     }
     if (!url.pathname.startsWith("/api/")) return false;
+    if (url.pathname === "/api/session" || url.pathname.startsWith("/api/auth/"))
+      response.setHeader("Cache-Control", "no-store");
     try {
       await auth.ready;
       const actor = await auth.actor(request);
@@ -91,7 +93,8 @@ export function createApi(
             actor && !actor.credentialId
               ? { id: actor.id, name: actor.name, email: actor.email, admin: actor.admin }
               : null,
-          oidc: Boolean(auth.env.VISUALGUARD_OIDC_ISSUER),
+          oidc: auth.oidcProvider !== null,
+          oidcProvider: auth.oidcProvider,
           envelopeVersion: 1,
         });
         return true;
@@ -104,11 +107,21 @@ export function createApi(
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/login") {
-        await auth.beginOidc(response);
+        try { await auth.beginOidc(response); }
+        catch {
+          response.writeHead(302, { Location: "/?signin_error=oidc" });
+          response.end();
+        }
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/callback") {
-        await auth.finishOidc(request, response, url);
+        try { await auth.finishOidc(request, response, url); }
+        catch {
+          // Provider errors can contain authorization codes or credential details.
+          // Send a fixed error code to the login page, never the provider response.
+          response.writeHead(302, { Location: "/?signin_error=oidc" });
+          response.end();
+        }
         return true;
       }
       if (!actor) throw new PlatformError(401, "Sign in to access this dashboard");
