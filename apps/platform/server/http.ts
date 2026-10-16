@@ -116,18 +116,34 @@ export function createApi(
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/callback") {
+        let failureLocation = "/?signin_error=oidc";
         try {
+          failureLocation = await auth.oidcFailureLocation(request);
           await auth.finishOidc(request, response, url);
         } catch {
           // Provider errors can contain authorization codes or credential details.
           // Send a fixed error code to the login page, never the provider response.
-          response.writeHead(302, { Location: "/?signin_error=oidc" });
+          response.writeHead(302, {
+            Location: failureLocation,
+          });
           response.end();
         }
         return true;
       }
       if (!actor) throw new PlatformError(401, "Sign in to access this dashboard");
       if (request.method !== "GET" && request.method !== "HEAD") auth.csrf(request, actor);
+      if (request.method === "GET" && url.pathname === "/api/auth/identities") {
+        json(response, 200, await auth.accountIdentities(actor));
+        return true;
+      }
+      if (request.method === "POST" && url.pathname === "/api/auth/identities/google/link") {
+        const input = z
+          .object({ currentPassword: z.string().max(256).optional() })
+          .strict()
+          .parse(await body(request));
+        json(response, 200, await auth.beginGoogleLink(actor, input.currentPassword, response));
+        return true;
+      }
       const requestedProjectId = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)(?:\/|$)/)?.[1];
       if (requestedProjectId) {
         const canonical = await repository.resolveProjectId(requestedProjectId);

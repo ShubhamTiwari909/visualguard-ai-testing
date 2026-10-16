@@ -5,6 +5,7 @@ import { sha256 } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
 import type { StateRecord, StateStore } from "./storage-contracts.js";
 import { oidcSettings, type OidcSettings } from "./oidc-config.js";
+import { Identities, type LinkProof } from "./identities.js";
 
 const scrypt = promisify(deriveKey);
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -30,7 +31,13 @@ interface Session {
   userId: string;
   authVersion: number;
   csrf: string;
+  authenticatedAt?: string;
+  authentication?: "password" | "oidc";
 }
+const recentlyAuthenticated = (session: Session) => {
+  const age = Date.now() - Date.parse(session.authenticatedAt ?? "");
+  return session.authentication === "oidc" && Number.isFinite(age) && age >= 0 && age <= 300_000;
+};
 export interface Membership {
   userId: string;
   projectId: string;
@@ -52,6 +59,12 @@ export interface Actor {
   uploadProject?: string;
   credentialId?: string;
 }
+interface OidcAttempt {
+  state: string;
+  nonce: string;
+  verifier: string;
+  link?: LinkProof;
+}
 export const safeUser = ({ passwordHash: _hash, ...user }: User) => user;
 const secret = () => randomBytes(32).toString("base64url");
 const matches = (left: string, right: string) => {
@@ -66,6 +79,7 @@ export class AuthService {
   readonly ready: Promise<void>;
   readonly oidcProvider: "google" | "oidc" | null;
   private readonly oidcSettings?: OidcSettings;
+  private identities: Identities;
   private localToken = secret();
   constructor(
     readonly state: StateStore,
@@ -102,6 +116,7 @@ export class AuthService {
       throw new Error("Hosted login requires VISUALGUARD_PUBLIC_URL");
     this.oidcSettings = mode === "login" ? oidcSettings(env) : undefined;
     this.oidcProvider = this.oidcSettings?.provider ?? null;
+    this.identities = new Identities(state);
     this.ready = this.bootstrap();
   }
 
@@ -341,18 +356,28 @@ export class AuthService {
     if (!row || row.value.disabled || !expected || !matches(actual.toString("hex"), expected))
       throw new PlatformError(401, "Email or password is incorrect");
     await this.state.remove("login-attempts", key);
-    await this.issueSession(row.value, response);
+    await this.issueSession(row.value, response, "password");
     await this.audit({ id: row.value.id }, "user.login", {});
     return safeUser(row.value);
   }
-  private async issueSession(user: User, response: ServerResponse) {
+  private async issueSession(
+    user: User,
+    response: ServerResponse,
+    authentication: "password" | "oidc",
+  ) {
     // Cookies carry a one-way-derived opaque handle, never the raw generated secret.
     // Persist a second hash for lookup so a database dump cannot replay the cookie.
     const token = sha256(secret());
     await this.state.create<Session>(
       "sessions",
       sha256(token),
-      { userId: user.id, authVersion: user.authVersion, csrf: secret() },
+      {
+        userId: user.id,
+        authVersion: user.authVersion,
+        csrf: secret(),
+        authenticatedAt: new Date().toISOString(),
+        authentication,
+      },
       expires(SESSION_SECONDS),
     );
     response.setHeader(
@@ -388,7 +413,7 @@ export class AuthService {
     row.value.authVersion++;
     if (!(await this.state.replace("users", row)))
       throw new PlatformError(409, "Account changed; sign in again");
-    await this.issueSession(row.value, response);
+    await this.issueSession(row.value, response, "password");
     await this.audit(actor, "password.changed", {});
   }
   async assign(actor: Actor, projectId: string, userId: string, role: ProjectRole | null) {
@@ -471,14 +496,22 @@ export class AuthService {
       });
     return this.oidcConfiguration;
   }
-  async beginOidc(response: ServerResponse) {
+  private async authorizeOidc(response: ServerResponse, link?: LinkProof) {
     const client = await import("openid-client"),
       config = await this.oidc();
     const verifier = client.randomPKCECodeVerifier(),
       state = client.randomState(),
       nonce = secret(),
       browser = sha256(secret());
-    await this.state.create("oidc", sha256(browser), { state, nonce, verifier }, expires(600));
+    if (
+      !(await this.state.create<OidcAttempt>(
+        "oidc",
+        sha256(browser),
+        { state, nonce, verifier, ...(link ? { link } : {}) },
+        expires(600),
+      ))
+    )
+      throw new PlatformError(409, "Unable to start sign-in; retry");
     const target = client.buildAuthorizationUrl(config, {
       redirect_uri: `${this.publicUrl!.origin}/api/auth/callback`,
       scope: "openid email profile",
@@ -486,26 +519,93 @@ export class AuthService {
       code_challenge_method: "S256",
       state,
       nonce,
+      ...(link ? { prompt: "select_account" } : {}),
     });
     response.setHeader(
       "Set-Cookie",
       `vg_oidc=${browser}; Path=/api/auth; HttpOnly; SameSite=Lax; Max-Age=600${this.publicUrl?.protocol === "https:" ? "; Secure" : ""}`,
     );
+    return target;
+  }
+  async beginOidc(response: ServerResponse) {
+    const target = await this.authorizeOidc(response);
     response.writeHead(302, { Location: target.href });
     response.end();
   }
-  async finishOidc(request: IncomingMessage, response: ServerResponse, url: URL) {
+  private browserAccount(actor: Actor) {
+    if (this.mode !== "login" || actor.credentialId || !actor.sessionId)
+      throw new PlatformError(403, "A signed-in browser account is required");
+  }
+  async accountIdentities(actor: Actor) {
+    this.browserAccount(actor);
+    const user = await this.state.get<User>("users", actor.id);
+    const session = await this.state.get<Session>("sessions", actor.sessionId!);
+    if (
+      !user ||
+      user.value.disabled ||
+      !session ||
+      session.value.userId !== actor.id ||
+      session.value.authVersion !== user.value.authVersion
+    )
+      throw new PlatformError(401, "Sign in again");
+    return {
+      googleLinked: await this.identities.googleLinked(actor.id),
+      googleConfigured: this.oidcProvider === "google",
+      linkingAvailable: await this.identities.available(),
+      requiresPassword: Boolean(user.value.passwordHash),
+      reauthenticationRequired: !user.value.passwordHash && !recentlyAuthenticated(session.value),
+    };
+  }
+  async beginGoogleLink(actor: Actor, password: string | undefined, response: ServerResponse) {
+    this.browserAccount(actor);
+    if (this.oidcProvider !== "google")
+      throw new PlatformError(400, "Configure Google sign-in before linking an account");
+    if (!(await this.identities.available()))
+      throw new PlatformError(
+        503,
+        "Account linking requires transactional storage; use SQLite, PostgreSQL, or a MongoDB replica set",
+      );
+    const user = await this.state.get<User>("users", actor.id);
+    const session = await this.state.get<Session>("sessions", actor.sessionId!);
+    if (
+      !user ||
+      user.value.disabled ||
+      !session ||
+      session.value.userId !== actor.id ||
+      session.value.authVersion !== user.value.authVersion
+    )
+      throw new PlatformError(401, "Sign in again before linking Google");
+    if (user.value.passwordHash) {
+      await this.throttle(sha256(`identity-link:${actor.id}`));
+      const [, salt, expected] = user.value.passwordHash.split("$");
+      const actual = (await scrypt((password ?? "").slice(0, 257), salt!, 64)) as Buffer;
+      if (!expected || !matches(actual.toString("hex"), expected))
+        throw new PlatformError(401, "Current password is incorrect");
+    } else if (!recentlyAuthenticated(session.value)) {
+      throw new PlatformError(401, "Sign in again before linking Google");
+    }
+    const target = await this.authorizeOidc(response, {
+      userId: actor.id,
+      sessionId: actor.sessionId!,
+      authVersion: user.value.authVersion,
+    });
+    return { authorizationUrl: target.href };
+  }
+  private async oidcAttempt(request: IncomingMessage) {
     const browser = request.headers.cookie
       ?.split(";")
       .map((part) => part.trim())
       .find((part) => part.startsWith("vg_oidc="))
       ?.slice(8);
-    const entry = browser
-      ? await this.state.get<{ state: string; nonce: string; verifier: string }>(
-          "oidc",
-          sha256(browser),
-        )
-      : undefined;
+    const entry = browser ? await this.state.get<OidcAttempt>("oidc", sha256(browser)) : undefined;
+    return entry;
+  }
+  async oidcFailureLocation(request: IncomingMessage) {
+    const entry = await this.oidcAttempt(request);
+    return entry?.value.link ? "/settings?identity=error" : "/?signin_error=oidc";
+  }
+  async finishOidc(request: IncomingMessage, response: ServerResponse, url: URL) {
+    const entry = await this.oidcAttempt(request);
     if (!entry || !(await this.state.remove("oidc", entry.id, entry.version)))
       throw new PlatformError(401, "Login expired; start again");
     const client = await import("openid-client");
@@ -520,24 +620,37 @@ export class AuthService {
     const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
     if (this.oidcProvider === "google" && (claims.email_verified !== true || !email))
       throw new PlatformError(401, "Google did not return a verified email address");
-    const id = `oidc-${sha256(`${this.oidcSettings!.issuer}:${claims.sub}`)}`;
+    const identity = {
+      issuer: this.oidcSettings!.issuer,
+      subject: claims.sub,
+      provider: this.oidcProvider!,
+    };
+    if (entry.value.link) {
+      const actor = await this.actor(request);
+      if (
+        !actor ||
+        actor.credentialId ||
+        actor.id !== entry.value.link.userId ||
+        actor.sessionId !== entry.value.link.sessionId
+      )
+        throw new PlatformError(401, "Sign in again before linking Google");
+      const user = await this.identities.link(identity, entry.value.link);
+      await this.issueSession(user, response, "oidc");
+      response.writeHead(302, { Location: "/settings?identity=linked" });
+      response.end();
+      return;
+    }
     const admin =
       (this.env.VISUALGUARD_OIDC_ADMIN_SUBJECTS ?? "").split(",").includes(claims.sub) ||
       (claims.email_verified === true &&
         email === this.env.VISUALGUARD_ADMIN_EMAIL?.trim().toLowerCase());
-    await this.state.create<User>("users", id, {
-      id,
+    const user = await this.identities.resolve(identity, {
       email,
       name: typeof claims.name === "string" ? claims.name.slice(0, 120) : email || "Team member",
       role: admin ? "admin" : "member",
-      disabled: false,
-      authVersion: 1,
-      createdAt: new Date().toISOString(),
     });
-    const user = (await this.state.get<User>("users", id))!.value;
-    if (user.disabled) throw new PlatformError(403, "Account is disabled");
-    await this.issueSession(user, response);
-    await this.audit({ id }, "user.login", { provider: this.oidcProvider });
+    await this.issueSession(user, response, "oidc");
+    await this.audit({ id: user.id }, "user.login", { provider: this.oidcProvider });
     response.writeHead(302, { Location: "/" });
     response.end();
   }
@@ -546,6 +659,21 @@ export class AuthService {
 /** Only used by local in-process tests; hosted instances always receive database-backed state. */
 export class MemoryStateStore implements StateStore {
   private entries = new Map<string, StateRecord>();
+  private revision = 0;
+  async supportsTransactions() {
+    return true;
+  }
+  async transaction<T>(work: (store: StateStore) => Promise<T>): Promise<T> {
+    const revision = this.revision;
+    const transaction = new MemoryStateStore();
+    transaction.entries = structuredClone(this.entries);
+    const result = await work(transaction);
+    if (this.revision !== revision)
+      throw new PlatformError(409, "State changed; retry the operation");
+    this.entries = transaction.entries;
+    this.revision++;
+    return result;
+  }
   async get<T>(namespace: string, id: string): Promise<StateRecord<T> | undefined> {
     const entry = this.entries.get(`${namespace}:${id}`);
     return entry && (!entry.expiresAt || entry.expiresAt > new Date().toISOString())
@@ -561,6 +689,7 @@ export class MemoryStateStore implements StateStore {
       version: 1,
       expiresAt,
     });
+    this.revision++;
     return true;
   }
   async replace<T>(namespace: string, record: StateRecord<T>) {
@@ -575,16 +704,19 @@ export class MemoryStateStore implements StateStore {
       `${namespace}:${record.id}`,
       structuredClone({ ...record, version: record.version + 1 }),
     );
+    this.revision++;
     return true;
   }
   async remove(namespace: string, id: string, version?: number) {
     const prior = this.entries.get(`${namespace}:${id}`);
-    return Boolean(
+    const removed = Boolean(
       prior &&
       (!prior.expiresAt || prior.expiresAt > new Date().toISOString()) &&
       (version === undefined || prior.version === version) &&
       this.entries.delete(`${namespace}:${id}`),
     );
+    if (removed) this.revision++;
+    return removed;
   }
   async list<T>(namespace: string, prefix = "", limit = 1000, after?: string) {
     const keys = [...this.entries.keys()]
@@ -609,6 +741,7 @@ export class MemoryStateStore implements StateStore {
         this.entries.delete(key);
         removed++;
       }
+    if (removed) this.revision++;
     return removed;
   }
 }

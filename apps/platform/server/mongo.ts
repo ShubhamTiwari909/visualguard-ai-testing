@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { MongoClient, type Collection, type Db, type Document } from "mongodb";
+import { MongoClient, type ClientSession, type Collection, type Db, type Document } from "mongodb";
 import type { ArtifactStore } from "./artifacts.js";
 import { OBJECT_CHUNK_BYTES, sha256 } from "./artifacts.js";
 import type { EvidenceRepository, StateRecord, StateStore } from "./storage-contracts.js";
@@ -471,33 +471,87 @@ type MongoState = {
 };
 export class MongoStateStore implements StateStore {
   private collection: Collection<MongoState>;
-  constructor(db: Db) {
+  private transactionCapability?: Promise<boolean>;
+  constructor(
+    private db: Db,
+    private client?: MongoClient,
+    private session?: ClientSession,
+  ) {
     this.collection = db.collection<MongoState>("vg_state");
+  }
+  async supportsTransactions(): Promise<boolean> {
+    if (this.session) return true;
+    if (!this.client) return false;
+    this.transactionCapability ??= this.db
+      .admin()
+      .command({ hello: 1 })
+      .then((hello) =>
+        Boolean(
+          typeof hello.logicalSessionTimeoutMinutes === "number" &&
+          (hello.setName || hello.msg === "isdbgrid"),
+        ),
+      )
+      .catch((error) => {
+        this.transactionCapability = undefined;
+        throw error;
+      });
+    return this.transactionCapability;
+  }
+  async transaction<T>(work: (store: StateStore) => Promise<T>): Promise<T> {
+    if (this.session) return work(this);
+    if (!(await this.supportsTransactions()))
+      throw new PlatformError(
+        503,
+        "Account linking requires a MongoDB replica set or sharded deployment",
+      );
+    const session = this.client!.startSession();
+    try {
+      return await session.withTransaction(
+        () => work(new MongoStateStore(this.db, this.client, session)),
+        {
+          readConcern: { level: "snapshot" },
+          writeConcern: { w: "majority" },
+          readPreference: "primary",
+          timeoutMS: 10_000,
+        },
+      );
+    } finally {
+      await session.endSession();
+    }
   }
   private live() {
     return { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date().toISOString() } }] };
   }
   async get<T>(namespace: string, id: string): Promise<StateRecord<T> | undefined> {
-    const row = await this.collection.findOne({ namespace, id, ...this.live() });
+    const row = await this.collection.findOne(
+      { namespace, id, ...this.live() },
+      { session: this.session },
+    );
     return row
       ? { id, value: row.value as T, version: row.version, expiresAt: row.expiresAt ?? undefined }
       : undefined;
   }
   async create<T>(namespace: string, id: string, value: T, expiresAt?: string) {
-    await this.collection.deleteOne({
-      namespace,
-      id,
-      expiresAt: { $ne: null, $lte: new Date().toISOString() },
-    });
-    try {
-      await this.collection.insertOne({
+    await this.collection.deleteOne(
+      {
         namespace,
         id,
-        value,
-        version: 1,
-        expiresAt: expiresAt ?? null,
-        expiresOn: expiresAt ? new Date(expiresAt) : null,
-      });
+        expiresAt: { $ne: null, $lte: new Date().toISOString() },
+      },
+      { session: this.session },
+    );
+    try {
+      await this.collection.insertOne(
+        {
+          namespace,
+          id,
+          value,
+          version: 1,
+          expiresAt: expiresAt ?? null,
+          expiresOn: expiresAt ? new Date(expiresAt) : null,
+        },
+        { session: this.session },
+      );
       return true;
     } catch (error) {
       if (error && typeof error === "object" && "code" in error && error.code === 11000)
@@ -518,6 +572,7 @@ export class MongoStateStore implements StateStore {
             },
             $inc: { version: 1 },
           },
+          { session: this.session },
         )
       ).modifiedCount === 1
     );
@@ -525,11 +580,14 @@ export class MongoStateStore implements StateStore {
   async remove(namespace: string, id: string, version?: number) {
     return (
       (
-        await this.collection.deleteOne({
-          namespace,
-          id,
-          ...(version === undefined ? {} : { version }),
-        })
+        await this.collection.deleteOne(
+          {
+            namespace,
+            id,
+            ...(version === undefined ? {} : { version }),
+          },
+          { session: this.session },
+        )
       ).deletedCount === 1
     );
   }
@@ -540,11 +598,14 @@ export class MongoStateStore implements StateStore {
     after?: string,
   ): Promise<StateRecord<T>[]> {
     const rows = await this.collection
-      .find({
-        namespace,
-        id: { $regex: `^${regex(prefix)}`, ...(after === undefined ? {} : { $gt: after }) },
-        ...this.live(),
-      })
+      .find(
+        {
+          namespace,
+          id: { $regex: `^${regex(prefix)}`, ...(after === undefined ? {} : { $gt: after }) },
+          ...this.live(),
+        },
+        { session: this.session },
+      )
       .sort({ id: 1 })
       .limit(limit)
       .toArray();
@@ -557,15 +618,18 @@ export class MongoStateStore implements StateStore {
   }
   async pruneExpired(limit = 250) {
     const rows = await this.collection
-      .find({ expiresAt: { $ne: null, $lte: new Date().toISOString() } })
+      .find({ expiresAt: { $ne: null, $lte: new Date().toISOString() } }, { session: this.session })
       .limit(limit)
       .toArray();
     if (!rows.length) return 0;
     return (
-      await this.collection.deleteMany({
-        _id: { $in: rows.map((row) => row._id) },
-        expiresAt: { $ne: null, $lte: new Date().toISOString() },
-      })
+      await this.collection.deleteMany(
+        {
+          _id: { $in: rows.map((row) => row._id) },
+          expiresAt: { $ne: null, $lte: new Date().toISOString() },
+        },
+        { session: this.session },
+      )
     ).deletedCount;
   }
 }
@@ -673,7 +737,7 @@ export async function openMongo(url: string) {
     ]);
     return {
       repository: new MongoRepository(db),
-      state: new MongoStateStore(db),
+      state: new MongoStateStore(db, client),
       store: new MongoArtifactStore(db),
       close: () => client.close(),
     };

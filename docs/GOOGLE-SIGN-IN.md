@@ -2,7 +2,7 @@
 
 P01 adds a named Google sign-in entry point to the existing dashboard login, validates complete OIDC configuration before startup, verifies Google email and token signatures, and returns provider failures to a safe retry screen. It uses the existing database-backed accounts, sessions, revocation, project roles, and audit records.
 
-This is the first phase of the [team onboarding plan](TEAM-ONBOARDING-PLAN.md#delivery-phases-agreed-on-16-october-2026). Invitations, invitation-required admission, explicit password/Google account linking, and expanded user administration follow in separate phases. An ordinary Google user initially has no project access; an administrator must grant it.
+This is the first phase of the [team onboarding plan](TEAM-ONBOARDING-PLAN.md#delivery-phases-agreed-on-16-october-2026). P02 now adds [explicit Google account linking](GOOGLE-ACCOUNT-LINKING.md) and identity continuity. Invitations, invitation-required admission, and expanded user administration remain later phases. An ordinary Google user initially has no project access; an administrator must grant it.
 
 ## 1. Values the operator supplies
 
@@ -16,7 +16,7 @@ This is the first phase of the [team onboarding plan](TEAM-ONBOARDING-PLAN.md#de
 
 Set `VISUALGUARD_AUTH_MODE=login` and `VISUALGUARD_OIDC_ISSUER=https://accounts.google.com`. These two values do not come from Google credentials. `VISUALGUARD_OIDC_ADMIN_SUBJECTS` remains an optional explicit subject allowlist for existing company OIDC deployments; it is not required for this Google email bootstrap.
 
-No new Google-specific credential names were added. A database service is optional: with `VISUALGUARD_DATABASE_URL` and `DATABASE_URL` unset, the dashboard uses SQLite. Use `VISUALGUARD_DATABASE_URL` only for an actual PostgreSQL or MongoDB connection. P01 does not require MongoDB transactions or a replica set because it does not implement invitations or identity linking.
+No new Google-specific credential names were added. A database service is optional: with `VISUALGUARD_DATABASE_URL` and `DATABASE_URL` unset, the dashboard uses SQLite. Use `VISUALGUARD_DATABASE_URL` only for an actual PostgreSQL or MongoDB connection. Ordinary Google sign-in remains supported on standalone MongoDB; the explicit linking feature introduced in P02 requires transactional storage (SQLite/PostgreSQL or a MongoDB replica set/sharded deployment).
 
 Keep real values in an ignored local environment file or your host's secret store. Never commit the client secret or include it in screenshots, issue descriptions, or chat messages. The safe template is [apps/platform/.env.example](../apps/platform/.env.example).
 
@@ -78,7 +78,7 @@ Open the configured origin and select **Sign in with Google**. Password login re
 7. Restart the dashboard with the same database and verify identities/sessions persist. Repeated Google login reuses the existing issuer/subject identity and does not automatically restore disabled accounts or edited roles.
 8. Cancel the Google consent/account-selection flow, or retry after an invalid/expired callback. The browser should return to the login screen with a generic retry message rather than displaying provider details.
 
-P01 retains legacy identity keys: a password account and Google account with the same email are separate accounts. The recovery password administrator and Google administrator can therefore be separate entries. Assign project access to the intended identity. Do not change the configured issuer's spelling/trailing slash for an existing database: it is part of current OIDC IDs. Explicit linking and canonical identity migration are P02 work.
+P01 created separate password and Google accounts even with the same email. P02 preserves existing IDs and lazily maps legacy external identities on validated sign-in; new external users on transaction-capable databases use opaque IDs. The recovery password administrator and an already-created Google administrator can still be separate entries. Assign project access to the intended identity. Do not change the configured issuer's spelling/trailing slash for an existing database: it is part of legacy OIDC IDs and identity mappings. See the [P02 guide](GOOGLE-ACCOUNT-LINKING.md) to link a fresh Google identity to your current account; existing separate accounts cannot be merged through this flow.
 
 This pilot allows an eligible Google account to create a signed-in member with zero project access. It is not invitation-only admission or automatic Workspace-domain provisioning. Google sign-in does not grant project access based on an email domain.
 
@@ -107,4 +107,4 @@ pnpm --filter @visualguard/platform exec vitest run \
 
 Validation on 16 October 2026 using Node 22.14: the three focused suites passed **45 tests**, including SQLite reopening and Google/generic OIDC cases, and `pnpm platform:build` passed. A real Google browser pilot requires operator credentials and consent/client setup; it has not been run. Live PostgreSQL/MongoDB identity flows and the full invitation release are not established by the simulated-provider tests. The merge review reran all 45 focused tests and the dashboard build against the released dashboard baseline. With the operator’s explicit approval to lift the deferred-check restriction for PR cleanup, repository formatting, lint, and CLI/platform type checks also passed.
 
-Next: P02 implements the transactional identity foundation and explicit linking. P03 adds invitations and admission migration; P04 expands user administration; P05 completes operational rollout. Keep each requested feature's implementation, documentation and focused tests in its own commit.
+P02 implements the [transactional identity foundation and explicit linking](GOOGLE-ACCOUNT-LINKING.md). Next, P03 adds invitations and admission migration; P04 expands user administration; P05 completes operational rollout. Keep each requested feature's implementation, documentation and focused tests in its own commit.
