@@ -228,9 +228,15 @@ export class Operations {
     if (input.password.length < 12 || input.password.length > 256)
       throw new PlatformError(400, "Use a replacement password of 12–256 characters");
     if (input.reason.includes(input.password))
-      throw new PlatformError(400, "Do not include the replacement password in the recovery reason");
+      throw new PlatformError(
+        400,
+        "Do not include the replacement password in the recovery reason",
+      );
     if (!this.state.transaction || !((await this.state.supportsTransactions?.()) ?? true))
-      throw new PlatformError(503, "Recovery requires SQLite, PostgreSQL, or a MongoDB replica set");
+      throw new PlatformError(
+        503,
+        "Recovery requires SQLite, PostgreSQL, or a MongoDB replica set",
+      );
     const salt = randomBytes(16).toString("hex");
     const key = (await scrypt(input.password, salt, 64)) as Buffer;
     return this.state.transaction(async (store) => {
@@ -265,7 +271,10 @@ export class Operations {
           for (const credential of rows) {
             const owner =
               namespace === "sessions" ? credential.value.userId : credential.value.ownerId;
-            if (owner === row.id && !(await store.remove(namespace, credential.id, credential.version)))
+            if (
+              owner === row.id &&
+              !(await store.remove(namespace, credential.id, credential.version))
+            )
               throw new PlatformError(409, "Credentials changed; preview recovery again");
           }
           if (rows.length < 100) break;

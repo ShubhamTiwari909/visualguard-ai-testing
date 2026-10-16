@@ -16,9 +16,7 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       ? process.env.VISUALGUARD_TEST_DATABASE_URL
       : process.env.VISUALGUARD_TEST_MONGODB_URL;
   describe.skipIf(backend !== "sqlite" && !url)(`${backend} operations recovery`, () => {
-    let state: StateStore,
-      close: () => Promise<void>,
-      root: string;
+    let state: StateStore, close: () => Promise<void>, root: string;
     beforeAll(async () => {
       root = await mkdtemp(join(tmpdir(), "vg-operations-storage-"));
       if (backend !== "sqlite") ({ state, close } = await isolatedStorage(backend, url!));

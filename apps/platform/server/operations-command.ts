@@ -55,7 +55,8 @@ export async function operationsCommand(args: string[], env: NodeJS.ProcessEnv =
   });
   if (values.help)
     return {
-      usage: "pnpm platform:operations <status|admins|preview|recover> [--user ID] [--after CURSOR]",
+      usage:
+        "pnpm platform:operations <status|admins|preview|recover> [--user ID] [--after CURSOR]",
       recovery:
         "recover --user ID --version PREVIEW_VERSION --confirm ID --backup-confirmed --reason REASON --password-file PRIVATE_FILE",
       warning:

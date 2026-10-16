@@ -112,6 +112,6 @@ pnpm --filter @visualguard/platform exec vitest run \
   test/auth.test.ts test/administration.test.ts test/reviews.test.ts
 ```
 
-Formatting, lint and type checks remain deferred under the current repository instructions. Live Google pilot, real deployment, and native PostgreSQL/MongoDB restore drills remain operator sign-off gates unless separately recorded as completed.
+The user authorized formatting, lint and type checks for the PR #44 review cleanup; all three passed locally on 16 October 2026. This exception applies to this PR cleanup. Live Google pilot, real deployment, and native PostgreSQL/MongoDB restore drills remain operator sign-off gates unless separately recorded as completed.
 
 Local validation on 16 October 2026: the seven focused suites above passed **69 tests**, with **6 explicitly skipped PostgreSQL/MongoDB recovery executions** because no live test database URLs were supplied. The dashboard UI build passed. Browser checks covered administrator navigation, actor/action filters, a 375 px viewport without horizontal overflow, and no observed browser errors. These results cover the implemented memory/SQLite paths, not a live Google pilot or an external database restore drill.

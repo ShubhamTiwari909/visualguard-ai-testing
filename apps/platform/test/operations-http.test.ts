@@ -8,12 +8,8 @@ import { openPlatform } from "../server/config.js";
 import { Operations } from "../server/operations.js";
 
 describe("workspace operations HTTP access", () => {
-  let platform: Awaited<ReturnType<typeof openPlatform>>,
-    server: Server,
-    base: string;
-  let root: string,
-    admin: { cookie: string; token: string },
-    member: typeof admin;
+  let platform: Awaited<ReturnType<typeof openPlatform>>, server: Server, base: string;
+  let root: string, admin: { cookie: string; token: string }, member: typeof admin;
   const password = "operations-test-only-password";
   const request = async (path: string, actor?: typeof admin, data?: unknown) => {
     const response = await fetch(`${base}${path}`, {

@@ -36,13 +36,17 @@ const bind = (state: StateStore): StateStore => ({
 });
 
 describe("workspace operations", () => {
-  let state: MemoryStateStore,
-    operations: Operations;
+  let state: MemoryStateStore, operations: Operations;
   beforeEach(() => {
     state = new MemoryStateStore();
     operations = new Operations(state);
   });
-  const event = (index: number, action = "user.updated", details: unknown = {}, actorId = "admin") => ({
+  const event = (
+    index: number,
+    action = "user.updated",
+    details: unknown = {},
+    actorId = "admin",
+  ) => ({
     id: `${String(index).padStart(13, "0")}:${randomUUID()}`,
     value: { actorId, action, at: "2026-10-16T12:01:00.000Z", details },
   });
@@ -131,7 +135,9 @@ describe("workspace operations", () => {
     expect(status.inventoryComplete).toBe(false);
     expect(status.accountsScanned).toBe(200);
     expect(status.duplicateEmails).toBe(1);
-    expect(status.duplicateEmailGroups).toEqual([{ email: "duplicate@example.test", accounts: 200 }]);
+    expect(status.duplicateEmailGroups).toEqual([
+      { email: "duplicate@example.test", accounts: 200 },
+    ]);
     expect(status.warnings.join(" ")).toContain("incomplete");
     expect(status.warnings.join(" ")).not.toContain("There is no active password administrator");
     expect(await state.list("users", "", 1000)).toHaveLength(201);
@@ -156,14 +162,21 @@ describe("workspace operations", () => {
       expectedVersion: 1,
       disabled: true,
     });
-    expect(JSON.stringify(await operations.recoveryAdministrators())).not.toContain("old-test-hash");
+    expect(JSON.stringify(await operations.recoveryAdministrators())).not.toContain(
+      "old-test-hash",
+    );
     for (const id of ["member", "google", "missing"])
-      await expect(operations.previewRecovery(id)).rejects.toThrow("existing password administrator");
+      await expect(operations.previewRecovery(id)).rejects.toThrow(
+        "existing password administrator",
+      );
   });
 
   it("recovers atomically while preserving identities, memberships and historical actors", async () => {
     await state.create("users", "admin", user("admin", { disabled: true }));
-    await state.create("external-identities", "google-owner", { userId: "admin", subject: "unchanged" });
+    await state.create("external-identities", "google-owner", {
+      userId: "admin",
+      subject: "unchanged",
+    });
     await state.create("memberships", "admin:demo", {
       userId: "admin",
       projectId: "demo",
@@ -187,7 +200,9 @@ describe("workspace operations", () => {
     expect(account.passwordHash).toMatch(/^scrypt\$/);
     expect(await state.list("sessions")).toHaveLength(1);
     expect(await state.list("tokens")).toEqual([]);
-    expect((await state.get<{ actorId: string }>("reviews", "historic"))?.value.actorId).toBe("admin");
+    expect((await state.get<{ actorId: string }>("reviews", "historic"))?.value.actorId).toBe(
+      "admin",
+    );
     expect((await state.get("external-identities", "google-owner"))?.value).toEqual({
       userId: "admin",
       subject: "unchanged",
@@ -216,7 +231,9 @@ describe("workspace operations", () => {
   it("rejects unsupported schemas without account or guard changes", async () => {
     await state.create("users", "admin", user("admin"));
     await state.create("identity-schema", "current", { version: 99 });
-    await expect(operations.recover(recover("admin"))).rejects.toThrow("compatible identity schema");
+    await expect(operations.recover(recover("admin"))).rejects.toThrow(
+      "compatible identity schema",
+    );
     expect((await state.get<User>("users", "admin"))?.value.authVersion).toBe(1);
     expect(await state.get("administrator-guard", "workspace")).toBeUndefined();
   });
