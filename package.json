@@ -14,6 +14,7 @@
     "platform:test:package": "node scripts/standalone-dashboard-smoke.mjs",
     "platform:import": "pnpm --filter @visualguard/platform run import",
     "platform:publish": "pnpm --filter @visualguard/platform run publish:run",
+    "platform:operations": "pnpm --filter @visualguard/platform run operations",
     "build": "pnpm --filter visualguard build",
     "test": "pnpm --filter visualguard test",
     "typecheck": "pnpm --filter visualguard typecheck && pnpm --filter @visualguard/platform typecheck",
