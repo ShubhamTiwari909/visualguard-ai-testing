@@ -62,6 +62,9 @@ try {
   };
   server = await dashboard.startDashboard({ port: 0, host: "127.0.0.1", env });
   assert.equal((await fetch(`${server.url}/api/health`)).status, 200);
+  const reviews = await fetch(`${server.url}/reviews`);
+  assert.equal(reviews.status, 200);
+  assert.match(await reviews.text(), /<div id="root">/);
   const html = await (await fetch(server.url)).text();
   assert.match(html, /<div id="root">/);
   const asset = html.match(/src="([^"]+\.js)"/)?.[1];

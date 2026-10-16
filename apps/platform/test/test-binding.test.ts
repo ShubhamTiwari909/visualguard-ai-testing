@@ -87,9 +87,15 @@ describe("test project binding", () => {
     try {
       await platform.repository.createProject("original", "Original name");
       await platform.repository.updateProject("original", "Friendly name", "friendly-id", 0);
-    } finally { await platform.close(); }
+    } finally {
+      await platform.close();
+    }
     for (const project of ["original", "friendly-id", "Friendly name"]) {
-      const binding = await prepareTestBinding({ project, metadata: { environment: "ci", runName: "Named smoke" }, env });
+      const binding = await prepareTestBinding({
+        project,
+        metadata: { environment: "ci", runName: "Named smoke" },
+        env,
+      });
       expect(binding.id).toBe("original");
       expect(binding.publicId).toBe("friendly-id");
       expect(binding.name).toBe("Friendly name");
@@ -97,13 +103,28 @@ describe("test project binding", () => {
   });
   it("rejects non-string public IDs returned by a remote dashboard", async () => {
     for (const publicId of [42, null, true, ["coerced-id"], { id: "unexpected" }]) {
-      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
-        id: "storefront", name: "Storefront Web", publicId,
-      }), { status: 200, headers: { "Content-Type": "application/json" } })));
-      await expect(prepareTestBinding({
-        project: "storefront", server: "https://dashboard.example.test",
-        metadata: { environment: "ci" }, env: { VISUALGUARD_UPLOAD_TOKEN: "test-upload-token" },
-      })).rejects.toThrow("invalid project");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(
+          async () =>
+            new Response(
+              JSON.stringify({
+                id: "storefront",
+                name: "Storefront Web",
+                publicId,
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+        ),
+      );
+      await expect(
+        prepareTestBinding({
+          project: "storefront",
+          server: "https://dashboard.example.test",
+          metadata: { environment: "ci" },
+          env: { VISUALGUARD_UPLOAD_TOKEN: "test-upload-token" },
+        }),
+      ).rejects.toThrow("invalid project");
     }
   });
   it("uses scoped remote lookup and rejects unsafe URLs or missing remote credentials", async () => {

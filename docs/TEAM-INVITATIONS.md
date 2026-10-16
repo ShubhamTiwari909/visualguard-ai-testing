@@ -10,8 +10,8 @@ Only one new application setting is introduced:
 VISUALGUARD_USER_ADMISSION=invite
 ```
 
-| Value | Behavior |
-| --- | --- |
+| Value    | Behavior                                                                                                                                                                                        |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `invite` | An unknown provider identity cannot create an account through ordinary login. It needs a matching invitation, verified identity, and explicit acceptance. Known identities continue signing in. |
 | `legacy` | Explicitly preserve the P01/P02 behavior: ordinary OIDC login may create a member account with no project membership. Use temporarily during migration or for standalone MongoDB compatibility. |
 
@@ -56,6 +56,7 @@ From the repository root, with Node 22.12+ and dependencies installed:
    ```
 
    Keep the environment loaded in that terminal. Use the host's process manager and HTTPS proxy for a hosted server. Do not point a trial at production storage.
+
 5. On a fresh database, sign in with the configured administrator email/password. Then use **Your sign-in methods → Link Google account** to attach Google to that same administrator. If initial setup has no password, the first eligible verified Google administrator can bootstrap the workspace instead. Once setup is complete, changing environment email/subject settings cannot create a second bootstrap administrator, promote an existing member, or restore a disabled account.
 6. Create a project using the existing dashboard project flow if none exists, then open **People & integrations**.
 
@@ -102,15 +103,15 @@ Identity proof must be no more than five minutes old; the browser onboarding tic
 
 All records use the existing versioned state adapter; no new SQL tables are needed:
 
-| Namespace | Purpose |
-| --- | --- |
-| `admission` | Versioned workspace admission mode and completed initial-admin setup |
-| `invitations` | Durable schema-v1 target/project/role, issuer, expiry, hashed secret, status, acceptance receipt |
-| `invitation-pending` | Unique hash of normalized email/canonical project → pending invitation ID |
-| `invitation-secrets` | Hash of a random 256-bit secret → invitation ID; no raw link is stored |
-| `onboarding` | Hashed browser handle, form token, invitation ID/version, short-lived validated recipient proof |
-| `invitation-projects` | Shared active/deleting project guard used by join and every ProjectDirectory deletion path |
-| Existing identity/membership/audit records | Atomic identity ownership, access and audit results |
+| Namespace                                  | Purpose                                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `admission`                                | Versioned workspace admission mode and completed initial-admin setup                             |
+| `invitations`                              | Durable schema-v1 target/project/role, issuer, expiry, hashed secret, status, acceptance receipt |
+| `invitation-pending`                       | Unique hash of normalized email/canonical project → pending invitation ID                        |
+| `invitation-secrets`                       | Hash of a random 256-bit secret → invitation ID; no raw link is stored                           |
+| `onboarding`                               | Hashed browser handle, form token, invitation ID/version, short-lived validated recipient proof  |
+| `invitation-projects`                      | Shared active/deleting project guard used by join and every ProjectDirectory deletion path       |
+| Existing identity/membership/audit records | Atomic identity ownership, access and audit results                                              |
 
 Terminal invitation metadata is retained rather than TTL-pruned into reusable credentials. The list omits token hashes. Provider tokens, authorization codes, raw invitation links, and passwords do not enter invitation audit details.
 
@@ -124,6 +125,6 @@ Pre-session actions require a browser form token; actions with a signed-in actor
 
 ## Validation and remaining phases
 
-Focused protocol, API, transaction, race and compatibility tests run against SQLite, PostgreSQL, transactional MongoDB and standalone MongoDB. On 16 October 2026, 234 tests passed in 10 focused suites, with 16 intentional backend-specific skips: the Mongo-only snapshot cases skip other adapters, and the in-memory repository fake skips physical evidence deletion. The dashboard UI build and a real-browser password invitation journey are also checked. No formatting, lint, or type-check commands are run during this sequence, per the user instruction.
+Focused protocol, API, transaction, race and compatibility tests run against SQLite, PostgreSQL, transactional MongoDB and standalone MongoDB. On 16 October 2026, 234 tests passed in 10 focused suites, with 16 intentional backend-specific skips: the Mongo-only snapshot cases skip other adapters, and the in-memory repository fake skips physical evidence deletion. The dashboard UI build and a real-browser password invitation journey are also checked. These checks were deferred during initial implementation. The operator subsequently authorized formatting, lint, and type checks for merge cleanup. Merge review reran 227 tests in nine focused suites with the same 16 intentional skips against the reviewed P01/P02 baseline and live adapters; formatting, lint, CLI/report/platform type checks, and the dashboard build passed. The review preserved direct `/reviews` serving alongside `/invite` while integrating the released runtime.
 
 Real Google browser acceptance still requires your existing Google client credentials and consent/audience configuration; the automated provider uses signed tokens through the actual OIDC library. Expanded account administration, session-revocation UI and last-admin protection remain P04. Audit/recovery operations and rollout evidence remain P05. Automatic invitation email delivery is outside the agreed scope.

@@ -51,7 +51,15 @@ export async function scaffoldDashboard(options: {
           buildCommand: "npm run build",
           outputDirectory: "public",
           functions: { "api/dashboard.mjs": { maxDuration: 300 } },
-          headers: [{ source: "/invite", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "no-store" }] }],
+          headers: [
+            {
+              source: "/invite",
+              headers: [
+                { key: "Referrer-Policy", value: "no-referrer" },
+                { key: "Cache-Control", value: "no-store" },
+              ],
+            },
+          ],
           rewrites: [
             { source: "/api/:path*", destination: "/api/dashboard?__vg_path=:path*" },
             { source: "/runs/:path*", destination: "/index.html" },

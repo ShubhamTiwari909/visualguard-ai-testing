@@ -102,7 +102,13 @@ function Metadata({ run }: { run: StoredRun }) {
 function Shell({ projects, children }: { projects: Project[]; children: ReactNode }) {
   const session = useSession();
   const selector = new URLSearchParams(window.location.search).get("project");
-  const selected = projects.find((project) => project.id === selector || project.publicId === selector || project.aliases?.includes(selector ?? ""))?.id ?? selector;
+  const selected =
+    projects.find(
+      (project) =>
+        project.id === selector ||
+        project.publicId === selector ||
+        project.aliases?.includes(selector ?? ""),
+    )?.id ?? selector;
   useEffect(() => {
     document.documentElement.dataset.theme = "light";
   }, []);
@@ -125,10 +131,16 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
           </div>
         </div>
         <p className="vg-nav-heading">QUALITY</p>
-        <Link className={`vg-nav-link ${!selected && (window.location.pathname === "/" || window.location.pathname.startsWith("/runs/")) ? "is-active" : ""}`} href="/">
+        <Link
+          className={`vg-nav-link ${!selected && (window.location.pathname === "/" || window.location.pathname.startsWith("/runs/")) ? "is-active" : ""}`}
+          href="/"
+        >
           <span aria-hidden="true">▦</span> Run history
         </Link>
-        <Link className={`vg-nav-link ${window.location.pathname === "/reviews" ? "is-active" : ""}`} href="/reviews">
+        <Link
+          className={`vg-nav-link ${window.location.pathname === "/reviews" ? "is-active" : ""}`}
+          href="/reviews"
+        >
           <span aria-hidden="true">✓</span> Review inbox
         </Link>
         <Link className="vg-nav-link" href="/settings">
@@ -354,7 +366,19 @@ function RunHistory({
             </label>
             <label>
               <span className="vg-sr-only">Project</span>
-              <select name="project" defaultValue={projects.find((project) => project.id === params.get("project") || project.publicId === params.get("project") || project.aliases?.includes(params.get("project") ?? ""))?.id ?? params.get("project") ?? ""}>
+              <select
+                name="project"
+                defaultValue={
+                  projects.find(
+                    (project) =>
+                      project.id === params.get("project") ||
+                      project.publicId === params.get("project") ||
+                      project.aliases?.includes(params.get("project") ?? ""),
+                  )?.id ??
+                  params.get("project") ??
+                  ""
+                }
+              >
                 <option value="">All projects</option>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
@@ -649,16 +673,16 @@ function RunView({
             {(session.user?.admin ||
               projects.find((project) => project.id === run.projectId)?.role === "maintainer") && (
               <>
-              <RunNameEditor run={run} onSaved={setRun} />
-              <DeleteAction
-                kind="run"
-                id={run.id}
-                name={runLabel(run)}
-                onDeleted={(result) => {
-                  releaseArtifacts(run.id);
-                  onDeleted(deletionMessage("run", result), run.projectId);
-                }}
-              />
+                <RunNameEditor run={run} onSaved={setRun} />
+                <DeleteAction
+                  kind="run"
+                  id={run.id}
+                  name={runLabel(run)}
+                  onDeleted={(result) => {
+                    releaseArtifacts(run.id);
+                    onDeleted(deletionMessage("run", result), run.projectId);
+                  }}
+                />
               </>
             )}
           </div>
@@ -782,7 +806,10 @@ function RunView({
             {!jobs.length && <div className="vg-empty">No matching checks.</div>}
           </div>
         </section>
-        <RunReviews run={run} initialJob={new URLSearchParams(window.location.search).get("review") ?? undefined} />
+        <RunReviews
+          run={run}
+          initialJob={new URLSearchParams(window.location.search).get("review") ?? undefined}
+        />
         <details className="vg-provenance">
           <summary>Evidence identity & provenance</summary>
           <dl>
@@ -898,6 +925,12 @@ function Platform() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {window.location.pathname === "/invite" ? <InvitationPage /> : <SessionProvider><Platform /></SessionProvider>}
+    {window.location.pathname === "/invite" ? (
+      <InvitationPage />
+    ) : (
+      <SessionProvider>
+        <Platform />
+      </SessionProvider>
+    )}
   </StrictMode>,
 );
