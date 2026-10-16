@@ -104,3 +104,9 @@ The separate publishing and local-project command suites also passed **10 tests*
 9. Repeat with your disposable PostgreSQL and MongoDB replica set. On standalone MongoDB, confirm the linking card reports linking unavailable and directs the user to their administrator while password/Google login and evidence/review workflows remain available.
 
 Native database backups include identities and operational authentication state; portable evidence exports do not. Do not run older P01 binaries against a P02 database after creating canonical mappings: they do not understand linked identities and can create separate legacy accounts. Roll back through a compatible forward fix or a coordinated pre-upgrade database snapshot, preserving an operational recovery method. Do not remove identity records to free a Google account or rewrite historical actors manually.
+
+The main-targeted CodeQL review identified a test-helper naming false positive:
+`passwordAccount()` returns an account/session fixture, but its whole return value
+was classified as a password, including the high-entropy session cookie. The
+helper is now named `authenticatedAccount()`; cookie lookup still uses SHA-256
+and actual passwords still use salted scrypt. No scanning rule is suppressed.
