@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { sha256 } from "./artifacts.js";
 import { PlatformError } from "./errors.js";
 import type { StateRecord, StateStore } from "./storage-contracts.js";
+import { oidcSettings, type OidcSettings } from "./oidc-config.js";
 
 const scrypt = promisify(deriveKey);
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -63,6 +64,8 @@ export class AuthService {
   readonly mode: "local" | "login";
   readonly publicUrl?: URL;
   readonly ready: Promise<void>;
+  readonly oidcProvider: "google" | "oidc" | null;
+  private readonly oidcSettings?: OidcSettings;
   private localToken = secret();
   constructor(
     readonly state: StateStore,
@@ -97,6 +100,8 @@ export class AuthService {
     }
     if (mode === "login" && !this.publicUrl)
       throw new Error("Hosted login requires VISUALGUARD_PUBLIC_URL");
+    this.oidcSettings = mode === "login" ? oidcSettings(env) : undefined;
+    this.oidcProvider = this.oidcSettings?.provider ?? null;
     this.ready = this.bootstrap();
   }
 
@@ -130,7 +135,7 @@ export class AuthService {
     if (
       !admins &&
       !(
-        this.env.VISUALGUARD_OIDC_ISSUER &&
+        this.oidcSettings &&
         (this.env.VISUALGUARD_ADMIN_EMAIL || this.env.VISUALGUARD_OIDC_ADMIN_SUBJECTS)
       )
     )
@@ -447,19 +452,23 @@ export class AuthService {
 
   private oidcConfiguration?: Promise<import("openid-client").Configuration>;
   private oidc() {
-    if (
-      !this.env.VISUALGUARD_OIDC_ISSUER ||
-      !this.env.VISUALGUARD_OIDC_CLIENT_ID ||
-      !this.env.VISUALGUARD_OIDC_CLIENT_SECRET
-    )
-      throw new PlatformError(400, "Single sign-on is not configured");
-    this.oidcConfiguration ??= import("openid-client").then((client) =>
-      client.discovery(
-        new URL(this.env.VISUALGUARD_OIDC_ISSUER!),
-        this.env.VISUALGUARD_OIDC_CLIENT_ID!,
-        this.env.VISUALGUARD_OIDC_CLIENT_SECRET!,
-      ),
-    );
+    const settings = this.oidcSettings;
+    if (!settings) throw new PlatformError(400, "Single sign-on is not configured");
+    this.oidcConfiguration ??= import("openid-client")
+      .then(async (client) => {
+        const config = await client.discovery(
+          new URL(settings.issuer),
+          settings.clientId,
+          settings.clientSecret,
+        );
+        if (settings.provider === "google") client.enableNonRepudiationChecks(config);
+        return config;
+      })
+      .catch((error) => {
+        // A transient provider outage must not poison discovery until the next restart.
+        this.oidcConfiguration = undefined;
+        throw error;
+      });
     return this.oidcConfiguration;
   }
   async beginOidc(response: ServerResponse) {
@@ -509,7 +518,9 @@ export class AuthService {
     const claims = tokens.claims();
     if (!claims?.sub) throw new PlatformError(401, "Identity provider did not return a subject");
     const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
-    const id = `oidc-${sha256(`${this.env.VISUALGUARD_OIDC_ISSUER}:${claims.sub}`)}`;
+    if (this.oidcProvider === "google" && (claims.email_verified !== true || !email))
+      throw new PlatformError(401, "Google did not return a verified email address");
+    const id = `oidc-${sha256(`${this.oidcSettings!.issuer}:${claims.sub}`)}`;
     const admin =
       (this.env.VISUALGUARD_OIDC_ADMIN_SUBJECTS ?? "").split(",").includes(claims.sub) ||
       (claims.email_verified === true &&
@@ -526,7 +537,7 @@ export class AuthService {
     const user = (await this.state.get<User>("users", id))!.value;
     if (user.disabled) throw new PlatformError(403, "Account is disabled");
     await this.issueSession(user, response);
-    await this.audit({ id }, "user.login", { provider: "oidc" });
+    await this.audit({ id }, "user.login", { provider: this.oidcProvider });
     response.writeHead(302, { Location: "/" });
     response.end();
   }

@@ -12,6 +12,7 @@ export interface SessionInfo {
   token?: string;
   user: { id: string; name: string; email: string; admin: boolean } | null;
   oidc: boolean;
+  oidcProvider?: "google" | "oidc" | null;
 }
 const Context = createContext<SessionInfo | undefined>(undefined);
 export const useSession = () => useContext(Context)!;
@@ -33,7 +34,11 @@ export async function mutation<T>(path: string, method: string, data?: unknown):
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionInfo>();
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    new URLSearchParams(window.location.search).get("signin_error") === "oidc"
+      ? "Unable to complete sign-in. Please try again or use your email and password."
+      : "",
+  );
   const [pending, setPending] = useState(false);
   const load = () =>
     fetch("/api/session")
@@ -112,7 +117,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         )}
         {session?.oidc && (
           <a className="vg-button" href="/api/auth/login">
-            Continue with company login
+            {session.oidcProvider === "google"
+              ? "Sign in with Google"
+              : "Continue with company login"}
           </a>
         )}
         {!session && error && (

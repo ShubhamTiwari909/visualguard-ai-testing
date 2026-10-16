@@ -34,6 +34,8 @@ Use **People & integrations** to create accounts, assign project roles, disable 
 
 ## Optional company login
 
+For the first Google sign-in phase, follow the [Google setup and local pilot guide](../../docs/GOOGLE-SIGN-IN.md). Use the existing OIDC variable names with issuer `https://accounts.google.com`; the login screen shows Sign in with Google only with complete configuration. This phase retains administrator-assigned project access; invitations and password/Google account linking follow separately.
+
 Set `VISUALGUARD_OIDC_ISSUER`, `VISUALGUARD_OIDC_CLIENT_ID`, and `VISUALGUARD_OIDC_CLIENT_SECRET`, then register `<PUBLIC_URL>/api/auth/callback` with the provider. The client uses authorization-code flow, PKCE, state, and nonce verification. Password login can remain available for the bootstrap administrator.
 
 An OIDC administrator is selected either by the configured `VISUALGUARD_ADMIN_EMAIL` **when the ID token marks that email as verified**, or by an explicit comma-separated `VISUALGUARD_OIDC_ADMIN_SUBJECTS` allowlist. Providers that omit verified-email claims should use the subject allowlist. Other identities must be assigned project access after their first successful sign-in. Existing disabled/edited accounts are not silently re-enabled by login.

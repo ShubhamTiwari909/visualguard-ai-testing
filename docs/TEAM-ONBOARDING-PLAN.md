@@ -1,9 +1,25 @@
 # Google sign-in, invitations, and user administration
 
-**Status:** planning only; no onboarding implementation is included in this document's commit.
+**Status:** phased implementation starting 16 October 2026; see the delivery phases below for the current boundary. The original planning commit contained no onboarding implementation.
 **Prepared:** 15 October 2026.
 **Roadmap:** an extension of [F02 identity and permissions](ORGANIZATION-GROWTH-PLAN.md#62-f02--identity-permissions-and-accountable-actors), integrated with [F03 collaborative review](COLLABORATIVE-REVIEW.md).
-**Future implementation branch:** `codex/team-onboarding`, created from updated `main` after PR #13 merges. Keep implementation, documentation, and focused tests together for each feature commit. This plan precedes those commits.
+**Implementation branch:** `codex/team-onboarding`, created from updated `main` after PR #13 merged. Keep implementation, documentation, and focused tests together for each feature commit. The original plan and phased delivery update precede implementation commits.
+
+## Delivery phases agreed on 16 October 2026
+
+The user requested Google sign-in first, on a separate branch from merged `main`. Deliver a small Google pilot using the existing single-record identity/session flow before the transactional invitation work. This does not complete the full T03 admission-policy milestone or change its dependencies.
+
+| Phase        | Scope                                                                                                                                                                   | Boundary / completion evidence                                                                                                                                                                                                          |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P01, current | Google sign-in, complete configuration validation, a named login entry point, safe retry after provider errors, exact callback setup, and focused protocol/access tests | Reuse existing OIDC IDs and current project-role assignment. New Google members have no project access. No account linking, invite-only admission, new database schema, or role redesign. Real Google pilot needs operator credentials. |
+| P02          | Transactional identity foundation and explicit linking (T01/T02)                                                                                                        | Preserve legacy actors and IDs; prove storage uniqueness/races before invitation endpoints.                                                                                                                                             |
+| P03          | Invitation management and recipient acceptance (remaining T03/T04/T05)                                                                                                  | Add invite-only admission with migration controls; implement copyable single-use links and atomic membership grants.                                                                                                                    |
+| P04          | Workspace user administration (T06)                                                                                                                                     | User lifecycle, role management, revocation, and last-admin protection with focused tests.                                                                                                                                              |
+| P05          | Operational rollout (T07)                                                                                                                                               | Audit UI, recovery, migrations, live adapter and Google pilot evidence, and release documentation.                                                                                                                                      |
+
+P01 is an administrator-managed pilot: it retains the existing ability to create a signed-in member with zero project access. It is not the invitation-only release described below. Keep local/offline access unchanged and preserve generic company OIDC behavior. Use the existing `VISUALGUARD_OIDC_*` names rather than introducing duplicate Google credential variables.
+
+P01 implementation and setup: [Google sign-in guide](GOOGLE-SIGN-IN.md). On 16 October 2026, 45 focused authentication tests and the dashboard UI build passed. Operator-supplied Google credentials are still required for the live browser pilot. Formatting, lint, and type checks remain deferred.
 
 ## 1. Intended outcome and release boundary
 
@@ -297,4 +313,4 @@ These are recommended defaults for planning, not reasons to block PR #13:
 
 An invited colleague can join with Google, see only authorized projects, and participate according to role. Admins can control admission, revoke access, and recover administration. Expired/reused links, competing requests, disabled accounts, and project deletion cannot create unintended access. Identity continuity and F03 attribution survive migration. SQLite, PostgreSQL, and transaction-capable MongoDB pass the same acceptance contract, with unsupported configurations explained before enabling onboarding. Documentation includes local setup, hosted setup, backup/recovery, limitations, and actual validation results.
 
-This document does not claim implementation, Google configuration, migration, email delivery, or onboarding tests have already been completed.
+P01's implementation and focused validation are recorded in the delivery-phase update above. Google configuration and the live browser pilot, transactional migration, invitations, email delivery, and the remaining onboarding acceptance tests have not been completed by P01.
