@@ -10,7 +10,7 @@ export interface RuntimeOptions {
   dataDir?: string;
 }
 export async function createDashboardHandler(options: RuntimeOptions = {}) {
-  const env = {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     ...options.env,
     ...(options.dataDir ? { VISUALGUARD_PLATFORM_DATA_DIR: resolve(options.dataDir) } : {}),
@@ -119,6 +119,7 @@ export async function startDashboard(
         if (
           path === "/" ||
           path === "/settings" ||
+          path === "/reviews" ||
           /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
         ) {
           const html = index;

@@ -360,14 +360,24 @@ export class AuthService {
     await this.audit({ id: row.value.id }, "user.login", {});
     return safeUser(row.value);
   }
-  private async issueSession(user: User, response: ServerResponse, authentication: "password" | "oidc") {
+  private async issueSession(
+    user: User,
+    response: ServerResponse,
+    authentication: "password" | "oidc",
+  ) {
     // Cookies carry a one-way-derived opaque handle, never the raw generated secret.
     // Persist a second hash for lookup so a database dump cannot replay the cookie.
     const token = sha256(secret());
     await this.state.create<Session>(
       "sessions",
       sha256(token),
-      { userId: user.id, authVersion: user.authVersion, csrf: secret(), authenticatedAt: new Date().toISOString(), authentication },
+      {
+        userId: user.id,
+        authVersion: user.authVersion,
+        csrf: secret(),
+        authenticatedAt: new Date().toISOString(),
+        authentication,
+      },
       expires(SESSION_SECONDS),
     );
     response.setHeader(
@@ -468,17 +478,22 @@ export class AuthService {
   private oidcConfiguration?: Promise<import("openid-client").Configuration>;
   private oidc() {
     const settings = this.oidcSettings;
-    if (!settings)
-      throw new PlatformError(400, "Single sign-on is not configured");
-    this.oidcConfiguration ??= import("openid-client").then(async (client) => {
-      const config = await client.discovery(new URL(settings.issuer), settings.clientId, settings.clientSecret);
-      if (settings.provider === "google") client.enableNonRepudiationChecks(config);
-      return config;
-    }).catch((error) => {
-      // A transient provider outage must not poison discovery until the next restart.
-      this.oidcConfiguration = undefined;
-      throw error;
-    });
+    if (!settings) throw new PlatformError(400, "Single sign-on is not configured");
+    this.oidcConfiguration ??= import("openid-client")
+      .then(async (client) => {
+        const config = await client.discovery(
+          new URL(settings.issuer),
+          settings.clientId,
+          settings.clientSecret,
+        );
+        if (settings.provider === "google") client.enableNonRepudiationChecks(config);
+        return config;
+      })
+      .catch((error) => {
+        // A transient provider outage must not poison discovery until the next restart.
+        this.oidcConfiguration = undefined;
+        throw error;
+      });
     return this.oidcConfiguration;
   }
   private async authorizeOidc(response: ServerResponse, link?: LinkProof) {
@@ -488,7 +503,14 @@ export class AuthService {
       state = client.randomState(),
       nonce = secret(),
       browser = sha256(secret());
-    if (!await this.state.create<OidcAttempt>("oidc", sha256(browser), { state, nonce, verifier, ...(link ? { link } : {}) }, expires(600)))
+    if (
+      !(await this.state.create<OidcAttempt>(
+        "oidc",
+        sha256(browser),
+        { state, nonce, verifier, ...(link ? { link } : {}) },
+        expires(600),
+      ))
+    )
       throw new PlatformError(409, "Unable to start sign-in; retry");
     const target = client.buildAuthorizationUrl(config, {
       redirect_uri: `${this.publicUrl!.origin}/api/auth/callback`,
@@ -518,7 +540,13 @@ export class AuthService {
     this.browserAccount(actor);
     const user = await this.state.get<User>("users", actor.id);
     const session = await this.state.get<Session>("sessions", actor.sessionId!);
-    if (!user || user.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== user.value.authVersion)
+    if (
+      !user ||
+      user.value.disabled ||
+      !session ||
+      session.value.userId !== actor.id ||
+      session.value.authVersion !== user.value.authVersion
+    )
       throw new PlatformError(401, "Sign in again");
     return {
       googleLinked: await this.identities.googleLinked(actor.id),
@@ -530,22 +558,37 @@ export class AuthService {
   }
   async beginGoogleLink(actor: Actor, password: string | undefined, response: ServerResponse) {
     this.browserAccount(actor);
-    if (this.oidcProvider !== "google") throw new PlatformError(400, "Configure Google sign-in before linking an account");
-    if (!await this.identities.available())
-      throw new PlatformError(503, "Account linking requires transactional storage; use SQLite, PostgreSQL, or a MongoDB replica set");
+    if (this.oidcProvider !== "google")
+      throw new PlatformError(400, "Configure Google sign-in before linking an account");
+    if (!(await this.identities.available()))
+      throw new PlatformError(
+        503,
+        "Account linking requires transactional storage; use SQLite, PostgreSQL, or a MongoDB replica set",
+      );
     const user = await this.state.get<User>("users", actor.id);
     const session = await this.state.get<Session>("sessions", actor.sessionId!);
-    if (!user || user.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== user.value.authVersion)
+    if (
+      !user ||
+      user.value.disabled ||
+      !session ||
+      session.value.userId !== actor.id ||
+      session.value.authVersion !== user.value.authVersion
+    )
       throw new PlatformError(401, "Sign in again before linking Google");
     if (user.value.passwordHash) {
       await this.throttle(sha256(`identity-link:${actor.id}`));
       const [, salt, expected] = user.value.passwordHash.split("$");
       const actual = (await scrypt((password ?? "").slice(0, 257), salt!, 64)) as Buffer;
-      if (!expected || !matches(actual.toString("hex"), expected)) throw new PlatformError(401, "Current password is incorrect");
+      if (!expected || !matches(actual.toString("hex"), expected))
+        throw new PlatformError(401, "Current password is incorrect");
     } else if (!recentlyAuthenticated(session.value)) {
       throw new PlatformError(401, "Sign in again before linking Google");
     }
-    const target = await this.authorizeOidc(response, { userId: actor.id, sessionId: actor.sessionId!, authVersion: user.value.authVersion });
+    const target = await this.authorizeOidc(response, {
+      userId: actor.id,
+      sessionId: actor.sessionId!,
+      authVersion: user.value.authVersion,
+    });
     return { authorizationUrl: target.href };
   }
   async finishOidc(request: IncomingMessage, response: ServerResponse, url: URL) {
@@ -554,12 +597,7 @@ export class AuthService {
       .map((part) => part.trim())
       .find((part) => part.startsWith("vg_oidc="))
       ?.slice(8);
-    const entry = browser
-      ? await this.state.get<OidcAttempt>(
-          "oidc",
-          sha256(browser),
-        )
-      : undefined;
+    const entry = browser ? await this.state.get<OidcAttempt>("oidc", sha256(browser)) : undefined;
     if (!entry || !(await this.state.remove("oidc", entry.id, entry.version)))
       throw new PlatformError(401, "Login expired; start again");
     const client = await import("openid-client");
@@ -574,10 +612,19 @@ export class AuthService {
     const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
     if (this.oidcProvider === "google" && (claims.email_verified !== true || !email))
       throw new PlatformError(401, "Google did not return a verified email address");
-    const identity = { issuer: this.oidcSettings!.issuer, subject: claims.sub, provider: this.oidcProvider! };
+    const identity = {
+      issuer: this.oidcSettings!.issuer,
+      subject: claims.sub,
+      provider: this.oidcProvider!,
+    };
     if (entry.value.link) {
       const actor = await this.actor(request);
-      if (!actor || actor.credentialId || actor.id !== entry.value.link.userId || actor.sessionId !== entry.value.link.sessionId)
+      if (
+        !actor ||
+        actor.credentialId ||
+        actor.id !== entry.value.link.userId ||
+        actor.sessionId !== entry.value.link.sessionId
+      )
         throw new PlatformError(401, "Sign in again before linking Google");
       const user = await this.identities.link(identity, entry.value.link);
       await this.issueSession(user, response, "oidc");
@@ -605,13 +652,16 @@ export class AuthService {
 export class MemoryStateStore implements StateStore {
   private entries = new Map<string, StateRecord>();
   private revision = 0;
-  async supportsTransactions() { return true; }
+  async supportsTransactions() {
+    return true;
+  }
   async transaction<T>(work: (store: StateStore) => Promise<T>): Promise<T> {
     const revision = this.revision;
     const transaction = new MemoryStateStore();
     transaction.entries = structuredClone(this.entries);
     const result = await work(transaction);
-    if (this.revision !== revision) throw new PlatformError(409, "State changed; retry the operation");
+    if (this.revision !== revision)
+      throw new PlatformError(409, "State changed; retry the operation");
     this.entries = transaction.entries;
     this.revision++;
     return result;
@@ -636,8 +686,12 @@ export class MemoryStateStore implements StateStore {
   }
   async replace<T>(namespace: string, record: StateRecord<T>) {
     const prior = this.entries.get(`${namespace}:${record.id}`);
-    if (!prior || prior.version !== record.version ||
-      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())) return false;
+    if (
+      !prior ||
+      prior.version !== record.version ||
+      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())
+    )
+      return false;
     this.entries.set(
       `${namespace}:${record.id}`,
       structuredClone({ ...record, version: record.version + 1 }),
@@ -658,9 +712,13 @@ export class MemoryStateStore implements StateStore {
   }
   async list<T>(namespace: string, prefix = "", limit = 1000, after?: string) {
     const keys = [...this.entries.keys()]
-      .filter((key) => key.startsWith(`${namespace}:${prefix}`) &&
-        (after === undefined || key.slice(namespace.length + 1) > after) &&
-        (!this.entries.get(key)!.expiresAt || this.entries.get(key)!.expiresAt! > new Date().toISOString()))
+      .filter(
+        (key) =>
+          key.startsWith(`${namespace}:${prefix}`) &&
+          (after === undefined || key.slice(namespace.length + 1) > after) &&
+          (!this.entries.get(key)!.expiresAt ||
+            this.entries.get(key)!.expiresAt! > new Date().toISOString()),
+      )
       .sort()
       .slice(0, limit);
     const rows = await Promise.all(

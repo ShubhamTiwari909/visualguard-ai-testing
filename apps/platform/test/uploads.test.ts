@@ -95,7 +95,7 @@ describe("F06 resumable publishing", () => {
       startedAt: "2026-10-15T10:00:00.000Z",
       durationMs: 10,
       mode: "compare",
-      tool: { version: "2.0.0" },
+      tool: { version: "2.0.0", node: process.versions.node },
       config: {
         baseURL: {},
         viewports: { desktop: { width: 1, height: 1 } },
