@@ -71,17 +71,32 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       const { id: _id, ...document } = input;
       const { run } = await repository.insertRun(document);
       const auth = new AuthService(state, { VISUALGUARD_AUTH_MODE: "local" });
-      const actor = { id: "local-owner", name: "Local workspace", email: "", admin: true, csrf: "" };
+      const actor = {
+        id: "local-owner",
+        name: "Local workspace",
+        email: "",
+        admin: true,
+        csrf: "",
+      };
       const reviews = new Reviews(repository, state, auth);
       const first = await reviews.read(actor, run.id, "checkout__desktop");
-      const mutation = { jobId: first.jobId, evidenceDigest: first.evidenceDigest,
-        scopeDigest: first.scopeDigest, expectedVersion: 0,
-        event: { action: "comment" as const, reason: "Shared review history" } };
+      const mutation = {
+        jobId: first.jobId,
+        evidenceDigest: first.evidenceDigest,
+        scopeDigest: first.scopeDigest,
+        expectedVersion: 0,
+        event: { action: "comment" as const, reason: "Shared review history" },
+      };
       const results = await Promise.allSettled([
-        reviews.append(actor, run.id, mutation), reviews.append(actor, run.id, mutation),
+        reviews.append(actor, run.id, mutation),
+        reviews.append(actor, run.id, mutation),
       ]);
       expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-      const otherInstance = new Reviews(repository, state, new AuthService(state, { VISUALGUARD_AUTH_MODE: "local" }));
+      const otherInstance = new Reviews(
+        repository,
+        state,
+        new AuthService(state, { VISUALGUARD_AUTH_MODE: "local" }),
+      );
       expect((await otherInstance.read(actor, run.id, first.jobId)).events).toHaveLength(1);
       const beforeRename = await reviews.read(actor, run.id, first.jobId);
       await repository.renameRun(run.id, "Reviewed release", 0);
@@ -97,7 +112,10 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect(await state.list("reviews", keyPrefix, 1, row!.id)).toEqual([]);
       await repository.deleteRun(run.id, projectId);
       expect(await state.list("reviews", keyPrefix)).toEqual([]);
-      const second = await repository.insertRun({ ...document, engineRunId: `${document.engineRunId}-again` });
+      const second = await repository.insertRun({
+        ...document,
+        engineRunId: `${document.engineRunId}-again`,
+      });
       const view = await reviews.read(actor, second.run.id, first.jobId);
       await reviews.append(actor, second.run.id, { ...mutation, scopeDigest: view.scopeDigest });
       await repository.deleteProject(projectId, 1);
@@ -120,7 +138,9 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect(await repository.projects([id])).toHaveLength(1);
     });
     it("renames project labels and IDs without moving evidence keys or transferring aliases", async () => {
-      const id = `${prefix}-names`, other = `${prefix}-other`, alias = `${prefix}-public`;
+      const id = `${prefix}-names`,
+        other = `${prefix}-other`,
+        alias = `${prefix}-public`;
       await repository.createProject(id, "Initial project");
       await repository.createProject(other, "Other project");
       const updated = await repository.updateProject(id, "Friendly project", alias, 0);
@@ -132,17 +152,31 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       const repeat = await repository.ensureProject(alias, "Must not rename");
       expect(repeat.created).toBe(false);
       expect(repeat.project.name).toBe("Friendly project");
-      await expect(repository.updateProject(id, "Stale", alias, 0)).rejects.toMatchObject({ status: 409 });
-      await expect(repository.updateProject(other, "Steal alias", alias, 0)).rejects.toMatchObject({ status: 409 });
-      await expect(repository.updateProject(id, "Steal stable key", other, 1)).rejects.toMatchObject({ status: 409 });
+      await expect(repository.updateProject(id, "Stale", alias, 0)).rejects.toMatchObject({
+        status: 409,
+      });
+      await expect(repository.updateProject(other, "Steal alias", alias, 0)).rejects.toMatchObject({
+        status: 409,
+      });
+      await expect(
+        repository.updateProject(id, "Steal stable key", other, 1),
+      ).rejects.toMatchObject({ status: 409 });
       await repository.deleteProject(id, 0);
-      await expect(repository.ensureProject(alias, "Reuse deleted alias")).rejects.toMatchObject({ status: 409 });
-      await expect(repository.ensureProject(id, "Reuse original ID")).rejects.toMatchObject({ status: 409 });
+      await expect(repository.ensureProject(alias, "Reuse deleted alias")).rejects.toMatchObject({
+        status: 409,
+      });
+      await expect(repository.ensureProject(id, "Reuse original ID")).rejects.toMatchObject({
+        status: 409,
+      });
       await state.remove("project-ids", id); // Simulate a tombstone written before naming support.
-      await expect(repository.updateProject(other, "Reuse legacy tombstone", id, 0)).rejects.toMatchObject({ status: 409 });
+      await expect(
+        repository.updateProject(other, "Reuse legacy tombstone", id, 0),
+      ).rejects.toMatchObject({ status: 409 });
     });
     it("rejects racing project edits and publishes only the winning aliases", async () => {
-      const id = `${prefix}-race`, aliasA = `${prefix}-race-a`, aliasB = `${prefix}-race-b`;
+      const id = `${prefix}-race`,
+        aliasA = `${prefix}-race-a`,
+        aliasB = `${prefix}-race-b`;
       await repository.createProject(id, "Before edit");
       const results = await Promise.allSettled([
         repository.updateProject(id, "Version A", aliasA, 0),
@@ -179,7 +213,7 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
         startedAt: "2026-10-15T10:00:00.000Z",
         durationMs: 0,
         mode: "compare",
-        tool: { version: "2.0.0" },
+        tool: { version: "2.0.0", node: process.versions.node },
         config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" },
         summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 },
         jobs: [],
@@ -239,7 +273,7 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
         startedAt: "2026-10-15T10:00:00.000Z",
         durationMs: 0,
         mode: "compare",
-        tool: { version: "2.0.0" },
+        tool: { version: "2.0.0", node: process.versions.node },
         config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" },
         summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 },
         jobs: [],

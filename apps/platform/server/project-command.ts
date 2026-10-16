@@ -122,7 +122,8 @@ export async function createDashboardProject(
       typeof value !== "object" ||
       !("id" in value) ||
       typeof value.id !== "string" ||
-      (value.id !== id && !("aliases" in value && Array.isArray(value.aliases) && value.aliases.includes(id))) ||
+      (value.id !== id &&
+        !("aliases" in value && Array.isArray(value.aliases) && value.aliases.includes(id))) ||
       !("name" in value) ||
       typeof value.name !== "string"
     )

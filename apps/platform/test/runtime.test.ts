@@ -30,6 +30,7 @@ describe("standalone hosts", () => {
     cleanups.push(runtime.close);
     expect((await fetch(`${runtime.url}/api/health`)).status).toBe(200);
     expect(await (await fetch(`${runtime.url}/settings`)).text()).toContain("Dashboard test");
+    expect(await (await fetch(`${runtime.url}/reviews`)).text()).toContain("Dashboard test");
     const rewritten = await (await fetch(`${runtime.url}/api/dashboard?__vg_path=projects`)).json();
     expect(rewritten.projects).toEqual([]);
   });

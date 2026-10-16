@@ -40,7 +40,7 @@ function fixture(id = "run-1", status: Status = "pass"): RunManifest {
       sourceRevision: "abc123",
       expectedJobs: ["home-desktop"],
     },
-    tool: { version: "2.0.0" },
+    tool: { version: "2.0.0", node: process.versions.node },
     config: {
       baseURL: { production: "https://example.test", staging: "https://staging.test" },
       viewports: { desktop: { width: 1440, height: 900 } },
@@ -164,17 +164,25 @@ describe("F01 shared evidence history", () => {
   });
   it("keeps an optional dashboard run name searchable without changing engine evidence", async () => {
     const manifest = fixture("named-run-1");
-    const result = await ingest(manifest, { environment: "staging", runName: "Checkout release smoke" });
+    const result = await ingest(manifest, {
+      environment: "staging",
+      runName: "Checkout release smoke",
+    });
     expect(result.run.name).toBe("Checkout release smoke");
     expect(result.run.manifest).toEqual(manifest);
     expect((await repository.runs({ q: "release smoke" })).total).toBe(1);
-    const repeated = await importRun(repository, store, { projectId: "storefront",
-      runDir: join(root, manifest.id), metadata: { environment: "staging", runName: "Checkout release smoke" } });
+    const repeated = await importRun(repository, store, {
+      projectId: "storefront",
+      runDir: join(root, manifest.id),
+      metadata: { environment: "staging", runName: "Checkout release smoke" },
+    });
     expect(repeated.duplicate).toBe(true);
     expect(repeated.run.name).toBe(result.run.name);
   });
   it("renames a run independently of its evidence and rejects stale edits", async () => {
-    const original = (await ingest(fixture("rename-run-1"), { environment: "staging", runName: "Initial label" })).run;
+    const original = (
+      await ingest(fixture("rename-run-1"), { environment: "staging", runName: "Initial label" })
+    ).run;
     const renamed = await repository.renameRun(original.id, "  Release smoke  ", 0);
     expect(renamed.name).toBe("Release smoke");
     expect(renamed.nameVersion).toBe(1);
@@ -183,7 +191,9 @@ describe("F01 shared evidence history", () => {
     expect(renamed.metadata).toEqual(original.metadata);
     expect((await repository.runs({ q: "release smoke" })).total).toBe(1);
     expect((await repository.runs({ q: "initial label" })).total).toBe(0);
-    await expect(repository.renameRun(original.id, "Stale change", 0)).rejects.toMatchObject({ status: 409 });
+    await expect(repository.renameRun(original.id, "Stale change", 0)).rejects.toMatchObject({
+      status: 409,
+    });
     const cleared = await repository.renameRun(original.id, "", 1);
     expect(cleared.name).toBeUndefined();
     expect(cleared.nameVersion).toBe(2);

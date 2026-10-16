@@ -4,12 +4,12 @@
 
 The merged dashboard completes the Phase B shared-evidence boundary: F01 history, F02 access, and F06 CI uploads. Phase C in the organization roadmap contains three features. They should keep separate commits and can ship incrementally:
 
-| Release unit | Features / phases combined | User outcome | Dependency / boundary |
-| --- | --- | --- | --- |
-| Shared dashboard, merged | Phase B: F01 + F02 + F06 upload stage | Share authenticated run evidence | Managed runner scheduling remains later |
-| Collaborative review, this branch | Phase C's F03 review storage + permission-checked API + run review UI + assignment inbox | A second person can discuss and decide exact visual evidence | Uses existing check IDs; job-level pilot explicitly allowed by §6.3 |
-| Reusable reference workflow, next | Phase C: F05 named checkpoints/catalog, then F04 baseline registry and promotion | Repeat named checks against traceable approved references | Keep F05 and F04 in their own commits; combine into a release after integration |
-| Informative release assessment, later | Phase D: F07 policy, exact-revision check delivery, operational readiness | Explain whether a revision meets the team's rules | Depends on review, reference, and coverage semantics; start in shadow mode |
+| Release unit                          | Features / phases combined                                                               | User outcome                                                 | Dependency / boundary                                                           |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Shared dashboard, merged              | Phase B: F01 + F02 + F06 upload stage                                                    | Share authenticated run evidence                             | Managed runner scheduling remains later                                         |
+| Collaborative review, this branch     | Phase C's F03 review storage + permission-checked API + run review UI + assignment inbox | A second person can discuss and decide exact visual evidence | Uses existing check IDs; job-level pilot explicitly allowed by §6.3             |
+| Reusable reference workflow, next     | Phase C: F05 named checkpoints/catalog, then F04 baseline registry and promotion         | Repeat named checks against traceable approved references    | Keep F05 and F04 in their own commits; combine into a release after integration |
+| Informative release assessment, later | Phase D: F07 policy, exact-revision check delivery, operational readiness                | Explain whether a revision meets the team's rules            | Depends on review, reference, and coverage semantics; start in shadow mode      |
 
 `codex/collaborative-review` starts from the merged `main`. This commit implements the F03 pilot, rather than claiming all of Phase C is complete. It combines the backend and user workflow needed to make reviews usable without waiting for baseline promotion or a release gate.
 
@@ -101,12 +101,12 @@ Raw SQLite files and native database backups include the review state and accoun
 
 Existing authentication, host/origin checks, JSON content type, and session action-token requirements apply. Browser mutations send `x-visualguard-platform-token`; upload bearer credentials cannot access these endpoints. Readers need project Viewer access; mutations need Reviewer or higher. The local owner has administrator access.
 
-| Request | Result |
-| --- | --- |
-| `GET /api/runs/RUN_UUID/reviews?job=CHECK_ID` | Thread, exact digests, current version, visual state, assignment, deadline, and `canReview` |
-| `POST /api/runs/RUN_UUID/reviews` | Append one explicit action against the submitted thread version |
-| `GET /api/projects/PROJECT_ID/reviewers` | Eligible reviewer IDs/names, with no email/password fields |
-| `GET /api/reviews?project=PROJECT_ID&owner=mine&status=open` | A bounded page of started review threads and an optional `nextCursor` |
+| Request                                                      | Result                                                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `GET /api/runs/RUN_UUID/reviews?job=CHECK_ID`                | Thread, exact digests, current version, visual state, assignment, deadline, and `canReview` |
+| `POST /api/runs/RUN_UUID/reviews`                            | Append one explicit action against the submitted thread version                             |
+| `GET /api/projects/PROJECT_ID/reviewers`                     | Eligible reviewer IDs/names, with no email/password fields                                  |
+| `GET /api/reviews?project=PROJECT_ID&owner=mine&status=open` | A bounded page of started review threads and an optional `nextCursor`                       |
 
 Read the thread first and use its returned fields. An example POST body:
 

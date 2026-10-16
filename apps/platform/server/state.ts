@@ -65,7 +65,13 @@ export class SqlStateStore implements StateStore {
     const escaped = prefix.replace(/[!%_]/g, (value) => `!${value}`);
     const rows = await this.db.query<Row>(
       `SELECT id, value, version, expires_at FROM vg_state WHERE namespace=? AND id LIKE ? ESCAPE '!'${after === undefined ? "" : " AND id>?"} AND (expires_at IS NULL OR expires_at>?) ORDER BY id LIMIT ?`,
-      [namespace, `${escaped}%`, ...(after === undefined ? [] : [after]), new Date().toISOString(), limit],
+      [
+        namespace,
+        `${escaped}%`,
+        ...(after === undefined ? [] : [after]),
+        new Date().toISOString(),
+        limit,
+      ],
     );
     return rows.map(record<T>);
   }
