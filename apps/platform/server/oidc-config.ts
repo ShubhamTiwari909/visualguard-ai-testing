@@ -27,8 +27,8 @@ export function oidcSettings(env: NodeJS.ProcessEnv): OidcSettings | undefined {
     url.protocol !== "https:" ||
     url.username ||
     url.password ||
-    url.search ||
-    url.hash
+    issuer.includes("?") ||
+    issuer.includes("#")
   )
     throw new Error(
       "VISUALGUARD_OIDC_ISSUER must be an HTTPS URL without credentials, query, or fragment",
