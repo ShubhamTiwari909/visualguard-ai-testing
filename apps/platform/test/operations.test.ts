@@ -5,12 +5,24 @@ import { Operations } from "../server/operations.js";
 import type { StateStore } from "../server/storage-contracts.js";
 
 const user = (id: string, extra: Partial<User> = {}): User => ({
-  id, name: id, email: `${id}@example.test`, role: "admin", disabled: false,
-  authVersion: 1, passwordHash: "old-test-hash", createdAt: "2026-01-01T00:00:00.000Z", ...extra,
+  id,
+  name: id,
+  email: `${id}@example.test`,
+  role: "admin",
+  disabled: false,
+  authVersion: 1,
+  passwordHash: "old-test-hash",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  ...extra,
 });
 const recover = (id: string, extra = {}) => ({
-  userId: id, expectedVersion: 1, confirm: id, backupAcknowledged: true,
-  reason: "Provider outage recovery exercise", password: "new-test-only-password", ...extra,
+  userId: id,
+  expectedVersion: 1,
+  confirm: id,
+  backupAcknowledged: true,
+  reason: "Provider outage recovery exercise",
+  password: "new-test-only-password",
+  ...extra,
 });
 const bind = (state: StateStore): StateStore => ({
   get: state.get.bind(state),
@@ -24,7 +36,8 @@ const bind = (state: StateStore): StateStore => ({
 });
 
 describe("workspace operations", () => {
-  let state: MemoryStateStore, operations: Operations;
+  let state: MemoryStateStore,
+    operations: Operations;
   beforeEach(() => {
     state = new MemoryStateStore();
     operations = new Operations(state);
@@ -76,15 +89,22 @@ describe("workspace operations", () => {
 
   it("omits unapproved audit fields and nested credential material", async () => {
     const row = event(1, "user.updated", {
-      userId: "target", password: "SECRET", passwordHash: "SECRET", subject: "SECRET",
-      clientSecret: "SECRET", token: "SECRET", before: { role: "member", passwordHash: "SECRET" },
+      userId: "target",
+      password: "SECRET",
+      passwordHash: "SECRET",
+      subject: "SECRET",
+      clientSecret: "SECRET",
+      token: "SECRET",
+      before: { role: "member", passwordHash: "SECRET" },
       after: { role: "admin", disabled: false, authVersion: "SECRET" },
     });
     await state.create("audit", row.id, row.value);
     const page = await operations.audit();
     expect(JSON.stringify(page)).not.toContain("SECRET");
     expect(page.events[0]?.details).toEqual({
-      userId: "target", before: { role: "member" }, after: { role: "admin", disabled: false },
+      userId: "target",
+      before: { role: "member" },
+      after: { role: "admin", disabled: false },
     });
   });
 
@@ -95,12 +115,18 @@ describe("workspace operations", () => {
     expect(page.events[0]?.details.role).toBe("Removed");
     const local = event(2, "project.created", {}, "local-owner");
     await state.create("audit", local.id, local.value);
-    expect((await operations.audit({ person: "Local workspace" })).events[0]?.actorName).toBe("Local workspace");
+    expect((await operations.audit({ person: "Local workspace" })).events[0]?.actorName).toBe(
+      "Local workspace",
+    );
   });
 
   it("reports incomplete inventories and email collisions without merging accounts", async () => {
     for (let index = 0; index < 201; index++)
-      await state.create("users", `user-${index}`, user(`user-${index}`, { role: "member", email: "duplicate@example.test" }));
+      await state.create(
+        "users",
+        `user-${index}`,
+        user(`user-${index}`, { role: "member", email: "duplicate@example.test" }),
+      );
     const status = await operations.status();
     expect(status.inventoryComplete).toBe(false);
     expect(status.accountsScanned).toBe(200);
@@ -125,7 +151,11 @@ describe("workspace operations", () => {
     await state.create("users", "admin", user("admin", { disabled: true }));
     await state.create("users", "member", user("member", { role: "member" }));
     await state.create("users", "google", user("google", { passwordHash: undefined }));
-    expect(await operations.previewRecovery("admin")).toMatchObject({ userId: "admin", expectedVersion: 1, disabled: true });
+    expect(await operations.previewRecovery("admin")).toMatchObject({
+      userId: "admin",
+      expectedVersion: 1,
+      disabled: true,
+    });
     expect(JSON.stringify(await operations.recoveryAdministrators())).not.toContain("old-test-hash");
     for (const id of ["member", "google", "missing"])
       await expect(operations.previewRecovery(id)).rejects.toThrow("existing password administrator");
@@ -134,7 +164,11 @@ describe("workspace operations", () => {
   it("recovers atomically while preserving identities, memberships and historical actors", async () => {
     await state.create("users", "admin", user("admin", { disabled: true }));
     await state.create("external-identities", "google-owner", { userId: "admin", subject: "unchanged" });
-    await state.create("memberships", "admin:demo", { userId: "admin", projectId: "demo", role: "reviewer" });
+    await state.create("memberships", "admin:demo", {
+      userId: "admin",
+      projectId: "demo",
+      role: "reviewer",
+    });
     await state.create("reviews", "historic", { actorId: "admin", decision: "approved" });
     for (let index = 0; index < 105; index++) {
       await state.create("sessions", `session-${index}`, { userId: "admin", authVersion: 1 });
@@ -144,12 +178,20 @@ describe("workspace operations", () => {
     const result = await operations.recover(recover("admin"));
     expect(result.credentialsRevoked).toBe(true);
     const account = (await state.get<User>("users", "admin"))!.value;
-    expect(account).toMatchObject({ disabled: false, role: "admin", authVersion: 2, createdAt: "2026-01-01T00:00:00.000Z" });
+    expect(account).toMatchObject({
+      disabled: false,
+      role: "admin",
+      authVersion: 2,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
     expect(account.passwordHash).toMatch(/^scrypt\$/);
     expect(await state.list("sessions")).toHaveLength(1);
     expect(await state.list("tokens")).toEqual([]);
     expect((await state.get<{ actorId: string }>("reviews", "historic"))?.value.actorId).toBe("admin");
-    expect((await state.get("external-identities", "google-owner"))?.value).toEqual({ userId: "admin", subject: "unchanged" });
+    expect((await state.get("external-identities", "google-owner"))?.value).toEqual({
+      userId: "admin",
+      subject: "unchanged",
+    });
     expect(await state.get("memberships", "admin:demo")).toBeTruthy();
     const audit = await operations.audit();
     expect(audit.events[0]?.action).toBe("user.recovered");
@@ -159,7 +201,13 @@ describe("workspace operations", () => {
 
   it("rejects stale previews, missing backup acknowledgement and wrong confirmations", async () => {
     await state.create("users", "admin", user("admin"));
-    for (const extra of [{ expectedVersion: 2 }, { backupAcknowledged: false }, { confirm: "other" }, { reason: "" }, { reason: "Password: new-test-only-password" }])
+    for (const extra of [
+      { expectedVersion: 2 },
+      { backupAcknowledged: false },
+      { confirm: "other" },
+      { reason: "" },
+      { reason: "Password: new-test-only-password" },
+    ])
       await expect(operations.recover(recover("admin", extra))).rejects.toThrow();
     expect((await state.get<User>("users", "admin"))?.value.authVersion).toBe(1);
     expect(await state.list("audit")).toEqual([]);
@@ -184,13 +232,17 @@ describe("workspace operations", () => {
     await state.create("sessions", "existing", { userId: "admin" });
     await state.create("tokens", "existing", { ownerId: "admin" });
     const fault = bind(state);
-    fault.transaction = (work) => state.transaction((transaction) => {
-      const store = bind(transaction);
-      const create = transaction.create.bind(transaction);
-      store.create = (namespace, ...args) => namespace === "audit" ? Promise.resolve(false) : create(namespace, ...args);
-      return work(store);
-    });
-    await expect(new Operations(fault).recover(recover("admin"))).rejects.toThrow("Unable to record recovery");
+    fault.transaction = (work) =>
+      state.transaction((transaction) => {
+        const store = bind(transaction);
+        const create = transaction.create.bind(transaction);
+        store.create = (namespace, ...args) =>
+          namespace === "audit" ? Promise.resolve(false) : create(namespace, ...args);
+        return work(store);
+      });
+    await expect(new Operations(fault).recover(recover("admin"))).rejects.toThrow(
+      "Unable to record recovery",
+    );
     expect((await state.get<User>("users", "admin"))?.value.passwordHash).toBe("old-test-hash");
     expect(await state.get("sessions", "existing")).toBeTruthy();
     expect(await state.get("tokens", "existing")).toBeTruthy();

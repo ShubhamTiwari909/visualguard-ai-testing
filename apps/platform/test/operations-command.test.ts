@@ -8,16 +8,23 @@ import type { User } from "../server/auth.js";
 
 describe("host operations command", () => {
   let root: string;
-  beforeEach(async () => { root = await mkdtemp(join(tmpdir(), "vg-operations-command-")); });
-  afterEach(async () => { await rm(root, { recursive: true, force: true }); });
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), "vg-operations-command-"));
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
 
   it("provides help and rejects incomplete recovery before opening storage", async () => {
     expect(await operationsCommand(["--help"], {})).toHaveProperty("recovery");
-    await expect(operationsCommand(["recover", "--user", "admin"], {})).rejects.toThrow("backup acknowledgement");
+    await expect(operationsCommand(["recover", "--user", "admin"], {})).rejects.toThrow(
+      "backup acknowledgement",
+    );
     await expect(operationsCommand(["unknown"], {})).rejects.toThrow("Choose status");
   });
 
-  it.skipIf(process.platform === "win32")("requires an owned private regular password file", async () => {
+  const posix = it.skipIf(process.platform === "win32");
+  posix("requires an owned private regular password file", async () => {
     const path = join(root, "password");
     await writeFile(path, "private-test-password\n", { mode: 0o600 });
     expect(await readRecoveryPassword(path)).toBe("private-test-password");
@@ -36,12 +43,18 @@ describe("host operations command", () => {
     await expect(readRecoveryPassword(path)).rejects.toThrow();
   });
 
-  it.skipIf(process.platform === "win32")("runs preview and confirmed recovery against the selected local database", async () => {
+  posix("runs preview and confirmed recovery against the selected local database", async () => {
     const env = { VISUALGUARD_PLATFORM_DATA_DIR: root };
     const platform = await openPlatform(env);
     await platform.state.create<User>("users", "admin", {
-      id: "admin", name: "Admin", email: "admin@example.test", role: "admin", disabled: true,
-      authVersion: 1, passwordHash: "old-hash", createdAt: "2026-01-01T00:00:00.000Z",
+      id: "admin",
+      name: "Admin",
+      email: "admin@example.test",
+      role: "admin",
+      disabled: true,
+      authVersion: 1,
+      passwordHash: "old-hash",
+      createdAt: "2026-01-01T00:00:00.000Z",
     });
     await platform.close();
     expect(await operationsCommand(["admins"], env)).toMatchObject({ accounts: [{ id: "admin" }] });
@@ -49,10 +62,23 @@ describe("host operations command", () => {
     expect(preview).toMatchObject({ userId: "admin", expectedVersion: 1 });
     const path = join(root, "password");
     await writeFile(path, "replacement-command-password", { mode: 0o600 });
-    const result = await operationsCommand([
-      "recover", "--user", "admin", "--version", "1", "--confirm", "admin", "--backup-confirmed",
-      "--reason", "Local command exercise", "--password-file", path,
-    ], env);
+    const result = await operationsCommand(
+      [
+        "recover",
+        "--user",
+        "admin",
+        "--version",
+        "1",
+        "--confirm",
+        "admin",
+        "--backup-confirmed",
+        "--reason",
+        "Local command exercise",
+        "--password-file",
+        path,
+      ],
+      env,
+    );
     expect(result).toMatchObject({ userId: "admin", credentialsRevoked: true });
     expect(JSON.stringify(result)).not.toContain("replacement-command-password");
   });

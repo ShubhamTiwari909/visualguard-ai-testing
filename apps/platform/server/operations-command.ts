@@ -11,10 +11,8 @@ export async function readRecoveryPassword(path: string) {
     );
   if (typeof constants.O_NOFOLLOW !== "number")
     throw new Error("This host cannot verify password-file symlinks safely");
-  const file = await open(
-    path,
-    constants.O_RDONLY | constants.O_NOFOLLOW | (constants.O_NONBLOCK ?? 0),
-  );
+  const flags = constants.O_RDONLY | constants.O_NOFOLLOW | (constants.O_NONBLOCK ?? 0);
+  const file = await open(path, flags);
   try {
     const info = await file.stat();
     if (!info.isFile() || info.size > 1024)

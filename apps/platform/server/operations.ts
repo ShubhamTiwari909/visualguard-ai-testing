@@ -229,7 +229,7 @@ export class Operations {
       throw new PlatformError(400, "Use a replacement password of 12–256 characters");
     if (input.reason.includes(input.password))
       throw new PlatformError(400, "Do not include the replacement password in the recovery reason");
-    if (!this.state.transaction || !(await this.state.supportsTransactions?.() ?? true))
+    if (!this.state.transaction || !((await this.state.supportsTransactions?.()) ?? true))
       throw new PlatformError(503, "Recovery requires SQLite, PostgreSQL, or a MongoDB replica set");
     const salt = randomBytes(16).toString("hex");
     const key = (await scrypt(input.password, salt, 64)) as Buffer;

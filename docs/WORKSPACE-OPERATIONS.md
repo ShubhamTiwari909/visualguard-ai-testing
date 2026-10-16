@@ -43,7 +43,9 @@ Recovery is for loss of access to an existing password administrator, including 
 Password-file ownership and private permissions are verified on a POSIX host, including macOS/Linux. Run recovery on such an operator host connected to the same database; the command explicitly refuses Windows password-file recovery rather than claiming to validate Windows ACLs. Dashboard viewing and ordinary sign-in remain unaffected on Windows.
 
 1. Stop all dashboard instances and other writers. Preserve the exact deployment configuration and take a **native operational database backup**, including authentication state, before proceeding. Portable evidence exports omit accounts, identities, sessions, memberships, invitations and audit records; they cannot recover administration.
+
 2. Run `admins`, identify the intended existing password administrator by ID/email, then run `preview --user ACCOUNT_ID`. Record the returned `expectedVersion`. Do not select an account by email alone when multiple accounts share it.
+
 3. Create a temporary password file privately, using your editor rather than a password in shell arguments/history:
 
    ```sh
@@ -54,6 +56,7 @@ Password-file ownership and private permissions are verified on a POSIX host, in
    ```
 
    Put one new 12–256 character password in the file. The command rejects symlinks, non-regular files, files over 1024 bytes, non-owned files, broad permissions, invalid UTF-8 and additional lines. Keep the file outside the repository and away from CI artifacts.
+
 4. Substitute the exact account ID and preview version in this command. Put no credentials in the reason; the reason is retained in audit history.
 
    ```sh
@@ -67,8 +70,11 @@ Password-file ownership and private permissions are verified on a POSIX host, in
    ```
 
 5. If the account changed after preview, recovery fails without partial changes. Inspect and preview again; do not retry with an invented version. SQLite, PostgreSQL or a MongoDB replica set/sharded deployment is required. Standalone MongoDB inspection remains available, but recovery fails before saving account changes.
+
 6. Restart the compatible dashboard with the same data directory/database. Sign in using the account's retained email and replacement password. Changing `VISUALGUARD_ADMIN_PASSWORD` alone never resets an existing account; update any private operator CLI credentials separately if you use them for authenticated project creation.
+
 7. Verify that old sessions and upload credentials fail, while retained Google linking, project memberships and historical review authorship still refer to the same account. Create fresh CI upload credentials through normal authorized controls. Remove the temporary password file after verifying access.
+
 8. Inspect the **Administrator recovered** audit event. It records the target, host-operator origin, reason, backup acknowledgement and revocation consequences. It does not impersonate a browser administrator or retain the replacement password.
 
 The administrator write guard, target-version check, account enable/password/auth-version update, credential revocation and audit insert share one transaction. A failed audit write rolls everything back. Recovery deliberately does not issue a browser session; the recovered person must sign in normally.

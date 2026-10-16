@@ -8,8 +8,12 @@ import { openPlatform } from "../server/config.js";
 import { Operations } from "../server/operations.js";
 
 describe("workspace operations HTTP access", () => {
-  let platform: Awaited<ReturnType<typeof openPlatform>>, server: Server, base: string;
-  let root: string, admin: { cookie: string; token: string }, member: typeof admin;
+  let platform: Awaited<ReturnType<typeof openPlatform>>,
+    server: Server,
+    base: string;
+  let root: string,
+    admin: { cookie: string; token: string },
+    member: typeof admin;
   const password = "operations-test-only-password";
   const request = async (path: string, actor?: typeof admin, data?: unknown) => {
     const response = await fetch(`${base}${path}`, {
@@ -37,11 +41,16 @@ describe("workspace operations HTTP access", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("No listener");
     base = `http://127.0.0.1:${address.port}`;
-    const api = createApi(platform.repository, platform.store, { state: platform.state, env: {
-      VISUALGUARD_AUTH_MODE: "login", VISUALGUARD_USER_ADMISSION: "invite",
-      VISUALGUARD_PUBLIC_URL: base, VISUALGUARD_ADMIN_EMAIL: "admin@example.test",
-      VISUALGUARD_ADMIN_PASSWORD: password,
-    } });
+    const api = createApi(platform.repository, platform.store, {
+      state: platform.state,
+      env: {
+        VISUALGUARD_AUTH_MODE: "login",
+        VISUALGUARD_USER_ADMISSION: "invite",
+        VISUALGUARD_PUBLIC_URL: base,
+        VISUALGUARD_ADMIN_EMAIL: "admin@example.test",
+        VISUALGUARD_ADMIN_PASSWORD: password,
+      },
+    });
     await api.ready;
     server.on("request", (req, res) => {
       void api(req, res).then((handled) => {
@@ -52,9 +61,12 @@ describe("workspace operations HTTP access", () => {
       });
     });
     admin = await login("admin@example.test");
-    expect((await request("/api/users", admin, {
-      name: "Member", email: "member@example.test", password,
-    })).response.status).toBe(201);
+    const created = await request("/api/users", admin, {
+      name: "Member",
+      email: "member@example.test",
+      password,
+    });
+    expect(created.response.status).toBe(201);
     member = await login("member@example.test");
   });
   afterEach(async () => {
@@ -80,14 +92,20 @@ describe("workspace operations HTTP access", () => {
     const filtered = await request("/api/audit?action=user.created&person=admin", admin);
     expect(filtered.value.events).toHaveLength(1);
     expect(filtered.value.events[0].action).toBe("user.created");
-    for (const query of ["since=invalid", "since=2026-10-17T00:00:00Z&until=2026-10-16T00:00:00Z", `after=${"x".repeat(201)}`])
+    for (const query of [
+      "since=invalid",
+      "since=2026-10-17T00:00:00Z&until=2026-10-16T00:00:00Z",
+      `after=${"x".repeat(201)}`,
+    ])
       expect((await request(`/api/audit?${query}`, admin)).response.status).toBe(400);
   });
 
   it("never exposes a recovery mutation over HTTP", async () => {
     const before = await platform.state.list("users");
     for (const path of ["/api/operations/recover", "/api/auth/recover"])
-      expect((await request(path, admin, { password: "attempted-reset-password" })).response.status).toBe(404);
+      expect(
+        (await request(path, admin, { password: "attempted-reset-password" })).response.status,
+      ).toBe(404);
     expect(await platform.state.list("users")).toEqual(before);
   });
 
@@ -96,7 +114,9 @@ describe("workspace operations HTTP access", () => {
     const token = await request("/api/projects/demo/tokens", admin, { name: "CI", days: 1 });
     expect(token.response.status).toBe(201);
     for (const path of ["/api/audit", "/api/operations"]) {
-      const response = await fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${token.value.token}` } });
+      const response = await fetch(`${base}${path}`, {
+        headers: { Authorization: `Bearer ${token.value.token}` },
+      });
       expect(response.status).toBe(403);
     }
   });
@@ -106,14 +126,23 @@ describe("workspace operations HTTP access", () => {
     const id = (await request("/api/session", admin)).value.user.id as string;
     const preview = await operations.previewRecovery(id);
     await operations.recover({
-      userId: id, expectedVersion: preview.expectedVersion, confirm: id,
-      backupAcknowledged: true, reason: "Local recovery acceptance check",
+      userId: id,
+      expectedVersion: preview.expectedVersion,
+      confirm: id,
+      backupAcknowledged: true,
+      reason: "Local recovery acceptance check",
       password: "replacement-operations-password",
     });
     expect((await request("/api/operations", admin)).response.status).toBe(401);
-    expect((await request("/api/auth/login", undefined, { email: "admin@example.test", password })).response.status).toBe(401);
-    expect((await request("/api/auth/login", undefined, {
-      email: "admin@example.test", password: "replacement-operations-password",
-    })).response.status).toBe(200);
+    const oldLogin = await request("/api/auth/login", undefined, {
+      email: "admin@example.test",
+      password,
+    });
+    expect(oldLogin.response.status).toBe(401);
+    const newLogin = await request("/api/auth/login", undefined, {
+      email: "admin@example.test",
+      password: "replacement-operations-password",
+    });
+    expect(newLogin.response.status).toBe(200);
   });
 });
