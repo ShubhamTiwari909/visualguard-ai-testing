@@ -554,8 +554,12 @@ export class MemoryStateStore implements StateStore {
   }
   async replace<T>(namespace: string, record: StateRecord<T>) {
     const prior = this.entries.get(`${namespace}:${record.id}`);
-    if (!prior || prior.version !== record.version ||
-      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())) return false;
+    if (
+      !prior ||
+      prior.version !== record.version ||
+      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())
+    )
+      return false;
     this.entries.set(
       `${namespace}:${record.id}`,
       structuredClone({ ...record, version: record.version + 1 }),
@@ -573,9 +577,13 @@ export class MemoryStateStore implements StateStore {
   }
   async list<T>(namespace: string, prefix = "", limit = 1000, after?: string) {
     const keys = [...this.entries.keys()]
-      .filter((key) => key.startsWith(`${namespace}:${prefix}`) &&
-        (after === undefined || key.slice(namespace.length + 1) > after) &&
-        (!this.entries.get(key)!.expiresAt || this.entries.get(key)!.expiresAt! > new Date().toISOString()))
+      .filter(
+        (key) =>
+          key.startsWith(`${namespace}:${prefix}`) &&
+          (after === undefined || key.slice(namespace.length + 1) > after) &&
+          (!this.entries.get(key)!.expiresAt ||
+            this.entries.get(key)!.expiresAt! > new Date().toISOString()),
+      )
       .sort()
       .slice(0, limit);
     const rows = await Promise.all(

@@ -116,7 +116,10 @@ export function createApi(
       const requestedProjectId = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)(?:\/|$)/)?.[1];
       if (requestedProjectId) {
         const canonical = await repository.resolveProjectId(requestedProjectId);
-        url.pathname = url.pathname.replace(`/api/projects/${requestedProjectId}`, `/api/projects/${canonical}`);
+        url.pathname = url.pathname.replace(
+          `/api/projects/${requestedProjectId}`,
+          `/api/projects/${canonical}`,
+        );
       }
       if (await uploads.handle(request, response, url, actor)) return true;
       if (request.method === "GET" && url.pathname === "/api/publishing/project") {
@@ -148,15 +151,25 @@ export function createApi(
           "Upload credentials cannot browse or administer the dashboard",
         );
       if (request.method === "GET" && url.pathname === "/api/reviews") {
-        const input = z.object({
-          project: z.string().regex(/^[a-z0-9-]{1,63}$/),
-          after: z.string().max(200).optional(),
-          owner: z.enum(["all", "mine", "unassigned"]).optional(),
-          status: z.enum(["all", "open", "pending", "approved", "rejected"]).optional(),
-          overdue: z.enum(["true", "false"]).optional(),
-        }).strict().parse(Object.fromEntries(url.searchParams));
-        json(response, 200, await reviews.inbox(actor, { ...input,
-          project: await repository.resolveProjectId(input.project), overdue: input.overdue === "true" }));
+        const input = z
+          .object({
+            project: z.string().regex(/^[a-z0-9-]{1,63}$/),
+            after: z.string().max(200).optional(),
+            owner: z.enum(["all", "mine", "unassigned"]).optional(),
+            status: z.enum(["all", "open", "pending", "approved", "rejected"]).optional(),
+            overdue: z.enum(["true", "false"]).optional(),
+          })
+          .strict()
+          .parse(Object.fromEntries(url.searchParams));
+        json(
+          response,
+          200,
+          await reviews.inbox(actor, {
+            ...input,
+            project: await repository.resolveProjectId(input.project),
+            overdue: input.overdue === "true",
+          }),
+        );
         return true;
       }
       const reviewPeople = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/reviewers$/);
@@ -303,11 +316,29 @@ export function createApi(
       if (request.method === "PATCH" && projectDeletion) {
         const id = projectDeletion[1]!;
         await auth.requireRole(actor, id, "maintainer");
-        const input = z.object({ name: z.string().trim().min(1).max(120), publicId: z.string().max(63),
-          expectedVersion: z.number().int().nonnegative() }).strict().parse(await body(request));
-        const project = await repository.updateProject(id, input.name, input.publicId, input.expectedVersion);
-        await auth.audit(actor, "project.renamed", { projectId: id, name: project.name, publicId: project.publicId })
-          .catch((error) => console.error("Project details saved; unable to record audit event", error));
+        const input = z
+          .object({
+            name: z.string().trim().min(1).max(120),
+            publicId: z.string().max(63),
+            expectedVersion: z.number().int().nonnegative(),
+          })
+          .strict()
+          .parse(await body(request));
+        const project = await repository.updateProject(
+          id,
+          input.name,
+          input.publicId,
+          input.expectedVersion,
+        );
+        await auth
+          .audit(actor, "project.renamed", {
+            projectId: id,
+            name: project.name,
+            publicId: project.publicId,
+          })
+          .catch((error) =>
+            console.error("Project details saved; unable to record audit event", error),
+          );
         json(response, 200, project);
         return true;
       }
@@ -315,7 +346,10 @@ export function createApi(
         const id = projectDeletion[1]!;
         await auth.requireRole(actor, id, "maintainer");
         const input = z
-          .object({ confirmation: z.union([z.literal(id), z.literal(requestedProjectId ?? id)]), expectedRuns: z.number().int().nonnegative() })
+          .object({
+            confirmation: z.union([z.literal(id), z.literal(requestedProjectId ?? id)]),
+            expectedRuns: z.number().int().nonnegative(),
+          })
           .strict()
           .parse(await body(request));
         const result = await repository.deleteProject(id, input.expectedRuns);
@@ -337,11 +371,26 @@ export function createApi(
       if (request.method === "PATCH" && match && !match[2]) {
         const run = await repository.getRun(match[1]!);
         await auth.requireRole(actor, run.projectId, "maintainer");
-        const input = z.object({ name: z.string().trim().max(120), expectedVersion: z.number().int().nonnegative() }).strict().parse(await body(request));
+        const input = z
+          .object({
+            name: z.string().trim().max(120),
+            expectedVersion: z.number().int().nonnegative(),
+          })
+          .strict()
+          .parse(await body(request));
         const renamed = await repository.renameRun(run.id, input.name, input.expectedVersion);
-        await auth.audit(actor, "run.renamed", { projectId: run.projectId, runId: run.id, name: renamed.name ?? null })
+        await auth
+          .audit(actor, "run.renamed", {
+            projectId: run.projectId,
+            runId: run.id,
+            name: renamed.name ?? null,
+          })
           .catch((error) => console.error("Run name saved; unable to record audit event", error));
-        json(response, 200, { id: renamed.id, name: renamed.name ?? null, nameVersion: renamed.nameVersion });
+        json(response, 200, {
+          id: renamed.id,
+          name: renamed.name ?? null,
+          nameVersion: renamed.nameVersion,
+        });
         return true;
       }
       if (request.method === "DELETE" && match && !match[2]) {

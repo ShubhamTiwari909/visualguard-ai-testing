@@ -36,7 +36,7 @@ describe.skipIf(!process.env.VISUALGUARD_TEST_DATABASE_URL)("PostgreSQL metadata
       startedAt: "2026-10-15T10:00:00.000Z",
       durationMs: 0,
       mode: "compare",
-      tool: { version: "2.0.0" },
+      tool: { version: "2.0.0", node: process.versions.node },
       config: { baseURL: {}, viewports: {}, ai: { provider: "none" }, failOn: "regression" },
       summary: { pass: 0, accepted: 0, review: 0, regression: 0, error: 0 },
       jobs: [],

@@ -114,10 +114,20 @@ class MongoEvidenceRepository implements EvidenceRepository {
     const next = { ...run, name: normalized, nameVersion: expectedVersion + 1 };
     const result = await this.db.collection("vg_runs").updateOne(
       { id, nameVersion: expectedVersion === 0 ? { $in: [null, 0] } : expectedVersion },
-      { $set: { nameVersion: next.nameVersion, searchText: runSearchText(next), ...(normalized ? { name: normalized } : {}) },
-        ...(normalized ? {} : { $unset: { name: "" } }) },
+      {
+        $set: {
+          nameVersion: next.nameVersion,
+          searchText: runSearchText(next),
+          ...(normalized ? { name: normalized } : {}),
+        },
+        ...(normalized ? {} : { $unset: { name: "" } }),
+      },
     );
-    if (!result.matchedCount) throw new PlatformError(409, "Run name changed or run was removed; refresh before saving again");
+    if (!result.matchedCount)
+      throw new PlatformError(
+        409,
+        "Run name changed or run was removed; refresh before saving again",
+      );
     return next;
   }
   async insertRun(run: Omit<RunDetail, "id">, preserveId?: string) {
@@ -523,9 +533,18 @@ export class MongoStateStore implements StateStore {
       ).deletedCount === 1
     );
   }
-  async list<T>(namespace: string, prefix = "", limit = 1000, after?: string): Promise<StateRecord<T>[]> {
+  async list<T>(
+    namespace: string,
+    prefix = "",
+    limit = 1000,
+    after?: string,
+  ): Promise<StateRecord<T>[]> {
     const rows = await this.collection
-      .find({ namespace, id: { $regex: `^${regex(prefix)}`, ...(after === undefined ? {} : { $gt: after }) }, ...this.live() })
+      .find({
+        namespace,
+        id: { $regex: `^${regex(prefix)}`, ...(after === undefined ? {} : { $gt: after }) },
+        ...this.live(),
+      })
       .sort({ id: 1 })
       .limit(limit)
       .toArray();

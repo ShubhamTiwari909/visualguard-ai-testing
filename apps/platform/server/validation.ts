@@ -230,7 +230,10 @@ const metadataSchema = z
 export function parseMetadata(value: unknown): RunMetadata {
   const result = metadataSchema.safeParse(value);
   if (!result.success)
-    throw new PlatformError(400, "Invalid run name, environment, branch, commit, PR, or deployment metadata");
+    throw new PlatformError(
+      400,
+      "Invalid run name, environment, branch, commit, PR, or deployment metadata",
+    );
   return result.data;
 }
 
