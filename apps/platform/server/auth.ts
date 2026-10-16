@@ -7,7 +7,7 @@ import type { StateRecord, StateStore } from "./storage-contracts.js";
 import { oidcSettings, type OidcSettings } from "./oidc-config.js";
 import type { OnboardingBinding } from "./onboarding.js";
 import { Administration, touchAdministratorGuard } from "./administration.js";
-import { Identities, type LinkProof } from "./identities.js";
+import { Identities, legacyIdentityId, type LinkProof } from "./identities.js";
 
 const scrypt = promisify(deriveKey);
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -97,7 +97,10 @@ export class AuthService {
     if (mode !== "local" && mode !== "login")
       throw new Error("VISUALGUARD_AUTH_MODE must be local or login");
     this.mode = mode;
-    if (env.VISUALGUARD_USER_ADMISSION && !["invite", "legacy"].includes(env.VISUALGUARD_USER_ADMISSION))
+    if (
+      env.VISUALGUARD_USER_ADMISSION &&
+      !["invite", "legacy"].includes(env.VISUALGUARD_USER_ADMISSION)
+    )
       throw new Error("VISUALGUARD_USER_ADMISSION must be invite or legacy");
     if (env.VISUALGUARD_PUBLIC_URL) {
       this.publicUrl = new URL(env.VISUALGUARD_PUBLIC_URL);
@@ -129,52 +132,135 @@ export class AuthService {
     this.ready = this.bootstrap();
   }
 
+  private async legacyAdministrator(id: string, create: () => Promise<User>) {
+    let policy = (await this.state.get<{ bootstrapComplete: boolean; bootstrapUserId?: string }>(
+      "admission",
+      "current",
+    ))!;
+    if (
+      policy.value.bootstrapComplete ||
+      (policy.value.bootstrapUserId && policy.value.bootstrapUserId !== id)
+    )
+      throw new PlatformError(
+        409,
+        "Administrator setup is already claimed; retry with the original administrator",
+      );
+    if (!policy.value.bootstrapUserId) {
+      policy.value.bootstrapUserId = id;
+      if (!(await this.state.replace("admission", policy)))
+        throw new PlatformError(409, "Administrator setup changed; retry");
+    }
+    // Reserve one identity first, but complete only after its account is durable.
+    // A failed create/completion write can be resumed without adding another administrator.
+    const user = await create();
+    if (user.disabled || user.role !== "admin")
+      throw new PlatformError(409, "Administrator account is unavailable");
+    policy = (await this.state.get<typeof policy.value>("admission", "current"))!;
+    if (policy.value.bootstrapUserId !== id)
+      throw new PlatformError(409, "Administrator setup changed; retry");
+    if (!policy.value.bootstrapComplete) {
+      policy.value.bootstrapComplete = true;
+      if (!(await this.state.replace("admission", policy)))
+        throw new PlatformError(409, "Administrator setup changed; retry");
+    }
+    return user;
+  }
+
   private async bootstrap() {
     if (this.mode === "local") return;
-    const existing = await this.state.get<{ version: number; mode: "invite" | "legacy"; bootstrapComplete: boolean }>("admission", "current");
-    if (existing && (existing.value.version !== 1 || !["invite", "legacy"].includes(existing.value.mode) || typeof existing.value.bootstrapComplete !== "boolean"))
+    const existing = await this.state.get<{
+      version: number;
+      mode: "invite" | "legacy";
+      bootstrapComplete: boolean;
+    }>("admission", "current");
+    if (
+      existing &&
+      (existing.value.version !== 1 ||
+        !["invite", "legacy"].includes(existing.value.mode) ||
+        typeof existing.value.bootstrapComplete !== "boolean")
+    )
       throw new Error("Admission storage requires a compatible dashboard version");
     const installedUsers = await this.state.list<User>("users", "", 1);
     if (!existing && !this.env.VISUALGUARD_USER_ADMISSION && installedUsers.length)
-      throw new Error("Existing installation: set VISUALGUARD_USER_ADMISSION=invite or legacy explicitly before upgrading");
-    this.admission = this.env.VISUALGUARD_USER_ADMISSION as "invite" | "legacy" | undefined ?? existing?.value.mode ?? "invite";
-    if (this.admission === "invite" && !await this.identities.available())
-      throw new Error("Invitation admission requires transactional storage; use a MongoDB replica set, SQLite, or PostgreSQL, or explicitly retain VISUALGUARD_USER_ADMISSION=legacy");
-    await this.state.create("admission", "current", { version: 1, mode: this.admission, bootstrapComplete: installedUsers.length > 0 });
-    const policy = (await this.state.get<{ version: number; mode: string; bootstrapComplete: boolean }>("admission", "current"))!;
+      throw new Error(
+        "Existing installation: set VISUALGUARD_USER_ADMISSION=invite or legacy explicitly before upgrading",
+      );
+    this.admission =
+      (this.env.VISUALGUARD_USER_ADMISSION as "invite" | "legacy" | undefined) ??
+      existing?.value.mode ??
+      "invite";
+    if (this.admission === "invite" && !(await this.identities.available()))
+      throw new Error(
+        "Invitation admission requires transactional storage; use a MongoDB replica set, SQLite, or PostgreSQL, or explicitly retain VISUALGUARD_USER_ADMISSION=legacy",
+      );
+    await this.state.create("admission", "current", {
+      version: 1,
+      mode: this.admission,
+      bootstrapComplete: installedUsers.length > 0,
+    });
+    const policy = (await this.state.get<{
+      version: number;
+      mode: string;
+      bootstrapComplete: boolean;
+    }>("admission", "current"))!;
     if (policy.value.mode !== this.admission) {
       policy.value.mode = this.admission;
-      if (!await this.state.replace("admission", policy)) throw new Error("Admission policy changed; restart dashboard");
+      if (!(await this.state.replace("admission", policy)))
+        throw new Error("Admission policy changed; restart dashboard");
     }
     const email = this.env.VISUALGUARD_ADMIN_EMAIL,
       password = this.env.VISUALGUARD_ADMIN_PASSWORD;
-    if (email && password && !(await this.state.get<{ bootstrapComplete: boolean }>("admission", "current"))?.value.bootstrapComplete) {
-      const user = await this.passwordUser({ email, password, name: "Workspace administrator", role: "admin" });
+    if (
+      email &&
+      password &&
+      !(await this.state.get<{ bootstrapComplete: boolean }>("admission", "current"))?.value
+        .bootstrapComplete
+    ) {
+      const user = await this.prepareLocalAccount({
+        email,
+        password,
+        name: "Workspace administrator",
+        role: "admin",
+      });
       if (await this.identities.available()) {
         await this.state.transaction!(async (store) => {
           await touchAdministratorGuard(store);
-          const policy = (await store.get<{ version: number; mode: string; bootstrapComplete: boolean }>("admission", "current"))!;
+          const policy = (await store.get<{
+            version: number;
+            mode: string;
+            bootstrapComplete: boolean;
+          }>("admission", "current"))!;
           if (policy.value.bootstrapComplete) return;
           policy.value.bootstrapComplete = true;
-          if (!await store.create("users", user.id, user) || !await store.replace("admission", policy))
+          if (
+            !(await store.create("users", user.id, user)) ||
+            !(await store.replace("admission", policy))
+          )
             throw new Error("Administrator setup changed; restart dashboard");
         });
       } else {
-        // Explicit legacy mode on standalone MongoDB retains single-record bootstrap.
-        const policy = (await this.state.get<{ bootstrapComplete: boolean }>("admission", "current"))!;
-        policy.value.bootstrapComplete = true;
-        if (!await this.state.replace("admission", policy)) throw new Error("Administrator setup changed; restart dashboard");
-        if (!await this.state.create("users", user.id, user)) throw new Error("Administrator setup changed; restart dashboard");
+        await this.legacyAdministrator(user.id, async () => {
+          if (await this.state.create("users", user.id, user)) return user;
+          const existing = await this.state.get<User>("users", user.id);
+          if (!existing)
+            throw new PlatformError(409, "Administrator setup changed; restart dashboard");
+          return existing.value;
+        });
       }
     }
     const admins = (await this.state.list<User>("users", "", 10_000)).some(
       (row) => row.value.role === "admin" && !row.value.disabled,
     );
     if (admins) {
-      const policy = (await this.state.get<{ version: number; mode: string; bootstrapComplete: boolean }>("admission", "current"))!;
+      const policy = (await this.state.get<{
+        version: number;
+        mode: string;
+        bootstrapComplete: boolean;
+      }>("admission", "current"))!;
       if (!policy.value.bootstrapComplete) {
         policy.value.bootstrapComplete = true;
-        if (!await this.state.replace("admission", policy)) throw new Error("Administrator setup changed; restart dashboard");
+        if (!(await this.state.replace("admission", policy)))
+          throw new Error("Administrator setup changed; restart dashboard");
       }
     }
     if (
@@ -223,7 +309,13 @@ export class AuthService {
       const entry = await this.state.get<UploadToken>("tokens", id);
       if (!entry) return undefined;
       const owner = await this.state.get<User>("users", entry.value.ownerId);
-      if (!owner || owner.value.disabled || (entry.value.authVersion !== undefined && entry.value.authVersion !== owner.value.authVersion)) return undefined;
+      if (
+        !owner ||
+        owner.value.disabled ||
+        (entry.value.authVersion !== undefined &&
+          entry.value.authVersion !== owner.value.authVersion)
+      )
+        return undefined;
       const actor: Actor = {
         id: owner.value.id,
         name: owner.value.name,
@@ -296,7 +388,7 @@ export class AuthService {
     if (!(await this.hasRole(actor, projectId, minimum)))
       throw new PlatformError(403, "You do not have access to this project or action");
   }
-  private async passwordUser(input: {
+  private async prepareLocalAccount(input: {
     email: string;
     password: string;
     name: string;
@@ -321,35 +413,79 @@ export class AuthService {
     };
     return user;
   }
-  async createUser(input: { email: string; password: string; name: string; role?: "admin" | "member" }) {
-    const user = await this.passwordUser(input);
+  async createUser(input: {
+    email: string;
+    password: string;
+    name: string;
+    role?: "admin" | "member";
+  }) {
+    const user = await this.prepareLocalAccount(input);
     const save = async (store: StateStore) => {
       if (user.role === "admin") await touchAdministratorGuard(store);
-      if (!await store.create("users", user.id, user)) throw new PlatformError(409, "An account with this email already exists");
+      if (!(await store.create("users", user.id, user)))
+        throw new PlatformError(409, "An account with this email already exists");
     };
-    if (user.role === "admin" && await this.administration.available()) await this.state.transaction!(save);
-    else if (!await this.state.create("users", user.id, user)) throw new PlatformError(409, "An account with this email already exists");
+    if (user.role === "admin" && (await this.administration.available()))
+      await this.state.transaction!(save);
+    else if (!(await this.state.create("users", user.id, user)))
+      throw new PlatformError(409, "An account with this email already exists");
     return safeUser(user);
   }
-  async createManagedUser(actor: Actor, input: { email: string; password: string; name: string; role?: "admin" | "member" }) {
+  async createManagedUser(
+    actor: Actor,
+    input: { email: string; password: string; name: string; role?: "admin" | "member" },
+  ) {
     if (this.mode === "local") return this.createUser(input);
-    if (input.role === "admin") throw new PlatformError(400, "Create a member first, then explicitly promote that account");
-    return this.administration.createMember(actor, await this.passwordUser({ ...input, role: "member" }));
+    if (input.role === "admin")
+      throw new PlatformError(400, "Create a member first, then explicitly promote that account");
+    return this.administration.createMember(
+      actor,
+      await this.prepareLocalAccount({ ...input, role: "member" }),
+    );
   }
   async users() {
     return (await this.state.list<User>("users", "", 10_000)).map((row) => safeUser(row.value));
   }
-  async updateUser(actor: Actor, id: string, input: { expectedVersion: number; disabled?: boolean; role?: "admin" | "member"; password?: string; currentPassword?: string; revoke?: boolean }) {
-    if (!actor.admin || actor.credentialId || this.mode !== "login") throw new PlatformError(403, "Administrator access required");
+  async updateUser(
+    actor: Actor,
+    id: string,
+    input: {
+      expectedVersion: number;
+      disabled?: boolean;
+      role?: "admin" | "member";
+      password?: string;
+      currentPassword?: string;
+      revoke?: boolean;
+    },
+  ) {
+    if (!actor.admin || actor.credentialId || this.mode !== "login")
+      throw new PlatformError(403, "Administrator access required");
     const proof = await this.proveAccount(actor, input.currentPassword);
     let passwordHash: string | undefined;
     if (input.password !== undefined) {
-      if (input.password.length < 12 || input.password.length > 256) throw new PlatformError(400, "Password must contain 12–256 characters");
-      const salt = secret(), hash = (await scrypt(input.password, salt, 64)) as Buffer;
+      if (input.password.length < 12 || input.password.length > 256)
+        throw new PlatformError(400, "Password must contain 12–256 characters");
+      const salt = secret(),
+        hash = (await scrypt(input.password, salt, 64)) as Buffer;
       passwordHash = `scrypt$${salt}$${hash.toString("hex")}`;
     }
-    return this.administration.change(actor, id, { expectedVersion: input.expectedVersion, disabled: input.disabled, role: input.role, passwordHash, revoke: input.revoke },
-      { userId: proof.userId, sessionId: proof.sessionId!, authVersion: proof.authVersion, provedAt: proof.provedAt });
+    return this.administration.change(
+      actor,
+      id,
+      {
+        expectedVersion: input.expectedVersion,
+        disabled: input.disabled,
+        role: input.role,
+        passwordHash,
+        revoke: input.revoke,
+      },
+      {
+        userId: proof.userId,
+        sessionId: proof.sessionId!,
+        authVersion: proof.authVersion,
+        provedAt: proof.provedAt,
+      },
+    );
   }
 
   async throttle(id: string, limit = 10) {
@@ -390,12 +526,21 @@ export class AuthService {
     // Cookies carry a one-way-derived opaque handle, never the raw generated secret.
     // Persist a second hash for lookup so a database dump cannot replay the cookie.
     const token = sha256(secret());
-    if (!await this.state.create<Session>(
-      "sessions",
-      sha256(token),
-      { userId: user.id, authVersion: user.authVersion, csrf: secret(), authenticatedAt: new Date().toISOString(), authentication },
-      expires(SESSION_SECONDS),
-    )) throw new PlatformError(503, "Unable to issue a session; sign in again or retry acceptance");
+    if (
+      !(await this.state.create<Session>(
+        "sessions",
+        sha256(token),
+        {
+          userId: user.id,
+          authVersion: user.authVersion,
+          csrf: secret(),
+          authenticatedAt: new Date().toISOString(),
+          authentication,
+        },
+        expires(SESSION_SECONDS),
+      ))
+    )
+      throw new PlatformError(503, "Unable to issue a session; sign in again or retry acceptance");
     response.setHeader(
       "Set-Cookie",
       `vg_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_SECONDS}${this.publicUrl?.protocol === "https:" ? "; Secure" : ""}`,
@@ -436,7 +581,8 @@ export class AuthService {
     await this.requireRole(actor, projectId, "maintainer");
     const account = await this.state.get<User>("users", userId);
     if (!account) throw new PlatformError(404, "Account not found");
-    if (role && account.value.disabled) throw new PlatformError(400, "Restore this account before granting new project access");
+    if (role && account.value.disabled)
+      throw new PlatformError(400, "Restore this account before granting new project access");
     const id = `${userId}:${projectId}`,
       row = await this.state.get<Membership>("memberships", id);
     if (!role) await this.state.remove("memberships", id);
@@ -462,20 +608,37 @@ export class AuthService {
     let ownerVersion: number | undefined;
     if (this.mode === "login") {
       const owner = await this.state.get<User>("users", actor.id);
-      const session = actor.sessionId ? await this.state.get<Session>("sessions", actor.sessionId) : undefined;
-      if (!owner || owner.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== owner.value.authVersion)
+      const session = actor.sessionId
+        ? await this.state.get<Session>("sessions", actor.sessionId)
+        : undefined;
+      if (
+        !owner ||
+        owner.value.disabled ||
+        !session ||
+        session.value.userId !== actor.id ||
+        session.value.authVersion !== owner.value.authVersion
+      )
         throw new PlatformError(401, "Sign in again before creating upload credentials");
       ownerVersion = owner.value.authVersion;
     }
     const token = `vg_upload_${secret()}`,
       id = sha256(token),
       expiresAt = expires(days * 86400);
-    if (!await this.state.create<UploadToken>(
-      "tokens",
-      id,
-      { ownerId: actor.id, projectId, name, createdAt: new Date().toISOString(), ...(ownerVersion === undefined ? {} : { authVersion: ownerVersion }) },
-      expiresAt,
-    )) throw new PlatformError(409, "Unable to create upload credential; retry");
+    if (
+      !(await this.state.create<UploadToken>(
+        "tokens",
+        id,
+        {
+          ownerId: actor.id,
+          projectId,
+          name,
+          createdAt: new Date().toISOString(),
+          ...(ownerVersion === undefined ? {} : { authVersion: ownerVersion }),
+        },
+        expiresAt,
+      ))
+    )
+      throw new PlatformError(409, "Unable to create upload credential; retry");
     await this.audit(actor, "upload-token.created", { projectId, tokenId: id });
     return { id, token, expiresAt };
   }
@@ -504,27 +667,43 @@ export class AuthService {
   private oidcConfiguration?: Promise<import("openid-client").Configuration>;
   private oidc() {
     const settings = this.oidcSettings;
-    if (!settings)
-      throw new PlatformError(400, "Single sign-on is not configured");
-    this.oidcConfiguration ??= import("openid-client").then(async (client) => {
-      const config = await client.discovery(new URL(settings.issuer), settings.clientId, settings.clientSecret);
-      if (settings.provider === "google") client.enableNonRepudiationChecks(config);
-      return config;
-    }).catch((error) => {
-      // A transient provider outage must not poison discovery until the next restart.
-      this.oidcConfiguration = undefined;
-      throw error;
-    });
+    if (!settings) throw new PlatformError(400, "Single sign-on is not configured");
+    this.oidcConfiguration ??= import("openid-client")
+      .then(async (client) => {
+        const config = await client.discovery(
+          new URL(settings.issuer),
+          settings.clientId,
+          settings.clientSecret,
+        );
+        if (settings.provider === "google") client.enableNonRepudiationChecks(config);
+        return config;
+      })
+      .catch((error) => {
+        // A transient provider outage must not poison discovery until the next restart.
+        this.oidcConfiguration = undefined;
+        throw error;
+      });
     return this.oidcConfiguration;
   }
-  private async authorizeOidc(response: ServerResponse, link?: LinkProof, join?: OnboardingBinding) {
+  private async authorizeOidc(
+    response: ServerResponse,
+    link?: LinkProof,
+    join?: OnboardingBinding,
+  ) {
     const client = await import("openid-client"),
       config = await this.oidc();
     const verifier = client.randomPKCECodeVerifier(),
       state = client.randomState(),
       nonce = secret(),
       browser = sha256(secret());
-    if (!await this.state.create<OidcAttempt>("oidc", sha256(browser), { state, nonce, verifier, ...(link ? { link } : {}), ...(join ? { join } : {}) }, expires(600)))
+    if (
+      !(await this.state.create<OidcAttempt>(
+        "oidc",
+        sha256(browser),
+        { state, nonce, verifier, ...(link ? { link } : {}), ...(join ? { join } : {}) },
+        expires(600),
+      ))
+    )
       throw new PlatformError(409, "Unable to start sign-in; retry");
     const target = client.buildAuthorizationUrl(config, {
       redirect_uri: `${this.publicUrl!.origin}/api/auth/callback`,
@@ -533,7 +712,7 @@ export class AuthService {
       code_challenge_method: "S256",
       state,
       nonce,
-      ...((link || join) ? { prompt: "select_account" } : {}),
+      ...(link || join ? { prompt: "select_account" } : {}),
     });
     response.setHeader(
       "Set-Cookie",
@@ -554,7 +733,13 @@ export class AuthService {
     this.browserAccount(actor);
     const user = await this.state.get<User>("users", actor.id);
     const session = await this.state.get<Session>("sessions", actor.sessionId!);
-    if (!user || user.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== user.value.authVersion)
+    if (
+      !user ||
+      user.value.disabled ||
+      !session ||
+      session.value.userId !== actor.id ||
+      session.value.authVersion !== user.value.authVersion
+    )
       throw new PlatformError(401, "Sign in again");
     return {
       googleLinked: await this.identities.googleLinked(actor.id),
@@ -566,22 +751,37 @@ export class AuthService {
   }
   async beginGoogleLink(actor: Actor, password: string | undefined, response: ServerResponse) {
     this.browserAccount(actor);
-    if (this.oidcProvider !== "google") throw new PlatformError(400, "Configure Google sign-in before linking an account");
-    if (!await this.identities.available())
-      throw new PlatformError(503, "Account linking requires transactional storage; use SQLite, PostgreSQL, or a MongoDB replica set");
+    if (this.oidcProvider !== "google")
+      throw new PlatformError(400, "Configure Google sign-in before linking an account");
+    if (!(await this.identities.available()))
+      throw new PlatformError(
+        503,
+        "Account linking requires transactional storage; use SQLite, PostgreSQL, or a MongoDB replica set",
+      );
     const user = await this.state.get<User>("users", actor.id);
     const session = await this.state.get<Session>("sessions", actor.sessionId!);
-    if (!user || user.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== user.value.authVersion)
+    if (
+      !user ||
+      user.value.disabled ||
+      !session ||
+      session.value.userId !== actor.id ||
+      session.value.authVersion !== user.value.authVersion
+    )
       throw new PlatformError(401, "Sign in again before linking Google");
     if (user.value.passwordHash) {
       await this.throttle(sha256(`identity-link:${actor.id}`));
       const [, salt, expected] = user.value.passwordHash.split("$");
       const actual = (await scrypt((password ?? "").slice(0, 257), salt!, 64)) as Buffer;
-      if (!expected || !matches(actual.toString("hex"), expected)) throw new PlatformError(401, "Current password is incorrect");
+      if (!expected || !matches(actual.toString("hex"), expected))
+        throw new PlatformError(401, "Current password is incorrect");
     } else if (!recentlyAuthenticated(session.value)) {
       throw new PlatformError(401, "Sign in again before linking Google");
     }
-    const target = await this.authorizeOidc(response, { userId: actor.id, sessionId: actor.sessionId!, authVersion: user.value.authVersion });
+    const target = await this.authorizeOidc(response, {
+      userId: actor.id,
+      sessionId: actor.sessionId!,
+      authVersion: user.value.authVersion,
+    });
     return { authorizationUrl: target.href };
   }
   async beginInvitationOidc(response: ServerResponse, join: OnboardingBinding) {
@@ -589,32 +789,69 @@ export class AuthService {
   }
   async proveAccount(actor: Actor, password?: string) {
     this.browserAccount(actor);
-    const user = await this.state.get<User>("users", actor.id), session = await this.state.get<Session>("sessions", actor.sessionId!);
-    if (!user || user.value.disabled || !session || session.value.userId !== actor.id || session.value.authVersion !== user.value.authVersion)
+    const user = await this.state.get<User>("users", actor.id),
+      session = await this.state.get<Session>("sessions", actor.sessionId!);
+    if (
+      !user ||
+      user.value.disabled ||
+      !session ||
+      session.value.userId !== actor.id ||
+      session.value.authVersion !== user.value.authVersion
+    )
       throw new PlatformError(401, "Sign in again");
     if (user.value.passwordHash) {
       const attemptKey = sha256(`account-proof:${actor.id}`);
       await this.throttle(attemptKey);
       const [, salt, expected] = user.value.passwordHash.split("$");
       const actual = (await scrypt((password ?? "").slice(0, 257), salt!, 64)) as Buffer;
-      if (!expected || !matches(actual.toString("hex"), expected)) throw new PlatformError(401, "Current password is incorrect");
+      if (!expected || !matches(actual.toString("hex"), expected))
+        throw new PlatformError(401, "Current password is incorrect");
       await this.state.remove("login-attempts", attemptKey);
-    } else if (!recentlyAuthenticated(session.value)) throw new PlatformError(401, "Sign in again to verify your account");
-    return { email: user.value.email, name: user.value.name, userId: user.value.id, authVersion: user.value.authVersion,
-      sessionId: actor.sessionId, provedAt: new Date().toISOString() };
+    } else if (!recentlyAuthenticated(session.value))
+      throw new PlatformError(401, "Sign in again to verify your account");
+    return {
+      email: user.value.email,
+      name: user.value.name,
+      userId: user.value.id,
+      authVersion: user.value.authVersion,
+      sessionId: actor.sessionId,
+      provedAt: new Date().toISOString(),
+    };
   }
-  async finishOidc(request: IncomingMessage, response: ServerResponse, url: URL, completeJoin?: (binding: OnboardingBinding, identity: import("./identities.js").ExternalIdentity, profile: { email: string; name: string }) => Promise<void>) {
+  private async oidcAttempt(request: IncomingMessage) {
     const browser = request.headers.cookie
       ?.split(";")
       .map((part) => part.trim())
       .find((part) => part.startsWith("vg_oidc="))
       ?.slice(8);
-    const entry = browser
-      ? await this.state.get<OidcAttempt>(
-          "oidc",
-          sha256(browser),
-        )
-      : undefined;
+    const entry = browser ? await this.state.get<OidcAttempt>("oidc", sha256(browser)) : undefined;
+    return entry;
+  }
+  async oidcFailureLocation(request: IncomingMessage) {
+    const entry = await this.oidcAttempt(request);
+    const joinHandle = request.headers.cookie
+      ?.split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("vg_join="))
+      ?.slice(8);
+    if ((!entry || entry.value.join) && joinHandle) {
+      const ticket = await this.state.get("onboarding", sha256(joinHandle));
+      if (ticket && (!entry?.value.join || entry.value.join.ticketId === ticket.id))
+        return "/invite?signin_error=oidc";
+    }
+    return entry?.value.link ? "/settings?identity=error" : "/?signin_error=oidc";
+  }
+  async finishOidc(
+    request: IncomingMessage,
+    response: ServerResponse,
+    url: URL,
+    completeJoin?: (
+      binding: OnboardingBinding,
+      identity: import("./identities.js").ExternalIdentity,
+      profile: { email: string; name: string },
+    ) => Promise<void>,
+  ) {
+    const entry = await this.oidcAttempt(request);
     if (!entry || !(await this.state.remove("oidc", entry.id, entry.version)))
       throw new PlatformError(401, "Login expired; start again");
     const client = await import("openid-client");
@@ -629,15 +866,30 @@ export class AuthService {
     const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
     if (this.oidcProvider === "google" && (claims.email_verified !== true || !email))
       throw new PlatformError(401, "Google did not return a verified email address");
-    const identity = { issuer: this.oidcSettings!.issuer, subject: claims.sub, provider: this.oidcProvider! };
+    const identity = {
+      issuer: this.oidcSettings!.issuer,
+      subject: claims.sub,
+      provider: this.oidcProvider!,
+    };
     if (entry.value.join) {
-      if (!completeJoin || claims.email_verified !== true || !email) throw new PlatformError(401, "A verified email is required");
-      await completeJoin(entry.value.join, identity, { email, name: typeof claims.name === "string" ? claims.name.slice(0, 120) : email });
-      response.writeHead(302, { Location: "/invite" }); response.end(); return;
+      if (!completeJoin || claims.email_verified !== true || !email)
+        throw new PlatformError(401, "A verified email is required");
+      await completeJoin(entry.value.join, identity, {
+        email,
+        name: typeof claims.name === "string" ? claims.name.slice(0, 120) : email,
+      });
+      response.writeHead(302, { Location: "/invite" });
+      response.end();
+      return;
     }
     if (entry.value.link) {
       const actor = await this.actor(request);
-      if (!actor || actor.credentialId || actor.id !== entry.value.link.userId || actor.sessionId !== entry.value.link.sessionId)
+      if (
+        !actor ||
+        actor.credentialId ||
+        actor.id !== entry.value.link.userId ||
+        actor.sessionId !== entry.value.link.sessionId
+      )
         throw new PlatformError(401, "Sign in again before linking Google");
       const user = await this.identities.link(identity, entry.value.link);
       await this.issueSession(user, response, "oidc");
@@ -649,33 +901,59 @@ export class AuthService {
       (this.env.VISUALGUARD_OIDC_ADMIN_SUBJECTS ?? "").split(",").includes(claims.sub) ||
       (claims.email_verified === true &&
         email === this.env.VISUALGUARD_ADMIN_EMAIL?.trim().toLowerCase());
-    const profile = { email, name: typeof claims.name === "string" ? claims.name.slice(0, 120) : email || "Team member", role: "member" as const };
+    const profile = {
+      email,
+      name: typeof claims.name === "string" ? claims.name.slice(0, 120) : email || "Team member",
+      role: "member" as const,
+    };
     let user = await this.identities.known(identity);
     if (user) user = await this.identities.resolve(identity, profile);
     else {
-      const policy = (await this.state.get<{ version: number; mode: string; bootstrapComplete: boolean }>("admission", "current"))!;
-      if (admin && !policy.value.bootstrapComplete && await this.identities.available()) {
+      const policy = (await this.state.get<{
+        version: number;
+        mode: string;
+        bootstrapComplete: boolean;
+      }>("admission", "current"))!;
+      if (admin && !policy.value.bootstrapComplete && (await this.identities.available())) {
         user = await this.state.transaction!(async (store) => {
           await touchAdministratorGuard(store);
           const current = (await store.get<typeof policy.value>("admission", "current"))!;
-          if (current.value.bootstrapComplete) throw new PlatformError(403, "An invitation is required");
-          if (await this.identities.known(identity, store)) throw new PlatformError(409, "Account changed; sign in again");
+          if (current.value.bootstrapComplete)
+            throw new PlatformError(403, "An invitation is required");
+          if (await this.identities.known(identity, store))
+            throw new PlatformError(409, "Account changed; sign in again");
           const created = await this.identities.enroll(store, identity, profile);
           const row = (await store.get<User>("users", created.id))!;
           row.value.role = "admin";
           current.value.bootstrapComplete = true;
-          if (!await store.replace("users", row) || !await store.replace("admission", current)) throw new PlatformError(409, "Administrator setup changed; retry");
+          if (!(await store.replace("users", row)) || !(await store.replace("admission", current)))
+            throw new PlatformError(409, "Administrator setup changed; retry");
           return row.value;
         });
       } else if (policy.value.mode === "legacy") {
         // Standalone Mongo retains its explicitly selected pilot workflow.
         const bootstrap = admin && !policy.value.bootstrapComplete;
-        if (bootstrap) {
-          policy.value.bootstrapComplete = true;
-          if (!await this.state.replace("admission", policy)) throw new PlatformError(409, "Administrator setup changed; retry");
-        }
-        user = await this.identities.resolve(identity, { ...profile, role: bootstrap ? "admin" : "member" });
-      } else throw new PlatformError(403, "Ask an administrator for an invitation before joining this workspace");
+        user = bootstrap
+          ? await this.legacyAdministrator(legacyIdentityId(identity), () =>
+              this.identities.resolve(identity, { ...profile, role: "admin" }),
+            )
+          : await this.identities.resolve(identity, { ...profile, role: "member" });
+      } else
+        throw new PlatformError(
+          403,
+          "Ask an administrator for an invitation before joining this workspace",
+        );
+    }
+    const pendingBootstrap = await this.state.get<{
+      bootstrapComplete: boolean;
+      bootstrapUserId?: string;
+    }>("admission", "current");
+    if (
+      !pendingBootstrap?.value.bootstrapComplete &&
+      pendingBootstrap?.value.bootstrapUserId === user.id
+    ) {
+      const candidate = user;
+      user = await this.legacyAdministrator(user.id, async () => candidate);
     }
     await this.issueSession(user, response, "oidc");
     await this.audit({ id: user.id }, "user.login", { provider: this.oidcProvider });
@@ -688,13 +966,16 @@ export class AuthService {
 export class MemoryStateStore implements StateStore {
   private entries = new Map<string, StateRecord>();
   private revision = 0;
-  async supportsTransactions() { return true; }
+  async supportsTransactions() {
+    return true;
+  }
   async transaction<T>(work: (store: StateStore) => Promise<T>): Promise<T> {
     const revision = this.revision;
     const transaction = new MemoryStateStore();
     transaction.entries = structuredClone(this.entries);
     const result = await work(transaction);
-    if (this.revision !== revision) throw new PlatformError(409, "State changed; retry the operation");
+    if (this.revision !== revision)
+      throw new PlatformError(409, "State changed; retry the operation");
     this.entries = transaction.entries;
     this.revision++;
     return result;
@@ -719,8 +1000,12 @@ export class MemoryStateStore implements StateStore {
   }
   async replace<T>(namespace: string, record: StateRecord<T>) {
     const prior = this.entries.get(`${namespace}:${record.id}`);
-    if (!prior || prior.version !== record.version ||
-      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())) return false;
+    if (
+      !prior ||
+      prior.version !== record.version ||
+      (prior.expiresAt && prior.expiresAt <= new Date().toISOString())
+    )
+      return false;
     this.entries.set(
       `${namespace}:${record.id}`,
       structuredClone({ ...record, version: record.version + 1 }),
@@ -741,9 +1026,13 @@ export class MemoryStateStore implements StateStore {
   }
   async list<T>(namespace: string, prefix = "", limit = 1000, after?: string) {
     const keys = [...this.entries.keys()]
-      .filter((key) => key.startsWith(`${namespace}:${prefix}`) &&
-        (after === undefined || key.slice(namespace.length + 1) > after) &&
-        (!this.entries.get(key)!.expiresAt || this.entries.get(key)!.expiresAt! > new Date().toISOString()))
+      .filter(
+        (key) =>
+          key.startsWith(`${namespace}:${prefix}`) &&
+          (after === undefined || key.slice(namespace.length + 1) > after) &&
+          (!this.entries.get(key)!.expiresAt ||
+            this.entries.get(key)!.expiresAt! > new Date().toISOString()),
+      )
       .sort()
       .slice(0, limit);
     const rows = await Promise.all(

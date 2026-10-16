@@ -71,12 +71,22 @@ export function Settings({
     let active = true;
     if (session.user?.admin) {
       setSearchingAccounts(true);
-      void get<{ users: User[] }>(`/api/users?query=${encodeURIComponent(accountSearch)}&status=active`)
-        .then((value) => { if (active) setUsers(value.users); })
-        .catch((problem: Error) => { if (active) setError(problem.message); })
-        .finally(() => { if (active) setSearchingAccounts(false); });
+      void get<{ users: User[] }>(
+        `/api/users?query=${encodeURIComponent(accountSearch)}&status=active`,
+      )
+        .then((value) => {
+          if (active) setUsers(value.users);
+        })
+        .catch((problem: Error) => {
+          if (active) setError(problem.message);
+        })
+        .finally(() => {
+          if (active) setSearchingAccounts(false);
+        });
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [accountSearch, revision, session.user?.admin]);
   const run = async (work: () => Promise<unknown>, note: string) => {
     setError("");
@@ -109,7 +119,9 @@ export function Settings({
         </p>
       )}
       {session.access === "login" && <AccountIdentity />}
-      {session.access === "login" && session.user?.admin && <InvitationSettings projects={projects} />}
+      {session.access === "login" && session.user?.admin && (
+        <InvitationSettings projects={projects} />
+      )}
       {session.access === "login" && (
         <section className="vg-panel vg-settings-section">
           <h2>Your password</h2>
@@ -166,7 +178,12 @@ export function Settings({
           </button>
         </div>
       )}
-      {session.access === "login" && session.user?.admin && <UserAdministration projects={projects} onChanged={() => setRevision((value) => value + 1)} />}
+      {session.access === "login" && session.user?.admin && (
+        <UserAdministration
+          projects={projects}
+          onChanged={() => setRevision((value) => value + 1)}
+        />
+      )}
       <section className="vg-panel vg-settings-section">
         <h2>Project access</h2>
         <label className="vg-settings-project">
@@ -187,14 +204,29 @@ export function Settings({
             ))}
           </select>
         </label>
-        {managed.find((item) => item.id === project) && <ProjectNameEditor
-          key={`${project}:${managed.find((item) => item.id === project)!.version ?? 0}`}
-          project={managed.find((item) => item.id === project)!}
-          onSaved={() => { setMessage("Project details saved. Old IDs still work."); onUpdated(); }}
-        />}
+        {managed.find((item) => item.id === project) && (
+          <ProjectNameEditor
+            key={`${project}:${managed.find((item) => item.id === project)!.version ?? 0}`}
+            project={managed.find((item) => item.id === project)!}
+            onSaved={() => {
+              setMessage("Project details saved. Old IDs still work.");
+              onUpdated();
+            }}
+          />
+        )}
         {project && (
           <>
-            {session.user?.admin && <label className="vg-settings-project">Find an account for project access<input value={accountSearch} maxLength={120} placeholder="Search name or email" onChange={(event) => setAccountSearch(event.target.value)} /></label>}
+            {session.user?.admin && (
+              <label className="vg-settings-project">
+                Find an account for project access
+                <input
+                  value={accountSearch}
+                  maxLength={120}
+                  placeholder="Search name or email"
+                  onChange={(event) => setAccountSearch(event.target.value)}
+                />
+              </label>
+            )}
             <form
               className="vg-settings-form"
               onSubmit={(event) => {
@@ -232,7 +264,9 @@ export function Settings({
                   <option value="maintainer">Maintainer</option>
                 </select>
               </label>
-              <button className="vg-button" disabled={searchingAccounts}>Grant access</button>
+              <button className="vg-button" disabled={searchingAccounts}>
+                Grant access
+              </button>
             </form>
             <div className="vg-table-scroll">
               <table className="vg-table">

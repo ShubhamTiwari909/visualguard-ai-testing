@@ -5,10 +5,10 @@ import { fileURLToPath } from "node:url";
 import { createServer as createViteServer } from "vite";
 import { createDashboardHandler } from "./runtime.js";
 
-export async function startDevDashboard() {
+export async function startDevDashboard(options: { port?: number } = {}) {
   const runtime = await createDashboardHandler();
-  const port = Number(process.env.VISUALGUARD_PLATFORM_PORT ?? 4400);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  const port = options.port ?? Number(process.env.VISUALGUARD_PLATFORM_PORT ?? 4400);
+  if (!Number.isInteger(port) || port < 0 || port > 65535 || (port === 0 && options.port !== 0)) {
     await runtime.close();
     throw new Error("Invalid development port");
   }
@@ -18,10 +18,14 @@ export async function startDevDashboard() {
     void (async () => {
       if (await runtime.handle(request, response)) return;
       const path = new URL(request.url ?? "/", "http://localhost").pathname;
-      if (path === "/invite") { response.setHeader("Referrer-Policy", "no-referrer"); response.setHeader("Cache-Control", "no-store"); }
+      if (path === "/invite") {
+        response.setHeader("Referrer-Policy", "no-referrer");
+        response.setHeader("Cache-Control", "no-store");
+      }
       if (
         path === "/" ||
         path === "/settings" ||
+        path === "/reviews" ||
         path === "/invite" ||
         /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
       ) {
@@ -48,8 +52,10 @@ export async function startDevDashboard() {
       server.once("error", reject);
       server.listen(port, "127.0.0.1", resolve);
     });
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing development listener");
     return {
-      url: `http://127.0.0.1:${port}`,
+      url: `http://127.0.0.1:${address.port}`,
       async close() {
         await vite?.close();
         server.closeAllConnections();

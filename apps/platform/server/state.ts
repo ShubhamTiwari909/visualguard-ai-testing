@@ -10,8 +10,14 @@ const record = <T>(row: Row): StateRecord<T> => ({
 });
 
 export class SqlStateStore implements StateStore {
-  constructor(private db: Database, private sql: Sql = db, private inTransaction = false) {}
-  async supportsTransactions() { return true; }
+  constructor(
+    private db: Database,
+    private sql: Sql = db,
+    private inTransaction = false,
+  ) {}
+  async supportsTransactions() {
+    return true;
+  }
   async transaction<T>(work: (store: StateStore) => Promise<T>): Promise<T> {
     if (this.inTransaction) return work(this);
     return this.db.transaction((sql) => work(new SqlStateStore(this.db, sql, true)));
@@ -73,7 +79,13 @@ export class SqlStateStore implements StateStore {
     const escaped = prefix.replace(/[!%_]/g, (value) => `!${value}`);
     const rows = await this.sql.query<Row>(
       `SELECT id, value, version, expires_at FROM vg_state WHERE namespace=? AND id LIKE ? ESCAPE '!'${after === undefined ? "" : " AND id>?"} AND (expires_at IS NULL OR expires_at>?) ORDER BY id LIMIT ?`,
-      [namespace, `${escaped}%`, ...(after === undefined ? [] : [after]), new Date().toISOString(), limit],
+      [
+        namespace,
+        `${escaped}%`,
+        ...(after === undefined ? [] : [after]),
+        new Date().toISOString(),
+        limit,
+      ],
     );
     return rows.map(record<T>);
   }

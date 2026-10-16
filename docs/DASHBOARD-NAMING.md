@@ -95,15 +95,15 @@ Focused regression cases are included for names, stale edits, alias collisions, 
 
 These are suggestions, not additional implementations in this branch.
 
-| Idea | Practical use |
-| --- | --- |
-| Pin projects and runs | Keep the current release or frequently reviewed apps at the top |
-| Run notes and tags | Add “release candidate”, ticket numbers, owner, or investigation notes |
-| Project description and repository link | Explain what an app covers and jump to its source |
-| Reversible project archive | Remove inactive apps from daily views while retaining evidence |
-| Saved filters | Return to “my app / staging / this branch / regressions” in one click |
-| Copy evidence link and download image | Share or attach a specific reference/candidate/diff without hunting URLs |
-| Remember table columns and page size | Let each reviewer keep the history view that suits their work |
-| Copy a rerun command | Generate the existing CLI command from a run's recorded, non-secret settings |
+| Idea                                    | Practical use                                                                |
+| --------------------------------------- | ---------------------------------------------------------------------------- |
+| Pin projects and runs                   | Keep the current release or frequently reviewed apps at the top              |
+| Run notes and tags                      | Add “release candidate”, ticket numbers, owner, or investigation notes       |
+| Project description and repository link | Explain what an app covers and jump to its source                            |
+| Reversible project archive              | Remove inactive apps from daily views while retaining evidence               |
+| Saved filters                           | Return to “my app / staging / this branch / regressions” in one click        |
+| Copy evidence link and download image   | Share or attach a specific reference/candidate/diff without hunting URLs     |
+| Remember table columns and page size    | Let each reviewer keep the history view that suits their work                |
+| Copy a rerun command                    | Generate the existing CLI command from a run's recorded, non-secret settings |
 
 Prioritize pins, notes/tags, and saved filters for daily flexibility. An external object-storage adapter is a separate, larger option if database image capacity becomes the constraint.

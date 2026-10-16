@@ -1,5 +1,25 @@
 # visualguard
 
+## 3.1.0
+
+### Minor Changes
+
+- 2cb400f: Add `visualguard dashboard project create <id>` (alias `add`) and `createDashboardProject` for idempotent local/server project setup. Preserve existing projects, report whether creation occurred, support administrator sessions for login-enabled servers, and retain project-scoped upload restrictions. Include a manual walkthrough.
+- 824f130: Add a dashboard review inbox with job-level visual decisions, discussion/replies, reviewer assignment, deadlines, and exact-evidence concurrency checks. Store review history separately from immutable engine results across SQLite, PostgreSQL, and MongoDB, enforce project reviewer permissions, and remove threads when their run or project is deleted.
+- c05d71d: Accept custom dashboard run names through `test --run-name`, saved-run import/publishing, and upload metadata. Show and search these names in the dashboard while retaining the original run number and immutable engine evidence.
+- 2cb400f: Add confirmed project and run deletion to the standalone dashboard, with maintainer/admin permissions, project access and upload cleanup, preserved shared artifacts, and deletion audit events. Deleted project IDs remain reserved to prevent credential reuse. Includes SQLite, PostgreSQL, MongoDB support and a manual walkthrough.
+- c05d71d: Allow project maintainers and administrators to edit project display names and public IDs with conflict checks. Retain immutable internal keys and historical ID aliases so existing runs, access, uploads, and links remain connected. Support aliases in CLI binding and publishing, reserve deleted identities, and preserve edited labels in portable backups.
+- c05d71d: Allow project maintainers and administrators to rename dashboard runs or restore their default labels. Reject concurrent stale edits, update name search, and preserve edited labels in portable evidence backups without changing engine evidence or evidence digests.
+- 2cb400f: Add the standalone dashboard command and `visualguard/dashboard` runtime: local SQLite files, PostgreSQL/MongoDB storage, password/OIDC team access, project permissions, resumable CI uploads, portable evidence export/restore, and Cloud Run/Vercel deployment scaffolds with prebuilt UI assets.
+- 2cb400f: Support `visualguard test [project]` to import captured evidence into a local dashboard or publish it to a configured hosted dashboard. Resolve IDs and exact permitted names, preserve engine verdicts and JSON output, and expose a project-scoped lookup for upload credentials. Includes metadata options and a manual setup/recovery guide.
+
+### Patch Changes
+
+- Fix standalone dashboard refreshes on `/reviews`, include the platform in workspace type checking, and complete release formatting and fixture type cleanup.
+- 2cb400f: Reuse the CLI and report outputs during the normal package build instead of rebuilding them in the dashboard step. Preserve the standalone JavaScript-only dashboard build and clarify dashboard setup, authentication, deletion responses, and validation coverage in the guides.
+- c05d71d: Restore compatible backup aliases into existing projects without naming profiles, trim run names before checking their length, reject malformed remote public IDs, and document the run-name CLI flag and reserved project ID semantics.
+- 2cb400f: Derive opaque session and OIDC correlation cookie handles with SHA-256 before browser storage, and retain only their separate lookup hashes server-side. Address PR #9's two CodeQL cleartext-cookie alerts without adding configuration or changing authentication/PKCE checks. Include regression coverage for hashed lookup keys and one-time callbacks.
+
 ## 2.0.0
 
 ### Major Changes
