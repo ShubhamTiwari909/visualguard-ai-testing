@@ -65,6 +65,9 @@ describe("standalone hosts", () => {
     expect(await readFile(join(vercel, ".env.example"), "utf8")).toContain(
       "VISUALGUARD_USER_ADMISSION=invite",
     );
+    expect(await readFile(join(vercel, ".env.example"), "utf8")).toContain(
+      "MongoDB requires a replica set",
+    );
     expect(config.outputDirectory).toBe("public");
     expect(config.rewrites[0].destination).toContain("__vg_path");
     expect(config.rewrites).toContainEqual({ source: "/reviews", destination: "/index.html" });

@@ -43,7 +43,7 @@ From the repository root, with Node 22.12+ and dependencies installed:
 
    ```sh
    set -a
-   source apps/platform/.env.local
+   . apps/platform/.env.local
    set +a
    pnpm platform:dev
    ```
@@ -128,3 +128,23 @@ Pre-session actions require a browser form token; actions with a signed-in actor
 Focused protocol, API, transaction, race and compatibility tests run against SQLite, PostgreSQL, transactional MongoDB and standalone MongoDB. On 16 October 2026, 234 tests passed in 10 focused suites, with 16 intentional backend-specific skips: the Mongo-only snapshot cases skip other adapters, and the in-memory repository fake skips physical evidence deletion. The dashboard UI build and a real-browser password invitation journey are also checked. These checks were deferred during initial implementation. The operator subsequently authorized formatting, lint, and type checks for merge cleanup. Merge review reran 227 tests in nine focused suites with the same 16 intentional skips against the reviewed P01/P02 baseline and live adapters; formatting, lint, CLI/report/platform type checks, and the dashboard build passed. The review preserved direct `/reviews` serving alongside `/invite` while integrating the released runtime.
 
 Real Google browser acceptance still requires your existing Google client credentials and consent/audience configuration; the automated provider uses signed tokens through the actual OIDC library. [P04 user administration](USER-ADMINISTRATION.md) now provides account lifecycle, session/upload revocation and last-admin protection. Audit/recovery operations and rollout evidence remain P05. Automatic invitation email delivery is outside the agreed scope.
+
+## Merge-review corrections
+
+Interrupted first-admin setup on standalone legacy storage now reserves one
+administrator identity and marks setup complete only after its account is durable.
+Retry with the original administrator configuration or Google identity; a different
+identity cannot claim interrupted setup. Completed setup never reopens from env
+changes. Expired, signed-out, disabled, or version-stale invitation proofs return
+to verification, and acceptance failures refresh that state. Same-email invitation
+enrollments share a transactional write fence; this never links accounts by email.
+
+External-database invitation and identity tests use a random PostgreSQL schema or
+MongoDB database and remove it on teardown. Test credentials need permission to
+create/remove that private schema or database; the configured database is never
+dropped. Initial standalone onboarding tests also remove their own test database.
+
+After these corrections, all 15 platform suites passed: **287 tests passed** and
+**16 intentional backend-specific cases skipped**, using live disposable
+PostgreSQL, replica-set MongoDB, and standalone MongoDB. Lint, format,
+CLI/report/platform type checks, and the dashboard build passed.

@@ -108,3 +108,15 @@ tests passed in 18 suites**, with the same **22 intentional backend-specific
 skips**, using live disposable PostgreSQL and MongoDB services. The dashboard
 package was rebuilt and its fresh-install smoke passed, including both direct
 review/invitation routes and deployment scaffolds.
+
+The final review also carries forward the invitation bootstrap/proof/enrollment
+race fixes and uses disposable PostgreSQL schemas and MongoDB databases for the
+administration storage suites, including standalone compatibility. Teardown removes
+only each suite’s private namespace. Each onboarding phase has its own release
+Changeset; publication still requires the P05 operational/release work described
+in the release validation report.
+
+After the additional review corrections, the combined platform passed **369
+tests in 18 suites**, with **22 intentional backend-specific skips**, using live
+PostgreSQL, replica-set MongoDB, and standalone MongoDB. Lint, format,
+CLI/report/platform type checks, and the dashboard build passed.

@@ -202,7 +202,11 @@ export function InvitationSettings({ projects }: { projects: Project[] }) {
           className="vg-button"
           disabled={busy}
           onClick={() => {
-            void load(after).catch((problem: Error) => setError(problem.message));
+            if (busy) return;
+            setBusy(true);
+            void load(after)
+              .catch((problem: Error) => setError(problem.message))
+              .finally(() => setBusy(false));
           }}
         >
           Load more invitations
@@ -360,13 +364,18 @@ export function InvitationPage() {
                 onClick={() => {
                   void run(async () => {
                     const current = await read<SessionInfo>("/api/session");
-                    const receipt = await joinRequest<{ projectId: string }>(
-                      "/api/onboarding/accept",
-                      { confirmed: true },
-                      join,
-                      current,
-                    );
-                    window.location.assign(`/?project=${encodeURIComponent(receipt.projectId)}`);
+                    try {
+                      const receipt = await joinRequest<{ projectId: string }>(
+                        "/api/onboarding/accept",
+                        { confirmed: true },
+                        join,
+                        current,
+                      );
+                      window.location.assign(`/?project=${encodeURIComponent(receipt.projectId)}`);
+                    } catch (problem) {
+                      await load().catch(() => undefined);
+                      throw problem;
+                    }
                   });
                 }}
               >

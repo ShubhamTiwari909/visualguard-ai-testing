@@ -7,7 +7,7 @@ import { Administration, type AdministratorProof } from "../server/administratio
 import { AuthService, MemoryStateStore, type Actor, type User } from "../server/auth.js";
 import { openDatabase } from "../server/database.js";
 import { SqlStateStore } from "../server/state.js";
-import { openMongo } from "../server/mongo.js";
+import { isolatedStorage } from "./fixtures/isolated-storage.js";
 import type { StateStore } from "../server/storage-contracts.js";
 
 function proxy(state: StateStore): StateStore {
@@ -36,10 +36,10 @@ for (const backend of ["memory", "sqlite", "postgres", "mongo"] as const) {
         if (backend === "memory") {
           state = new MemoryStateStore();
           close = async () => {};
-        } else if (backend === "mongo") ({ state, close } = await openMongo(url!));
+        } else if (backend === "mongo" || backend === "postgres")
+          ({ state, close } = await isolatedStorage(backend, url!));
         else {
           const db = await openDatabase({
-            url: backend === "postgres" ? url : undefined,
             sqlitePath: join(root, "admin.sqlite"),
           });
           state = new SqlStateStore(db);
@@ -355,9 +355,10 @@ describe.skipIf(!process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL)(
   "standalone MongoDB administration compatibility",
   () => {
     it("reports read-only account administration and refuses multi-record changes before writing", async () => {
-      const target = new URL(process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL!);
-      target.pathname = `/vg_admin_${randomUUID().replaceAll("-", "")}`;
-      const { state, close } = await openMongo(target.href);
+      const { state, close } = await isolatedStorage(
+        "mongo",
+        process.env.VISUALGUARD_TEST_MONGODB_STANDALONE_URL!,
+      );
       try {
         const auth = new AuthService(state, {
           VISUALGUARD_AUTH_MODE: "login",
