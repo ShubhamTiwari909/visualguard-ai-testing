@@ -110,3 +110,10 @@ The main-targeted CodeQL review identified a test-helper naming false positive:
 was classified as a password, including the high-entropy session cookie. The
 helper is now named `authenticatedAccount()`; cookie lookup still uses SHA-256
 and actual passwords still use salted scrypt. No scanning rule is suppressed.
+
+Additional review coverage exercises a generic issuer under `/realm/team`, an
+actual password change during the link handoff, and failed ordinary sign-in versus
+link attempts while already signed in. Failure redirects now use the stored OIDC
+attempt intent. Together with the empty-query/fragment issuer checks, the three
+authentication suites pass 56 tests; lint, format, type checks, and the dashboard
+build pass.

@@ -20,6 +20,7 @@ interface SimulatedOidcProvider {
 
 /** Fake network endpoints; the real openid-client still validates the OIDC flow and JWT. */
 export function oidcProvider(issuer = "https://accounts.google.com") {
+  const endpointBase = issuer.replace(/\/$/, "");
   const actualFetch = globalThis.fetch;
   const codes = new Map<string, { nonce: string; challenge: string }>();
   const provider: SimulatedOidcProvider = {
@@ -51,16 +52,16 @@ export function oidcProvider(issuer = "https://accounts.google.com") {
           return Response.json({ error: "temporarily_unavailable" }, { status: 503 });
         return Response.json({
           issuer,
-          authorization_endpoint: `${issuer}/authorize`,
-          token_endpoint: `${issuer}/token`,
-          jwks_uri: `${issuer}/jwks`,
+          authorization_endpoint: `${endpointBase}/authorize`,
+          token_endpoint: `${endpointBase}/token`,
+          jwks_uri: `${endpointBase}/jwks`,
           response_types_supported: ["code"],
           subject_types_supported: ["public"],
           id_token_signing_alg_values_supported: ["RS256"],
           token_endpoint_auth_methods_supported: ["client_secret_post"],
         });
       }
-      if (url.pathname === "/jwks") {
+      if (url.pathname === new URL(`${endpointBase}/jwks`).pathname) {
         provider.jwksRequests++;
         return Response.json({
           keys: [
@@ -73,7 +74,7 @@ export function oidcProvider(issuer = "https://accounts.google.com") {
           ],
         });
       }
-      if (url.pathname === "/token") {
+      if (url.pathname === new URL(`${endpointBase}/token`).pathname) {
         provider.tokenRequests++;
         const body = new URLSearchParams(String(init?.body));
         const entry = codes.get(body.get("code") ?? "");
