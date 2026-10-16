@@ -453,17 +453,22 @@ export class AuthService {
   private oidcConfiguration?: Promise<import("openid-client").Configuration>;
   private oidc() {
     const settings = this.oidcSettings;
-    if (!settings)
-      throw new PlatformError(400, "Single sign-on is not configured");
-    this.oidcConfiguration ??= import("openid-client").then(async (client) => {
-      const config = await client.discovery(new URL(settings.issuer), settings.clientId, settings.clientSecret);
-      if (settings.provider === "google") client.enableNonRepudiationChecks(config);
-      return config;
-    }).catch((error) => {
-      // A transient provider outage must not poison discovery until the next restart.
-      this.oidcConfiguration = undefined;
-      throw error;
-    });
+    if (!settings) throw new PlatformError(400, "Single sign-on is not configured");
+    this.oidcConfiguration ??= import("openid-client")
+      .then(async (client) => {
+        const config = await client.discovery(
+          new URL(settings.issuer),
+          settings.clientId,
+          settings.clientSecret,
+        );
+        if (settings.provider === "google") client.enableNonRepudiationChecks(config);
+        return config;
+      })
+      .catch((error) => {
+        // A transient provider outage must not poison discovery until the next restart.
+        this.oidcConfiguration = undefined;
+        throw error;
+      });
     return this.oidcConfiguration;
   }
   async beginOidc(response: ServerResponse) {

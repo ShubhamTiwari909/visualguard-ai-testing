@@ -6,13 +6,13 @@ This is the first phase of the [team onboarding plan](TEAM-ONBOARDING-PLAN.md#de
 
 ## 1. Values the operator supplies
 
-| Variable | Required value / purpose |
-| --- | --- |
-| `VISUALGUARD_PUBLIC_URL` | Exact dashboard origin; local example `http://127.0.0.1:4400`; HTTPS for hosting |
-| `VISUALGUARD_OIDC_CLIENT_ID` | Google OAuth **Web application** client ID |
-| `VISUALGUARD_OIDC_CLIENT_SECRET` | That web client's server-side secret |
-| `VISUALGUARD_ADMIN_EMAIL` | Verified Google email for the first Google administrator; also the password recovery administrator's email |
-| `VISUALGUARD_ADMIN_PASSWORD` | Unique password, 12–256 characters, to bootstrap a recovery password account on a new database |
+| Variable                         | Required value / purpose                                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `VISUALGUARD_PUBLIC_URL`         | Exact dashboard origin; local example `http://127.0.0.1:4400`; HTTPS for hosting                           |
+| `VISUALGUARD_OIDC_CLIENT_ID`     | Google OAuth **Web application** client ID                                                                 |
+| `VISUALGUARD_OIDC_CLIENT_SECRET` | That web client's server-side secret                                                                       |
+| `VISUALGUARD_ADMIN_EMAIL`        | Verified Google email for the first Google administrator; also the password recovery administrator's email |
+| `VISUALGUARD_ADMIN_PASSWORD`     | Unique password, 12–256 characters, to bootstrap a recovery password account on a new database             |
 
 Set `VISUALGUARD_AUTH_MODE=login` and `VISUALGUARD_OIDC_ISSUER=https://accounts.google.com`. These two values do not come from Google credentials. `VISUALGUARD_OIDC_ADMIN_SUBJECTS` remains an optional explicit subject allowlist for existing company OIDC deployments; it is not required for this Google email bootstrap.
 
@@ -105,6 +105,6 @@ pnpm --filter @visualguard/platform exec vitest run \
   test/google-auth.test.ts test/oidc-cookies.test.ts test/auth.test.ts
 ```
 
-Validation on 16 October 2026 using Node 22.14: the three focused suites passed **45 tests**, including SQLite reopening and Google/generic OIDC cases, and `pnpm platform:build` passed. A real Google browser pilot requires operator credentials and consent/client setup; it has not been run. Live PostgreSQL/MongoDB identity flows and the full invitation release are not established by the simulated-provider tests. Formatting, lint, and type-check commands were not run and remain deferred under the repository instructions.
+Validation on 16 October 2026 using Node 22.14: the three focused suites passed **45 tests**, including SQLite reopening and Google/generic OIDC cases, and `pnpm platform:build` passed. A real Google browser pilot requires operator credentials and consent/client setup; it has not been run. Live PostgreSQL/MongoDB identity flows and the full invitation release are not established by the simulated-provider tests. The merge review reran all 45 focused tests and the dashboard build against the released dashboard baseline. With the operator’s explicit approval to lift the deferred-check restriction for PR cleanup, repository formatting, lint, and CLI/platform type checks also passed.
 
 Next: P02 implements the transactional identity foundation and explicit linking. P03 adds invitations and admission migration; P04 expands user administration; P05 completes operational rollout. Keep each requested feature's implementation, documentation and focused tests in its own commit.

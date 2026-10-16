@@ -117,7 +117,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         )}
         {session?.oidc && (
           <a className="vg-button" href="/api/auth/login">
-            {session.oidcProvider === "google" ? "Sign in with Google" : "Continue with company login"}
+            {session.oidcProvider === "google"
+              ? "Sign in with Google"
+              : "Continue with company login"}
           </a>
         )}
         {!session && error && (
