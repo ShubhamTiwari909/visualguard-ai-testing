@@ -257,7 +257,7 @@ describe("Google sign-in and identity continuity", () => {
     ).resolves.toBeUndefined();
   });
 
-  async function passwordAccount() {
+  async function authenticatedAccount() {
     const password = "current-test-password-long";
     const user = await auth.createUser({
       email: "member@example.test",
@@ -271,7 +271,10 @@ describe("Google sign-in and identity continuity", () => {
     return { user, password, cookie, actor };
   }
   async function linkingAttempt(
-    account: Pick<Awaited<ReturnType<typeof passwordAccount>>, "actor" | "password" | "cookie">,
+    account: Pick<
+      Awaited<ReturnType<typeof authenticatedAccount>>,
+      "actor" | "password" | "cookie"
+    >,
   ) {
     const start = response();
     const { authorizationUrl } = await auth.beginGoogleLink(
@@ -293,7 +296,7 @@ describe("Google sign-in and identity continuity", () => {
   }
 
   it("links Google after current-password proof, keeps the existing account/access, and revokes old sessions", async () => {
-    const account = await passwordAccount();
+    const account = await authenticatedAccount();
     await state.create("memberships", `${account.user.id}:private-project`, {
       userId: account.user.id,
       projectId: "private-project",
@@ -335,7 +338,7 @@ describe("Google sign-in and identity continuity", () => {
   });
 
   it("rejects missing/wrong password proof and browser or upload credential substitution", async () => {
-    const account = await passwordAccount();
+    const account = await authenticatedAccount();
     await expect(
       auth.beginGoogleLink(account.actor, undefined, response().value),
     ).rejects.toMatchObject({ status: 401 });
@@ -364,7 +367,7 @@ describe("Google sign-in and identity continuity", () => {
 
   it("rejects a session swap, logout, disable or password change during the Google handoff", async () => {
     for (const action of ["swap", "logout", "disable", "version"] as const) {
-      const account = action === "swap" ? await passwordAccount() : undefined;
+      const account = action === "swap" ? await authenticatedAccount() : undefined;
       // Subsequent iterations reuse the same password user but receive fresh sessions.
       const password = "current-test-password-long";
       const login = response();
@@ -409,7 +412,7 @@ describe("Google sign-in and identity continuity", () => {
   it("refuses to merge a Google account already used for ordinary sign-in", async () => {
     const existing = await loginAttempt();
     await auth.finishOidc(existing.request, response().value, existing.callback);
-    const account = await passwordAccount(),
+    const account = await authenticatedAccount(),
       attempt = await linkingAttempt(account);
     await expect(
       auth.finishOidc(attempt.request, response().value, attempt.callback),
@@ -504,7 +507,7 @@ describe("Google sign-in and identity continuity", () => {
   });
 
   it("enforces session/action-token/origin boundaries on the account-link API", async () => {
-    const account = await passwordAccount(),
+    const account = await authenticatedAccount(),
       base = await httpDashboard();
     const endpoint = `${base}/api/auth/identities/google/link`;
     expect((await fetch(`${base}/api/auth/identities`)).status).toBe(401);
