@@ -457,6 +457,23 @@ describe("Google sign-in and identity continuity", () => {
     }
   });
 
+  it("rejects another browser session belonging to the same account during linking", async () => {
+    const account = await authenticatedAccount(),
+      attempt = await linkingAttempt(account);
+    const second = response();
+    await auth.login(account.user.email, account.password, second.value);
+    const cookie = second.headers.get("Set-Cookie")!.split(";")[0]!;
+    const actor = (await auth.actor({ headers: { cookie } } as IncomingMessage))!;
+    expect(actor.id).toBe(account.actor.id);
+    expect(actor.sessionId).not.toBe(account.actor.sessionId);
+    attempt.request.headers.cookie = `${cookie}; ${attempt.oidcCookie}`;
+    await expect(
+      auth.finishOidc(attempt.request, response().value, attempt.callback),
+    ).rejects.toMatchObject({ status: 401 });
+    expect(await state.list("external-identities")).toHaveLength(0);
+    expect((await state.get<User>("users", account.user.id))!.value.authVersion).toBe(1);
+  });
+
   it("refuses to merge a Google account already used for ordinary sign-in", async () => {
     const existing = await loginAttempt();
     await auth.finishOidc(existing.request, response().value, existing.callback);

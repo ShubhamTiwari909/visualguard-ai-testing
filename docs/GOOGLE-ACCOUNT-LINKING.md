@@ -119,3 +119,8 @@ link attempts while already signed in. Failure redirects now use the stored OIDC
 attempt intent. Together with the empty-query/fragment issuer checks, the three
 authentication suites pass 56 tests; lint, format, type checks, and the dashboard
 build pass.
+
+The final review adds an explicit same-account session-substitution test: a
+second successful login has the same user ID but a different session ID and
+cannot finish a Google-link attempt started in the first session. This separately
+protects exact-session binding from the different-account rejection test.
