@@ -62,9 +62,14 @@ try {
   };
   server = await dashboard.startDashboard({ port: 0, host: "127.0.0.1", env });
   assert.equal((await fetch(`${server.url}/api/health`)).status, 200);
-  const reviews = await fetch(`${server.url}/reviews`);
+  const reviews = await fetch(`${server.url}/reviews`, { redirect: "manual" });
   assert.equal(reviews.status, 200);
   assert.match(await reviews.text(), /<div id="root">/);
+  const invitation = await fetch(`${server.url}/invite`, { redirect: "manual" });
+  assert.equal(invitation.status, 200);
+  assert.equal(invitation.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(invitation.headers.get("cache-control"), "no-store");
+  assert.match(await invitation.text(), /<div id="root">/);
   const html = await (await fetch(server.url)).text();
   assert.match(html, /<div id="root">/);
   const asset = html.match(/src="([^"]+\.js)"/)?.[1];
@@ -147,6 +152,16 @@ try {
       JSON.parse(await readFile(join(out, "package.json"), "utf8")).dependencies.visualguard,
       "file:./visualguard.tgz",
     );
+    if (target === "vercel") {
+      const config = JSON.parse(await readFile(join(out, "vercel.json"), "utf8"));
+      for (const route of ["/reviews", "/invite"]) {
+        assert.ok(
+          config.rewrites.some(
+            (rewrite) => rewrite.source === route && rewrite.destination === "/index.html",
+          ),
+        );
+      }
+    }
   }
   await dashboard.copyDashboardAssets(join(consumer, "public"));
   await stat(join(consumer, "public/index.html"));

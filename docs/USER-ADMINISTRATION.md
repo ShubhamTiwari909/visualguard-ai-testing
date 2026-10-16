@@ -102,3 +102,9 @@ On 16 October 2026, Node 22.14, PostgreSQL 17.5 and MongoDB 8.3.4 were used for 
 New coverage includes concurrent cross-demotion/disable, stale target versions, authority/session revocation after Mongo snapshot reads, rollback after credential deletion, paged credentials and directory filters, current-password/recent-OIDC proof, cross-project role isolation, provider-only reset rejection, in-flight token invalidation and F03 history/effective decisions after disable/restore. The dashboard UI build passes. Real-browser checks cover the management and confirmation screens. Live Google consent/browser testing still requires operator credentials from the preceding phases.
 
 During merge cleanup, the operator authorized formatting, lint, and type checks. All passed, alongside the dashboard build and a fresh run of the same 314 tests with 22 intentional skips against the reviewed P01–P03/released dashboard baseline. P05 is the remaining operational rollout phase.
+
+The final integration with PR #25 also passed the complete platform suite: **354
+tests passed in 18 suites**, with the same **22 intentional backend-specific
+skips**, using live disposable PostgreSQL and MongoDB services. The dashboard
+package was rebuilt and its fresh-install smoke passed, including both direct
+review/invitation routes and deployment scaffolds.

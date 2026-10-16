@@ -2,13 +2,13 @@
 
 **Prepared:** 15 October 2026.  
 **Release scope:** F01 dashboard/history, F02 access, F06 remote publishing, database portability, installed-package commands, and deployment scaffolds.  
-**Release status:** implementation and local release-candidate validation are complete. The npm release and live Cloud Run/Vercel deployments have not been performed. Formatting, lint, and type checks remain deferred until after F36 under the user's instruction.
+**Release status:** 3.1.0 is published on npm. Release formatting, lint, type checks, builds, and local validation passed; see the [release validation report](RELEASE-3.1.0-VALIDATION.md). Live Cloud Run/Vercel deployments have not been validated.
 
-**Deletion extension:** project/run deletion has since been added with confirmation and reference-aware cleanup. No checks or builds were run for that follow-up, as requested. See [deletion usage and the manual checklist](DASHBOARD-DELETION.md); the validation record below describes the preceding dashboard implementation.
+**Deletion extension:** project/run deletion has since been added with confirmation and reference-aware cleanup. See [deletion usage and the manual checklist](DASHBOARD-DELETION.md); current release checks are recorded in the [release validation report](RELEASE-3.1.0-VALIDATION.md).
 
-**Test binding extension:** `visualguard test [project]` now saves the resulting evidence to a local or hosted project automatically. See the [binding setup and manual checklist](DASHBOARD-TEST-BINDING.md). This follow-up also has no executed checks or regenerated package build.
+**Test binding extension:** `visualguard test [project]` now saves the resulting evidence to a local or hosted project automatically. See the [binding setup and manual checklist](DASHBOARD-TEST-BINDING.md). Current release checks are recorded in the release validation report.
 
-**Project CLI extension:** `visualguard dashboard project create <id>` (alias `add`) creates a missing project and preserves an existing ID. [Local/server setup and manual checklist](DASHBOARD-CLI-PROJECTS.md). No checks or builds were run for this follow-up either.
+**Project CLI extension:** `visualguard dashboard project create <id>` (alias `add`) creates a missing project and preserves an existing ID. [Local/server setup and manual checklist](DASHBOARD-CLI-PROJECTS.md). Current release checks are recorded in the release validation report.
 
 ## 1. Choose your setup
 
@@ -42,9 +42,9 @@ nvm use 22
 
 Keep the package's optional dependencies installed when using PostgreSQL, MongoDB, or OIDC. A normal npm installation includes them. `--omit=optional` excludes those drivers.
 
-### Before the dashboard-enabled npm release is published
+### Test unreleased changes from source
 
-The repository contains a minor-release Changeset. It does not mean the dashboard is already available from `npm install visualguard` on the public registry.
+The dashboard is available in the published 3.1.0 package. To test newer repository changes before their release, build and install a local package candidate. New Changesets describe a future release; they do not change an already published package.
 
 From a development checkout, create a local package candidate:
 
@@ -66,7 +66,7 @@ npx visualguard dashboard
 
 Replace `VERSION` with the actual package filename/version in your checkout. A local tarball is a release candidate and does not overwrite an existing npm release. Rebuild/repack after source changes; an earlier tarball does not automatically include later deletion controls.
 
-### After the dashboard-enabled npm release is published
+### Install the published dashboard
 
 ```sh
 cd /path/to/another-project
@@ -382,6 +382,8 @@ npx visualguard dashboard init --target vercel \
 The tarball is copied into the generated project and referenced through `file:./visualguard.tgz`, so the deployment does not accidentally install an older registry release.
 
 The generator creates a small `package.json`, `.env.example`, `api/dashboard.mjs`, and `vercel.json`. It refuses to overwrite a nonempty directory. The Vercel build copies the package's prebuilt UI into `public/`; the Node function serves the API. Rewrites route browser pages to the UI and preserve nested API paths/queries for the shared handler.
+
+For scaffolds generated with 3.1.0, add `{ "source": "/reviews", "destination": "/index.html" }` to the `rewrites` array in `vercel.json` before any catch-all rule, then redeploy. This enables opening or refreshing the review inbox directly. The next patch includes this rule in newly generated scaffolds; upgrading the package does not modify an existing `vercel.json`.
 
 In Vercel:
 

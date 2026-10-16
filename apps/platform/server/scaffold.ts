@@ -64,6 +64,7 @@ export async function scaffoldDashboard(options: {
             { source: "/api/:path*", destination: "/api/dashboard?__vg_path=:path*" },
             { source: "/runs/:path*", destination: "/index.html" },
             { source: "/settings", destination: "/index.html" },
+            { source: "/reviews", destination: "/index.html" },
             { source: "/invite", destination: "/index.html" },
             { source: "/", destination: "/index.html" },
           ],

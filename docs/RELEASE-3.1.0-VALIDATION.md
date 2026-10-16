@@ -6,9 +6,10 @@ dashboard, collaborative review inbox, and editable project and run names.
 
 ## Result
 
-Local release checks passed. Merge the cleanup branch and require its GitHub CI
-checks to pass before publishing. No npm publication or cloud deployment was
-performed during validation.
+Local release checks passed. Require the cleanup pull request's GitHub CI checks
+to pass before merging it: the main-branch release workflow can publish on that
+same merge without waiting for main-branch CI. No npm publication or cloud
+deployment was performed during local validation.
 
 | Check                                                                                            | Result                                                                                 |
 | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
@@ -61,3 +62,42 @@ package version remains 3.1.0. Future features should add new changesets normall
 The existing release workflow runs on pushes to `main`. With the release
 changesets consumed, it can publish the unpublished 3.1.0 package automatically.
 Merging this release preparation therefore participates in the publication flow.
+
+## Post-release host fixes
+
+The release workflow for merged commit `927fdbe` succeeded, and npm listed 3.1.0
+as published on October 16, 2026. Follow-up review found that direct `/reviews`
+navigation also needed a development-server route and a generated Vercel rewrite.
+Those fixes have a patch changeset for the next release; 3.1.0 is not republished.
+
+Four focused development/runtime/scaffold tests passed for the follow-up. Both
+runtime and installed-package review-route checks reject redirects. The installed
+package smoke also verifies that generated Vercel configuration rewrites
+`/reviews` to `/index.html`.
+
+Follow-up validation passed:
+
+- `pnpm --filter @visualguard/platform exec vitest run test/runtime.test.ts test/dev.test.ts`
+- `pnpm --filter visualguard build:dashboard`
+- `pnpm platform:test:package`
+
+Existing Vercel deployments need the same entry added to their `vercel.json`
+`rewrites` array, before any catch-all rule:
+
+```json
+{ "source": "/reviews", "destination": "/index.html" }
+```
+
+Regenerating a scaffold into a new empty folder also includes the rule. Updating
+the installed package alone does not rewrite an existing deployment's configuration.
+
+## Integration review
+
+The PR #25 review corrected historical pre-release wording in section 2 of the
+walkthrough so it agrees with the published status. Integrating the onboarding
+stack preserves both `/reviews` and `/invite` in development, installed runtime,
+and generated Vercel routes. Five development/runtime/scaffold tests and the
+rebuilt installed-package smoke passed; invitation route checks also verify
+`no-referrer` and `no-store` headers without following redirects. Repository
+lint/format checks, CLI/report/platform type checks, and the dashboard build passed
+under the operator’s explicit authorization for PR cleanup.
