@@ -7,6 +7,7 @@ import { InvitationSettings } from "./invitations";
 import { UserAdministration } from "./users";
 import { AccountIdentity } from "./identities";
 import { Profile } from "./profile";
+import { WorkspaceOperations } from "./operations";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
 type Member = { userId: string; role: string };
@@ -108,6 +109,11 @@ export function Settings({
           <h1>People & integrations</h1>
           <p className="vg-muted">Control project access and connect your test pipelines.</p>
         </div>
+        {session.access === "login" && session.user?.admin && (
+          <a className="vg-button" href="#operations">
+            Audit & recovery
+          </a>
+        )}
       </div>
       {error && (
         <div role="alert" className="vg-error">
@@ -186,6 +192,7 @@ export function Settings({
           onChanged={() => setRevision((value) => value + 1)}
         />
       )}
+      {session.access === "login" && session.user?.admin && <WorkspaceOperations />}
       <section className="vg-panel vg-settings-section">
         <h2>Project access</h2>
         <label className="vg-settings-project">

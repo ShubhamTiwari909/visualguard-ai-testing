@@ -99,7 +99,7 @@ For lifecycle requests, the HTTP layer validates the administrator's password or
 
 The target's role/disabled/password change, auth-version rotation, deletion of owned browser/upload credentials, and audit event commit together or all roll back. Audit captures actor/target IDs, before/after role and enabled state, a password-reset flag and revocation consequence; it never includes raw passwords, hashes or token values. Credentials are processed in bounded pages. Session rows arriving after a revocation snapshot still carry the older auth version and cannot authenticate.
 
-Keep a tested password administrator and native database backups for recovery. This phase prevents ordinary loss of the last administrator, but does not ship emergency recovery commands, permanent account erasure, a new audit UI, automatic email delivery, or a full rolling-upgrade/recovery operator workflow. Those operational rollout items remain P05 where applicable.
+Keep a tested password administrator and native database backups for recovery. P04 prevents ordinary loss of the last administrator. [P05 workspace operations](WORKSPACE-OPERATIONS.md) adds administrative audit history, readiness checks, a host-side password-administrator recovery command, and backup/rollout runbooks. Permanent account erasure and automatic email delivery remain outside this scope; live Google/deployment acceptance still requires operator sign-off.
 
 ## Focused validation
 

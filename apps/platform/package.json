@@ -12,6 +12,7 @@
     "build": "vite build",
     "import": "jiti server/import-cli.ts",
     "publish:run": "jiti server/publish-cli.ts",
+    "operations": "jiti server/operations-cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -940,6 +940,19 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+.vg-audit-events {
+  list-style: none;
+  padding: 0;
+}
+.vg-audit-events > li {
+  padding: 20px 0;
+  border-top: 1px solid #e0e7e3;
+  overflow-wrap: anywhere;
+}
+.vg-audit-events > li > p {
+  color: #7e8d85;
+  font-size: 12px;
+}
 .vg-settings-section {
   margin-bottom: 24px;
   padding: 24px;

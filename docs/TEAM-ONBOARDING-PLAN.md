@@ -29,6 +29,8 @@ P03 setup, migration, manual checks, storage and limitations: [Invitations and a
 
 P04 setup, manual checks, API changes and storage guarantees: [User administration](USER-ADMINISTRATION.md). The searchable directory, role changes, disable/restore, password reset, session/upload revocation and shared last-admin guard are implemented together. The focused live-adapter run passed 314 tests with 22 expected backend-specific skips; the UI build passed. No new application environment variables are required. Operational recovery/audit rollout remains P05. Formatting, lint and CLI/platform type checks passed during the authorized merge cleanup, together with a fresh 314-test live-adapter run and the UI build.
 
+P05 code is implemented as one **Workspace operations** feature: audit history (P05-A), host-side administrator recovery (P05-B), and rollout readiness/runbooks (P05-C). See [the implementation plan](WORKSPACE-OPERATIONS-PLAN.md). Real Google pilot evidence, live deployment and release permissions remain operator sign-off gates rather than implied automated-test results.
+
 ## 1. Intended outcome and release boundary
 
 An administrator can invite a colleague to a project with a specific role. The colleague follows the link, proves their identity with Google, accepts the invitation, and sees only permitted projects. Administrators can inspect membership, change roles, disable users, and revoke sessions. Existing review authorship remains intact when access changes.
@@ -321,4 +323,4 @@ These are recommended defaults for planning, not reasons to block PR #13:
 
 An invited colleague can join with Google, see only authorized projects, and participate according to role. Admins can control admission, revoke access, and recover administration. Expired/reused links, competing requests, disabled accounts, and project deletion cannot create unintended access. Identity continuity and F03 attribution survive migration. SQLite, PostgreSQL, and transaction-capable MongoDB pass the same acceptance contract, with unsupported configurations explained before enabling onboarding. Documentation includes local setup, hosted setup, backup/recovery, limitations, and actual validation results.
 
-P01/P02/P03/P04 implementation and focused validation are recorded in the delivery-phase update above. The real Google browser pilot, automatic email delivery (out of scope), operational recovery/audit rollout, and remaining live-provider acceptance checks are still outstanding for their phases.
+P01/P02/P03/P04 implementation and focused validation are recorded in the delivery-phase update above. P05 code and its operator procedures are documented in [Workspace operations](WORKSPACE-OPERATIONS.md). The real Google browser pilot, deployment/release sign-off and any unrecorded live-provider/native-restore acceptance checks remain outstanding. Automatic email delivery remains outside scope.

@@ -13,6 +13,7 @@ import { findProject, projectSelector } from "./project-selector.js";
 import { Invitations } from "./invitations.js";
 import { Onboarding } from "./onboarding.js";
 import { Reviews, reviewMutation } from "./reviews.js";
+import { Operations } from "./operations.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -79,6 +80,7 @@ export function createApi(
   );
   const onboarding = new Onboarding(auth, invitations);
   const reviews = new Reviews(repository, auth.state, auth);
+  const operations = new Operations(auth.state);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -97,7 +99,9 @@ export function createApi(
       url.pathname === "/api/session" ||
       url.pathname.startsWith("/api/auth/") ||
       url.pathname.startsWith("/api/onboarding") ||
-      url.pathname.startsWith("/api/invitations")
+      url.pathname.startsWith("/api/invitations") ||
+      url.pathname === "/api/audit" ||
+      url.pathname === "/api/operations"
     )
       response.setHeader("Cache-Control", "no-store");
     try {
@@ -433,9 +437,24 @@ export function createApi(
       }
       if (request.method === "GET" && url.pathname === "/api/audit") {
         if (!actor.admin) throw new PlatformError(403, "Administrator access required");
-        json(response, 200, {
-          events: (await auth.state.list("audit", "", 100)).map((row) => row.value),
-        });
+        const input = z
+          .object({
+            after: z.string().min(1).max(200).optional(),
+            action: z.string().max(120).optional(),
+            person: z.string().max(120).optional(),
+            since: z.string().datetime({ offset: true }).optional(),
+            until: z.string().datetime({ offset: true }).optional(),
+          })
+          .strict()
+          .parse(Object.fromEntries(url.searchParams));
+        if (input.since && input.until && Date.parse(input.since) > Date.parse(input.until))
+          throw new PlatformError(400, "Start date must precede end date");
+        json(response, 200, await operations.audit(input));
+        return true;
+      }
+      if (request.method === "GET" && url.pathname === "/api/operations") {
+        if (!actor.admin) throw new PlatformError(403, "Administrator access required");
+        json(response, 200, await operations.status());
         return true;
       }
       const access = url.pathname.match(
