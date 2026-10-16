@@ -3,6 +3,7 @@ import { mutation, useSession } from "./auth";
 import type { Project } from "../shared/contracts";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { ProjectNameEditor } from "./naming";
+import { InvitationSettings } from "./invitations";
 import { AccountIdentity } from "./identities";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
@@ -115,9 +116,8 @@ export function Settings({
           {message}
         </p>
       )}
-      {session.access === "login" && (
-        <AccountIdentity />
-      )}
+      {session.access === "login" && <AccountIdentity />}
+      {session.access === "login" && session.user?.admin && <InvitationSettings projects={projects} />}
       {session.access === "login" && (
         <section className="vg-panel vg-settings-section">
           <h2>Your password</h2>

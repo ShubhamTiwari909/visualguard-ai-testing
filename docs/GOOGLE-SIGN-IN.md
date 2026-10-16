@@ -1,5 +1,7 @@
 # Google sign-in pilot — P01
 
+**P03 upgrade:** follow [Invitations and admission](TEAM-INVITATIONS.md) for current setup and migration behavior. Fresh hosted installs now default to invite-only; existing installs must explicitly choose an admission policy. The descriptions below record the earlier phase boundary.
+
 P01 adds a named Google sign-in entry point to the existing dashboard login, validates complete OIDC configuration before startup, verifies Google email and token signatures, and returns provider failures to a safe retry screen. It uses the existing database-backed accounts, sessions, revocation, project roles, and audit records.
 
 This is the first phase of the [team onboarding plan](TEAM-ONBOARDING-PLAN.md#delivery-phases-agreed-on-16-october-2026). P02 now adds [explicit Google account linking](GOOGLE-ACCOUNT-LINKING.md) and identity continuity. Invitations, invitation-required admission, and expanded user administration remain later phases. An ordinary Google user initially has no project access; an administrator must grant it.

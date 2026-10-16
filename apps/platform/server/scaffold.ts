@@ -34,7 +34,7 @@ export async function scaffoldDashboard(options: {
   );
   await writeFile(
     resolve(out, ".env.example"),
-    "VISUALGUARD_DATABASE_URL=postgresql://USER:PASSWORD@HOST/visualguard\n# Or mongodb://HOST/visualguard / mongodb+srv://USER:PASSWORD@HOST/visualguard\nVISUALGUARD_PUBLIC_URL=https://YOUR-DASHBOARD-HOST\nVISUALGUARD_ADMIN_EMAIL=owner@example.com\nVISUALGUARD_ADMIN_PASSWORD=REPLACE-WITH-A-UNIQUE-12-CHARACTER-OR-LONGER-PASSWORD\n",
+    "VISUALGUARD_DATABASE_URL=postgresql://USER:PASSWORD@HOST/visualguard\n# Or mongodb://HOST/visualguard / mongodb+srv://USER:PASSWORD@HOST/visualguard\nVISUALGUARD_PUBLIC_URL=https://YOUR-DASHBOARD-HOST\nVISUALGUARD_USER_ADMISSION=invite\nVISUALGUARD_ADMIN_EMAIL=owner@example.com\nVISUALGUARD_ADMIN_PASSWORD=REPLACE-WITH-A-UNIQUE-12-CHARACTER-OR-LONGER-PASSWORD\n",
   );
   if (options.target === "vercel") {
     await mkdir(resolve(out, "api"));
@@ -51,10 +51,12 @@ export async function scaffoldDashboard(options: {
           buildCommand: "npm run build",
           outputDirectory: "public",
           functions: { "api/dashboard.mjs": { maxDuration: 300 } },
+          headers: [{ source: "/invite", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "no-store" }] }],
           rewrites: [
             { source: "/api/:path*", destination: "/api/dashboard?__vg_path=:path*" },
             { source: "/runs/:path*", destination: "/index.html" },
             { source: "/settings", destination: "/index.html" },
+            { source: "/invite", destination: "/index.html" },
             { source: "/", destination: "/index.html" },
           ],
         },
@@ -74,7 +76,7 @@ export async function scaffoldDashboard(options: {
   }
   await writeFile(
     resolve(out, "README.md"),
-    `# VisualGuard dashboard (${options.target})\n\nRun npm install. Configure the four settings in .env.example in your host's environment/secret settings. Do not commit real secrets. MongoDB and PostgreSQL are detected from the URL. Metadata and screenshots persist in the external database.\n\n${options.target === "vercel" ? "Deploy this folder as a Vercel project (Other framework). The build copies prebuilt assets; api/dashboard.mjs handles API requests. Configure the canonical production URL. Preview deployments need their own URL and isolated database." : "Deploy this folder with Cloud Run source deployment or its Dockerfile. Cloud Run sets PORT. Configure database network access and the canonical service URL."}\n\nThis project needs no React, Vite, Playwright browsers, or VisualGuard repository source files.\n`,
+    `# VisualGuard dashboard (${options.target})\n\nRun npm install. Configure the settings in .env.example in your host's environment/secret settings. Do not commit real secrets. MongoDB and PostgreSQL are detected from the URL. Metadata and screenshots persist in the external database.\n\n${options.target === "vercel" ? "Deploy this folder as a Vercel project (Other framework). The build copies prebuilt assets; api/dashboard.mjs handles API requests. Configure the canonical production URL. Preview deployments need their own URL and isolated database." : "Deploy this folder with Cloud Run source deployment or its Dockerfile. Cloud Run sets PORT. Configure database network access and the canonical service URL."}\n\nThis project needs no React, Vite, Playwright browsers, or VisualGuard repository source files.\n`,
   );
   return out;
 }

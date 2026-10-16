@@ -12,6 +12,7 @@ export interface SessionInfo {
   token?: string;
   user: { id: string; name: string; email: string; admin: boolean } | null;
   oidc: boolean;
+  admission?: "invite" | "legacy";
   oidcProvider?: "google" | "oidc" | null;
 }
 const Context = createContext<SessionInfo | undefined>(undefined);
@@ -85,6 +86,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         </div>
         <h1>{session ? "Welcome to your workspace" : "Connecting to your workspace…"}</h1>
         <p className="vg-muted">Sign in to browse your team's visual test evidence.</p>
+        {session?.admission === "invite" && <p className="vg-muted">Joining for the first time? Ask your administrator for an invitation link.</p>}
         {error && (
           <p role="alert" className="vg-form-error">
             {error}

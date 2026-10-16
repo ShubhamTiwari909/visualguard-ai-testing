@@ -10,6 +10,8 @@ import { body, json } from "./transport.js";
 import { Uploads, UPLOAD_CHUNK_BYTES } from "./uploads.js";
 import { sha256 } from "./artifacts.js";
 import { findProject, projectSelector } from "./project-selector.js";
+import { Invitations } from "./invitations.js";
+import { Onboarding } from "./onboarding.js";
 import { Reviews, reviewMutation } from "./reviews.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
@@ -65,6 +67,8 @@ export function createApi(
   if (auth.mode === "login" && !options.state)
     throw new Error("Hosted access requires persistent authentication state");
   const uploads = new Uploads(repository, store, auth.state, auth);
+  const invitations = new Invitations(auth.state, repository, auth.publicUrl?.origin ?? "http://localhost");
+  const onboarding = new Onboarding(auth, invitations);
   const reviews = new Reviews(repository, auth.state, auth);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
@@ -80,7 +84,7 @@ export function createApi(
       return true;
     }
     if (!url.pathname.startsWith("/api/")) return false;
-    if (url.pathname === "/api/session" || url.pathname.startsWith("/api/auth/"))
+    if (url.pathname === "/api/session" || url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/onboarding") || url.pathname.startsWith("/api/invitations"))
       response.setHeader("Cache-Control", "no-store");
     try {
       await auth.ready;
@@ -93,6 +97,7 @@ export function createApi(
             actor && !actor.credentialId
               ? { id: actor.id, name: actor.name, email: actor.email, admin: actor.admin }
               : null,
+          admission: auth.admission,
           oidc: auth.oidcProvider !== null,
           oidcProvider: auth.oidcProvider,
           envelopeVersion: 1,
@@ -107,22 +112,48 @@ export function createApi(
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/login") {
-        try { await auth.beginOidc(response); }
-        catch {
+        try { await auth.throttle(sha256(`oidc-login:${request.socket.remoteAddress}`)); await auth.beginOidc(response); }
+        catch (error) {
+          if (error instanceof PlatformError && error.status === 429) { json(response, 429, { error: error.message }); return true; }
           response.writeHead(302, { Location: "/?signin_error=oidc" });
           response.end();
         }
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/callback") {
-        try { await auth.finishOidc(request, response, url); }
+        try { await auth.finishOidc(request, response, url, (binding, identity, profile) => onboarding.complete(request, binding, identity, profile)); }
         catch {
           // Provider errors can contain authorization codes or credential details.
           // Send a fixed error code to the login page, never the provider response.
-          response.writeHead(302, { Location: actor && !actor.credentialId ? "/settings?identity=error" : "/?signin_error=oidc" });
+          response.writeHead(302, { Location: request.headers.cookie?.includes("vg_join=") ? "/invite?signin_error=oidc" : actor && !actor.credentialId ? "/settings?identity=error" : "/?signin_error=oidc" });
           response.end();
         }
         return true;
+      }
+      if (url.pathname.startsWith("/api/onboarding")) {
+        response.setHeader("Referrer-Policy", "no-referrer");
+        if (request.method === "GET" && url.pathname === "/api/onboarding") {
+          await auth.throttle(sha256(`onboarding-preview:${request.socket.remoteAddress}`), 60);
+          json(response, 200, await onboarding.browser(request, response)); return true;
+        }
+        if (request.method === "POST" && url.pathname === "/api/onboarding/exchange") {
+          const input = z.object({ token: z.string().max(200) }).strict().parse(await body(request));
+          json(response, 200, await onboarding.exchange(request, input.token, actor)); return true;
+        }
+        if (request.method === "POST" && url.pathname === "/api/onboarding/login") {
+          z.object({}).strict().parse(await body(request));
+          json(response, 200, await onboarding.login(request, response, actor)); return true;
+        }
+        if (request.method === "POST" && url.pathname === "/api/onboarding/prove") {
+          const input = z.object({ currentPassword: z.string().max(256).optional() }).strict().parse(await body(request));
+          if (!actor) throw new PlatformError(401, "Sign in to your existing account first");
+          json(response, 200, await onboarding.prove(request, actor, input.currentPassword)); return true;
+        }
+        if (request.method === "POST" && url.pathname === "/api/onboarding/accept") {
+          z.object({ confirmed: z.literal(true) }).strict().parse(await body(request));
+          json(response, 200, await onboarding.accept(request, response, actor)); return true;
+        }
+        throw new PlatformError(404, "API endpoint not found");
       }
       if (!actor) throw new PlatformError(401, "Sign in to access this dashboard");
       if (request.method !== "GET" && request.method !== "HEAD") auth.csrf(request, actor);
@@ -169,6 +200,27 @@ export function createApi(
           403,
           "Upload credentials cannot browse or administer the dashboard",
         );
+      if (url.pathname === "/api/invitations") {
+        if (auth.mode !== "login" || !actor.admin || !actor.sessionId) throw new PlatformError(403, "A signed-in administrator is required");
+        if (request.method === "GET") {
+          const input = z.object({ after: z.string().uuid().optional() }).strict().parse(Object.fromEntries(url.searchParams));
+          json(response, 200, await invitations.list(actor, input.after)); return true;
+        }
+        if (request.method === "POST") {
+          const input = z.object({ email: z.string().max(254), projectId: z.string().regex(/^[a-z0-9-]{1,63}$/),
+            role: z.enum(["viewer", "reviewer", "maintainer"]), hours: z.number().int().min(1).max(168).optional() }).strict().parse(await body(request));
+          input.projectId = await repository.resolveProjectId(input.projectId);
+          json(response, 201, await invitations.create(actor, input)); return true;
+        }
+      }
+      const invitationChange = url.pathname.match(/^\/api\/invitations\/([a-f0-9-]{36})\/(cancel|replace)$/);
+      if (request.method === "POST" && invitationChange) {
+        const input = z.object({ expectedVersion: z.number().int().positive(), role: z.enum(["viewer", "reviewer", "maintainer"]).optional(),
+          hours: z.number().int().min(1).max(168).optional() }).strict().parse(await body(request));
+        if (invitationChange[2] === "replace" && !input.role) throw new PlatformError(400, "Choose a role for the replacement invitation");
+        json(response, 200, await invitations.change(actor, invitationChange[1]!, input.expectedVersion,
+          invitationChange[2] === "replace" ? { role: input.role!, hours: input.hours } : undefined)); return true;
+      }
       if (request.method === "GET" && url.pathname === "/api/reviews") {
         const input = z.object({
           project: z.string().regex(/^[a-z0-9-]{1,63}$/),

@@ -151,7 +151,7 @@ describe("F03 exact-evidence collaborative reviews", () => {
   it("pages users and memberships without per-user lookups and lists only eligible reviewers", async () => {
     await state.create("users", "admin", { ...account, id: "admin", role: "admin" });
     const loginAuth = new AuthService(state, {
-      VISUALGUARD_AUTH_MODE: "login", VISUALGUARD_PUBLIC_URL: "http://127.0.0.1:4400",
+      VISUALGUARD_USER_ADMISSION: "legacy", VISUALGUARD_AUTH_MODE: "login", VISUALGUARD_PUBLIC_URL: "http://127.0.0.1:4400",
     });
     await loginAuth.ready;
     for (let index = 0; index < 101; index++) {
