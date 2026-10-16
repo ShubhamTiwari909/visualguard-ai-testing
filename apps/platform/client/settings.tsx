@@ -117,7 +117,9 @@ export function Settings({
         </p>
       )}
       {session.access === "login" && <AccountIdentity />}
-      {session.access === "login" && session.user?.admin && <InvitationSettings projects={projects} />}
+      {session.access === "login" && session.user?.admin && (
+        <InvitationSettings projects={projects} />
+      )}
       {session.access === "login" && (
         <section className="vg-panel vg-settings-section">
           <h2>Your password</h2>
@@ -270,11 +272,16 @@ export function Settings({
             ))}
           </select>
         </label>
-        {managed.find((item) => item.id === project) && <ProjectNameEditor
-          key={`${project}:${managed.find((item) => item.id === project)!.version ?? 0}`}
-          project={managed.find((item) => item.id === project)!}
-          onSaved={() => { setMessage("Project details saved. Old IDs still work."); onUpdated(); }}
-        />}
+        {managed.find((item) => item.id === project) && (
+          <ProjectNameEditor
+            key={`${project}:${managed.find((item) => item.id === project)!.version ?? 0}`}
+            project={managed.find((item) => item.id === project)!}
+            onSaved={() => {
+              setMessage("Project details saved. Old IDs still work.");
+              onUpdated();
+            }}
+          />
+        )}
         {project && (
           <>
             <form

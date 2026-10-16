@@ -67,7 +67,11 @@ export function createApi(
   if (auth.mode === "login" && !options.state)
     throw new Error("Hosted access requires persistent authentication state");
   const uploads = new Uploads(repository, store, auth.state, auth);
-  const invitations = new Invitations(auth.state, repository, auth.publicUrl?.origin ?? "http://localhost");
+  const invitations = new Invitations(
+    auth.state,
+    repository,
+    auth.publicUrl?.origin ?? "http://localhost",
+  );
   const onboarding = new Onboarding(auth, invitations);
   const reviews = new Reviews(repository, auth.state, auth);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
@@ -84,7 +88,12 @@ export function createApi(
       return true;
     }
     if (!url.pathname.startsWith("/api/")) return false;
-    if (url.pathname === "/api/session" || url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/onboarding") || url.pathname.startsWith("/api/invitations"))
+    if (
+      url.pathname === "/api/session" ||
+      url.pathname.startsWith("/api/auth/") ||
+      url.pathname.startsWith("/api/onboarding") ||
+      url.pathname.startsWith("/api/invitations")
+    )
       response.setHeader("Cache-Control", "no-store");
     try {
       await auth.ready;
@@ -112,20 +121,32 @@ export function createApi(
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/login") {
-        try { await auth.throttle(sha256(`oidc-login:${request.socket.remoteAddress}`)); await auth.beginOidc(response); }
-        catch (error) {
-          if (error instanceof PlatformError && error.status === 429) { json(response, 429, { error: error.message }); return true; }
+        try {
+          await auth.throttle(sha256(`oidc-login:${request.socket.remoteAddress}`));
+          await auth.beginOidc(response);
+        } catch (error) {
+          if (error instanceof PlatformError && error.status === 429) {
+            json(response, 429, { error: error.message });
+            return true;
+          }
           response.writeHead(302, { Location: "/?signin_error=oidc" });
           response.end();
         }
         return true;
       }
       if (request.method === "GET" && url.pathname === "/api/auth/callback") {
-        try { await auth.finishOidc(request, response, url, (binding, identity, profile) => onboarding.complete(request, binding, identity, profile)); }
-        catch {
+        let failureLocation = "/?signin_error=oidc";
+        try {
+          failureLocation = await auth.oidcFailureLocation(request);
+          await auth.finishOidc(request, response, url, (binding, identity, profile) =>
+            onboarding.complete(request, binding, identity, profile),
+          );
+        } catch {
           // Provider errors can contain authorization codes or credential details.
           // Send a fixed error code to the login page, never the provider response.
-          response.writeHead(302, { Location: request.headers.cookie?.includes("vg_join=") ? "/invite?signin_error=oidc" : actor && !actor.credentialId ? "/settings?identity=error" : "/?signin_error=oidc" });
+          response.writeHead(302, {
+            Location: failureLocation,
+          });
           response.end();
         }
         return true;
@@ -134,24 +155,39 @@ export function createApi(
         response.setHeader("Referrer-Policy", "no-referrer");
         if (request.method === "GET" && url.pathname === "/api/onboarding") {
           await auth.throttle(sha256(`onboarding-preview:${request.socket.remoteAddress}`), 60);
-          json(response, 200, await onboarding.browser(request, response)); return true;
+          json(response, 200, await onboarding.browser(request, response));
+          return true;
         }
         if (request.method === "POST" && url.pathname === "/api/onboarding/exchange") {
-          const input = z.object({ token: z.string().max(200) }).strict().parse(await body(request));
-          json(response, 200, await onboarding.exchange(request, input.token, actor)); return true;
+          const input = z
+            .object({ token: z.string().max(200) })
+            .strict()
+            .parse(await body(request));
+          json(response, 200, await onboarding.exchange(request, input.token, actor));
+          return true;
         }
         if (request.method === "POST" && url.pathname === "/api/onboarding/login") {
-          z.object({}).strict().parse(await body(request));
-          json(response, 200, await onboarding.login(request, response, actor)); return true;
+          z.object({})
+            .strict()
+            .parse(await body(request));
+          json(response, 200, await onboarding.login(request, response, actor));
+          return true;
         }
         if (request.method === "POST" && url.pathname === "/api/onboarding/prove") {
-          const input = z.object({ currentPassword: z.string().max(256).optional() }).strict().parse(await body(request));
+          const input = z
+            .object({ currentPassword: z.string().max(256).optional() })
+            .strict()
+            .parse(await body(request));
           if (!actor) throw new PlatformError(401, "Sign in to your existing account first");
-          json(response, 200, await onboarding.prove(request, actor, input.currentPassword)); return true;
+          json(response, 200, await onboarding.prove(request, actor, input.currentPassword));
+          return true;
         }
         if (request.method === "POST" && url.pathname === "/api/onboarding/accept") {
-          z.object({ confirmed: z.literal(true) }).strict().parse(await body(request));
-          json(response, 200, await onboarding.accept(request, response, actor)); return true;
+          z.object({ confirmed: z.literal(true) })
+            .strict()
+            .parse(await body(request));
+          json(response, 200, await onboarding.accept(request, response, actor));
+          return true;
         }
         throw new PlatformError(404, "API endpoint not found");
       }
@@ -162,14 +198,20 @@ export function createApi(
         return true;
       }
       if (request.method === "POST" && url.pathname === "/api/auth/identities/google/link") {
-        const input = z.object({ currentPassword: z.string().max(256).optional() }).strict().parse(await body(request));
+        const input = z
+          .object({ currentPassword: z.string().max(256).optional() })
+          .strict()
+          .parse(await body(request));
         json(response, 200, await auth.beginGoogleLink(actor, input.currentPassword, response));
         return true;
       }
       const requestedProjectId = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)(?:\/|$)/)?.[1];
       if (requestedProjectId) {
         const canonical = await repository.resolveProjectId(requestedProjectId);
-        url.pathname = url.pathname.replace(`/api/projects/${requestedProjectId}`, `/api/projects/${canonical}`);
+        url.pathname = url.pathname.replace(
+          `/api/projects/${requestedProjectId}`,
+          `/api/projects/${canonical}`,
+        );
       }
       if (await uploads.handle(request, response, url, actor)) return true;
       if (request.method === "GET" && url.pathname === "/api/publishing/project") {
@@ -201,36 +243,79 @@ export function createApi(
           "Upload credentials cannot browse or administer the dashboard",
         );
       if (url.pathname === "/api/invitations") {
-        if (auth.mode !== "login" || !actor.admin || !actor.sessionId) throw new PlatformError(403, "A signed-in administrator is required");
+        if (auth.mode !== "login" || !actor.admin || !actor.sessionId)
+          throw new PlatformError(403, "A signed-in administrator is required");
         if (request.method === "GET") {
-          const input = z.object({ after: z.string().uuid().optional() }).strict().parse(Object.fromEntries(url.searchParams));
-          json(response, 200, await invitations.list(actor, input.after)); return true;
+          const input = z
+            .object({ after: z.string().uuid().optional() })
+            .strict()
+            .parse(Object.fromEntries(url.searchParams));
+          json(response, 200, await invitations.list(actor, input.after));
+          return true;
         }
         if (request.method === "POST") {
-          const input = z.object({ email: z.string().max(254), projectId: z.string().regex(/^[a-z0-9-]{1,63}$/),
-            role: z.enum(["viewer", "reviewer", "maintainer"]), hours: z.number().int().min(1).max(168).optional() }).strict().parse(await body(request));
+          const input = z
+            .object({
+              email: z.string().max(254),
+              projectId: z.string().regex(/^[a-z0-9-]{1,63}$/),
+              role: z.enum(["viewer", "reviewer", "maintainer"]),
+              hours: z.number().int().min(1).max(168).optional(),
+            })
+            .strict()
+            .parse(await body(request));
           input.projectId = await repository.resolveProjectId(input.projectId);
-          json(response, 201, await invitations.create(actor, input)); return true;
+          json(response, 201, await invitations.create(actor, input));
+          return true;
         }
       }
-      const invitationChange = url.pathname.match(/^\/api\/invitations\/([a-f0-9-]{36})\/(cancel|replace)$/);
+      const invitationChange = url.pathname.match(
+        /^\/api\/invitations\/([a-f0-9-]{36})\/(cancel|replace)$/,
+      );
       if (request.method === "POST" && invitationChange) {
-        const input = z.object({ expectedVersion: z.number().int().positive(), role: z.enum(["viewer", "reviewer", "maintainer"]).optional(),
-          hours: z.number().int().min(1).max(168).optional() }).strict().parse(await body(request));
-        if (invitationChange[2] === "replace" && !input.role) throw new PlatformError(400, "Choose a role for the replacement invitation");
-        json(response, 200, await invitations.change(actor, invitationChange[1]!, input.expectedVersion,
-          invitationChange[2] === "replace" ? { role: input.role!, hours: input.hours } : undefined)); return true;
+        const input = z
+          .object({
+            expectedVersion: z.number().int().positive(),
+            role: z.enum(["viewer", "reviewer", "maintainer"]).optional(),
+            hours: z.number().int().min(1).max(168).optional(),
+          })
+          .strict()
+          .parse(await body(request));
+        if (invitationChange[2] === "replace" && !input.role)
+          throw new PlatformError(400, "Choose a role for the replacement invitation");
+        json(
+          response,
+          200,
+          await invitations.change(
+            actor,
+            invitationChange[1]!,
+            input.expectedVersion,
+            invitationChange[2] === "replace"
+              ? { role: input.role!, hours: input.hours }
+              : undefined,
+          ),
+        );
+        return true;
       }
       if (request.method === "GET" && url.pathname === "/api/reviews") {
-        const input = z.object({
-          project: z.string().regex(/^[a-z0-9-]{1,63}$/),
-          after: z.string().max(200).optional(),
-          owner: z.enum(["all", "mine", "unassigned"]).optional(),
-          status: z.enum(["all", "open", "pending", "approved", "rejected"]).optional(),
-          overdue: z.enum(["true", "false"]).optional(),
-        }).strict().parse(Object.fromEntries(url.searchParams));
-        json(response, 200, await reviews.inbox(actor, { ...input,
-          project: await repository.resolveProjectId(input.project), overdue: input.overdue === "true" }));
+        const input = z
+          .object({
+            project: z.string().regex(/^[a-z0-9-]{1,63}$/),
+            after: z.string().max(200).optional(),
+            owner: z.enum(["all", "mine", "unassigned"]).optional(),
+            status: z.enum(["all", "open", "pending", "approved", "rejected"]).optional(),
+            overdue: z.enum(["true", "false"]).optional(),
+          })
+          .strict()
+          .parse(Object.fromEntries(url.searchParams));
+        json(
+          response,
+          200,
+          await reviews.inbox(actor, {
+            ...input,
+            project: await repository.resolveProjectId(input.project),
+            overdue: input.overdue === "true",
+          }),
+        );
         return true;
       }
       const reviewPeople = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/reviewers$/);
@@ -377,11 +462,29 @@ export function createApi(
       if (request.method === "PATCH" && projectDeletion) {
         const id = projectDeletion[1]!;
         await auth.requireRole(actor, id, "maintainer");
-        const input = z.object({ name: z.string().trim().min(1).max(120), publicId: z.string().max(63),
-          expectedVersion: z.number().int().nonnegative() }).strict().parse(await body(request));
-        const project = await repository.updateProject(id, input.name, input.publicId, input.expectedVersion);
-        await auth.audit(actor, "project.renamed", { projectId: id, name: project.name, publicId: project.publicId })
-          .catch((error) => console.error("Project details saved; unable to record audit event", error));
+        const input = z
+          .object({
+            name: z.string().trim().min(1).max(120),
+            publicId: z.string().max(63),
+            expectedVersion: z.number().int().nonnegative(),
+          })
+          .strict()
+          .parse(await body(request));
+        const project = await repository.updateProject(
+          id,
+          input.name,
+          input.publicId,
+          input.expectedVersion,
+        );
+        await auth
+          .audit(actor, "project.renamed", {
+            projectId: id,
+            name: project.name,
+            publicId: project.publicId,
+          })
+          .catch((error) =>
+            console.error("Project details saved; unable to record audit event", error),
+          );
         json(response, 200, project);
         return true;
       }
@@ -389,7 +492,10 @@ export function createApi(
         const id = projectDeletion[1]!;
         await auth.requireRole(actor, id, "maintainer");
         const input = z
-          .object({ confirmation: z.union([z.literal(id), z.literal(requestedProjectId ?? id)]), expectedRuns: z.number().int().nonnegative() })
+          .object({
+            confirmation: z.union([z.literal(id), z.literal(requestedProjectId ?? id)]),
+            expectedRuns: z.number().int().nonnegative(),
+          })
           .strict()
           .parse(await body(request));
         const result = await repository.deleteProject(id, input.expectedRuns);
@@ -411,11 +517,26 @@ export function createApi(
       if (request.method === "PATCH" && match && !match[2]) {
         const run = await repository.getRun(match[1]!);
         await auth.requireRole(actor, run.projectId, "maintainer");
-        const input = z.object({ name: z.string().trim().max(120), expectedVersion: z.number().int().nonnegative() }).strict().parse(await body(request));
+        const input = z
+          .object({
+            name: z.string().trim().max(120),
+            expectedVersion: z.number().int().nonnegative(),
+          })
+          .strict()
+          .parse(await body(request));
         const renamed = await repository.renameRun(run.id, input.name, input.expectedVersion);
-        await auth.audit(actor, "run.renamed", { projectId: run.projectId, runId: run.id, name: renamed.name ?? null })
+        await auth
+          .audit(actor, "run.renamed", {
+            projectId: run.projectId,
+            runId: run.id,
+            name: renamed.name ?? null,
+          })
           .catch((error) => console.error("Run name saved; unable to record audit event", error));
-        json(response, 200, { id: renamed.id, name: renamed.name ?? null, nameVersion: renamed.nameVersion });
+        json(response, 200, {
+          id: renamed.id,
+          name: renamed.name ?? null,
+          nameVersion: renamed.nameVersion,
+        });
         return true;
       }
       if (request.method === "DELETE" && match && !match[2]) {

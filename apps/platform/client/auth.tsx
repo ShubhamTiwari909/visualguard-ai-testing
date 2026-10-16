@@ -86,7 +86,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         </div>
         <h1>{session ? "Welcome to your workspace" : "Connecting to your workspace…"}</h1>
         <p className="vg-muted">Sign in to browse your team's visual test evidence.</p>
-        {session?.admission === "invite" && <p className="vg-muted">Joining for the first time? Ask your administrator for an invitation link.</p>}
+        {session?.admission === "invite" && (
+          <p className="vg-muted">
+            Joining for the first time? Ask your administrator for an invitation link.
+          </p>
+        )}
         {error && (
           <p role="alert" className="vg-form-error">
             {error}
@@ -119,7 +123,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         )}
         {session?.oidc && (
           <a className="vg-button" href="/api/auth/login">
-            {session.oidcProvider === "google" ? "Sign in with Google" : "Continue with company login"}
+            {session.oidcProvider === "google"
+              ? "Sign in with Google"
+              : "Continue with company login"}
           </a>
         )}
         {!session && error && (

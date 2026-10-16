@@ -8,13 +8,13 @@ This is the first phase of the [team onboarding plan](TEAM-ONBOARDING-PLAN.md#de
 
 ## 1. Values the operator supplies
 
-| Variable | Required value / purpose |
-| --- | --- |
-| `VISUALGUARD_PUBLIC_URL` | Exact dashboard origin; local example `http://127.0.0.1:4400`; HTTPS for hosting |
-| `VISUALGUARD_OIDC_CLIENT_ID` | Google OAuth **Web application** client ID |
-| `VISUALGUARD_OIDC_CLIENT_SECRET` | That web client's server-side secret |
-| `VISUALGUARD_ADMIN_EMAIL` | Verified Google email for the first Google administrator; also the password recovery administrator's email |
-| `VISUALGUARD_ADMIN_PASSWORD` | Unique password, 12–256 characters, to bootstrap a recovery password account on a new database |
+| Variable                         | Required value / purpose                                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `VISUALGUARD_PUBLIC_URL`         | Exact dashboard origin; local example `http://127.0.0.1:4400`; HTTPS for hosting                           |
+| `VISUALGUARD_OIDC_CLIENT_ID`     | Google OAuth **Web application** client ID                                                                 |
+| `VISUALGUARD_OIDC_CLIENT_SECRET` | That web client's server-side secret                                                                       |
+| `VISUALGUARD_ADMIN_EMAIL`        | Verified Google email for the first Google administrator; also the password recovery administrator's email |
+| `VISUALGUARD_ADMIN_PASSWORD`     | Unique password, 12–256 characters, to bootstrap a recovery password account on a new database             |
 
 Set `VISUALGUARD_AUTH_MODE=login` and `VISUALGUARD_OIDC_ISSUER=https://accounts.google.com`. These two values do not come from Google credentials. `VISUALGUARD_OIDC_ADMIN_SUBJECTS` remains an optional explicit subject allowlist for existing company OIDC deployments; it is not required for this Google email bootstrap.
 
@@ -56,7 +56,7 @@ Load it explicitly in the terminal that will run the dashboard:
 unset VISUALGUARD_DATABASE_URL DATABASE_URL VISUALGUARD_SQLITE_FILE
 
 set -a
-source apps/platform/.env.local
+. apps/platform/.env.local
 set +a
 
 # Optional isolated data directory; reuse it for persistence testing.
@@ -71,12 +71,14 @@ Open the configured origin and select **Sign in with Google**. Password login re
 
 ## 4. Exercise multiple users
 
+These steps describe the P01 open-admission pilot. On P03 or newer builds, the supplied template defaults to invitation admission: use the [invitation flow](TEAM-INVITATIONS.md) for additional Google users. To repeat this older exercise on a disposable database, explicitly set `VISUALGUARD_USER_ADMISSION=legacy` after loading the environment file, then restart the server. Keep normal team onboarding in invite mode.
+
 1. In a fresh database, sign in with the verified account configured as `VISUALGUARD_ADMIN_EMAIL`. Confirm it can open People & integrations. A successful Google login is audited as provider `google`.
 2. Import/publish evidence into a disposable project using the existing workflow.
 3. In a separate browser profile/private window, sign in using a second Google account permitted by your Google application's audience. It initially sees no private projects.
 4. As administrator, find that account under People & integrations and grant Viewer, Reviewer, or Maintainer on the test project.
 5. Refresh the second browser and verify the expected project access. Viewer cannot comment/decide; Reviewer can use Team review; Maintainer retains the existing project administration rights.
-6. Remove membership or disable the account and retry its requests/sign-in. Access must be denied. Prior comments and review attribution remain stored.
+6. Remove project membership and retry that project’s requests: they must be denied, while account sign-in remains available. Disable the account separately to deny sign-in and invalidate its sessions. Prior comments and review attribution remain stored.
 7. Restart the dashboard with the same database and verify identities/sessions persist. Repeated Google login reuses the existing issuer/subject identity and does not automatically restore disabled accounts or edited roles.
 8. Cancel the Google consent/account-selection flow, or retry after an invalid/expired callback. The browser should return to the login screen with a generic retry message rather than displaying provider details.
 
@@ -107,6 +109,6 @@ pnpm --filter @visualguard/platform exec vitest run \
   test/google-auth.test.ts test/oidc-cookies.test.ts test/auth.test.ts
 ```
 
-Validation on 16 October 2026 using Node 22.14: the three focused suites passed **45 tests**, including SQLite reopening and Google/generic OIDC cases, and `pnpm platform:build` passed. A real Google browser pilot requires operator credentials and consent/client setup; it has not been run. Live PostgreSQL/MongoDB identity flows and the full invitation release are not established by the simulated-provider tests. Formatting, lint, and type-check commands were not run and remain deferred under the repository instructions.
+Validation on 16 October 2026 using Node 22.14: the three focused suites passed **45 tests**, including SQLite reopening and Google/generic OIDC cases, and `pnpm platform:build` passed. A real Google browser pilot requires operator credentials and consent/client setup; it has not been run. Live PostgreSQL/MongoDB identity flows and the full invitation release are not established by the simulated-provider tests. The merge review reran all 45 focused tests and the dashboard build against the released dashboard baseline. With the operator’s explicit approval to lift the deferred-check restriction for PR cleanup, repository formatting, lint, and CLI/platform type checks also passed.
 
 P02 implements the [transactional identity foundation and explicit linking](GOOGLE-ACCOUNT-LINKING.md). Next, P03 adds invitations and admission migration; P04 expands user administration; P05 completes operational rollout. Keep each requested feature's implementation, documentation and focused tests in its own commit.

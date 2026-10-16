@@ -26,7 +26,7 @@ export function DeleteAction({
     [error, setError] = useState(""),
     [pending, setPending] = useState(false);
   const [confirmedRunCount, setConfirmedRunCount] = useState(runCount ?? 0);
-  const expected = kind === "project" ? displayId ?? id : "DELETE";
+  const expected = kind === "project" ? (displayId ?? id) : "DELETE";
   useEffect(() => {
     if (open) dialog.current?.showModal();
   }, [open]);
@@ -100,8 +100,8 @@ export function DeleteAction({
               </p>
               {kind === "project" && (
                 <p>
-                  The project ID <strong>{expected}</strong> and its old aliases will stay reserved. Use a new ID for a future
-                  project.
+                  The project ID <strong>{expected}</strong> and its old aliases will stay reserved.
+                  Use a new ID for a future project.
                 </p>
               )}
             </div>
