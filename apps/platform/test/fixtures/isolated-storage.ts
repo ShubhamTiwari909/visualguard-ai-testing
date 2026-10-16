@@ -10,31 +10,35 @@ import { SqlStateStore } from "../../server/state.js";
 export async function isolatedStorage(backend: "postgres" | "mongo", url: string) {
   const name = `vg_test_${randomUUID().replaceAll("-", "")}`;
   if (backend === "mongo") {
-    const target = new URL(url);
-    if (target.username && !target.searchParams.has("authSource"))
-      target.searchParams.set(
-        "authSource",
-        decodeURIComponent(target.pathname.slice(1)) || "admin",
-      );
-    target.pathname = `/${name}`;
-    const result = await openMongo(target.href);
-    return {
-      ...result,
-      close: async () => {
-        try {
-          await result.close();
-        } finally {
-          const cleanup = new MongoClient(target.href);
+    const control = new MongoClient(url, { maxPoolSize: 1 });
+    try {
+      await control.connect();
+      const target = new URL(url);
+      // Preserve the driver's resolved auth database, including SRV TXT settings.
+      const authSource = control.options.credentials?.source;
+      if (authSource) target.searchParams.set("authSource", authSource);
+      target.pathname = `/${name}`;
+      const result = await openMongo(target.href);
+      return {
+        ...result,
+        close: async () => {
           try {
-            await cleanup.connect();
-            await cleanup.db(name).dropDatabase();
+            await result.close();
           } finally {
-            await cleanup.close();
+            try {
+              await control.db(name).dropDatabase();
+            } finally {
+              await control.close();
+            }
           }
-        }
-      },
-    };
+        },
+      };
+    } catch (error) {
+      await control.close();
+      throw error;
+    }
   }
+
   const control = new Pool({ connectionString: url, max: 1 });
   let created = false,
     db: Database | undefined;

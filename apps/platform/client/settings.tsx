@@ -1,9 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { mutation, useSession } from "./auth";
 import type { Project } from "../shared/contracts";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { ProjectNameEditor } from "./naming";
 import { InvitationSettings } from "./invitations";
+import { UserAdministration } from "./users";
 import { AccountIdentity } from "./identities";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
@@ -37,19 +38,13 @@ export function Settings({
     [error, setError] = useState("");
   const [issued, setIssued] = useState(""),
     [revision, setRevision] = useState(0);
+  const [accountSearch, setAccountSearch] = useState("");
+  const [searchingAccounts, setSearchingAccounts] = useState(false);
   useEffect(() => {
     if (!managed.some((item) => item.id === project)) setProject(managed[0]?.id ?? "");
   }, [projects, project, session.user?.admin]);
   useEffect(() => {
     let active = true;
-    if (session.user?.admin)
-      void get<{ users: User[] }>("/api/users")
-        .then((value) => {
-          if (active) setUsers(value.users);
-        })
-        .catch((problem: Error) => {
-          if (active) setError(problem.message);
-        });
     if (project)
       void Promise.all([
         get<{ members: Member[] }>(`/api/projects/${project}/members`),
@@ -72,6 +67,27 @@ export function Settings({
       active = false;
     };
   }, [project, revision, session.user?.admin]);
+  useEffect(() => {
+    let active = true;
+    if (session.user?.admin) {
+      setSearchingAccounts(true);
+      void get<{ users: User[] }>(
+        `/api/users?query=${encodeURIComponent(accountSearch)}&status=active`,
+      )
+        .then((value) => {
+          if (active) setUsers(value.users);
+        })
+        .catch((problem: Error) => {
+          if (active) setError(problem.message);
+        })
+        .finally(() => {
+          if (active) setSearchingAccounts(false);
+        });
+    }
+    return () => {
+      active = false;
+    };
+  }, [accountSearch, revision, session.user?.admin]);
   const run = async (work: () => Promise<unknown>, note: string) => {
     setError("");
     setMessage("");
@@ -82,20 +98,6 @@ export function Settings({
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : "Action failed");
     }
-  };
-  const create = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget,
-      data = new FormData(form);
-    void run(async () => {
-      await mutation("/api/users", "POST", {
-        name: data.get("name"),
-        email: data.get("email"),
-        password: data.get("password"),
-        role: data.get("role"),
-      });
-      form.reset();
-    }, "Account created. Share the initial password privately; passwords are never sent by the dashboard.");
   };
   return (
     <main className="vg-content">
@@ -176,81 +178,11 @@ export function Settings({
           </button>
         </div>
       )}
-      {session.user?.admin && (
-        <section className="vg-panel vg-settings-section">
-          <h2>Workspace accounts</h2>
-          <form className="vg-settings-form" onSubmit={create}>
-            <label>
-              Name
-              <input name="name" required maxLength={120} />
-            </label>
-            <label>
-              Email
-              <input name="email" type="email" required />
-            </label>
-            <label>
-              Initial password
-              <input
-                name="password"
-                type="password"
-                minLength={12}
-                maxLength={256}
-                autoComplete="new-password"
-                required
-              />
-            </label>
-            <label>
-              Workspace role
-              <select name="role">
-                <option value="member">Member</option>
-                <option value="admin">Administrator</option>
-              </select>
-            </label>
-            <button className="vg-button vg-button-primary">Create account</button>
-          </form>
-          <div className="vg-table-scroll">
-            <table className="vg-table">
-              <thead>
-                <tr>
-                  <th>Person</th>
-                  <th>Workspace role</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <strong>{user.name}</strong>
-                      <small className="vg-table-secondary">{user.email || user.id}</small>
-                    </td>
-                    <td>{user.role}</td>
-                    <td>{user.disabled ? "Disabled" : "Active"}</td>
-                    <td>
-                      {user.id !== session.user?.id && (
-                        <button
-                          className="vg-button"
-                          onClick={() => {
-                            void run(
-                              () =>
-                                mutation(`/api/users/${encodeURIComponent(user.id)}`, "PATCH", {
-                                  disabled: !user.disabled,
-                                }),
-                              "Account updated; existing sessions are revoked.",
-                            );
-                          }}
-                        >
-                          {user.disabled ? "Enable" : "Disable"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+      {session.access === "login" && session.user?.admin && (
+        <UserAdministration
+          projects={projects}
+          onChanged={() => setRevision((value) => value + 1)}
+        />
       )}
       <section className="vg-panel vg-settings-section">
         <h2>Project access</h2>
@@ -284,6 +216,17 @@ export function Settings({
         )}
         {project && (
           <>
+            {session.user?.admin && (
+              <label className="vg-settings-project">
+                Find an account for project access
+                <input
+                  value={accountSearch}
+                  maxLength={120}
+                  placeholder="Search name or email"
+                  onChange={(event) => setAccountSearch(event.target.value)}
+                />
+              </label>
+            )}
             <form
               className="vg-settings-form"
               onSubmit={(event) => {
@@ -302,7 +245,7 @@ export function Settings({
               <label>
                 Account
                 {users.length ? (
-                  <select name="user">
+                  <select key={accountSearch} name="user">
                     {users.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.email || user.name}
@@ -321,7 +264,9 @@ export function Settings({
                   <option value="maintainer">Maintainer</option>
                 </select>
               </label>
-              <button className="vg-button">Grant access</button>
+              <button className="vg-button" disabled={searchingAccounts}>
+                Grant access
+              </button>
             </form>
             <div className="vg-table-scroll">
               <table className="vg-table">

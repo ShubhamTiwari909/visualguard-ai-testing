@@ -49,6 +49,8 @@ Google sign-in is available as the first phase of team onboarding. See the [Goog
 
 P02 now adds [explicit Google account linking and identity continuity](../../docs/GOOGLE-ACCOUNT-LINKING.md) under Your sign-in methods. It preserves account IDs and review authorship, requires current-account proof, and rotates sessions after linking. SQLite/PostgreSQL and transactional MongoDB are supported; standalone MongoDB keeps ordinary sign-in while reporting linking unavailable. P03 now adds invitation management and atomic recipient acceptance on transactional storage.
 
+P04 adds [workspace user administration](../../docs/USER-ADMINISTRATION.md): search/filter/pagination, account details, explicit admin promotion/demotion, disable/restore, password reset, and session/upload revocation with last-admin protection. It adds no environment variables. Lifecycle APIs now require a target version and current administrator proof; direct admin grants during account creation are replaced by a separate promotion.
+
 Configure the database, public URL, administrator credentials, and admission policy: `VISUALGUARD_DATABASE_URL`, `VISUALGUARD_PUBLIC_URL`, `VISUALGUARD_ADMIN_EMAIL`, `VISUALGUARD_ADMIN_PASSWORD`, and `VISUALGUARD_USER_ADMISSION=invite`. PostgreSQL and MongoDB are selected from the URL automatically. The hosted public origin enables login and project permissions. Use a host secret store for credentials.
 
 ```sh

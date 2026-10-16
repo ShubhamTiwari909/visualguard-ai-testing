@@ -67,6 +67,42 @@ describe("Google sign-in and identity continuity", () => {
     return { target, cookie, callback, request: { headers: { cookie } } as IncomingMessage };
   }
 
+  it.each([
+    ["oidc", "error"],
+    ["oidc", "rejected-write"],
+    ["password", "error"],
+    ["password", "rejected-write"],
+  ] as const)(
+    "does not issue a %s session when its login audit has an %s",
+    async (method, failure) => {
+      const result = response();
+      let execute: () => Promise<unknown>;
+      if (method === "password") {
+        const password = "test-only-password-long";
+        const user = await auth.createUser({
+          email: "password@example.test",
+          name: "Member",
+          password,
+        });
+        execute = () => auth.login(user.email, password, result.value);
+      } else {
+        const attempt = await loginAttempt();
+        execute = () => auth.finishOidc(attempt.request, result.value, attempt.callback);
+      }
+      const create = state.create.bind(state);
+      vi.spyOn(state, "create").mockImplementation(async (namespace, ...args) => {
+        if (namespace === "audit") {
+          if (failure === "error") throw new Error("test-only-storage-failure");
+          return false;
+        }
+        return create(namespace, ...args);
+      });
+      await expect(execute()).rejects.toThrow();
+      expect(result.headers.get("Set-Cookie")).toBeUndefined();
+      expect(await state.list("sessions")).toHaveLength(0);
+    },
+  );
+
   it("completes the real OIDC code flow with PKCE, signed claims and a server session, without granting project access", async () => {
     const attempt = await loginAttempt();
     expect(attempt.target.searchParams.get("redirect_uri")).toBe(
@@ -104,6 +140,7 @@ describe("Google sign-in and identity continuity", () => {
     ["subject", { sub: undefined }],
     ["nonce", { nonce: "wrong-nonce" }],
     ["verified email", { email_verified: false }],
+    ["missing verified email", { email_verified: undefined }],
     ["missing email", { email: undefined }],
   ] as const)("rejects invalid %s without creating users or sessions", async (_label, claims) => {
     provider.claims = claims;
@@ -420,6 +457,23 @@ describe("Google sign-in and identity continuity", () => {
     }
   });
 
+  it("rejects another browser session belonging to the same account during linking", async () => {
+    const account = await authenticatedAccount(),
+      attempt = await linkingAttempt(account);
+    const second = response();
+    await auth.login(account.user.email, account.password, second.value);
+    const cookie = second.headers.get("Set-Cookie")!.split(";")[0]!;
+    const actor = (await auth.actor({ headers: { cookie } } as IncomingMessage))!;
+    expect(actor.id).toBe(account.actor.id);
+    expect(actor.sessionId).not.toBe(account.actor.sessionId);
+    attempt.request.headers.cookie = `${cookie}; ${attempt.oidcCookie}`;
+    await expect(
+      auth.finishOidc(attempt.request, response().value, attempt.callback),
+    ).rejects.toMatchObject({ status: 401 });
+    expect(await state.list("external-identities")).toHaveLength(0);
+    expect((await state.get<User>("users", account.user.id))!.value.authVersion).toBe(1);
+  });
+
   it("refuses to merge a Google account already used for ordinary sign-in", async () => {
     const existing = await loginAttempt();
     await auth.finishOidc(existing.request, response().value, existing.callback);
@@ -484,6 +538,34 @@ describe("Google sign-in and identity continuity", () => {
     });
     return base;
   }
+
+  it("logs only a fixed operation marker when an unexpected callback storage failure occurs", async () => {
+    const base = await httpDashboard();
+    const start = await fetch(`${base}/api/auth/login`, { redirect: "manual" });
+    const target = new URL(start.headers.get("location")!);
+    const callback = new URL(
+      `${base}/api/auth/callback?code=${provider.authorize(target)}&state=${target.searchParams.get("state")}`,
+    );
+    const create = state.create.bind(state);
+    vi.spyOn(state, "create").mockImplementation(async (namespace, ...args) => {
+      if (namespace === "audit") throw new Error("test-only-sensitive-storage-details");
+      return create(namespace, ...args);
+    });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const failed = await fetch(callback, {
+        redirect: "manual",
+        headers: { Cookie: start.headers.get("set-cookie")!.split(";")[0]! },
+      });
+      expect(failed.headers.get("location")).toBe("/?signin_error=oidc");
+      expect(failed.headers.get("set-cookie")).toBeNull();
+      expect(log).toHaveBeenCalledWith("Platform OIDC callback failed");
+      expect(JSON.stringify(log.mock.calls)).not.toContain("test-only-sensitive-storage-details");
+      expect(await state.list("sessions")).toHaveLength(0);
+    } finally {
+      log.mockRestore();
+    }
+  });
 
   it.each(["signin", "link"] as const)(
     "routes a failed %s attempt by its stored intent even with an existing session",

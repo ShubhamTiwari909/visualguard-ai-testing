@@ -127,7 +127,7 @@ Pre-session actions require a browser form token; actions with a signed-in actor
 
 Focused protocol, API, transaction, race and compatibility tests run against SQLite, PostgreSQL, transactional MongoDB and standalone MongoDB. On 16 October 2026, 234 tests passed in 10 focused suites, with 16 intentional backend-specific skips: the Mongo-only snapshot cases skip other adapters, and the in-memory repository fake skips physical evidence deletion. The dashboard UI build and a real-browser password invitation journey are also checked. These checks were deferred during initial implementation. The operator subsequently authorized formatting, lint, and type checks for merge cleanup. Merge review reran 227 tests in nine focused suites with the same 16 intentional skips against the reviewed P01/P02 baseline and live adapters; formatting, lint, CLI/report/platform type checks, and the dashboard build passed. The review preserved direct `/reviews` serving alongside `/invite` while integrating the released runtime.
 
-Real Google browser acceptance still requires your existing Google client credentials and consent/audience configuration; the automated provider uses signed tokens through the actual OIDC library. Expanded account administration, session-revocation UI and last-admin protection remain P04. Audit/recovery operations and rollout evidence remain P05. Automatic invitation email delivery is outside the agreed scope.
+Real Google browser acceptance still requires your existing Google client credentials and consent/audience configuration; the automated provider uses signed tokens through the actual OIDC library. [P04 user administration](USER-ADMINISTRATION.md) now provides account lifecycle, session/upload revocation and last-admin protection. Audit/recovery operations and rollout evidence remain P05. Automatic invitation email delivery is outside the agreed scope.
 
 ## Merge-review corrections
 
@@ -153,3 +153,6 @@ The local account builder is named `prepareLocalAccount`: it returns a user
 record, not a password. This avoids CodeQL classifying every returned field
 (including email and session-routing data) as a password source. Actual password
 hashing remains salted scrypt, and no scanning rule is suppressed.
+
+Isolated MongoDB tests preserve the driver's resolved authentication database
+(including SRV settings) while selecting a disposable data database.

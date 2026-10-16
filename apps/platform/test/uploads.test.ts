@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createServer, type Server } from "node:http";
+import { createServer, type Server, type IncomingMessage, type ServerResponse } from "node:http";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -49,7 +49,15 @@ describe("F06 resumable publishing", () => {
     auth = new AuthService(state, env);
     await auth.ready;
     const admin = (await auth.users())[0]!;
-    actor = { id: admin.id, name: admin.name, email: admin.email, admin: true, csrf: "" };
+    const loginHeaders = new Map<string, string>();
+    await auth.login(admin.email, env.VISUALGUARD_ADMIN_PASSWORD!, {
+      setHeader(name: string, value: string) {
+        loginHeaders.set(name, value);
+      },
+    } as unknown as ServerResponse);
+    actor = (await auth.actor({
+      headers: { cookie: loginHeaders.get("Set-Cookie")!.split(";")[0] },
+    } as IncomingMessage))!;
     const credential = await auth.mintToken(actor, "storefront", "CI", 1);
     token = credential.token;
     tokenId = credential.id;
