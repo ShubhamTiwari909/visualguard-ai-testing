@@ -43,7 +43,14 @@ function Link({
     navigate(href);
   };
   return (
-    <a className={className} href={href} onClick={click}>
+    <a
+      className={className}
+      href={href}
+      onClick={click}
+      aria-current={
+        `${window.location.pathname}${window.location.search}` === href ? "page" : undefined
+      }
+    >
       {children}
     </a>
   );
@@ -102,6 +109,14 @@ function Metadata({ run }: { run: StoredRun }) {
 
 function Shell({ projects, children }: { projects: Project[]; children: ReactNode }) {
   const session = useSession();
+  const pageName =
+    window.location.pathname === "/settings"
+      ? "People & integrations"
+      : window.location.pathname === "/operations"
+        ? "Audit & recovery"
+        : window.location.pathname === "/reviews"
+          ? "Review inbox"
+          : "Evidence";
   const selector = new URLSearchParams(window.location.search).get("project");
   const selected =
     projects.find(
@@ -144,11 +159,17 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
         >
           <span aria-hidden="true">✓</span> Review inbox
         </Link>
-        <Link className={`vg-nav-link ${window.location.pathname === "/settings" ? "is-active" : ""}`} href="/settings">
+        <Link
+          className={`vg-nav-link ${window.location.pathname === "/settings" ? "is-active" : ""}`}
+          href="/settings"
+        >
           <span aria-hidden="true">⚙</span> People & integrations
         </Link>
         {session.access === "login" && session.user?.admin && (
-          <Link className={`vg-nav-link ${window.location.pathname === "/operations" ? "is-active" : ""}`} href="/operations">
+          <Link
+            className={`vg-nav-link ${window.location.pathname === "/operations" ? "is-active" : ""}`}
+            href="/operations"
+          >
             <span aria-hidden="true">◷</span> Audit & recovery
           </Link>
         )}
@@ -178,14 +199,25 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
       </aside>
       <div className="vg-workspace-main">
         <header className="vg-topbar">
-          <span>
-            Workspace <span className="vg-breadcrumb">/</span> Evidence
-          </span>
-          <Link className="vg-mobile-settings" href="/settings">
-            Settings
+          <Link className="vg-mobile-brand" href="/">
+            <span className="vg-logo" aria-hidden="true">
+              V
+            </span>
+            VisualGuard
           </Link>
+          <span>
+            Workspace <span className="vg-breadcrumb">/</span> {pageName}
+          </span>
           <AccountMenu />
         </header>
+        <nav className="vg-mobile-nav" aria-label="Workspace">
+          <Link href="/">Run history</Link>
+          <Link href="/reviews">Review inbox</Link>
+          <Link href="/settings">People & integrations</Link>
+          {session.access === "login" && session.user?.admin && (
+            <Link href="/operations">Audit & recovery</Link>
+          )}
+        </nav>
         {children}
       </div>
     </div>

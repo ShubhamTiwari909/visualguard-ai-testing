@@ -8,10 +8,12 @@
   color: #20332f;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 14px;
+  line-height: 1.6;
 }
 .platform button,
 .platform input,
-.platform select {
+.platform select,
+.platform textarea {
   font: inherit;
 }
 .vg-review-panel {
@@ -26,6 +28,14 @@
   align-items: end;
   flex-wrap: wrap;
   gap: 12px;
+  margin-bottom: 20px;
+}
+.vg-review-body > p {
+  margin: 16px 0;
+  line-height: 1.7;
+}
+.vg-review-body > p:last-child {
+  margin-bottom: 0;
 }
 .vg-review-toolbar label,
 .vg-review-body fieldset label {
@@ -34,6 +44,13 @@
   gap: 6px;
   min-width: 0;
   max-width: 100%;
+}
+.vg-review-toolbar label {
+  flex: 1 1 170px;
+}
+.vg-review-toolbar .vg-review-checkbox {
+  flex: 0 1 auto;
+  min-height: 42px;
 }
 .vg-review-toolbar select {
   max-width: 100%;
@@ -140,13 +157,47 @@
   -webkit-tap-highlight-color: transparent;
 }
 .platform input,
-.platform select {
+.platform select,
+.platform textarea {
   background: white;
   border: 1px solid #dfe7e3;
   border-radius: 7px;
-  padding: 9px 11px;
+  padding: 10px 12px;
+  min-height: 42px;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   color: #243c35;
+  line-height: 1.4;
+}
+.platform select:not([multiple]) {
+  appearance: none;
+  padding-right: 42px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235e7568' stroke-width='1.7' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  text-overflow: ellipsis;
+}
+.platform input[type="checkbox"],
+.platform input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: #224b3b;
+}
+.platform :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #38846a;
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  .platform select:not([multiple]) {
+    appearance: auto;
+    background-image: none;
+    padding-right: 12px;
+  }
 }
 .platform input:focus,
 .platform select:focus {
@@ -164,6 +215,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
 }
 .vg-brand {
   display: flex;
@@ -302,6 +354,11 @@
   background: #fff;
   font-size: 11px;
   color: #7e8d85;
+  gap: 16px;
+}
+.vg-mobile-nav,
+.vg-mobile-brand {
+  display: none;
 }
 .vg-breadcrumb {
   margin: 0 14px;
@@ -360,8 +417,10 @@
   border: 1px solid #dce5df;
   color: #486254;
   border-radius: 7px;
-  padding: 9px 13px;
-  font-size: 11px !important;
+  padding: 10px 14px;
+  min-height: 42px;
+  font-size: 12px !important;
+  line-height: 1.4;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -450,9 +509,10 @@
   gap: 16px;
   padding: 22px 23px;
   border-bottom: 1px solid #edf1ee;
+  flex-wrap: wrap;
 }
 .vg-panel-heading h2 {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 650;
   margin: 0;
   display: flex;
@@ -486,7 +546,7 @@
 .vg-filter-row select {
   font-size: 11px;
   max-width: 160px;
-  height: 35px;
+  min-height: 42px;
 }
 .vg-filter-row .vg-search {
   flex: 1;
@@ -648,10 +708,13 @@
   border-top: 1px solid #eaf0eb;
   color: #95a398;
   font-size: 10px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 .vg-pagination > div {
   display: flex;
   gap: 7px;
+  flex-wrap: wrap;
 }
 .vg-pagination .vg-button {
   font-size: 10px !important;
@@ -939,6 +1002,7 @@
 .vg-profile-details dd {
   margin: 0;
   overflow-wrap: anywhere;
+  line-height: 1.6;
 }
 .vg-audit-events {
   list-style: none;
@@ -957,8 +1021,10 @@
   padding: 0 24px;
 }
 .vg-audit-filters {
-  display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.vg-settings-form.vg-audit-filters {
+  display: grid;
 }
 .vg-audit-filters .vg-form-actions {
   grid-column: 1 / -1;
@@ -1023,6 +1089,12 @@
 .vg-readiness-conflicts {
   margin-top: 24px;
 }
+.vg-readiness-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.vg-readiness-grid dt {
+  min-height: 2.8em;
+}
 .vg-readiness-conflicts ul {
   margin: 12px 0;
   padding-left: 20px;
@@ -1030,11 +1102,17 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 1000px) {
+  .vg-readiness-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .vg-audit-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 480px) {
+  .vg-readiness-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .vg-audit-filters {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1054,23 +1132,69 @@
 .vg-settings-section > h2 {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 20px;
+  margin: 0 0 12px;
+}
+.vg-settings-section > p {
+  margin: 12px 0;
+  line-height: 1.7;
+}
+.vg-settings-section > h2 + p {
+  margin-top: 0;
+}
+.vg-settings-section > :last-child {
+  margin-bottom: 0;
+}
+.vg-settings-section > label,
+.vg-settings-section > .vg-button {
+  margin-top: 20px;
 }
 .vg-settings-form {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 15px;
-  margin: 20px 0;
+  gap: 20px 16px;
+  margin: 24px 0;
 }
 .vg-settings-form label {
   flex: 1 1 170px;
+  min-width: 0;
+}
+.vg-settings-form > p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.vg-settings-form .vg-button,
+.vg-user-confirmation .vg-button {
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
 }
 .vg-settings-project {
   max-width: 350px;
+  width: 100%;
 }
 .vg-settings-subheading {
-  margin-top: 30px;
+  margin: 28px 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.vg-settings-section > h2.vg-settings-subheading {
+  margin-top: 32px;
+}
+.vg-name-editor {
+  margin-top: 16px;
+}
+.vg-settings-section > details:not(.vg-recovery-guide) {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #edf1ee;
+}
+.vg-settings-section > details > summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.vg-user-confirmation > .vg-settings-project {
+  margin-top: 16px;
 }
 .vg-settings-note {
   padding: 16px;
@@ -1124,19 +1248,6 @@
     flex-direction: column;
   }
   .vg-sidebar {
-    width: 100%;
-    height: auto;
-    position: static;
-    border-right: 0;
-    border-bottom: 1px solid #e0e8e2;
-    padding: 16px 20px;
-  }
-  .vg-sidebar .vg-workspace,
-  .vg-sidebar .vg-nav-heading,
-  .vg-sidebar .vg-nav-heading-row,
-  .vg-sidebar nav,
-  .vg-sidebar-footer,
-  .vg-sidebar > .vg-nav-link {
     display: none;
   }
   .vg-brand {
@@ -1286,9 +1397,6 @@
   gap: 16px;
   flex-wrap: wrap;
 }
-.vg-mobile-settings {
-  display: none;
-}
 @media (max-width: 760px) {
   .vg-topbar {
     height: auto;
@@ -1297,17 +1405,79 @@
     gap: 8px;
     padding-top: 8px;
     padding-bottom: 8px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .vg-mobile-brand {
+    display: flex;
+    align-items: center;
+    color: #1d3931;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .vg-mobile-brand .vg-logo {
+    width: 24px;
+    height: 27px;
+    margin-right: 7px;
+    font-size: 17px;
+  }
+  .vg-topbar > span {
+    display: none;
+  }
+  .vg-topbar .vg-account {
+    margin-left: auto;
+    gap: 8px;
+  }
+  .vg-topbar .vg-button {
+    padding: 8px 10px;
+    min-height: 36px;
+    font-size: 11px !important;
+  }
+  .vg-mobile-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px 16px;
+    background: white;
+    border-bottom: 1px solid #e0e8e2;
+  }
+  .vg-mobile-nav a {
+    text-align: center;
+    min-width: 0;
+    padding: 8px 12px;
+    border-radius: 7px;
+    color: #526d5e;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .vg-mobile-nav a[aria-current="page"] {
+    color: #23583f;
+    background: #eaf3ed;
+    font-weight: 600;
+  }
+  .vg-settings-section {
+    padding: 20px;
+  }
+  .vg-settings-form {
+    gap: 16px;
+  }
+  .vg-settings-form label {
+    flex-basis: 100%;
+  }
+  .vg-login-card {
+    padding: 24px;
   }
   .vg-account-name {
     display: none;
   }
-  .vg-mobile-settings {
-    display: inline;
-    margin-left: auto;
-    margin-right: 12px;
-  }
   .vg-deletion-notice {
     margin: 16px 16px 0;
+  }
+}
+@media (max-width: 359px) {
+  .vg-readiness-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

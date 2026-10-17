@@ -28,6 +28,9 @@ export function Settings({
   onUpdated: () => void;
 }) {
   const session = useSession();
+  useEffect(() => {
+    document.title = "People & integrations · VisualGuard";
+  }, []);
   const managed = projects.filter(
     (project) => session.user?.admin || project.role === "maintainer",
   );
@@ -172,17 +175,19 @@ export function Settings({
           <strong>Copy your upload token now</strong>
           <p>It is shown once. Store it in your CI secret settings.</p>
           <textarea readOnly aria-label="New upload token" value={issued} />
-          <button
-            className="vg-button"
-            onClick={() => {
-              void navigator.clipboard.writeText(issued);
-            }}
-          >
-            Copy token
-          </button>
-          <button className="vg-button" onClick={() => setIssued("")}>
-            Dismiss
-          </button>
+          <div className="vg-form-actions">
+            <button
+              className="vg-button"
+              onClick={() => {
+                void navigator.clipboard.writeText(issued);
+              }}
+            >
+              Copy token
+            </button>
+            <button className="vg-button" onClick={() => setIssued("")}>
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
       {session.access === "login" && session.user?.admin && (

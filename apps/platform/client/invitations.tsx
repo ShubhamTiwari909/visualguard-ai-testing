@@ -160,7 +160,7 @@ export function InvitationSettings({ projects }: { projects: Project[] }) {
                 </td>
                 <td>
                   {(row.status === "pending" || row.status === "expired") && (
-                    <>
+                    <div className="vg-form-actions">
                       <button
                         className="vg-button"
                         disabled={busy}
@@ -189,7 +189,7 @@ export function InvitationSettings({ projects }: { projects: Project[] }) {
                       >
                         Replace link
                       </button>
-                    </>
+                    </div>
                   )}
                 </td>
               </tr>
