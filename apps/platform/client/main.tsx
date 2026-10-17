@@ -37,6 +37,12 @@ function Link({
   children: ReactNode;
   className?: string;
 }) {
+  const target = new URL(href, window.location.origin);
+  const current = new URL(window.location.href);
+  const currentPage =
+    (target.pathname === current.pathname ||
+      (href === "/" && current.pathname.startsWith("/runs/"))) &&
+    [...target.searchParams].every(([key, value]) => current.searchParams.get(key) === value);
   const click = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
@@ -47,9 +53,7 @@ function Link({
       className={className}
       href={href}
       onClick={click}
-      aria-current={
-        `${window.location.pathname}${window.location.search}` === href ? "page" : undefined
-      }
+      aria-current={currentPage ? "page" : undefined}
     >
       {children}
     </a>

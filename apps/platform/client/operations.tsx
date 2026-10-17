@@ -39,6 +39,10 @@ const labels: Record<string, string> = {
   publicId: "Public project ID",
   created: "Created",
 };
+const recoveryCommands = [
+  "pnpm platform:operations admins",
+  "pnpm platform:operations preview --user ACCOUNT_ID",
+].join("\n");
 function detail(value: AuditEvent["details"][string]): string {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value !== "object") return String(value);
@@ -274,9 +278,7 @@ function WorkspaceOperations() {
           </li>
         </ol>
         <pre>
-          <code>
-            {"pnpm platform:operations admins\npnpm platform:operations preview --user ACCOUNT_ID"}
-          </code>
+          <code>{recoveryCommands}</code>
         </pre>
         <p className="vg-muted">
           Recovery requires a POSIX operator host. Google-only accounts must recover access through

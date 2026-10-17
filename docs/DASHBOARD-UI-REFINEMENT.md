@@ -17,5 +17,6 @@ On 17 October 2026:
 - Run history, review inbox, People & integrations and Audit & recovery were checked at 320, 375, 768 and 1440 px without page-wide horizontal overflow. Wide data tables retain their own scroll area.
 - The administrator confirmation form, checkbox sizing, select inset, page-change focus, keyboard focus outline and high-contrast select fallback were checked in the browser.
 - An imported disposable comparison exercised the run detail review composer: a comment was posted successfully and appeared in the review inbox. Desktop/mobile review forms were inspected visually.
+- Merge review corrected active mobile navigation on project-filtered history, project-scoped reviews and run details. Browser checks on the built server confirmed those routes retain their active destination without overflow, and recovery command line breaks are preserved.
 
 Formatting, lint and type checks remain deferred under AGENTS.md for this follow-up. The earlier exception covered PR #44 review cleanup only. No Google configuration or new application environment variables are required.
