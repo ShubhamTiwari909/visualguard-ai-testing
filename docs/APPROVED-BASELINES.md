@@ -149,18 +149,18 @@ Playwright fixture sets export into the `playwright/` subdirectory automatically
 - **Concurrent maintainers:** open the same set in two tabs, promote in one, then submit in the stale tab. The stale operation fails with a conflict and requires refresh/re-evaluation.
 - **New version:** import the comparison from step 7 with its source revision, review its check, then promote as v2. Identical pixels still require explicit shared review.
 - **Restore:** in history choose **Restore v1**, provide a reason, and confirm. This creates v3, parent v2, restored from v1. The restore form receives keyboard focus; history is paginated in 20-version pages.
-- **Retention:** deleting a run used by any baseline version fails. Explicitly deleting the whole project removes its evidence and baseline history. Keep native database backups for recovery.
+- **Retention:** deleting a run used by any baseline version fails. Portable restoration of an unretained run waits for its deletion cleanup to finish; an interrupted deletion stays closed for storage recovery. Explicitly deleting the whole project removes its evidence and baseline history. Keep native database backups for recovery.
 
 ## Hosted use and environment variables
 
 No new required environment variables are introduced. Existing database/authentication configuration applies:
 
-| Use | Settings |
-| --- | --- |
-| Local demo | `VISUALGUARD_PLATFORM_DATA_DIR` (optional; defaults to `.visualguard/platform`) |
-| PostgreSQL | Existing `VISUALGUARD_DATABASE_URL=postgresql://…` |
-| MongoDB | Existing `VISUALGUARD_DATABASE_URL=mongodb://…`; mutations require a transaction-capable replica set |
-| Hosted download | `VISUALGUARD_DASHBOARD_URL=https://…` or `--server`; project-scoped `VISUALGUARD_UPLOAD_TOKEN` |
+| Use               | Settings                                                                                                                   |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Local demo        | `VISUALGUARD_PLATFORM_DATA_DIR` (optional; defaults to `.visualguard/platform`)                                            |
+| PostgreSQL        | Existing `VISUALGUARD_DATABASE_URL=postgresql://…`                                                                         |
+| MongoDB           | Existing `VISUALGUARD_DATABASE_URL=mongodb://…`; mutations require a transaction-capable replica set                       |
+| Hosted download   | `VISUALGUARD_DASHBOARD_URL=https://…` or `--server`; project-scoped `VISUALGUARD_UPLOAD_TOKEN`                             |
 | Local direct pull | Same SQLite file/data directory or database URL as the dashboard; host database access grants direct administrative access |
 
 ```sh

@@ -134,14 +134,26 @@ export class ProjectDirectory implements PlatformRepository {
     const previousGuard = preserveId
       ? await this.names.get<BaselineRunGuard>("baseline-runs", preserveId)
       : undefined;
+    if (previousGuard?.value.status === "deleting")
+      throw new PlatformError(
+        409,
+        "Run deletion is still in progress; retry restoration after it completes",
+      );
     const result = await this.evidence.insertRun(
       { ...run, projectId: await this.resolveProjectId(run.projectId) },
       preserveId,
     );
     // A portable restore may recreate a deleted, unretained run with its original ID.
-    // Only a NEW insert can reopen the guard: a duplicate must never unlock deletion in flight.
-    if (!result.duplicate && previousGuard?.value.status === "deleting" && !previousGuard.value.pinned)
-      await this.names.replace("baseline-runs", { ...previousGuard, value: { status: "active", pinned: false } });
+    // Only a completed deletion can be reopened; cleanup must finish before any ID reuse.
+    if (
+      result.run.id === preserveId &&
+      previousGuard?.value.status === "deleted" &&
+      !previousGuard.value.pinned
+    )
+      await this.names.replace("baseline-runs", {
+        ...previousGuard,
+        value: { status: "active", pinned: false },
+      });
     return result;
   }
   async runs(filters: RunFilters, allowed?: string[]) {
@@ -159,16 +171,55 @@ export class ProjectDirectory implements PlatformRepository {
     if (!guard || guard.value.status !== "active")
       throw new PlatformError(409, "Run deletion is already in progress");
     if (guard.value.pinned)
-      throw new PlatformError(409, "This run is retained by approved baseline history; delete the project to remove its entire history");
-    if (!(await this.names.replace("baseline-runs", { ...guard, value: { ...guard.value, status: "deleting" } })))
+      throw new PlatformError(
+        409,
+        "This run is retained by approved baseline history; delete the project to remove its entire history",
+      );
+    if (
+      !(await this.names.replace("baseline-runs", {
+        ...guard,
+        value: { ...guard.value, status: "deleting" },
+      }))
+    )
       throw new PlatformError(409, "Run changed; refresh before deleting");
+    let result;
     try {
-      return await this.evidence.deleteRun(id, expectedProject);
+      result = await this.evidence.deleteRun(id, expectedProject);
     } catch (error) {
-      if (error instanceof PlatformError && error.status === 409)
-        await this.names.replace("baseline-runs", { ...guard, version: guard.version + 1 });
+      if (error instanceof PlatformError && [404, 409].includes(error.status)) {
+        let missing = false,
+          certain = true;
+        if (error.status === 404) {
+          // MongoDB also returns 404 for a wrong project confirmation. Only a verified
+          // absence permits ID reuse; a storage read failure must leave the guard closed.
+          try {
+            await this.evidence.getRun(id);
+          } catch (lookup) {
+            if (lookup instanceof PlatformError && lookup.status === 404) missing = true;
+            else certain = false;
+          }
+        }
+        if (certain)
+          await this.names.replace("baseline-runs", {
+            ...guard,
+            version: guard.version + 1,
+            value: missing ? { status: "deleted", pinned: false } : guard.value,
+          });
+      }
       throw error;
     }
+    if (
+      !(await this.names.replace("baseline-runs", {
+        ...guard,
+        version: guard.version + 1,
+        value: { status: "deleted", pinned: false },
+      }))
+    )
+      throw new PlatformError(
+        409,
+        "Run was deleted but its deletion guard changed; inspect storage before restoring",
+      );
+    return result;
   }
   async deleteProject(id: string, expectedRuns: number) {
     id = await this.resolveProjectId(id);

@@ -121,7 +121,9 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
         ? "Audit & recovery"
         : window.location.pathname === "/reviews"
           ? "Review inbox"
-          : window.location.pathname === "/baselines" ? "Approved baselines" : "Evidence";
+          : window.location.pathname === "/baselines"
+            ? "Approved baselines"
+            : "Evidence";
   const selector = new URLSearchParams(window.location.search).get("project");
   const selected =
     projects.find(
@@ -164,7 +166,10 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
         >
           <span aria-hidden="true">✓</span> Review inbox
         </Link>
-        <Link className={`vg-nav-link ${window.location.pathname === "/baselines" ? "is-active" : ""}`} href="/baselines">
+        <Link
+          className={`vg-nav-link ${window.location.pathname === "/baselines" ? "is-active" : ""}`}
+          href="/baselines"
+        >
           <span aria-hidden="true">▣</span> Approved baselines
         </Link>
         <Link
@@ -832,7 +837,16 @@ function RunView({
                         {jobSummary(job) || "No additional findings"}
                       </p>
                       {job.captures.production?.approvedReference && (
-                        <p className="vg-small">Reference: <a href={`/baselines?project=${encodeURIComponent(job.captures.production.approvedReference.projectId)}`}>{job.captures.production.approvedReference.set} v{job.captures.production.approvedReference.version}</a> · exact approved image and compatible rendering identity</p>
+                        <p className="vg-small">
+                          Reference:{" "}
+                          <a
+                            href={`/baselines?project=${encodeURIComponent(job.captures.production.approvedReference.projectId)}`}
+                          >
+                            {job.captures.production.approvedReference.set} v
+                            {job.captures.production.approvedReference.version}
+                          </a>{" "}
+                          · exact approved image and compatible rendering identity
+                        </p>
                       )}
                       <div className="vg-evidence-links">
                         {Object.entries(job.captures).map(([side, capture]) =>

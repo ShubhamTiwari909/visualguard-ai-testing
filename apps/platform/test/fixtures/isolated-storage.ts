@@ -63,7 +63,12 @@ export async function isolatedStorage(backend: "postgres" | "mongo", url: string
       `${target.searchParams.get("options") ?? ""} -c search_path=${name}`.trim(),
     );
     db = await openDatabase({ url: target.href, sqlitePath: "unused" });
-    return { state: new SqlStateStore(db), repository: new Repository(db), store: new SqlArtifactStore(db), close };
+    return {
+      state: new SqlStateStore(db),
+      repository: new Repository(db),
+      store: new SqlArtifactStore(db),
+      close,
+    };
   } catch (error) {
     await close();
     throw error;

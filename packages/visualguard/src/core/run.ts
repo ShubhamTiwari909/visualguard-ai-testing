@@ -465,7 +465,8 @@ export class Run extends RunEmitter {
     const baselinePath = this.options.baselineDir
       ? join(this.options.baselineDir, `${job.id}.png`)
       : undefined;
-    if (baselinePath && !liveEnvs.includes("production")) assertApprovedBaselinePresent(baselinePath);
+    if (baselinePath && !liveEnvs.includes("production"))
+      assertApprovedBaselinePresent(baselinePath);
     if (baselinePath && this.options.updateBaselines) assertBaselineWritable(baselinePath);
     if (!liveEnvs.includes("production")) {
       if (baselinePath && existsSync(baselinePath)) {
@@ -475,8 +476,16 @@ export class Run extends RunEmitter {
             renderingIdentity(this.config, job),
             this.config.baseline.legacy,
           );
-          const approvedReference = approvedBaselineReference(baselinePath, { jobId: job.id, route: job.route, viewport: job.viewport, identity: renderingIdentity(this.config, job) });
-          result.captures.production = { ...this.loadBaseline(baselinePath, jobDir, rel), approvedReference };
+          const approvedReference = approvedBaselineReference(baselinePath, {
+            jobId: job.id,
+            route: job.route,
+            viewport: job.viewport,
+            identity: renderingIdentity(this.config, job),
+          });
+          result.captures.production = {
+            ...this.loadBaseline(baselinePath, jobDir, rel),
+            approvedReference,
+          };
         } catch (error) {
           if (this.options.updateBaselines !== true) throw error;
           // Explicit updates migrate legacy/incompatible references rather than comparing

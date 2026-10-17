@@ -251,13 +251,20 @@ async function check(
       image: "production.png",
       dom: existsSync(join(dir, "production.dom.json")) ? "production.dom.json" : undefined,
       size: outcome.size,
+      unstable: outcome.unstable,
+      truncated: outcome.truncated,
       durationMs: outcome.durationMs,
       attempts: outcome.attempts,
       health: outcome.health,
     } satisfies CaptureResult;
   } else if (existsSync(baselinePath) && !updating) {
     assertBaselineCompatible(baselinePath, identity, config.baseline.legacy);
-    const approvedReference = approvedBaselineReference(baselinePath, { jobId: id, route: job.route, viewport: job.viewport, identity });
+    const approvedReference = approvedBaselineReference(baselinePath, {
+      jobId: id,
+      route: job.route,
+      viewport: job.viewport,
+      identity,
+    });
     copyFileSync(baselinePath, productionPath);
     if (existsSync(baselinePath.replace(/\.png$/, ".dom.json"))) {
       copyFileSync(baselinePath.replace(/\.png$/, ".dom.json"), join(dir, "production.dom.json"));
