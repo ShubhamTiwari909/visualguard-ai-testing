@@ -35,17 +35,12 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 
 ## Features
 
-Already installed from npm? Follow the [simple local-to-cloud deployment guide](docs/NPM-DEPLOYMENT-QUICKSTART.md) to set up your application and deploy its dashboard directly to Vercel or Cloud Run.
+Choose one of the two setup guides:
 
-For customer-owned deployments, follow the [Vercel and Google Cloud Run guide](docs/CLOUD-HOSTING-VERCEL-CLOUD-RUN.md) for setup, environment variables and where screenshots are stored. The [self-hosting and market launch guide](docs/SELF-HOSTING-AND-MARKET-LAUNCH.md) covers the offering, responsibilities and a portable Docker Compose alternative.
+- [Run this repository locally](docs/LOCAL-SETUP.md): installation, color-change demo, source dashboard and current team features.
+- [Install the npm package in any project](docs/NPM-PACKAGE-SETUP.md): visual regression, dashboard with SQLite/PostgreSQL/MongoDB, publishing and Vercel/Cloud Run deployment.
 
-The [standalone dashboard](docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) adds shared run history, password/OIDC access, project permissions, remote CI publishing, MongoDB/PostgreSQL storage, portable local backups, and Cloud Run/Vercel deployment templates. Local use needs no database setup. Start the source app with `pnpm platform:dev`; dashboard-enabled package releases provide `npx visualguard dashboard` in any project. See the walkthrough for release-candidate installation and hosting.
-
-Use `npx visualguard test storefront` to run tests and automatically save the new run to a dashboard project, or `npx visualguard test "Storefront Web"` for its exact display name. Hosted destinations use `--dashboard <origin>` or `VISUALGUARD_DASHBOARD_URL`, plus a project upload token. [Project binding setup and manual walkthrough](docs/DASHBOARD-TEST-BINDING.md). This follow-up requires a rebuilt package/server; no builds or checks were run for it.
-
-Create a project without opening the UI: `npx visualguard dashboard project create storefront --name "Storefront Web"`. Existing IDs are reused without renaming or resetting anything. [Local/server CLI setup](docs/DASHBOARD-CLI-PROJECTS.md).
-
-[Visual regression policies and GitHub PR checks](docs/VISUAL-REGRESSION-POLICY.md) assess required screenshots, current approved baselines, evidence freshness and visual reviews for an exact commit. Start with informative checks; local assessment needs no new secrets. Named journeys remain deferred.
+Visual tests and reports work offline without a dashboard or database. The shared dashboard adds persisted history, project permissions, remote uploads, reviews, approved baselines and exact-revision visual policies according to the installed release. See the guides for the distinction between published npm features and newer source changes. Named journeys remain deferred.
 
 | Capability                 | What you can do                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -687,7 +682,7 @@ Read the [package architecture map](docs/PACKAGE-ARCHITECTURE.md) for entry poin
 
 The declared Playwright peer range starts at 1.45; repository development currently pins 1.64. Chromium has the full configured Node 22/24 and Linux/macOS/Windows CI matrix. Firefox/WebKit have focused Linux CI smoke coverage, narrower than the Chromium suite. Firefox uses responsive viewport sizes but does not apply `isMobile` emulation.
 
-Reports can contain page text, screenshots and source patches. Share artifacts according to your project's data policy. The [getting started guide](docs/getting-started.md) provides a shorter introduction; the [migration guide](docs/RELIABILITY-CHANGES.md) details current guarantees and limits. [PLAN.md](PLAN.md) and the [project analysis](docs/PROJECT-ANALYSIS-AND-ROADMAP.md) contain historical design and future ideas, not promises of shipped features. The [organization growth plan](docs/ORGANIZATION-GROWTH-PLAN.md) proposes 36 feature ideas, an internal pilot, and a phased adoption roadmap.
+Reports can contain page text, screenshots and source patches. Share artifacts according to your project's data policy. The [npm setup guide](docs/NPM-PACKAGE-SETUP.md) provides step-by-step installation and dashboard setup; the [migration guide](docs/RELIABILITY-CHANGES.md) details current guarantees and limits. [PLAN.md](PLAN.md) and the [project analysis](docs/PROJECT-ANALYSIS-AND-ROADMAP.md) contain historical design and future ideas, not promises of shipped features. The [organization growth plan](docs/ORGANIZATION-GROWTH-PLAN.md) proposes 36 feature ideas, an internal pilot, and a phased adoption roadmap.
 
 ## License
 

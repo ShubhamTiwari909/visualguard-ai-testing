@@ -7,7 +7,7 @@ and staging with Playwright, diffs them pixel by pixel, and tells you what chang
 
 ![VisualGuard run in the terminal, then the HTML report: a regression, a colour change with ignored dynamic content, and an explained alignment change](https://raw.githubusercontent.com/ShubhamTiwari909/visualguard-ai-testing/main/docs/assets/demo.gif)
 
-New here? Read the [getting started guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/getting-started.md).
+New here? Read the [complete npm setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/NPM-PACKAGE-SETUP.md).
 
 ```bash
 npm install -D visualguard playwright
@@ -25,26 +25,18 @@ npx visualguard test
   2 passed · 1 review · 1 regression · 0 errors   (6.4s)
 ```
 
+## Dashboard and setup guides
+
+The package also provides a standalone dashboard with local SQLite or PostgreSQL/MongoDB storage, project access, remote evidence uploads and Vercel/Cloud Run deployment scaffolds.
+
+Use the two final setup guides:
+
+- [Install in any project](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/NPM-PACKAGE-SETUP.md): visual tests, reports, dashboard, database choices, publishing and deployment.
+- [Run the source repository locally](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/LOCAL-SETUP.md): the fixture demo, current merged team features and operator recovery.
+
+A plain `test` stays offline. `test storefront` binds new evidence to an existing dashboard project; hosted/login-mode publishing requires that project's upload token. The setup guide distinguishes released npm capabilities from later merged source features. Existing installed packages do not gain newer features until a matching release is installed.
+
 ## Try it without a config
-
-The standalone dashboard is also available in dashboard-enabled releases:
-
-```sh
-npx visualguard dashboard project create storefront --name "Storefront Web"
-npx visualguard test storefront --production https://example.com --staging http://localhost:3000 --route / --no-ai
-npx visualguard dashboard
-npx visualguard dashboard import /absolute/path/to/run --project storefront
-```
-
-Start your staging app first and replace the example production and staging URLs with your own. The command above supplies both URLs without a config file and saves its evidence to the local dashboard project. Once those URLs are configured, `test storefront` uses the configured tests. Use an exact, quoted project name too: `test "Storefront Web"`. For a shared dashboard, set `VISUALGUARD_DASHBOARD_URL` and `VISUALGUARD_UPLOAD_TOKEN`. You can override the URL with `--dashboard https://your-dashboard.example.com`; the hosted dashboard still requires `VISUALGUARD_UPLOAD_TOKEN`. A plain `test` stays offline. See the [project binding guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-TEST-BINDING.md) for setup, labels, and retrying saved runs. This extension requires a rebuilt feature-enabled package and server; it has not been validated or built in this change.
-
-It includes local SQLite, MongoDB/PostgreSQL storage, team login/project permissions, remote CI uploads, portable backups, and deployment generators for Cloud Run/Vercel. No browser installation is needed to host the dashboard. See the [standalone walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/STANDALONE-DASHBOARD-WALKTHROUGH.md), including local release-candidate installation before npm publication.
-
-The F03 follow-up adds **Team review** on each run and a **Review inbox** for assignments, deadlines, comments, and job-level visual approvals/rejections tied to exact evidence. Visual approval leaves engine failures and release decisions separate. See the [review setup and manual walkthrough](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/COLLABORATIVE-REVIEW.md). This follow-up has not been built or tested locally.
-
-Create a project ahead of time with `dashboard project create <id> --name "Display name"` (`project add` is an alias). Repeating an existing ID keeps its current name and runs. Use `--server <origin>` for a running dashboard; login-enabled servers require administrator credentials, while upload tokens remain publishing-only. [CLI project setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-CLI-PROJECTS.md).
-
-Name a dashboard run with `test storefront --run-name "Release smoke"` (using your configured application URLs). Maintainers can edit run names and project names/public IDs in the dashboard. Old project IDs keep working as aliases. The [naming guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DASHBOARD-NAMING.md) explains scope, manual setup, and hosted image storage. This follow-up requires a feature-enabled package and has no executed local checks or builds.
 
 ```bash
 # Scan one site: finds routes (sitemap.xml, then links), captures them, checks health,
