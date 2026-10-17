@@ -50,6 +50,28 @@ test("a change marked review passes unless failOn is review", async ({ page, vis
   );
 });
 
+test.describe("capture reliability evidence", () => {
+  test.use({
+    visualguardOptions: {
+      config: {
+        baseURL: { production: "http://127.0.0.1:4210", staging: STAGING },
+        stabilize: { freezeTime: "2026-01-01T00:00:00Z", networkQuietMs: 100 },
+        screenshot: { fullPage: true, maxHeight: 100 },
+        output: { dir: join(work, "out") },
+      },
+    },
+  });
+  test("retains truncation on the live reference as well as the candidate", async ({
+    page,
+    visualguard,
+  }) => {
+    await page.goto(`${STAGING}/identical`);
+    const result = await visualguard.check(page);
+    expect(result.captures.production?.truncated).toBe(true);
+    expect(result.captures.staging?.truncated).toBe(true);
+  });
+});
+
 test.describe("without a production URL", () => {
   test.use({
     visualguardOptions: {
