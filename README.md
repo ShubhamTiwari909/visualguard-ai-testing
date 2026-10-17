@@ -35,6 +35,8 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 
 ## Features
 
+Already installed from npm? Follow the [simple local-to-cloud deployment guide](docs/NPM-DEPLOYMENT-QUICKSTART.md) to set up your application and deploy its dashboard directly to Vercel or Cloud Run.
+
 For customer-owned deployments, follow the [Vercel and Google Cloud Run guide](docs/CLOUD-HOSTING-VERCEL-CLOUD-RUN.md) for setup, environment variables and where screenshots are stored. The [self-hosting and market launch guide](docs/SELF-HOSTING-AND-MARKET-LAUNCH.md) covers the offering, responsibilities and a portable Docker Compose alternative.
 
 The [standalone dashboard](docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) adds shared run history, password/OIDC access, project permissions, remote CI publishing, MongoDB/PostgreSQL storage, portable local backups, and Cloud Run/Vercel deployment templates. Local use needs no database setup. Start the source app with `pnpm platform:dev`; dashboard-enabled package releases provide `npx visualguard dashboard` in any project. See the walkthrough for release-candidate installation and hosting.

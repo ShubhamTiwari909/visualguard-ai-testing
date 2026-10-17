@@ -2,6 +2,8 @@
 
 Prepared: 17 October 2026. Product source reviewed: `main` at `8cf7c86`.
 
+**Installed from npm?** Start with the [simple npm deployment guide](NPM-DEPLOYMENT-QUICKSTART.md). It uses your installed package directly, with no tarball or source build. This longer guide covers deployment details, Cloud SQL, storage and operations.
+
 Use one customer-owned installation per organization, with multiple users and projects inside it. This guide covers the two requested hosting options and explains exactly where uploaded images persist. It describes setup commands for the operator to run; no cloud deployment was performed while writing it.
 
 ## Contents
