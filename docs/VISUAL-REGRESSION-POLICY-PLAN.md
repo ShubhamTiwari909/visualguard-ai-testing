@@ -15,7 +15,7 @@ F05 named journeys is deferred. Use existing screenshot check IDs, rendering pro
 
 ## Validation
 
-Focused behavior tests cover exact revisions, missing/sharded evidence, health/capture failures, unchanged/changed screenshots, reference lineage and identity, reviewer revocation, policy conflicts, exceptions, HTTP roles/CSRF/credential scope, GitHub retries/idempotence/head changes and persistence. A feature UI build may be used. Formatting, lint and type checks remain deferred under AGENTS.md.
+Focused behavior tests cover exact revisions, missing/sharded evidence, health/capture failures, unchanged/changed screenshots, reference lineage and identity, reviewer revocation, policy conflicts, exceptions, HTTP roles/CSRF/credential scope, GitHub retries/idempotence/head changes and persistence. A feature UI build may be used. Formatting, lint and type checks were initially deferred under AGENTS.md; the user subsequently authorized them for PR #52 review and merge.
 
 ## Rollout
 

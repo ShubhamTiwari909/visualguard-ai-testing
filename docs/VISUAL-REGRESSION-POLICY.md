@@ -44,19 +44,19 @@ F07 uses existing screenshot checks, approved baseline sets and shared review de
 
 ## Exercise each protection
 
-| Check | Action | Expected result |
-| --- | --- | --- |
-| Visual change | Run the baseline config with `--staging http://127.0.0.1:4100`, import that new run, and assess | Blocked until a reviewer approves each changed screenshot in **Check reviews**; reassess afterward |
-| Withdraw/reject | Withdraw the current visual approval or reject it, then reassess | Blocked; comments and local accept files do not substitute for approval |
-| Exact commit | Assess a different full 40-character commit | Pending without evidence; selecting a run from a different commit blocks |
-| Coverage | Add a nonexistent ID to required checks and save | Blocked for missing required screenshot even if captured checks pass |
-| Partial execution | Upload an individual shard or an engine-marked incomplete run | Blocked; merge and publish the complete execution |
-| Stale reference | Restore/promote a new approved version, then assess old evidence | Blocked; pull the current version and capture again |
-| Capture reliability | Assess a run with capture errors, instability, truncation or independent failures | Blocked even if its visual change was approved |
-| Evidence age | Assess a run older than the configured lifetime | Blocked; freshness starts at capture time, not upload time |
+| Check               | Action                                                                                                           | Expected result                                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Visual change       | Run the baseline config with `--staging http://127.0.0.1:4100`, import that new run, and assess                  | Blocked until a reviewer approves each changed screenshot in **Check reviews**; reassess afterward                      |
+| Withdraw/reject     | Withdraw the current visual approval or reject it, then reassess                                                 | Blocked; comments and local accept files do not substitute for approval                                                 |
+| Exact commit        | Assess a different full 40-character commit                                                                      | Pending without evidence; selecting a run from a different commit blocks                                                |
+| Coverage            | Add a nonexistent ID to required checks and save                                                                 | Blocked for missing required screenshot even if captured checks pass                                                    |
+| Partial execution   | Upload an individual shard or an engine-marked incomplete run                                                    | Blocked; merge and publish the complete execution                                                                       |
+| Stale reference     | Restore/promote a new approved version, then assess old evidence                                                 | Blocked; pull the current version and capture again                                                                     |
+| Capture reliability | Assess a run with capture errors, instability, truncation or independent failures                                | Blocked even if its visual change was approved                                                                          |
+| Evidence age        | Assess a run older than the configured lifetime                                                                  | Blocked; freshness starts at capture time, not upload time                                                              |
 | Temporary exception | Add an exact check ID, exact commit, reason and expiry under **Temporary visual approval exceptions**, then save | Only its missing visual approval is waived until expiry; explicit rejection and structural/capture failures still block |
-| Access changes | Remove/disable/downgrade the deciding reviewer in a hosted workspace, then reassess | Their decision no longer provides an approval |
-| Permissions | View as a project viewer | Policy/history and assessment available; edits and browser GitHub reconciliation require a maintainer |
+| Access changes      | Remove/disable/downgrade the deciding reviewer in a hosted workspace, then reassess                              | Their decision no longer provides an approval                                                                           |
+| Permissions         | View as a project viewer                                                                                         | Policy/history and assessment available; edits and browser GitHub reconciliation require a maintainer                   |
 
 An exception must expire within seven days. Changing exceptions creates a new policy version with actor and reason. An empty required-check list inherits all current baseline entries; an explicit list is the maintainer's selected required coverage. Every captured check, including additional checks, must still have a compatible approved reference and satisfy reliability/review rules.
 
@@ -64,12 +64,12 @@ An exception must expire within seven days. Changing exceptions creates a new po
 
 Local assessment adds no required environment variables. For GitHub delivery, configure these **on the dashboard server**:
 
-| Variable | Value |
-| --- | --- |
-| `VISUALGUARD_GITHUB_TOKEN` | Fine-grained token with **Checks: write** and **Pull requests: read** for the selected repositories, or a GitHub App installation token maintained by your deployment |
-| `VISUALGUARD_GITHUB_REPOSITORIES` | Comma-separated immutable project-ID mappings, e.g. `storefront=your-org/store,admin-ui=your-org/admin-ui` |
-| `VISUALGUARD_GITHUB_WEBHOOK_SECRET` | Random secret matching the repository webhook configuration |
-| `VISUALGUARD_PUBLIC_URL` | Existing HTTPS dashboard origin; used for hosted authentication and check details links |
+| Variable                            | Value                                                                                                                                                                 |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VISUALGUARD_GITHUB_TOKEN`          | Fine-grained token with **Checks: write** and **Pull requests: read** for the selected repositories, or a GitHub App installation token maintained by your deployment |
+| `VISUALGUARD_GITHUB_REPOSITORIES`   | Comma-separated immutable project-ID mappings, e.g. `storefront=your-org/store,admin-ui=your-org/admin-ui`                                                            |
+| `VISUALGUARD_GITHUB_WEBHOOK_SECRET` | Random secret matching the repository webhook configuration                                                                                                           |
+| `VISUALGUARD_PUBLIC_URL`            | Existing HTTPS dashboard origin; used for hosted authentication and check details links                                                                               |
 
 Keep secrets in the deployment secret store. They are never returned in policy responses or included in artifacts. Token rotation/installation-token refresh is the deployment's responsibility. A classic PAT cannot create Check Runs; use a supported token type described by [GitHub's Checks API](https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#create-a-check-run).
 
@@ -118,6 +118,8 @@ Browser mutations require the existing CSRF protection. Scoped upload tokens are
 
 ## Validation for this implementation
 
-Focused local validation passed: 45 behavior tests across policy evaluation, HTTP permissions/CSRF/scoped credentials, SQLite persistence, GitHub reconciliation, baseline deletion and runtime integration. Four PostgreSQL/MongoDB cases were skipped because their test connection variables were not configured. The package JavaScript/dashboard/offline-report build passed without declaration generation. Browser checks covered desktop and 390px mobile layouts, save/reload/save, assessment display, no horizontal overflow and a clean console after the validation fix. The built CLI returned exit 0 for satisfied evidence and exit 2 for a missing revision with `--enforce`.
+Focused local validation passed: 47 behavior tests across policy evaluation, HTTP permissions/CSRF/scoped credentials, SQLite persistence, GitHub reconciliation, baseline deletion and runtime integration. Four PostgreSQL/MongoDB cases were skipped because their test connection variables were not configured. The package JavaScript/dashboard/offline-report build passed without declaration generation. Browser checks covered desktop and 390px mobile layouts, save/reload/save, assessment display, no horizontal overflow and a clean console after the validation fix. The built CLI returned exit 0 for satisfied evidence and exit 2 for a missing revision with `--enforce`.
 
-GitHub delivery was exercised with simulated API responses; no live repository webhook or Check Run was configured during implementation. Formatting, lint and type checks were not run, as required by the current repository instructions. These deferred checks remain outstanding before merge/release.
+GitHub delivery was exercised with simulated API responses; no live repository webhook or Check Run was configured during implementation. Formatting, lint and type checks were initially deferred under AGENTS.md. The user granted a PR #52 exception during review. Formatting, lint and the full type check passed after correcting the storage test harness to use the shared repository/state interfaces across SQLite, PostgreSQL and MongoDB. Final CI results must pass on the reviewed head before merge.
+
+PR #52 review also added regression cases for newer evidence arriving during GitHub publication and an expired reconciliation lease. Delivery now reselects the newest evidence bound to the exact PR/commit/environment before confirming its result, and a worker that loses its lease cannot invalidate the newer worker's result from its failure handler. The full local platform suite passed 358 tests, with 158 conditional external-storage cases skipped. The original PR CI exercised PostgreSQL and MongoDB and passed 492 tests with 22 conditional skips; final cleanup CI results should be checked on the reviewed head before merging.

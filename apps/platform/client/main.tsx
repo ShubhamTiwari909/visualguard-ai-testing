@@ -171,7 +171,10 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
         >
           <span aria-hidden="true">▣</span> Approved baselines
         </Link>
-        <Link className={`vg-nav-link ${window.location.pathname === "/policies" ? "is-active" : ""}`} href="/policies">
+        <Link
+          className={`vg-nav-link ${window.location.pathname === "/policies" ? "is-active" : ""}`}
+          href="/policies"
+        >
           <span aria-hidden="true">◇</span> Visual regression policy
         </Link>
         <Link
