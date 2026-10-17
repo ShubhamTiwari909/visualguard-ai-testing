@@ -13,6 +13,7 @@ import { findProject, projectSelector } from "./project-selector.js";
 import { Invitations } from "./invitations.js";
 import { Onboarding } from "./onboarding.js";
 import { Reviews, reviewMutation } from "./reviews.js";
+import { Baselines, baselineSet, baselinePromotion, baselineRestore } from "./baselines.js";
 import { Operations } from "./operations.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
@@ -81,6 +82,7 @@ export function createApi(
   const onboarding = new Onboarding(auth, invitations);
   const reviews = new Reviews(repository, auth.state, auth);
   const operations = new Operations(auth.state);
+  const baselines = new Baselines(repository, auth.state, auth);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -247,6 +249,94 @@ export function createApi(
         await auth.logout(actor, response);
         json(response, 200, { ok: true });
         return true;
+      }
+      const baselineRoute = url.pathname.match(
+        /^\/api\/projects\/([a-z0-9-]+)\/baselines(?:\/([a-z0-9-]+)(?:\/(history|promote|restore|artifacts\/([a-f0-9]{64})))?)?$/,
+      );
+      if (baselineRoute) {
+        const [, project, set, action, hash] = baselineRoute;
+        if (set) baselineSet.parse(set);
+        if (request.method === "GET") {
+          if (!set) json(response, 200, { sets: await baselines.list(actor, project!) });
+          else if (action === "history")
+            json(
+              response,
+              200,
+              await baselines.history(
+                actor,
+                project!,
+                set,
+                url.searchParams.get("after") ?? undefined,
+              ),
+            );
+          else {
+            const version = await baselines.version(
+              actor,
+              project!,
+              set,
+              url.searchParams.has("version")
+                ? integer(url.searchParams.get("version"), 1, 1, 1000000000)
+                : undefined,
+            );
+            if (hash) {
+              const artifact = version.entries
+                .flatMap((entry) => [entry.image, ...(entry.dom ? [entry.dom] : [])])
+                .find((item) => item.hash === hash);
+              if (!artifact)
+                throw new PlatformError(404, "Artifact is not part of this approved version");
+              const index = integer(
+                url.searchParams.get("chunk"),
+                0,
+                0,
+                Math.max(0, Math.ceil(artifact.size / UPLOAD_CHUNK_BYTES) - 1),
+              );
+              const data = store.getChunk
+                ? await store.getChunk(hash, index)
+                : (await store.get(hash)).subarray(
+                    index * UPLOAD_CHUNK_BYTES,
+                    (index + 1) * UPLOAD_CHUNK_BYTES,
+                  );
+              response.writeHead(200, {
+                "Content-Type": "application/octet-stream",
+                "Content-Length": data.length,
+                "Cache-Control": "private, no-store",
+                "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+              });
+              response.end(data);
+            } else if (!action) json(response, 200, version);
+            else throw new PlatformError(405, "Unsupported baseline action");
+          }
+          return true;
+        }
+        if (actor.credentialId)
+          throw new PlatformError(403, "Upload credentials cannot change approved baselines");
+        if (request.method === "POST" && set && action === "promote") {
+          json(
+            response,
+            201,
+            await baselines.promote(
+              actor,
+              project!,
+              set,
+              baselinePromotion.parse(await body(request)),
+            ),
+          );
+          return true;
+        }
+        if (request.method === "POST" && set && action === "restore") {
+          json(
+            response,
+            201,
+            await baselines.restore(
+              actor,
+              project!,
+              set,
+              baselineRestore.parse(await body(request)),
+            ),
+          );
+          return true;
+        }
+        throw new PlatformError(405, "Unsupported baseline action");
       }
       if (actor.credentialId)
         throw new PlatformError(

@@ -198,6 +198,8 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 ### 6.4 F04 — Baseline registry, lineage, and promotion
 
+**Implementation:** see [approved baseline implementation and local testing guide](APPROVED-BASELINES.md). The maintainer confirms that the source revision landed; automatic repository merge verification remains part of later repository/release integration.
+
 **Problem:** “latest capture” and “approved expected appearance” are different references, especially with concurrent PRs and moving production.
 
 **First scope:** immutable baseline versions, branch/release labels, source revision, rendering/capture identity, chosen reference explanation, promotion history, and restore-as-new-version.

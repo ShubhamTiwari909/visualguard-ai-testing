@@ -8,6 +8,8 @@ import type { AuditEvent, AuditPage, OperationsStatus } from "../shared/operatio
 
 const scrypt = promisify(deriveKey);
 const detailKeys = new Set([
+  "set",
+  "version",
   "userId",
   "projectId",
   "runId",

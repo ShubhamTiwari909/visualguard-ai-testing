@@ -66,6 +66,7 @@ export async function scaffoldDashboard(options: {
             { source: "/settings", destination: "/index.html" },
             { source: "/operations", destination: "/index.html" },
             { source: "/reviews", destination: "/index.html" },
+            { source: "/baselines", destination: "/index.html" },
             { source: "/invite", destination: "/index.html" },
             { source: "/", destination: "/index.html" },
           ],

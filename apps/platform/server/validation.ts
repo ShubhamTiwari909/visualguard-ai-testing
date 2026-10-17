@@ -41,6 +41,21 @@ const delta = z.discriminatedUnion("kind", [
 const status = z.enum(["pass", "accepted", "review", "regression", "error"]);
 const capture = z
   .object({
+    approvedReference: z
+      .object({
+        projectId: z.string().min(1),
+        set: z.string().min(1),
+        version: z.number().int().positive(),
+        checkKey: z.string().regex(/^[a-f0-9]{64}$/),
+        runId: z.string().uuid(),
+        evidenceDigest: z.string().regex(/^[a-f0-9]{64}$/),
+        sourceRevision: z.string(),
+        targetRevision: z.string(),
+        promotedAt: z.string().datetime(),
+        policyVersion: z.literal(1),
+      })
+      .passthrough()
+      .optional(),
     image: z.string().min(1),
     dom: z.string().optional(),
     size,
@@ -77,6 +92,14 @@ const job = z
     viewport: z.string(),
     status,
     durationMs: finite,
+    renderingIdentity: z
+      .object({
+        platform: z.string().min(1),
+        project: z.string().optional(),
+        policy: z.record(z.string(), z.unknown()),
+      })
+      .passthrough()
+      .optional(),
     urls: z.object({ production: z.string(), staging: z.string() }).passthrough(),
     captures: z
       .object({ production: capture.optional(), staging: capture.optional() })

@@ -28,6 +28,9 @@ import {
   capturePolicy,
   fingerprint,
   renderingIdentity,
+  assertBaselineWritable,
+  approvedBaselineReference,
+  assertApprovedBaselinePresent,
   writeBaselineMetadata,
 } from "../core/provenance.js";
 import { instrumentHealth } from "../capture/health.js";
@@ -238,6 +241,8 @@ async function check(
       },
     });
   };
+  if (!config.baseURL.production) assertApprovedBaselinePresent(baselinePath);
+  if (updating) assertBaselineWritable(baselinePath);
   if (config.baseURL.production) {
     const outcome = await captureReference();
     writeFileSync(productionPath, outcome.png);
@@ -246,18 +251,27 @@ async function check(
       image: "production.png",
       dom: existsSync(join(dir, "production.dom.json")) ? "production.dom.json" : undefined,
       size: outcome.size,
+      unstable: outcome.unstable,
+      truncated: outcome.truncated,
       durationMs: outcome.durationMs,
       attempts: outcome.attempts,
       health: outcome.health,
     } satisfies CaptureResult;
   } else if (existsSync(baselinePath) && !updating) {
     assertBaselineCompatible(baselinePath, identity, config.baseline.legacy);
+    const approvedReference = approvedBaselineReference(baselinePath, {
+      jobId: id,
+      route: job.route,
+      viewport: job.viewport,
+      identity,
+    });
     copyFileSync(baselinePath, productionPath);
     if (existsSync(baselinePath.replace(/\.png$/, ".dom.json"))) {
       copyFileSync(baselinePath.replace(/\.png$/, ".dom.json"), join(dir, "production.dom.json"));
     }
     captures.production = {
       source: "baseline",
+      approvedReference,
       image: "production.png",
       dom: existsSync(join(dir, "production.dom.json")) ? "production.dom.json" : undefined,
       size: pngSize(readFileSync(productionPath)),
@@ -272,6 +286,7 @@ async function check(
       throw new Error(
         `Missing baseline ${baselinePath}; update snapshots explicitly or set baseline.missing: "create".`,
       );
+    assertBaselineWritable(baselinePath);
     mkdirSync(baselineDir, { recursive: true });
     copyFileSync(stagingPath, baselinePath);
     writeBaselineMetadata(baselinePath, identity, config.cwd);
@@ -283,6 +298,8 @@ async function check(
     });
     return {
       id,
+      capturePolicy: capturePolicy(config, job),
+      renderingIdentity: identity,
       route: job.route,
       name,
       viewport: job.viewport,
@@ -310,6 +327,7 @@ async function check(
   let result: JobResult = {
     id,
     capturePolicy: capturePolicy(config, job),
+    renderingIdentity: identity,
     route: job.route,
     name,
     viewport: job.viewport,
