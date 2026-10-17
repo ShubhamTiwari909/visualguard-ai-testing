@@ -15,10 +15,10 @@ pnpm platform:dev
 
 For a built source dashboard, use `pnpm platform:build`, then `pnpm platform:start`. SQLite supports every operation without PostgreSQL, MongoDB or an upload token. PostgreSQL and transactional MongoDB use the existing real database URL. Never export placeholder database URLs.
 
-Sign in as an administrator, open **People & integrations**, then choose **Audit & recovery** at the top. The Workspace operations section contains:
+Sign in as an administrator and choose **Audit & recovery** in the sidebar, or follow its link from **People & integrations**. The dedicated page is `/operations`; existing `/settings#operations` links open that page too. It contains:
 
 - **Sign-in readiness:** transaction capability, admission policy, active administrators and active password administrators. An inventory scans at most 200 accounts and clearly reports incomplete counts. Duplicate normalized emails are reported without combining accounts or permissions. Unknown identity schemas require a compatible forward release, not a downgrade or record deletion.
-- **Audit history:** recent account, identity, invitation, access and project activity. Filter by actor name/email, exact action and UTC dates. Load more activity uses an exclusive cursor; an empty filtered page can still have another page. Each request scans at most 200 records and returns at most 50 events. Existing audit records retain their 90-day expiry policy.
+- **Audit history:** recent account, identity, invitation, access and project activity. Filter by actor name/email, exact action and UTC dates. **Previous page / Next page** use exclusive cursors and replace the displayed events, keeping at most 50 events rendered. Each request scans at most 200 records, so an empty filtered page can still have a Next page. Filters, Clear filters and Refresh operations restart at page 1; readiness is refreshed separately from page navigation. A failed page request retains the previous page and offers retry. Event details and host-side recovery guidance expand on demand. Existing audit records retain their 90-day expiry policy.
 
 The view is available only to workspace administrators. Members, project maintainers and upload credentials cannot access its APIs. The response omits passwords, password hashes, raw tokens, provider subjects, session IDs and unexpected event fields. Existing event attribution is retained; a missing historical account is labeled Former account.
 
@@ -115,3 +115,12 @@ pnpm --filter @visualguard/platform exec vitest run \
 The user authorized formatting, lint and type checks for the PR #44 review cleanup; all three passed locally on 16 October 2026. This exception applies to this PR cleanup. Live Google pilot, real deployment, and native PostgreSQL/MongoDB restore drills remain operator sign-off gates unless separately recorded as completed.
 
 Local validation on 16 October 2026: the seven focused suites above passed **69 tests**, with **6 explicitly skipped PostgreSQL/MongoDB recovery executions** because no live test database URLs were supplied. The dashboard UI build passed. Browser checks covered administrator navigation, actor/action filters, a 375 px viewport without horizontal overflow, and no observed browser errors. These results cover the implemented memory/SQLite paths, not a live Google pilot or an external database restore drill.
+
+## Dedicated page verification
+
+1. Sign in as an administrator and open `/operations` directly, through the sidebar, and through People & integrations. Refresh the browser on that route. Older `/settings#operations` links should reach the same page.
+2. With more than 50 audit records, choose Next page, then Previous page. Each page replaces the event list and announces its page number. Confirm no more than 50 event rows are rendered.
+3. Apply actor/action/date filters from a later page; the result restarts at page 1. Clear filters and Refresh operations also restart at page 1. An empty filtered scan with a cursor must still permit Next page.
+4. Simulate an audit request failure while moving pages. The previous page remains visible, an error explains the failure, and Try again retries the failed request. Navigating away aborts pending requests.
+5. Sign in as a member or use local-owner mode. Audit navigation stays hidden, and a direct visit explains the administrator requirement without requesting audit/readiness data. Existing APIs remain administrator-only.
+6. Check 375 px and desktop layouts, keyboard focus after page changes, and expanded event details/recovery instructions. Generated Vercel deployments must include `/operations → /index.html`; regenerate or update existing deployment rewrites when upgrading.

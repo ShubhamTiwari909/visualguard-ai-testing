@@ -25,6 +25,7 @@ export async function startDevDashboard(options: { port?: number } = {}) {
       if (
         path === "/" ||
         path === "/settings" ||
+        path === "/operations" ||
         path === "/reviews" ||
         path === "/invite" ||
         /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)

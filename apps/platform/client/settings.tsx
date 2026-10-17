@@ -7,7 +7,6 @@ import { InvitationSettings } from "./invitations";
 import { UserAdministration } from "./users";
 import { AccountIdentity } from "./identities";
 import { Profile } from "./profile";
-import { WorkspaceOperations } from "./operations";
 
 type User = { id: string; name: string; email: string; role: string; disabled: boolean };
 type Member = { userId: string; role: string };
@@ -29,6 +28,9 @@ export function Settings({
   onUpdated: () => void;
 }) {
   const session = useSession();
+  useEffect(() => {
+    document.title = "People & integrations · VisualGuard";
+  }, []);
   const managed = projects.filter(
     (project) => session.user?.admin || project.role === "maintainer",
   );
@@ -110,7 +112,7 @@ export function Settings({
           <p className="vg-muted">Control project access and connect your test pipelines.</p>
         </div>
         {session.access === "login" && session.user?.admin && (
-          <a className="vg-button" href="#operations">
+          <a className="vg-button" href="/operations">
             Audit & recovery
           </a>
         )}
@@ -173,17 +175,19 @@ export function Settings({
           <strong>Copy your upload token now</strong>
           <p>It is shown once. Store it in your CI secret settings.</p>
           <textarea readOnly aria-label="New upload token" value={issued} />
-          <button
-            className="vg-button"
-            onClick={() => {
-              void navigator.clipboard.writeText(issued);
-            }}
-          >
-            Copy token
-          </button>
-          <button className="vg-button" onClick={() => setIssued("")}>
-            Dismiss
-          </button>
+          <div className="vg-form-actions">
+            <button
+              className="vg-button"
+              onClick={() => {
+                void navigator.clipboard.writeText(issued);
+              }}
+            >
+              Copy token
+            </button>
+            <button className="vg-button" onClick={() => setIssued("")}>
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
       {session.access === "login" && session.user?.admin && (
@@ -192,7 +196,6 @@ export function Settings({
           onChanged={() => setRevision((value) => value + 1)}
         />
       )}
-      {session.access === "login" && session.user?.admin && <WorkspaceOperations />}
       <section className="vg-panel vg-settings-section">
         <h2>Project access</h2>
         <label className="vg-settings-project">
