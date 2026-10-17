@@ -96,6 +96,12 @@ export function runPolicyCommand(options: {
     mode: "informative" | "required";
     fingerprint: string;
   };
-  deliveries?: { projectId: string; pullRequest: number; revision: string; checkUrl?: string; error?: string }[];
+  deliveries?: {
+    projectId: string;
+    pullRequest: number;
+    revision: string;
+    checkUrl?: string;
+    error?: string;
+  }[];
   errors?: { pullRequest: number; error: string }[];
 }>;

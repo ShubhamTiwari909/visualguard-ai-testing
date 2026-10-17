@@ -114,12 +114,27 @@ export function createApi(
       await auth.ready;
       if (request.method === "POST" && url.pathname === "/api/github/webhook") {
         const parsedBody = (request as IncomingMessage & { body?: unknown }).body;
-        if (parsedBody !== undefined && !Buffer.isBuffer(parsedBody) && typeof parsedBody !== "string")
-          throw new PlatformError(415, "GitHub webhooks require the original raw request body; disable host JSON body parsing for this endpoint");
+        if (
+          parsedBody !== undefined &&
+          !Buffer.isBuffer(parsedBody) &&
+          typeof parsedBody !== "string"
+        )
+          throw new PlatformError(
+            415,
+            "GitHub webhooks require the original raw request body; disable host JSON body parsing for this endpoint",
+          );
         const bytes = await readBytes(request, 1024 * 1024);
         const signature = request.headers["x-hub-signature-256"];
         const event = request.headers["x-github-event"];
-        json(response, 200, await policyGitHub.webhook(bytes, typeof signature === "string" ? signature : undefined, typeof event === "string" ? event : undefined));
+        json(
+          response,
+          200,
+          await policyGitHub.webhook(
+            bytes,
+            typeof signature === "string" ? signature : undefined,
+            typeof event === "string" ? event : undefined,
+          ),
+        );
         return true;
       }
       const actor = await auth.actor(request);
@@ -264,21 +279,30 @@ export function createApi(
         json(response, 200, { ok: true });
         return true;
       }
-      const policyRoute = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/policy(?:\/(assess|reconcile|deliveries))?$/);
+      const policyRoute = url.pathname.match(
+        /^\/api\/projects\/([a-z0-9-]+)\/policy(?:\/(assess|reconcile|deliveries))?$/,
+      );
       if (policyRoute) {
         const project = policyRoute[1]!;
         const action = policyRoute[2];
         if (request.method === "GET" && !action) {
           json(response, 200, await policies.history(actor, project));
         } else if (request.method === "POST" && !action) {
-          json(response, 201, await policies.save(actor, project, policyMutation.parse(await body(request))));
+          json(
+            response,
+            201,
+            await policies.save(actor, project, policyMutation.parse(await body(request))),
+          );
         } else if (request.method === "POST" && action === "assess") {
           const input = assessmentInput.parse(await body(request));
           json(response, 200, await policies.assess(actor, project, input.revision, input.runId));
         } else if (request.method === "GET" && action === "deliveries") {
           json(response, 200, { deliveries: await policyGitHub.deliveries(actor, project) });
         } else if (request.method === "POST" && action === "reconcile") {
-          const input = z.object({ pullRequest: pullRequestNumber }).strict().parse(await body(request));
+          const input = z
+            .object({ pullRequest: pullRequestNumber })
+            .strict()
+            .parse(await body(request));
           json(response, 200, await policyGitHub.reconcile(actor, project, input.pullRequest));
         } else throw new PlatformError(405, "Unsupported policy action");
         return true;
