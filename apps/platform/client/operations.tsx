@@ -39,6 +39,10 @@ const labels: Record<string, string> = {
   publicId: "Public project ID",
   created: "Created",
 };
+const recoveryCommands = [
+  "pnpm platform:operations admins",
+  "pnpm platform:operations preview --user ACCOUNT_ID",
+].join("\n");
 function detail(value: AuditEvent["details"][string]): string {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value !== "object") return String(value);
@@ -75,7 +79,9 @@ export function OperationsPage() {
         <div className="vg-page-heading">
           <div>
             <h1>Audit & recovery</h1>
-            <p className="vg-muted">This page is available to signed-in workspace administrators.</p>
+            <p className="vg-muted">
+              This page is available to signed-in workspace administrators.
+            </p>
           </div>
         </div>
         <a className="vg-button" href="/settings">
@@ -256,8 +262,8 @@ function WorkspaceOperations() {
       <details className="vg-panel vg-settings-section vg-recovery-guide">
         <summary>Administrator recovery</summary>
         <p>
-          Recovery is performed by an operator on the dashboard host. It restores an existing password
-          administrator and revokes that account’s sessions and upload credentials.
+          Recovery is performed by an operator on the dashboard host. It restores an existing
+          password administrator and revokes that account’s sessions and upload credentials.
         </p>
         <ol>
           <li>Stop dashboard writers and take a native database backup.</li>
@@ -265,18 +271,16 @@ function WorkspaceOperations() {
             List password administrators and preview the exact account with the host commands below.
           </li>
           <li>
-            Follow the workspace recovery runbook with the preview version, backup confirmation and a
-            private password file.
+            Follow the workspace recovery runbook with the preview version, backup confirmation and
+            a private password file.
           </li>
           <li>
-            Restart the dashboard, sign in with the replacement password and verify the recovery audit
-            event.
+            Restart the dashboard, sign in with the replacement password and verify the recovery
+            audit event.
           </li>
         </ol>
         <pre>
-          <code>
-            {"pnpm platform:operations admins\npnpm platform:operations preview --user ACCOUNT_ID"}
-          </code>
+          <code>{recoveryCommands}</code>
         </pre>
         <p className="vg-muted">
           Recovery requires a POSIX operator host. Google-only accounts must recover access through
