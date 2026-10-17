@@ -29,6 +29,8 @@ npx visualguard test
 
 The package also provides a standalone dashboard with local SQLite or PostgreSQL/MongoDB storage, project access, remote evidence uploads and Vercel/Cloud Run deployment scaffolds.
 
+Read the [product feature guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/PRODUCT-FEATURES.md) for an overview of current capabilities and release boundaries.
+
 Use the two final setup guides:
 
 - [Install in any project](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/NPM-PACKAGE-SETUP.md): visual tests, reports, dashboard, database choices, publishing and deployment.

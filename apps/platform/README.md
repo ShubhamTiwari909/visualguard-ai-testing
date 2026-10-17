@@ -1,6 +1,6 @@
 # VisualGuard dashboard application
 
-Use the two maintained setup guides:
+See the [product feature guide](../../docs/PRODUCT-FEATURES.md) for a readable overview. Use the two maintained setup guides:
 
 - [Local source setup](../../docs/LOCAL-SETUP.md): repository installation, fixture demo, dashboard, team features and operator recovery.
 - [npm package setup](../../docs/NPM-PACKAGE-SETUP.md): consumer installation, offline tests, SQLite/PostgreSQL/MongoDB, publishing and Vercel/Cloud Run deployment.

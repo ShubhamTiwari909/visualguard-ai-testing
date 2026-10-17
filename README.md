@@ -8,7 +8,7 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 
 ![VisualGuard terminal run and HTML report showing a regression, ignored dynamic content and an explained alignment change](docs/assets/demo.gif)
 
-> **Release status:** This README describes the current source checkout, including changes intended for the next major release. These changes are not a claim that v2 has been published. Existing users should read the [reliability and migration guide](docs/RELIABILITY-CHANGES.md) before upgrading; older npm versions may behave differently.
+> **Release status:** This README describes the current source checkout, including features newer than the published npm release. Read the [product feature guide](docs/PRODUCT-FEATURES.md) for release boundaries and the [reliability and migration guide](docs/RELIABILITY-CHANGES.md) before upgrading; older npm versions may behave differently.
 
 ## Contents
 
@@ -34,6 +34,8 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 - [Compatibility and troubleshooting](#compatibility-and-troubleshooting)
 
 ## Features
+
+Read the [product feature guide](docs/PRODUCT-FEATURES.md) for a plain-language tour of the testing engine, reports, AI, dashboard, reviews, accounts, baselines and visual policies.
 
 Choose one of the two setup guides:
 

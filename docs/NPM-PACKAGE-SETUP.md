@@ -1,5 +1,7 @@
 # Install VisualGuard in any project: visual tests and dashboard
 
+For an explanation of all product capabilities before setup, read the [product feature guide](PRODUCT-FEATURES.md).
+
 This is the complete user setup guide for the published npm package. You do not need to clone VisualGuard or build its source. For repository development and testing the latest merged features, use [local source setup](LOCAL-SETUP.md).
 
 ## Contents

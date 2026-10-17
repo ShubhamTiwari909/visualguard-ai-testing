@@ -1,5 +1,7 @@
 # Run VisualGuard from source locally
 
+For an explanation of all product capabilities before setup, read the [product feature guide](PRODUCT-FEATURES.md).
+
 Use this guide to develop this repository or try the latest merged features on your own computer. To install the published package in another application, use the other final guide: [npm package setup](NPM-PACKAGE-SETUP.md).
 
 The examples use a macOS/Linux POSIX shell. On Windows, use WSL for these shell/Docker examples. VisualGuard's ordinary CLI/dashboard also support Windows; host-side password-file recovery requires a POSIX host.
