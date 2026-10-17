@@ -20,6 +20,7 @@ import { Settings } from "./settings";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { RunNameEditor } from "./naming";
 import { ReviewInbox, RunReviews } from "./reviews";
+import { OperationsPage } from "./operations";
 
 function navigate(path: string) {
   window.history.pushState(null, "", path);
@@ -143,9 +144,14 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
         >
           <span aria-hidden="true">✓</span> Review inbox
         </Link>
-        <Link className="vg-nav-link" href="/settings">
+        <Link className={`vg-nav-link ${window.location.pathname === "/settings" ? "is-active" : ""}`} href="/settings">
           <span aria-hidden="true">⚙</span> People & integrations
         </Link>
+        {session.access === "login" && session.user?.admin && (
+          <Link className={`vg-nav-link ${window.location.pathname === "/operations" ? "is-active" : ""}`} href="/operations">
+            <span aria-hidden="true">◷</span> Audit & recovery
+          </Link>
+        )}
         <div className="vg-nav-heading-row">
           <p className="vg-nav-heading">PROJECTS</p>
           <span>{projects.length}</span>
@@ -856,10 +862,18 @@ function Platform() {
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState("");
   useEffect(() => {
-    const change = () =>
+    const change = () => {
+      if (window.location.pathname === "/settings" && window.location.hash === "#operations")
+        window.history.replaceState(null, "", "/operations");
       setLocation({ path: window.location.pathname, search: window.location.search });
+    };
+    change();
     window.addEventListener("popstate", change);
-    return () => window.removeEventListener("popstate", change);
+    window.addEventListener("hashchange", change);
+    return () => {
+      window.removeEventListener("popstate", change);
+      window.removeEventListener("hashchange", change);
+    };
   }, []);
   useEffect(() => {
     const abort = new AbortController();
@@ -909,6 +923,8 @@ function Platform() {
       )}
       {location.path === "/settings" ? (
         <Settings projects={projects} onDeleted={deleted} onUpdated={refresh} />
+      ) : location.path === "/operations" ? (
+        <OperationsPage />
       ) : location.path === "/reviews" ? (
         <ReviewInbox key={location.search} projects={projects} search={location.search} />
       ) : (

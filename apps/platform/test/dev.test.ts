@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 import { startDevDashboard } from "../server/dev.js";
 
-it.each(["/reviews", "/invite"])(
+it.each(["/reviews", "/invite", "/operations"])(
   "serves %s directly in the development dashboard",
   async (path) => {
     const dataDir = await mkdtemp(join(tmpdir(), "vg-dev-"));

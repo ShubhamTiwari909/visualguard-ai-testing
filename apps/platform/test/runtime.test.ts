@@ -30,6 +30,13 @@ describe("standalone hosts", () => {
     cleanups.push(runtime.close);
     expect((await fetch(`${runtime.url}/api/health`)).status).toBe(200);
     expect(await (await fetch(`${runtime.url}/settings`)).text()).toContain("Dashboard test");
+    const operations = await fetch(`${runtime.url}/operations`, { redirect: "manual" });
+    expect(operations.status).toBe(200);
+    expect(await operations.text()).toContain("Dashboard test");
+    expect(operations.headers.get("cache-control")).toBe("no-store");
+    const head = await fetch(`${runtime.url}/operations`, { method: "HEAD" });
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe("");
     const reviews = await fetch(`${runtime.url}/reviews`, { redirect: "manual" });
     expect(reviews.status).toBe(200);
     expect(await reviews.text()).toContain("Dashboard test");
@@ -71,6 +78,7 @@ describe("standalone hosts", () => {
     expect(config.outputDirectory).toBe("public");
     expect(config.rewrites[0].destination).toContain("__vg_path");
     expect(config.rewrites).toContainEqual({ source: "/reviews", destination: "/index.html" });
+    expect(config.rewrites).toContainEqual({ source: "/operations", destination: "/index.html" });
     expect(await readFile(join(vercel, "api/dashboard.mjs"), "utf8")).toContain(
       'from "visualguard/dashboard"',
     );

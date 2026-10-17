@@ -123,6 +123,7 @@ export async function startDashboard(
         if (
           path === "/" ||
           path === "/settings" ||
+          path === "/operations" ||
           path === "/invite" ||
           path === "/reviews" ||
           /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
