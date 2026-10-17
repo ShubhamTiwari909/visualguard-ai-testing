@@ -2,14 +2,14 @@
 
 Prepared: 17 October 2026. Source reviewed: merged `main` at `8cf7c86`.
 
-This document recommends a distribution model, describes the customer onboarding experience to build, and gives a manual deployment recipe using the current dashboard. It does not announce an existing deploy button, container release, hosted service, or completed production validation.
+This document recommends a distribution model, describes the customer onboarding experience to build, and gives a portable deployment reference. The requested primary hosts are now **Vercel and Google Cloud Run**: use the [cloud hosting guide](CLOUD-HOSTING-VERCEL-CLOUD-RUN.md) for the full step-by-step setup and screenshot storage explanation. It does not announce an existing deploy button, container release, hosted service, or completed production validation.
 
 ## Contents
 
 - [Recommended hosting and ownership](#1-recommended-model)
 - [Minimal setup and release gaps](#2-keep-first-setup-small)
 - [Publisher release preparation](#4-publisher-preparation-make-the-installation-artifact)
-- [Railway setup](#5-customer-setup-a-railway)
+- [Vercel and Cloud Run setup](#5-customer-setup-a-vercel-or-google-cloud-run)
 - [VPS and Docker Compose setup](#6-customer-setup-b-docker-compose-on-a-vps)
 - [First project and visual test](#7-first-project-and-first-screenshot-comparison)
 - [Optional Google, GitHub and AI](#8-add-integrations-after-first-value)
@@ -26,16 +26,15 @@ Recommended offering:
 
 | Route | Who it serves | What the customer manages | Priority |
 | --- | --- | --- | --- |
-| Deploy on Railway template | Teams wanting the fewest infrastructure steps | Their Railway account, application settings, database/backups and optional domain | Primary onboarding route to build |
+| Vercel + managed PostgreSQL | Teams wanting familiar frontend hosting | Their Vercel account, PostgreSQL resource, settings and optional domain | Primary guided route to validate |
+| Google Cloud Run + Cloud SQL | Teams using Google Cloud | Their cloud project, IAM, database/backups and secrets | Supported installation route to validate |
 | Docker Compose on a VPS | Teams with a server or infrastructure requirements | Server, DNS, Docker, backups and updates | Portable reference deployment |
 | Coolify/Dokploy | Customers already running one of these platforms | Existing platform and the VisualGuard stack | Document after the reference stack is tested |
 | Hosted VisualGuard service | Customers who want you to operate everything | Account, projects and integrations | Consider later if demand justifies ongoing operations |
 
-I recommend Railway as the first guided cloud option because its templates can describe services, variables and attached storage. The product can supply the configuration while the customer owns the resulting deployment. Render Blueprints are a reasonable alternative; support one guided provider initially to keep installation and support predictable. These are recommendations, not claims that VisualGuard templates already exist. [Railway templates](https://docs.railway.com/templates/create), [Render Blueprints](https://render.com/docs/blueprint-spec).
+The selected providers are **Vercel and Google Cloud Run**. Lead with Vercel plus managed PostgreSQL for a familiar onboarding flow; offer Cloud Run plus Cloud SQL for customers who prefer Google Cloud. Both require an external database for persistent screenshots and platform state. The [cloud hosting guide](CLOUD-HOSTING-VERCEL-CLOUD-RUN.md) covers each provider, required variables, first-run testing, domains, database backups and current deployment limitations.
 
-Keep a Docker distribution as the portable foundation. Do not make Kubernetes, separate object storage, Google OAuth, AI keys or a private browser scheduler prerequisites for a first screenshot comparison.
-
-A customer can begin on the provider's generated HTTPS hostname and add a custom domain later. Owning a separate domain is optional for the first evaluation. Railway supports generated and custom domains with certificate provisioning. [Domain setup](https://docs.railway.com/networking/domains/working-with-domains).
+Keep Docker as a portable alternative. Do not make Kubernetes, separate object storage, Google OAuth, AI keys or a private browser scheduler prerequisites for a first screenshot comparison. A provider-generated HTTPS hostname is sufficient initially; a custom domain can come later.
 
 ### Responsibility split
 
@@ -52,7 +51,7 @@ The core workflow should run without a vendor-operated account service. Customer
 
 The first customer experience should be:
 
-1. Choose **Deploy on Railway** or **Docker Compose**.
+1. Choose **Vercel** or **Google Cloud Run**, with its database setup; Docker Compose remains an optional portable route.
 2. Enter an administrator email; generate or enter a strong initial password.
 3. Deploy, open the dashboard and sign in.
 4. Create a project, create a project upload token, and run one visual comparison.
@@ -97,15 +96,15 @@ The domain and database are configuration, but a good template avoids making cus
 ### Release work before a minimal-setup public launch
 
 1. Publish a tested dashboard-enabled release with a distinct version and matching release notes.
-2. Publish a supported runtime container and immutable image digest; provide a tested Compose bundle.
-3. Create and test the Railway template, including database wiring, canonical URL and private generated secrets.
+2. Provide tested Vercel and Cloud Run deployment bundles; publish an optional runtime container with an immutable digest for portable/container installs.
+3. Create and test Vercel and Cloud Run installation bundles/templates, including database wiring, canonical URL and private secrets.
 4. Provide a demo project/example and first-run instructions that work with that exact release.
 5. Supply a reconciliation scheduling recipe, backup/restore procedure and upgrade instructions.
-6. Validate an installation in a clean customer account before advertising the deploy button.
+6. Validate both requested host installations in clean customer accounts before advertising deploy buttons.
 
 On 17 October 2026, npm metadata reported `visualguard@3.1.0`, with `gitHead` `b8f2cb04f33684410f5ad4bc5c493f6bcfa83f4e`. This is different from the reviewed F07 source revision. Do not assume an unpinned `npx visualguard` already contains every feature in this guide. Check the package capabilities and release notes, or use a tested tarball. No GitHub releases were returned during this inspection; the repository's release workflow currently targets npm, and the inspected workflow does not publish a container.
 
-The earlier rollout work also found a missing `/policies` rewrite in the generated Vercel scaffold. That correction is on `codex/production-rollout-validation`; it is not part of the `main` revision reviewed here. The ordinary Node dashboard serves `/policies`. Treat Vercel as an advanced path until route coverage, raw webhook forwarding and external database behavior are verified on the actual deployment.
+The earlier rollout work also found a missing `/policies` rewrite in the generated Vercel scaffold. That correction is on `codex/production-rollout-validation`; it is not part of the `main` revision reviewed here. The ordinary Node dashboard serves `/policies`. The cloud hosting guide includes the generated-file route correction; verify route coverage, raw webhook forwarding and external database behavior on the actual deployment before launching this route.
 
 ## 4. Publisher preparation: make the installation artifact
 
@@ -145,56 +144,19 @@ Run the standalone-package smoke test and the supported database/host checks in 
 
 Build the dashboard-only runtime image from that artifact. The current Cloud Run scaffold supplies a generic Node Dockerfile; its runtime command can also be used on a VPS or a container-capable platform. Browser execution stays in customer development/CI runners, so the dashboard image does not need Playwright browser binaries.
 
-Publish a versioned public image, attach provenance, and document its digest. Use the same tested image in Compose and the guided template. GitHub documents container publishing and pulling by digest; the specific VisualGuard image name/tag must be created before it is advertised. [Publishing images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images), [container registry and digest references](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
+Publish a versioned public image, attach provenance, and document its digest. Use the same tested image in Compose and image-based Cloud Run deployments. Vercel uses the package/function scaffold rather than this container. GitHub documents container publishing and pulling by digest; the specific VisualGuard image name/tag must be created before it is advertised. [Publishing images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images), [container registry and digest references](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
 
-## 5. Customer setup A: Railway
+## 5. Customer setup A: Vercel or Google Cloud Run
 
-**Status:** this is the setup specification for the template to publish. There is no verified VisualGuard deploy-button URL in this document. Until it exists, use the manual deployment bundle in section 6 or import that bundle's Dockerfile as a Railway service.
+Follow the dedicated [Vercel and Google Cloud Run setup guide](CLOUD-HOSTING-VERCEL-CLOUD-RUN.md). It provides:
 
-### Step 1 — Deploy into the customer's account
+- Shared package preparation and required environment variables.
+- Vercel project import, managed PostgreSQL wiring, production/preview isolation, routes and domain setup.
+- Cloud Run source deployment with Cloud SQL, runtime identity, Secret Manager and canonical URL setup.
+- A precise explanation of screenshot storage: uploaded image/DOM chunks currently live in the customer's configured database, not an automatically created storage bucket.
+- The first visual comparison, optional Google/GitHub integrations, backups and rollout checks.
 
-Open the published VisualGuard template, choose the customer's Railway workspace/project and review the resources it will create. The template should provision a dashboard and PostgreSQL, then request the admin email and initial password. The customer pays their provider directly. Do not promise a free production tier or quote an unverified hosting price.
-
-### Step 2 — Wire the dashboard service
-
-The template author should set these values on the dashboard service:
-
-```dotenv
-VISUALGUARD_AUTH_MODE=login
-VISUALGUARD_USER_ADMISSION=invite
-VISUALGUARD_DATABASE_URL=${{Postgres.DATABASE_URL}}
-VISUALGUARD_PUBLIC_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
-VISUALGUARD_ADMIN_EMAIL=customer-supplied-email
-VISUALGUARD_ADMIN_PASSWORD=customer-private-generated-or-supplied-password
-```
-
-These `${{...}}` expressions are **Railway variable references**, not shell or Docker Compose syntax. `Postgres` must match the database service's name. Generate the public domain before resolving the public URL; if it is not available yet, set the actual generated HTTPS origin explicitly and redeploy. Configure public networking to the port the process listens on, health path `/api/health`, one initial application replica and an appropriate restart policy. The runtime reads `PORT`; do not hard-code a different externally routed port. [Variable references](https://docs.railway.com/variables/reference).
-
-For a manual installation before the template exists: generate the Docker deployment folder from section 6, place its Dockerfile/package/tarball in a customer-owned deployment repository without `.env`, connect it as the dashboard source, add PostgreSQL, and apply the settings above. This path has more steps than the template and should be described as such.
-
-### Step 3 — Check the first deployment
-
-Open the canonical URL and confirm:
-
-- `/api/health` returns HTTP 200 and `{"status":"ok"}`.
-- `/` displays a sign-in page before authentication.
-- Signing in reveals the customer workspace.
-- `/policies`, `/baselines` and `/reviews` load after sign-in.
-- A project created in the UI survives an application redeploy.
-
-Do not put the service into production solely because its process started: a healthy process with the wrong canonical origin can still reject normal requests.
-
-### Step 4 — Add the customer's domain, if desired
-
-Add a domain such as `visualguard.customer.com` in the provider's networking settings. Create the DNS record it supplies and wait for HTTPS to become valid. Then change `VISUALGUARD_PUBLIC_URL` to `https://visualguard.customer.com` and redeploy.
-
-Use the new canonical URL for login, upload clients, webhook callbacks and integrations. The application checks the configured host; it does not automatically treat the old provider hostname as a second accepted dashboard origin. Update a configured Google callback if the origin changes. [Railway domain instructions](https://docs.railway.com/networking/domains/working-with-domains).
-
-### Step 5 — Configure backups
-
-Check which backup/PITR features the customer's selected database plan provides, enable an appropriate schedule and test a restore into a separate environment. Document who receives failure alerts. Do not assume that creating PostgreSQL automatically establishes the customer's required retention or recovery objective. [Railway PostgreSQL backup and restore](https://docs.railway.com/guides/postgres-backups-restores).
-
-Continue with first-run onboarding in section 7.
+These are manual installation instructions using existing scaffolds. Provider deploy buttons and fully automated provisioning still require packaging and live validation.
 
 ## 6. Customer setup B: Docker Compose on a VPS
 
@@ -478,7 +440,7 @@ Start with frontend/product teams already using Playwright and agencies that han
 
 ### Launch sequence
 
-1. Publish the versioned release, portable deployment bundle and one guided provider template.
+1. Publish the versioned release and tested Vercel/Cloud Run deployment bundles, with a portable Docker option.
 2. Record a short example showing a button color change and baseline review; use synthetic demo data.
 3. Put **Try locally**, **Deploy in your account**, **View demo** and **Read setup guide** on the product page.
 4. Run assisted pilots with a small set of teams; observe installation instead of assuming the documentation is sufficient.
@@ -499,7 +461,7 @@ Customer-owned hosting transfers the infrastructure bill and daily operations to
 | --- | --- | --- |
 | 1 | Reproducible dashboard release and public runtime image | A clean customer machine installs the exact artifact and all advertised pages/commands work |
 | 2 | Tested Compose bundle and backup/upgrade instructions | A second person deploys, backs up, restores and upgrades an isolated installation |
-| 3 | Railway template and real deploy button | A fresh customer account deploys without editing database URLs or building the repository |
+| 3 | Vercel and Cloud Run setup automation | Fresh customer accounts deploy with correct database, secrets and canonical URL wiring |
 | 4 | First-run setup assistance | A new admin reaches the first shared screenshot comparison with only necessary decisions |
 | 5 | Easier customer-owned GitHub connection and scheduled reconciliation | Permission scope, token refresh/expiry, duplicate events and missed runs are demonstrated |
 | 6 | Supported provider/OS/database matrix and release checklist | Each advertised combination has evidence and an owner for failures |
@@ -510,6 +472,6 @@ This is deployment and onboarding work for the existing visual regression produc
 
 This guide was created through source/configuration inspection and current provider documentation. Its local links, JSON, shell syntax and YAML structure were checked. Docker Compose configuration validation could not run because a usable Compose plugin was unavailable in the authoring environment; these checks do not certify a deployment. No cloud resources, customer database, DNS records, OAuth client, GitHub webhook, template or container registry publication was created while writing it. The example Compose configuration is a proposed manual recipe; only a real deployment can validate its DNS, TLS, database, backups and customer environment.
 
-Product references: [standalone dashboard](STANDALONE-DASHBOARD-WALKTHROUGH.md), [Google sign-in](GOOGLE-SIGN-IN.md), [team invitations](TEAM-INVITATIONS.md), [approved baselines](APPROVED-BASELINES.md), [visual regression policy](VISUAL-REGRESSION-POLICY.md).
+Product references: [Vercel and Cloud Run hosting](CLOUD-HOSTING-VERCEL-CLOUD-RUN.md), [standalone dashboard](STANDALONE-DASHBOARD-WALKTHROUGH.md), [Google sign-in](GOOGLE-SIGN-IN.md), [team invitations](TEAM-INVITATIONS.md), [approved baselines](APPROVED-BASELINES.md), [visual regression policy](VISUAL-REGRESSION-POLICY.md).
 
-Provider references: [Railway template creation](https://docs.railway.com/templates/create), [Railway deployment flow](https://docs.railway.com/templates/deploy), [Railway variables](https://docs.railway.com/variables/reference), [Railway PostgreSQL](https://docs.railway.com/databases/postgresql), [Railway backup/restore](https://docs.railway.com/guides/postgres-backups-restores), [Render Blueprints](https://render.com/docs/blueprint-spec), [Coolify Compose](https://next.coolify.io/docs/applications/builds/docker-compose), [Caddy HTTPS](https://caddyserver.com/docs/quick-starts/https), [GitHub container publishing](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images).
+Provider references: [Vercel Marketplace storage](https://vercel.com/docs/marketplace-storage), [Vercel environments](https://vercel.com/docs/deployments/environments), [Vercel function limits](https://vercel.com/docs/functions/limitations), [Cloud Run source deployment](https://docs.cloud.google.com/run/docs/deploying-source-code), [Cloud SQL connectivity](https://docs.cloud.google.com/sql/docs/postgres/connect-run), [Cloud Run secrets](https://docs.cloud.google.com/run/docs/configuring/services/secrets), [Caddy HTTPS](https://caddyserver.com/docs/quick-starts/https), [GitHub container publishing](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images).
