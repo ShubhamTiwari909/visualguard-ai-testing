@@ -35,6 +35,8 @@ VisualGuard uses Playwright to compare production and staging, a site and saved 
 
 ## Features
 
+For customer-owned deployments, read the [self-hosting and market launch guide](docs/SELF-HOSTING-AND-MARKET-LAUNCH.md): recommended hosting model, Railway onboarding, a Docker Compose recipe, required settings, backups and launch preparation.
+
 The [standalone dashboard](docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) adds shared run history, password/OIDC access, project permissions, remote CI publishing, MongoDB/PostgreSQL storage, portable local backups, and Cloud Run/Vercel deployment templates. Local use needs no database setup. Start the source app with `pnpm platform:dev`; dashboard-enabled package releases provide `npx visualguard dashboard` in any project. See the walkthrough for release-candidate installation and hosting.
 
 Use `npx visualguard test storefront` to run tests and automatically save the new run to a dashboard project, or `npx visualguard test "Storefront Web"` for its exact display name. Hosted destinations use `--dashboard <origin>` or `VISUALGUARD_DASHBOARD_URL`, plus a project upload token. [Project binding setup and manual walkthrough](docs/DASHBOARD-TEST-BINDING.md). This follow-up requires a rebuilt package/server; no builds or checks were run for it.
