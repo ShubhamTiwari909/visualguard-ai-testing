@@ -9,6 +9,8 @@
 
 ## 1. The recommendation
 
+**Scope update, 17 October 2026:** Keep current work focused on visual regression. F04 approved baselines has merged; F05 named journeys and deterministic datasets is deferred at the user's request. Continue using existing screenshot checks and capture profiles without requiring a scenario catalog, application fixtures, or journey authoring. Before selecting the next implementation, assess remaining F06 CI upload gaps; F07 can then build visual review and exact-revision checks around the existing check identities. Managed runner scheduling remains demand-driven. This update takes precedence over the original journey-oriented sequencing and targets below; it does not authorize another feature implementation.
+
 **Next standalone unit, after merge of PR #9:** the Phase C F03 pilot combines review storage, permission-checked APIs, and the run review/inbox UI on `codex/collaborative-review`, branched from merged `main`. It adds job-level visual decisions, discussion, assignment and deadlines with exact-evidence concurrency checks. See the [implementation boundary and manual walkthrough](COLLABORATIVE-REVIEW.md). No local checks, builds, or tests were run for this follow-up. F05 named checkpoints and F04 approved reference promotion form the next reference-workflow release, with separate feature commits; F07 remains a later informative gate.
 
 **Standalone follow-up:** confirmed project/run deletion with project permissions, access/upload cleanup, and preservation of shared evidence is implemented separately. See the [deletion guide](DASHBOARD-DELETION.md). No build, formatting, lint, type checking, or tests were run for that follow-up, per the user's updated instruction.
@@ -212,6 +214,8 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 ### 6.5 F05 — Named journeys and deterministic datasets
 
+**Status:** deferred at the user's request on 17 October 2026. The scope below is retained for future consideration and is not part of the current visual regression release.
+
 **Problem:** URLs alone miss modals, error states, empty states, role-specific views, and multi-step interactions.
 
 **First scope:** a source-controlled catalog of named scenarios with owner, tags, criticality, compatible environments, setup/replay, fixture version, checkpoints, and teardown. Use existing Playwright tests and `referenceSetup` before designing another test language.
@@ -248,7 +252,7 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 **Acceptance:** a new commit cannot inherit an old passing gate; changed policy invalidates the relevant assessment; missing shard/upload blocks; offline platform produces pending/error rather than an invented success; recovery reconciles status. Roll out as informative checks first, then required checks on selected stable journeys.
 
-**Dependencies:** F01–F06, measured pilot repeatability, code-host permissions. Initial policy can require all changed jobs to be reviewed while region-level decisions mature.
+**Dependencies:** F01–F04, reliable F06 CI evidence upload, measured pilot repeatability, and code-host permissions. F05 is deferred: the initial visual regression policy uses existing check identities and capture profiles without a named journey catalog. Initial policy can require all changed jobs to be reviewed while region-level decisions mature.
 
 ### 6.8 F08/F12 — Ownership, grouped causes, and noise management
 
@@ -599,7 +603,7 @@ For positioning, do not lead only with “AI screenshot testing.” Lead with th
 
 **First ten working days:** inventory the pilot apps/users; agree critical journeys; measure repeated unchanged captures and review time; confirm identity/storage; define the platform envelope; import representative artifacts; demonstrate one shared run link; draft baseline/review semantics; turn the first milestone into an issue backlog.
 
-**First release:** authenticated shared evidence, exact run identity/completeness, basic review decisions, approved baseline versions, named journey metadata, reliable CI upload, and informative PR policy.
+**First release:** authenticated shared evidence, exact run identity/completeness, basic review decisions, approved baseline versions, reliable CI upload, and informative visual regression PR policy. Named journey metadata and deterministic datasets (F05) are deferred.
 
 **After that:** ownership/grouping and noise management, component/coverage profiles, selected integrations, impact experiments, design/locale checks, and a repair center based on actual workflow demand.
 
