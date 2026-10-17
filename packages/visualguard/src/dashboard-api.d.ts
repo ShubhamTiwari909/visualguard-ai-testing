@@ -75,3 +75,33 @@ export function pullApprovedBaseline(options: {
   server?: string;
   env?: Record<string, string | undefined>;
 }): Promise<{ directory: string; projectId: string; set: string; version: number; checks: number }>;
+
+export function runPolicyCommand(options: {
+  project: string;
+  action: "assess" | "reconcile";
+  revision?: string;
+  runId?: string;
+  pullRequest?: number;
+  all?: boolean;
+  server?: string;
+  env?: Record<string, string | undefined>;
+}): Promise<{
+  assessment?: {
+    projectId: string;
+    revision: string;
+    status: "pending" | "satisfied" | "blocked" | "error";
+    reasons: string[];
+    policyVersion: number;
+    baselineVersion?: number;
+    mode: "informative" | "required";
+    fingerprint: string;
+  };
+  deliveries?: {
+    projectId: string;
+    pullRequest: number;
+    revision: string;
+    checkUrl?: string;
+    error?: string;
+  }[];
+  errors?: { pullRequest: number; error: string }[];
+}>;

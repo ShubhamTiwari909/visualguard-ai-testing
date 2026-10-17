@@ -48,3 +48,5 @@ export async function restoreDashboard(file: string, env?: NodeJS.ProcessEnv) {
     await platform.close();
   }
 }
+
+export { runPolicyCommand } from "../../../apps/platform/server/policy-command.js";

@@ -247,13 +247,14 @@ export class ProjectDirectory implements PlatformRepository {
         });
       throw error;
     }
-    for (const namespace of ["baseline-heads", "baseline-versions"]) {
+    for (const namespace of ["baseline-heads", "baseline-versions", "policy-deliveries"]) {
       for (;;) {
         const rows = await this.names.list(namespace, `${id}:`, 100);
         if (!rows.length) break;
         for (const row of rows) await this.names.remove(namespace, row.id, row.version);
       }
     }
+    await this.names.remove("visual-policies", id);
     await this.names.remove("project-profiles", id);
     // Reservations deliberately survive deletion, preventing old aliases from changing owners.
     return result;

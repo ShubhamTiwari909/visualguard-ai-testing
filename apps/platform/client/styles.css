@@ -1644,3 +1644,51 @@
 .vg-baseline-panel .vg-baseline-controls {
   margin-top: 16px;
 }
+
+.vg-policy-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.vg-policy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+}
+.vg-policy-fields details > * + * {
+  margin-top: 16px;
+}
+.vg-policy-result {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--surface-subtle, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.vg-policy-result ul {
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.vg-policy-exceptions {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.vg-policy-exceptions li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .vg-policy-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
