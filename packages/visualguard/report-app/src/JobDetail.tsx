@@ -463,6 +463,13 @@ export function JobDetail(props: JobDetailProps) {
           {props.actions && <div className="ml-auto flex gap-2">{props.actions}</div>}
         </div>
         {summary && <p className="text-sm text-slate-700 dark:text-slate-300">{summary}</p>}
+        {job.captures.production?.approvedReference && (
+          <p className="text-xs text-slate-600 dark:text-slate-300">
+            Approved reference: {job.captures.production.approvedReference.projectId}/{job.captures.production.approvedReference.set} v{job.captures.production.approvedReference.version}
+            {" · "}source {job.captures.production.approvedReference.sourceRevision.slice(0, 12)}
+            {" · "}selected from a pinned snapshot with matching check and rendering identity; content hashes verified.
+          </p>
+        )}
         {job.acceptedBy && (
           <p className="text-xs text-teal-800 dark:text-teal-300">
             Accepted {new Date(job.acceptedBy.at).toLocaleString()}

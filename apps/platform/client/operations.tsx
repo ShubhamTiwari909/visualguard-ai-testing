@@ -3,6 +3,8 @@ import { useSession } from "./auth";
 import type { AuditEvent, AuditPage, OperationsStatus } from "../shared/operations";
 
 const actions: Record<string, string> = {
+  "baseline.promote": "Approved baseline promoted",
+  "baseline.restore": "Approved baseline restored",
   "user.login": "Signed in",
   "user.created": "Account created",
   "user.updated": "Account updated",
@@ -23,6 +25,8 @@ const actions: Record<string, string> = {
   "invitation.accepted": "Invitation accepted",
 };
 const labels: Record<string, string> = {
+  set: "Baseline set",
+  version: "Baseline version",
   userId: "Account",
   projectId: "Project",
   runId: "Run",

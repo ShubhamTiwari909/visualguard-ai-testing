@@ -40,6 +40,7 @@ describe("standalone hosts", () => {
     const reviews = await fetch(`${runtime.url}/reviews`, { redirect: "manual" });
     expect(reviews.status).toBe(200);
     expect(await reviews.text()).toContain("Dashboard test");
+    expect((await fetch(`${runtime.url}/baselines`)).status).toBe(200);
     const invitation = await fetch(`${runtime.url}/invite`, { redirect: "manual" });
     expect(invitation.status).toBe(200);
     expect(await invitation.text()).toContain("Dashboard test");
@@ -77,6 +78,7 @@ describe("standalone hosts", () => {
     );
     expect(config.outputDirectory).toBe("public");
     expect(config.rewrites[0].destination).toContain("__vg_path");
+    expect(config.rewrites).toContainEqual({ source: "/baselines", destination: "/index.html" });
     expect(config.rewrites).toContainEqual({ source: "/reviews", destination: "/index.html" });
     expect(config.rewrites).toContainEqual({ source: "/operations", destination: "/index.html" });
     expect(await readFile(join(vercel, "api/dashboard.mjs"), "utf8")).toContain(

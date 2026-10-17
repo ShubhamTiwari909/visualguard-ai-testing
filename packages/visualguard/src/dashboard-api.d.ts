@@ -66,3 +66,12 @@ export function scaffoldDashboard(options: {
   version: string;
   packageFile?: string;
 }): Promise<string>;
+
+export function pullApprovedBaseline(options: {
+  project: string;
+  set: string;
+  out: string;
+  version?: number;
+  server?: string;
+  env?: Record<string, string | undefined>;
+}): Promise<{ directory: string; projectId: string; set: string; version: number; checks: number }>;

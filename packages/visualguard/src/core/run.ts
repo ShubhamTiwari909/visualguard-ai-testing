@@ -50,6 +50,9 @@ import {
   capturePolicy,
   fingerprint,
   renderingIdentity,
+  assertBaselineWritable,
+  approvedBaselineReference,
+  assertApprovedBaselinePresent,
   sourceRevision,
   writeBaselineMetadata,
 } from "./provenance.js";
@@ -397,6 +400,7 @@ export class Run extends RunEmitter {
     const result: JobResult = {
       id: job.id,
       capturePolicy: capturePolicy(this.config, job),
+      renderingIdentity: renderingIdentity(this.config, job),
       route: job.route,
       name: job.name,
       viewport: job.viewport,
@@ -461,6 +465,8 @@ export class Run extends RunEmitter {
     const baselinePath = this.options.baselineDir
       ? join(this.options.baselineDir, `${job.id}.png`)
       : undefined;
+    if (baselinePath && !liveEnvs.includes("production")) assertApprovedBaselinePresent(baselinePath);
+    if (baselinePath && this.options.updateBaselines) assertBaselineWritable(baselinePath);
     if (!liveEnvs.includes("production")) {
       if (baselinePath && existsSync(baselinePath)) {
         try {
@@ -469,7 +475,8 @@ export class Run extends RunEmitter {
             renderingIdentity(this.config, job),
             this.config.baseline.legacy,
           );
-          result.captures.production = this.loadBaseline(baselinePath, jobDir, rel);
+          const approvedReference = approvedBaselineReference(baselinePath, { jobId: job.id, route: job.route, viewport: job.viewport, identity: renderingIdentity(this.config, job) });
+          result.captures.production = { ...this.loadBaseline(baselinePath, jobDir, rel), approvedReference };
         } catch (error) {
           if (this.options.updateBaselines !== true) throw error;
           // Explicit updates migrate legacy/incompatible references rather than comparing
@@ -645,6 +652,7 @@ export class Run extends RunEmitter {
       capturePolicy?: JobResult["capturePolicy"];
     },
   ): void {
+    assertBaselineWritable(baselinePath);
     mkdirSync(join(baselinePath, ".."), { recursive: true });
     copyFileSync(join(runDir, capture.image), baselinePath);
     writeBaselineMetadata(

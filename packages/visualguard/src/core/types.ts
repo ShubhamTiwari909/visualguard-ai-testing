@@ -158,6 +158,7 @@ export interface CaptureResult {
    * "baseline" when the image came from a stored snapshot instead of a live capture.
    */
   source?: "live" | "baseline";
+  approvedReference?: import("../../../../apps/platform/shared/baselines.js").BaselineReference;
   /**
    * Path relative to the run directory.
    */
@@ -347,6 +348,7 @@ export interface JobResult {
    * Capture settings retained for faithful repair replay; credentials and hooks stay in config.
    */
   capturePolicy?: import("./provenance.js").CapturePolicy;
+  renderingIdentity?: ReturnType<typeof import("./provenance.js").renderingIdentity>;
   id: string;
   route: string;
   name: string;

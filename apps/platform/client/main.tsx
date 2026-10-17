@@ -20,6 +20,7 @@ import { Settings } from "./settings";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { RunNameEditor } from "./naming";
 import { ReviewInbox, RunReviews } from "./reviews";
+import { BaselinesPage } from "./baselines";
 import { OperationsPage } from "./operations";
 
 function navigate(path: string) {
@@ -120,7 +121,7 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
         ? "Audit & recovery"
         : window.location.pathname === "/reviews"
           ? "Review inbox"
-          : "Evidence";
+          : window.location.pathname === "/baselines" ? "Approved baselines" : "Evidence";
   const selector = new URLSearchParams(window.location.search).get("project");
   const selected =
     projects.find(
@@ -162,6 +163,9 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
           href="/reviews"
         >
           <span aria-hidden="true">✓</span> Review inbox
+        </Link>
+        <Link className={`vg-nav-link ${window.location.pathname === "/baselines" ? "is-active" : ""}`} href="/baselines">
+          <span aria-hidden="true">▣</span> Approved baselines
         </Link>
         <Link
           className={`vg-nav-link ${window.location.pathname === "/settings" ? "is-active" : ""}`}
@@ -217,6 +221,7 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
         <nav className="vg-mobile-nav" aria-label="Workspace">
           <Link href="/">Run history</Link>
           <Link href="/reviews">Review inbox</Link>
+          <Link href="/baselines">Approved baselines</Link>
           <Link href="/settings">People & integrations</Link>
           {session.access === "login" && session.user?.admin && (
             <Link href="/operations">Audit & recovery</Link>
@@ -826,6 +831,9 @@ function RunView({
                       <p className="vg-job-summary">
                         {jobSummary(job) || "No additional findings"}
                       </p>
+                      {job.captures.production?.approvedReference && (
+                        <p className="vg-small">Reference: <a href={`/baselines?project=${encodeURIComponent(job.captures.production.approvedReference.projectId)}`}>{job.captures.production.approvedReference.set} v{job.captures.production.approvedReference.version}</a> · exact approved image and compatible rendering identity</p>
+                      )}
                       <div className="vg-evidence-links">
                         {Object.entries(job.captures).map(([side, capture]) =>
                           capture?.dom ? (
@@ -961,6 +969,8 @@ function Platform() {
         <Settings projects={projects} onDeleted={deleted} onUpdated={refresh} />
       ) : location.path === "/operations" ? (
         <OperationsPage />
+      ) : location.path === "/baselines" ? (
+        <BaselinesPage key={location.search} projects={projects} />
       ) : location.path === "/reviews" ? (
         <ReviewInbox key={location.search} projects={projects} search={location.search} />
       ) : (

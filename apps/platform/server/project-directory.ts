@@ -3,6 +3,7 @@ import type { EvidenceRepository, PlatformRepository, StateStore } from "./stora
 import { PlatformError } from "./errors.js";
 import type { ProjectGuard } from "./invitations.js";
 import { randomUUID } from "node:crypto";
+import { prepareBaselineRun, type BaselineRunGuard } from "./baseline-guards.js";
 import { projectId } from "./validation.js";
 
 interface Profile {
@@ -130,10 +131,18 @@ export class ProjectDirectory implements PlatformRepository {
     return this.evidence.renameRun(id, name, expectedVersion);
   }
   async insertRun(run: Omit<RunDetail, "id">, preserveId?: string) {
-    return this.evidence.insertRun(
+    const previousGuard = preserveId
+      ? await this.names.get<BaselineRunGuard>("baseline-runs", preserveId)
+      : undefined;
+    const result = await this.evidence.insertRun(
       { ...run, projectId: await this.resolveProjectId(run.projectId) },
       preserveId,
     );
+    // A portable restore may recreate a deleted, unretained run with its original ID.
+    // Only a NEW insert can reopen the guard: a duplicate must never unlock deletion in flight.
+    if (!result.duplicate && previousGuard?.value.status === "deleting" && !previousGuard.value.pinned)
+      await this.names.replace("baseline-runs", { ...previousGuard, value: { status: "active", pinned: false } });
+    return result;
   }
   async runs(filters: RunFilters, allowed?: string[]) {
     return this.evidence.runs(
@@ -144,8 +153,22 @@ export class ProjectDirectory implements PlatformRepository {
       allowed,
     );
   }
-  deleteRun(id: string, expectedProject?: string) {
-    return this.evidence.deleteRun(id, expectedProject);
+  async deleteRun(id: string, expectedProject?: string) {
+    await prepareBaselineRun(this.names, id);
+    const guard = await this.names.get<BaselineRunGuard>("baseline-runs", id);
+    if (!guard || guard.value.status !== "active")
+      throw new PlatformError(409, "Run deletion is already in progress");
+    if (guard.value.pinned)
+      throw new PlatformError(409, "This run is retained by approved baseline history; delete the project to remove its entire history");
+    if (!(await this.names.replace("baseline-runs", { ...guard, value: { ...guard.value, status: "deleting" } })))
+      throw new PlatformError(409, "Run changed; refresh before deleting");
+    try {
+      return await this.evidence.deleteRun(id, expectedProject);
+    } catch (error) {
+      if (error instanceof PlatformError && error.status === 409)
+        await this.names.replace("baseline-runs", { ...guard, version: guard.version + 1 });
+      throw error;
+    }
   }
   async deleteProject(id: string, expectedRuns: number) {
     id = await this.resolveProjectId(id);
@@ -172,6 +195,13 @@ export class ProjectDirectory implements PlatformRepository {
           value: { status: "active" },
         });
       throw error;
+    }
+    for (const namespace of ["baseline-heads", "baseline-versions"]) {
+      for (;;) {
+        const rows = await this.names.list(namespace, `${id}:`, 100);
+        if (!rows.length) break;
+        for (const row of rows) await this.names.remove(namespace, row.id, row.version);
+      }
     }
     await this.names.remove("project-profiles", id);
     // Reservations deliberately survive deletion, preventing old aliases from changing owners.

@@ -126,6 +126,7 @@ export async function startDashboard(
           path === "/operations" ||
           path === "/invite" ||
           path === "/reviews" ||
+          path === "/baselines" ||
           /^\/runs\/[a-f0-9-]{36}(?:\/report)?$/.test(path)
         ) {
           const html = index;

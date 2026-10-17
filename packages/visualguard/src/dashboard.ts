@@ -7,6 +7,7 @@ export {
 export { uploadRun as publishDashboardRun } from "../../../apps/platform/server/upload-client.js";
 export { scaffoldDashboard } from "../../../apps/platform/server/scaffold.js";
 export { createDashboardProject } from "../../../apps/platform/server/project-command.js";
+export { pullApprovedBaseline } from "../../../apps/platform/server/baseline-command.js";
 import { openPlatform } from "../../../apps/platform/server/config.js";
 import { importRun } from "../../../apps/platform/server/ingest.js";
 import { exportEvidence, restoreEvidence } from "../../../apps/platform/server/backup.js";

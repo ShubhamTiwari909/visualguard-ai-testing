@@ -72,6 +72,19 @@ export function registerDashboardCommand(program: Command) {
       .option("--commit <sha>", "Source revision")
       .option("--pr <number>", "Pull request number")
       .option("--deployment <id>", "Deployment label");
+  dashboard.command("baseline")
+    .description("Download immutable approved references")
+    .command("pull <set>")
+    .requiredOption("--project <id>", "Project ID")
+    .requiredOption("--out <directory>", "New baseline directory (must not exist)")
+    .option("--version <number>", "Pin an earlier immutable version; defaults to current")
+    .option("--server <url>", "Dashboard origin; otherwise use the local database")
+    .action(async (set: string, options: { project: string; out: string; version?: string; server?: string }) => {
+      loadEnvFiles(process.cwd());
+      const { pullApprovedBaseline } = await import("../../dashboard.js");
+      const result = await pullApprovedBaseline({ ...options, set, version: options.version === undefined ? undefined : Number(options.version) });
+      console.log(`Pinned ${result.projectId}/${result.set} v${result.version}: ${result.checks} checks in ${result.directory}`);
+    });
   const project = dashboard.command("project").description("Manage dashboard projects");
   project
     .command("create <id>")
