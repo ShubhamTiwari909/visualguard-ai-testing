@@ -6,7 +6,7 @@ import { AuthService, MemoryStateStore, type ProjectRole } from "./auth.js";
 import { z } from "zod";
 import { artifactPath } from "./validation.js";
 import { RUN_STATUSES, type RunFilters, type RunStatus } from "../shared/contracts.js";
-import { body, json } from "./transport.js";
+import { body, json, readBytes } from "./transport.js";
 import { Uploads, UPLOAD_CHUNK_BYTES } from "./uploads.js";
 import { sha256 } from "./artifacts.js";
 import { findProject, projectSelector } from "./project-selector.js";
@@ -15,6 +15,8 @@ import { Onboarding } from "./onboarding.js";
 import { Reviews, reviewMutation } from "./reviews.js";
 import { Baselines, baselineSet, baselinePromotion, baselineRestore } from "./baselines.js";
 import { Operations } from "./operations.js";
+import { Policies, policyMutation, assessmentInput, pullRequestNumber } from "./policies.js";
+import { PolicyGitHub } from "./policy-github.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -83,6 +85,8 @@ export function createApi(
   const reviews = new Reviews(repository, auth.state, auth);
   const operations = new Operations(auth.state);
   const baselines = new Baselines(repository, auth.state, auth);
+  const policies = new Policies(repository, auth.state, auth);
+  const policyGitHub = new PolicyGitHub(policies);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -108,6 +112,16 @@ export function createApi(
       response.setHeader("Cache-Control", "no-store");
     try {
       await auth.ready;
+      if (request.method === "POST" && url.pathname === "/api/github/webhook") {
+        const parsedBody = (request as IncomingMessage & { body?: unknown }).body;
+        if (parsedBody !== undefined && !Buffer.isBuffer(parsedBody) && typeof parsedBody !== "string")
+          throw new PlatformError(415, "GitHub webhooks require the original raw request body; disable host JSON body parsing for this endpoint");
+        const bytes = await readBytes(request, 1024 * 1024);
+        const signature = request.headers["x-hub-signature-256"];
+        const event = request.headers["x-github-event"];
+        json(response, 200, await policyGitHub.webhook(bytes, typeof signature === "string" ? signature : undefined, typeof event === "string" ? event : undefined));
+        return true;
+      }
       const actor = await auth.actor(request);
       if (request.method === "GET" && url.pathname === "/api/session") {
         json(response, 200, {
@@ -248,6 +262,25 @@ export function createApi(
       if (request.method === "POST" && url.pathname === "/api/auth/logout") {
         await auth.logout(actor, response);
         json(response, 200, { ok: true });
+        return true;
+      }
+      const policyRoute = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/policy(?:\/(assess|reconcile|deliveries))?$/);
+      if (policyRoute) {
+        const project = policyRoute[1]!;
+        const action = policyRoute[2];
+        if (request.method === "GET" && !action) {
+          json(response, 200, await policies.history(actor, project));
+        } else if (request.method === "POST" && !action) {
+          json(response, 201, await policies.save(actor, project, policyMutation.parse(await body(request))));
+        } else if (request.method === "POST" && action === "assess") {
+          const input = assessmentInput.parse(await body(request));
+          json(response, 200, await policies.assess(actor, project, input.revision, input.runId));
+        } else if (request.method === "GET" && action === "deliveries") {
+          json(response, 200, { deliveries: await policyGitHub.deliveries(actor, project) });
+        } else if (request.method === "POST" && action === "reconcile") {
+          const input = z.object({ pullRequest: pullRequestNumber }).strict().parse(await body(request));
+          json(response, 200, await policyGitHub.reconcile(actor, project, input.pullRequest));
+        } else throw new PlatformError(405, "Unsupported policy action");
         return true;
       }
       const baselineRoute = url.pathname.match(

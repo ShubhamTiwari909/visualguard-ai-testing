@@ -240,6 +240,8 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 ### 6.7 F07 — Release policy and exact-revision PR checks
 
+**Visual regression implementation:** [F07 scope and testing guide](VISUAL-REGRESSION-POLICY.md). Uses existing screenshot IDs and profiles; named journeys remain deferred. GitHub delivery starts informative and needs scheduled/on-demand reconciliation for later changes and expiry.
+
 **Problem:** an engine status alone does not express the organization's reviewer, coverage, freshness, or exception rules.
 
 **First scope:** versioned project policies and a GitHub check attached to the candidate commit. Policy describes required scenarios/profiles, blocking finding classes, required approvals, evidence freshness, completeness, and allowed exceptions.

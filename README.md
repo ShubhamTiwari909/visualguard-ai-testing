@@ -41,6 +41,9 @@ Use `npx visualguard test storefront` to run tests and automatically save the ne
 
 Create a project without opening the UI: `npx visualguard dashboard project create storefront --name "Storefront Web"`. Existing IDs are reused without renaming or resetting anything. [Local/server CLI setup](docs/DASHBOARD-CLI-PROJECTS.md).
 
+[Visual regression policies and GitHub PR checks](docs/VISUAL-REGRESSION-POLICY.md) assess required screenshots, current approved baselines, evidence freshness and visual reviews for an exact commit. Start with informative checks; local assessment needs no new secrets. Named journeys remain deferred.
+
+
 | Capability                 | What you can do                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Live comparisons           | Compare production, staging, localhost or a PR preview, including pages whose paths differ between environments.                                            |

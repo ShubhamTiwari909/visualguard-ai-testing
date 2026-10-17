@@ -64,6 +64,33 @@ export function registerDashboardCommand(program: Command) {
       process.once("SIGINT", stop);
       process.once("SIGTERM", stop);
     });
+  const policy = dashboard.command("policy").description("Assess visual regression policy and reconcile exact-revision GitHub checks");
+  policy.command("assess")
+    .requiredOption("--project <id>", "Project ID")
+    .requiredOption("--revision <sha>", "Exact source commit")
+    .option("--run <id>", "Assess a specific stored run")
+    .option("--server <url>", "Dashboard origin; otherwise use local storage")
+    .option("--enforce", "Exit with failure unless the policy is satisfied")
+    .action(async (options) => {
+      loadEnvFiles(process.cwd());
+      const { runPolicyCommand } = await import("../../dashboard.js");
+      const result = await runPolicyCommand({ action: "assess", project: options.project, revision: options.revision, runId: options.run, server: options.server });
+      console.log(JSON.stringify(result, null, 2));
+      if (options.enforce && result.assessment?.status !== "satisfied") process.exitCode = 2;
+    });
+  policy.command("reconcile")
+    .requiredOption("--project <id>", "Project ID")
+    .option("--pr <number>", "Verify and publish the live PR head")
+    .option("--all", "Refresh every tracked PR for this project")
+    .option("--server <url>", "Dashboard origin; otherwise use local storage")
+    .action(async (options) => {
+      loadEnvFiles(process.cwd());
+      if (Boolean(options.all) === Boolean(options.pr)) throw new Error("Choose either --pr or --all");
+      const { runPolicyCommand } = await import("../../dashboard.js");
+      const result = await runPolicyCommand({ action: "reconcile", project: options.project, pullRequest: options.pr ? Number(options.pr) : undefined, all: options.all, server: options.server });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.errors?.length) process.exitCode = 2;
+    });
   const addMetadata = (command: Command) =>
     command
       .option("--environment <name>", "Environment label", "staging")

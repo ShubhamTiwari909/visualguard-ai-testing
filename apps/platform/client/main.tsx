@@ -20,6 +20,7 @@ import { Settings } from "./settings";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { RunNameEditor } from "./naming";
 import { ReviewInbox, RunReviews } from "./reviews";
+import { PoliciesPage, RunPolicy } from "./policies";
 import { BaselinesPage } from "./baselines";
 import { OperationsPage } from "./operations";
 
@@ -114,16 +115,14 @@ function Metadata({ run }: { run: StoredRun }) {
 
 function Shell({ projects, children }: { projects: Project[]; children: ReactNode }) {
   const session = useSession();
-  const pageName =
-    window.location.pathname === "/settings"
-      ? "People & integrations"
-      : window.location.pathname === "/operations"
-        ? "Audit & recovery"
-        : window.location.pathname === "/reviews"
-          ? "Review inbox"
-          : window.location.pathname === "/baselines"
-            ? "Approved baselines"
-            : "Evidence";
+  const pageNames: Record<string, string> = {
+    "/settings": "People & integrations",
+    "/operations": "Audit & recovery",
+    "/reviews": "Review inbox",
+    "/baselines": "Approved baselines",
+    "/policies": "Visual regression policy",
+  };
+  const pageName = pageNames[window.location.pathname] ?? "Evidence";
   const selector = new URLSearchParams(window.location.search).get("project");
   const selected =
     projects.find(
@@ -171,6 +170,9 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
           href="/baselines"
         >
           <span aria-hidden="true">▣</span> Approved baselines
+        </Link>
+        <Link className={`vg-nav-link ${window.location.pathname === "/policies" ? "is-active" : ""}`} href="/policies">
+          <span aria-hidden="true">◇</span> Visual regression policy
         </Link>
         <Link
           className={`vg-nav-link ${window.location.pathname === "/settings" ? "is-active" : ""}`}
@@ -227,6 +229,7 @@ function Shell({ projects, children }: { projects: Project[]; children: ReactNod
           <Link href="/">Run history</Link>
           <Link href="/reviews">Review inbox</Link>
           <Link href="/baselines">Approved baselines</Link>
+          <Link href="/policies">Visual regression policy</Link>
           <Link href="/settings">People & integrations</Link>
           {session.access === "login" && session.user?.admin && (
             <Link href="/operations">Audit & recovery</Link>
@@ -870,6 +873,7 @@ function RunView({
             {!jobs.length && <div className="vg-empty">No matching checks.</div>}
           </div>
         </section>
+        <RunPolicy run={run} />
         <RunReviews
           run={run}
           initialJob={new URLSearchParams(window.location.search).get("review") ?? undefined}
@@ -983,6 +987,8 @@ function Platform() {
         <Settings projects={projects} onDeleted={deleted} onUpdated={refresh} />
       ) : location.path === "/operations" ? (
         <OperationsPage />
+      ) : location.path === "/policies" ? (
+        <PoliciesPage key={location.search} projects={projects} />
       ) : location.path === "/baselines" ? (
         <BaselinesPage key={location.search} projects={projects} />
       ) : location.path === "/reviews" ? (
