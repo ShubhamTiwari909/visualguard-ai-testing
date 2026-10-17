@@ -60,7 +60,7 @@ export class PolicyGitHub {
     };
     const id = `${project}:${String(pullRequest).padStart(10, "0")}`;
     const previous = await this.policies.state.get<PolicyDelivery>("policy-deliveries", id);
-    let delivery: PolicyDelivery = { ...(previous?.value.repository === repository ? previous.value : {}), projectId: project, repository, pullRequest, revision: previous?.value.revision ?? "", error: undefined, updatedAt: new Date().toISOString() };
+    const delivery: PolicyDelivery = { ...(previous?.value.repository === repository ? previous.value : {}), projectId: project, repository, pullRequest, revision: previous?.value.revision ?? "", error: undefined, updatedAt: new Date().toISOString() };
     const save = async () => {
       await assertLease();
       const row = await this.policies.state.get<PolicyDelivery>("policy-deliveries", id);
@@ -103,15 +103,7 @@ export class PolicyGitHub {
       delivery.checkId = check.id;
       delivery.checkUrl = check.html_url;
       await save();
-      const page = await this.policies.repository.runs({ project, commit: pr.head.sha, pullRequest, environment: policy.environment, limit: 1 });
-      const assessment = await this.policies.assess(actor, project, pr.head.sha, page.runs[0]?.id);
-      // assess() otherwise selects revision-only evidence; PR evidence must also be explicitly bound.
-      if (!page.runs.length) {
-        assessment.status = "pending";
-        assessment.reasons = ["No uploaded evidence bound to this exact PR, commit and environment."];
-        assessment.runId = undefined;
-        assessment.evidenceDigest = undefined;
-      }
+      const assessment = await this.policies.assess(actor, project, pr.head.sha, undefined, pullRequest);
       delivery.assessment = assessment;
       const head = prSchema.parse(await this.api(repository, `/pulls/${pullRequest}`));
       const freshPolicy = (await this.policies.history(actor, project)).current;
@@ -128,8 +120,9 @@ export class PolicyGitHub {
       });
       // Re-evaluate decisions, baseline, expiry and evidence after network delivery. If they moved,
       // invalidate this check immediately; scheduled reconciliation repairs interrupted invalidation.
-      const latest = await this.policies.assess(actor, project, pr.head.sha, page.runs[0]?.id);
-      if (page.runs.length && latest.fingerprint !== assessment.fingerprint) {
+      const latest = await this.policies.assess(actor, project, pr.head.sha, undefined, pullRequest);
+      if (latest.fingerprint !== assessment.fingerprint) {
+        await assertLease();
         await this.api(repository, `/check-runs/${check.id}`, "PATCH", pending);
         throw new PlatformError(409, "Visual evidence, baseline or decisions changed; reconcile again");
       }
@@ -141,9 +134,13 @@ export class PolicyGitHub {
       delivery.updatedAt = new Date().toISOString();
       await save().catch(() => {});
       // Never leave a known stale success after a failed re-evaluation.
-      if (delivery.checkId) await this.api(repository, `/check-runs/${delivery.checkId}`, "PATCH", {
-        status: "in_progress", output: { title: "Reconciliation required", summary: delivery.error },
-      }).catch(() => {});
+      if (delivery.checkId) {
+        // A newer lease owner may already have published a fresh result. An expired
+        // worker must not overwrite that result while handling its own failure.
+        await assertLease().then(() => this.api(repository, `/check-runs/${delivery.checkId}`, "PATCH", {
+          status: "in_progress", output: { title: "Reconciliation required", summary: delivery.error },
+        })).catch(() => {});
+      }
       throw new PlatformError(error instanceof PlatformError ? error.status : 502, delivery.error);
     } finally {
       const current = await this.policies.state.get<{ owner: string }>("policy-locks", lockId);

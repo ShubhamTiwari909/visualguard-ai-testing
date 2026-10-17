@@ -2,7 +2,6 @@ import { z } from "zod";
 import { fingerprint } from "../../../packages/visualguard/src/core/provenance.js";
 import type { JobResult } from "../../../packages/visualguard/src/core/types.js";
 import type { PolicyAssessment, PolicyHistory, PolicyVersion } from "../shared/policies.js";
-import type { RunDetail } from "../shared/contracts.js";
 import { AuthService, type Actor } from "./auth.js";
 import { Baselines, baselineSet } from "./baselines.js";
 import { Reviews } from "./reviews.js";
@@ -96,8 +95,9 @@ export class Policies {
     await this.auth.audit(actor, "policy.save", { projectId: project, version: next.version }).catch(() => {});
     return this.history(actor, project);
   }
-  async assess(actor: Actor, project: string, revision: string, runId?: string): Promise<PolicyAssessment> {
+  async assess(actor: Actor, project: string, revision: string, runId?: string, pullRequest?: number): Promise<PolicyAssessment> {
     sourceRevision.parse(revision);
+    if (pullRequest !== undefined) pullRequestNumber.parse(pullRequest);
     await this.access(actor, project);
     const policy = (await this.history(actor, project)).current;
     const result: PolicyAssessment = {
@@ -112,19 +112,19 @@ export class Policies {
       return result;
     };
     if (!policy) { result.reasons.push("Configure a visual regression policy first."); return finish(); }
-    let run: RunDetail;
     if (!runId) {
-      const page = await this.repository.runs({ project, commit: revision, environment: policy.environment, limit: 1 });
+      const page = await this.repository.runs({ project, commit: revision, environment: policy.environment, pullRequest, limit: 1 });
       runId = page.runs[0]?.id;
     }
-    if (!runId) { result.reasons.push("No uploaded evidence for this exact revision and environment."); return finish(); }
-    run = await this.repository.getRun(runId);
+    if (!runId) { result.reasons.push(pullRequest === undefined ? "No uploaded evidence for this exact revision and environment." : "No uploaded evidence bound to this exact PR, commit and environment."); return finish(); }
+    const run = await this.repository.getRun(runId);
     if (run.projectId !== project) throw new PlatformError(403, "Evidence belongs to another project");
     result.runId = run.id;
     result.evidenceDigest = run.digest;
     const block = (reason: string) => result.reasons.push(reason);
     if (run.metadata.commit !== revision || run.manifest.provenance?.sourceRevision !== revision)
       block("Run metadata and capture provenance must both match the candidate revision.");
+    if (pullRequest !== undefined && run.metadata.pullRequest !== pullRequest) block("Evidence belongs to a different pull request.");
     if (run.metadata.environment !== policy.environment) block("Evidence uses a different environment.");
     if (run.mode !== "compare" && run.mode !== "baseline") block("A screenshot comparison run is required.");
     if (!run.complete || completeness(run.manifest).length) block("Evidence is incomplete; upload all checks and merge all shards.");

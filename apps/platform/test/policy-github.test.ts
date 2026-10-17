@@ -98,6 +98,25 @@ describe("F07 exact revision GitHub reconciliation", () => {
     await expect(github.reconcile(owner, "storefront", 7)).rejects.toMatchObject({ status: 409 });
     expect(checks[0]?.status).toBe("in_progress");
   });
+  it("invalidates a passing delivery if newer PR evidence arrives during publication", async () => {
+    afterPatch = async () => {
+      const newer = p.candidate();
+      newer.startedAt = new Date(Date.now() + 1000).toISOString();
+      newer.complete = false;
+      await p.insert(newer);
+    };
+    await expect(github.reconcile(owner, "storefront", 7)).rejects.toMatchObject({ status: 409 });
+    expect(checks[0]?.status).toBe("in_progress");
+  });
+  it("does not let an expired worker overwrite the newer lease owner's result", async () => {
+    afterPatch = async () => {
+      await p.state.remove("policy-locks", "storefront");
+      await p.state.create("policy-locks", "storefront", { owner: "new-worker" }, new Date(Date.now() + 60000).toISOString());
+    };
+    await expect(github.reconcile(owner, "storefront", 7)).rejects.toMatchObject({ status: 409 });
+    expect(checks[0]?.status).toBe("completed");
+    expect((await p.state.get<{ owner: string }>("policy-locks", "storefront"))?.value.owner).toBe("new-worker");
+  });
   it("leaves the check pending when the PR head changes during assessment", async () => {
     let reads = 0;
     fail = (path) => {
