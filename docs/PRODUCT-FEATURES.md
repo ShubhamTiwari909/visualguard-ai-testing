@@ -262,6 +262,8 @@ Project deletion removes its runs/access/upload credentials while preserving unr
 
 Each project can save independent production/staging base URLs, explicit routes, viewports and an optional AI provider/model. Configuration edits require maintainer/admin access and reject stale versions. The saved configuration is data only: credentials, cookies, hooks and executable config files stay on the runner. Existing offline CLI config files remain independent.
 
+Project maintainers/admins can choose **Run test** in the selected project. A connected private runner claims the saved configuration, captures the comparison and uploads the evidence. The dashboard shows execution status and links to the resulting run. The worker has a dedicated expiring project credential; upload-only tokens cannot claim work. Each project permits one active execution, with lease/timeout handling for disconnects. This on-demand workflow works with locally run and hosted dashboards; it requires a connected foreground runner rather than browser execution inside a web request. See [setup and commands](NPM-PACKAGE-SETUP.md#run-a-test-from-the-dashboard).
+
 ## 13. Accounts, Google sign-in and permissions
 
 ### Access choices
@@ -386,6 +388,7 @@ Developers can use the package API for configuration parsing, run creation, even
 | `merge` | Combine compatible shards and validate coverage |
 | `comment` | Publish/update a PR summary comment |
 | `dashboard` | Run the dashboard |
+| `dashboard runner` | Connect a foreground private browser runner for project-scoped UI test requests |
 | `dashboard project create` | Create/reuse a project with appropriate authority |
 | `dashboard import` / `publish` | Store local evidence or upload to a running server |
 | `dashboard export` / `restore` | Move portable evidence |
@@ -399,7 +402,7 @@ This is a capability map, not a command sequence to run all at once. Use the set
 
 ## 20. Current scope and choosing a starting point
 
-Features described as implemented here are distinct from ideas in the roadmap. The current product does not include a managed browser-runner scheduler, a standalone named-journey/data catalog, automatic invitation emails, billing/license enforcement, a multi-tenant vendor control plane, arbitrary issue-tracker/chat adapters or an external screenshot-bucket adapter.
+Features described as implemented here are distinct from ideas in the roadmap. The current product does not include an automatic managed browser-runner scheduler, a standalone named-journey/data catalog, automatic invitation emails, billing/license enforcement, a multi-tenant vendor control plane, arbitrary issue-tracker/chat adapters or an external screenshot-bucket adapter.
 
 A generic webhook is not a dedicated Slack/Teams integration. A GitHub check is not automatic release authorization. Proposed roadmap features are not additional hidden commands.
 

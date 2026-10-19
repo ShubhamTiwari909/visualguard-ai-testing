@@ -254,6 +254,8 @@ export class ProjectDirectory implements PlatformRepository {
         for (const row of rows) await this.names.remove(namespace, row.id, row.version);
       }
     }
+    await this.names.remove("project-test-executions", id);
+    await this.names.remove("project-runner-heartbeats", id);
     await this.names.remove("project-test-configs", id);
     await this.names.remove("visual-policies", id);
     await this.names.remove("project-profiles", id);

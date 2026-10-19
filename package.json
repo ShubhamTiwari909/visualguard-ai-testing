@@ -12,6 +12,7 @@
     "platform:build": "pnpm --filter @visualguard/platform build",
     "platform:test": "pnpm --filter @visualguard/platform test",
     "platform:test:package": "node scripts/standalone-dashboard-smoke.mjs",
+    "platform:test:runner": "node scripts/dashboard-runner-smoke.mjs",
     "platform:import": "pnpm --filter @visualguard/platform run import",
     "platform:publish": "pnpm --filter @visualguard/platform run publish:run",
     "platform:operations": "pnpm --filter @visualguard/platform run operations",

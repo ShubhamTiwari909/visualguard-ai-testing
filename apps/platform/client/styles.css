@@ -1698,3 +1698,49 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.vg-project-tests {
+  border-top: 1px solid #edf1ee;
+}
+.vg-project-tests > .vg-form-error,
+.vg-project-tests > .vg-muted,
+.vg-test-status,
+.vg-test-config,
+.vg-runner-setup {
+  margin: 18px 23px;
+}
+.vg-project-tests h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.vg-test-config {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+}
+.vg-test-config label {
+  display: grid;
+  gap: 7px;
+}
+.vg-test-config textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dfe7e2;
+  border-radius: 7px;
+  font: inherit;
+  resize: vertical;
+}
+.vg-runner-setup summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.vg-runner-command {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  background: #f3f7f4;
+  padding: 12px;
+  border-radius: 7px;
+}
+.vg-test-status .vg-button {
+  margin-left: 12px;
+}

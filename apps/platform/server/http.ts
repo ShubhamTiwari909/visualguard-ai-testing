@@ -18,6 +18,7 @@ import { Operations } from "./operations.js";
 import { Policies, policyMutation, assessmentInput, pullRequestNumber } from "./policies.js";
 import { PolicyGitHub } from "./policy-github.js";
 import { ProjectTests } from "./project-tests.js";
+import { TestExecutions } from "./test-executions.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -89,6 +90,7 @@ export function createApi(
   const policies = new Policies(repository, auth.state, auth);
   const policyGitHub = new PolicyGitHub(policies);
   const projectTests = new ProjectTests(repository, auth.state, auth);
+  const testExecutions = new TestExecutions(projectTests);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -235,6 +237,22 @@ export function createApi(
         }
         throw new PlatformError(404, "API endpoint not found");
       }
+      const runnerRoute = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-runner\/(claim|heartbeat|complete)$/);
+      if (runnerRoute && request.method === "POST") {
+        if (!actor) throw new PlatformError(401, "Runner credential rejected");
+        response.setHeader("Cache-Control", "no-store");
+        const project = await repository.resolveProjectId(runnerRoute[1]!);
+        const bearer = request.headers.authorization?.startsWith("Bearer ") ? request.headers.authorization.slice(7) : "";
+        const runnerId = await testExecutions.runner(actor, project, bearer);
+        const input = await body(request);
+        const value = runnerRoute[2] === "claim"
+          ? (z.object({}).strict().parse(input), await testExecutions.claim(project, runnerId))
+          : runnerRoute[2] === "heartbeat"
+            ? await testExecutions.heartbeat(project, runnerId, input)
+            : await testExecutions.complete(project, runnerId, input);
+        json(response, 200, value);
+        return true;
+      }
       if (!actor) throw new PlatformError(401, "Sign in to access this dashboard");
       if (request.method !== "GET" && request.method !== "HEAD") auth.csrf(request, actor);
       if (request.method === "GET" && url.pathname === "/api/auth/identities") {
@@ -256,6 +274,25 @@ export function createApi(
           `/api/projects/${requestedProjectId}`,
           `/api/projects/${canonical}`,
         );
+      }
+      const testExecution = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-execution$/);
+      if (testExecution) {
+        response.setHeader("Cache-Control", "no-store");
+        if (request.method === "GET") {
+          json(response, 200, await testExecutions.status(actor, testExecution[1]!));
+          return true;
+        }
+        if (request.method === "POST") {
+          json(response, 202, await testExecutions.request(actor, testExecution[1]!, await body(request)));
+          return true;
+        }
+      }
+      const runnerKey = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-runner-key$/);
+      if (runnerKey && request.method === "POST") {
+        await projectTests.access(actor, runnerKey[1]!, true);
+        const input = z.object({ name: z.string().min(1).max(120), days: z.number().int().min(1).max(90) }).strict().parse(await body(request));
+        json(response, 201, await auth.mintToken(actor, runnerKey[1]!, input.name, input.days, true));
+        return true;
       }
       const testConfig = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-config$/);
       if (testConfig) {

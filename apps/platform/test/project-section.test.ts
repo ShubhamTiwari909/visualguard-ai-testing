@@ -22,12 +22,16 @@ describe("selected project section", () => {
     expect(html).toContain("3 stored runs");
     expect(html).toContain('aria-label="Delete Storefront"');
     expect(html).toContain("Delete project");
+    expect(html).toContain("Configure tests");
+    expect(html).toContain("Run test");
     expect(html).not.toContain("Permanently delete project");
   });
   it("hides the deletion action for readers/reviewers", () => {
     const html = render(project, false);
     expect(html).toContain("Storefront");
     expect(html).not.toContain("Delete project");
+    expect(html).not.toContain("Configure tests");
+    expect(html).not.toContain("Run test");
   });
   it("does not offer deletion in the all-projects view", () => {
     expect(render(undefined, true)).toBe("");

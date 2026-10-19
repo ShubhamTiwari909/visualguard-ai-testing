@@ -64,6 +64,30 @@ export function registerDashboardCommand(program: Command) {
       process.once("SIGINT", stop);
       process.once("SIGTERM", stop);
     });
+  dashboard
+    .command("runner")
+    .description("Connect a private browser runner for dashboard-requested tests")
+    .requiredOption("--project <id>", "Dashboard project ID")
+    .requiredOption("--server <url>", "Dashboard origin")
+    .option("--once", "Poll once, execute pending work if present, then exit")
+    .option("--poll <milliseconds>", "Polling interval (1000–30000)", "3000")
+    .option("--work-dir <directory>", "Private directory for runner evidence")
+    .action(async (options) => {
+      loadEnvFiles(process.cwd());
+      const { runDashboardRunner } = await import("../../../../../apps/platform/server/test-runner.js");
+      const controller = new AbortController();
+      const stop = () => controller.abort();
+      process.once("SIGINT", stop);
+      process.once("SIGTERM", stop);
+      try {
+        await runDashboardRunner({ ...options, poll: Number(options.poll), token: process.env.VISUALGUARD_RUNNER_TOKEN ?? "", signal: controller.signal });
+      } catch (error) {
+        if (!controller.signal.aborted) throw error;
+      } finally {
+        process.removeListener("SIGINT", stop);
+        process.removeListener("SIGTERM", stop);
+      }
+    });
   const policy = dashboard
     .command("policy")
     .description("Assess visual regression policy and reconcile exact-revision GitHub checks");

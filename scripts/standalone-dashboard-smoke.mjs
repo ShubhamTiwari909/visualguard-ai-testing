@@ -148,6 +148,20 @@ try {
     cwd: consumer,
   });
   assert.match(help.stdout, /--env-file/);
+  const csrf = (await (await fetch(`${server.url}/api/session`)).json()).token;
+  const runnerKeyResponse = await fetch(`${server.url}/api/projects/smoke/test-runner-key`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-visualguard-platform-token": csrf },
+    body: JSON.stringify({ name: "Fresh package runner", days: 1 }),
+  });
+  assert.equal(runnerKeyResponse.status, 201);
+  const runnerKey = await runnerKeyResponse.json();
+  await exec(process.execPath, [join(installed, "cli.js"), "dashboard", "runner",
+    "--project", "smoke", "--server", server.url, "--once",
+    "--work-dir", join(consumer, "runner-evidence")], {
+    cwd: consumer,
+    env: { ...process.env, VISUALGUARD_RUNNER_TOKEN: runnerKey.token },
+  });
   for (const target of ["vercel", "cloud-run"]) {
     const out = join(consumer, target);
     await dashboard.scaffoldDashboard({ target, out, version: pkg.version, packageFile: tarball });
@@ -169,7 +183,7 @@ try {
   await dashboard.copyDashboardAssets(join(consumer, "public"));
   await stat(join(consumer, "public/index.html"));
   console.log(
-    "Standalone package smoke passed: fresh install, core API, UI/assets, local start, import, publish, backup/restore, CLI, and both deployment scaffolds.",
+    "Standalone package smoke passed: fresh install, core API, UI/assets, local start, import, publish, backup/restore, CLI/private runner polling, and both deployment scaffolds.",
   );
 } finally {
   await server?.close();
