@@ -68,6 +68,9 @@ try {
   const operations = await fetch(`${server.url}/operations`, { redirect: "manual" });
   assert.equal(operations.status, 200);
   assert.match(await operations.text(), /<div id="root">/);
+  const policies = await fetch(`${server.url}/policies`, { redirect: "manual" });
+  assert.equal(policies.status, 200);
+  assert.match(await policies.text(), /<div id="root">/);
   const invitation = await fetch(`${server.url}/invite`, { redirect: "manual" });
   assert.equal(invitation.status, 200);
   assert.equal(invitation.headers.get("referrer-policy"), "no-referrer");
@@ -157,7 +160,7 @@ try {
     );
     if (target === "vercel") {
       const config = JSON.parse(await readFile(join(out, "vercel.json"), "utf8"));
-      for (const route of ["/reviews", "/invite", "/operations"]) {
+      for (const route of ["/reviews", "/invite", "/operations", "/baselines", "/policies"]) {
         assert.ok(
           config.rewrites.some(
             (rewrite) => rewrite.source === route && rewrite.destination === "/index.html",

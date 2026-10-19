@@ -341,7 +341,7 @@ SQLite supports the local team features without a separate service. PostgreSQL a
 
 The customer owns the installation's database/domain/secrets and decides who gets access. Database storage/backup costs include images, not only accounts and comments. Source and application authentication remain on the runner; enabled AI/GitHub/Google integrations make their own external connections.
 
-Vercel and Cloud Run deployment scaffolds are available. The setup guide explains separate dashboard projects, external databases, canonical URLs and known scaffold corrections. A generated scaffold is not evidence of a validated production deployment or an existing one-click marketplace template.
+Vercel and Cloud Run deployment scaffolds are available. The setup guide explains separate dashboard projects, external databases, canonical URLs and updating existing deployment folders. The `3.2.0` Vercel scaffold includes the `/policies` page rewrite. A generated scaffold is not evidence of a validated production deployment or an existing one-click marketplace template.
 
 ## 18. Backups, audit and recovery
 
