@@ -8,7 +8,7 @@ It can compare two running versions of an application, compare an application wi
 
 This document explains the current source implementation in ordinary product terms. For installation, use [local source setup](LOCAL-SETUP.md) or [npm package setup](NPM-PACKAGE-SETUP.md).
 
-**Release note — 19 October 2026:** this release preparation targets `visualguard@3.2.0`. Registry metadata still reports `3.1.0`, from revision `b8f2cb04`. The Google onboarding/account linking, expanded administration, approved baselines and visual policies described here require version 3.2.0 or a current-source installation. Check npm availability before upgrading; this guide does not announce publication or live cloud certification. Existing operators should read the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310).
+**Release note — 19 October 2026:** registry metadata reports `visualguard@3.2.0`. The Google onboarding/account linking, expanded administration, approved baselines and visual policies described here require version 3.2.0 or a current-source installation. Check npm availability before upgrading; merged source changes after publication require a later package release. This guide does not certify a live cloud deployment. Existing operators should read the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310).
 
 ## Contents
 
@@ -380,6 +380,7 @@ Developers can use the package API for configuration parsing, run creation, even
 | `merge` | Combine compatible shards and validate coverage |
 | `comment` | Publish/update a PR summary comment |
 | `dashboard` | Run the dashboard |
+| `test PROJECT --dashboard URL` | Bind this execution to a project and publish evidence to the selected dashboard |
 | `dashboard project create` | Create/reuse a project with appropriate authority |
 | `dashboard import` / `publish` | Store local evidence or upload to a running server |
 | `dashboard export` / `restore` | Move portable evidence |
@@ -389,7 +390,7 @@ Developers can use the package API for configuration parsing, run creation, even
 | `visualguard/playwright` | Check an interactive state inside an existing Playwright test |
 | `visualguard` / `visualguard/dashboard` APIs | Build supported run/reporting/dashboard integrations |
 
-This is a capability map, not a command sequence to run all at once. Use the setup guides and installed command help for version-specific options.
+This is a capability map, not a command sequence to run all at once. For copyable commands and explanations of tests, starting a dashboard, creating projects, project binding, import/publish and deployment generation, use the [npm command reference](NPM-PACKAGE-SETUP.md#13-command-reference) or [source command reference](LOCAL-SETUP.md#13-command-reference). Each installed command also supports `--help`.
 
 ## 20. Current scope and choosing a starting point
 
