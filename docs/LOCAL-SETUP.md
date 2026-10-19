@@ -4,20 +4,24 @@ For an explanation of all product capabilities before setup, read the [product f
 
 Use this guide to develop this repository or try the latest merged features on your own computer. To install the published package in another application, use the other final guide: [npm package setup](NPM-PACKAGE-SETUP.md).
 
+Use terminal A for the demo application sites, terminal B for a dashboard, and terminal C for comparison commands. Skip terminal B when running visual regression alone. AI can be added to any comparison without changing the selected dashboard database.
+
 The examples use a macOS/Linux POSIX shell. On Windows, use WSL for these shell/Docker examples. VisualGuard's ordinary CLI/dashboard also support Windows; host-side password-file recovery requires a POSIX host.
 
 ## Contents
 
-- [Install the repository](#1-install-the-repository)
-- [Start the production and staging demo](#2-start-the-production-and-staging-demo)
-- [Run visual regression without a dashboard or database](#3-run-visual-regression-without-a-dashboard-or-database)
-- [Run the local dashboard with SQLite](#4-run-the-local-dashboard-with-sqlite)
-- [Choose PostgreSQL or MongoDB](#5-choose-postgresql-or-mongodb)
-- [Test password login, Google and multiple users](#6-test-password-login-google-and-multiple-users)
-- [Review changes, baselines and visual policies](#7-review-changes-baselines-and-visual-policies)
-- [Audit, recovery and backups](#8-audit-recovery-and-backups)
-- [Run a built dashboard or package candidate](#9-run-a-built-dashboard-or-package-candidate)
-- [Troubleshooting and checks](#10-troubleshooting-and-checks)
+- [1. Install the repository](#1-install-the-repository)
+- [2. Start the production and staging demo](#2-start-the-production-and-staging-demo)
+- [3. Run visual regression without a dashboard or database](#3-run-visual-regression-without-a-dashboard-or-database)
+- [4. Run source visual regression with AI](#4-run-source-visual-regression-with-ai)
+- [5. Run source visual regression with a local SQLite dashboard](#5-run-source-visual-regression-with-a-local-sqlite-dashboard)
+- [6. Run source visual regression with PostgreSQL](#6-run-source-visual-regression-with-postgresql)
+- [7. Run source visual regression with MongoDB](#7-run-source-visual-regression-with-mongodb)
+- [8. Test password login, Google and multiple users](#8-test-password-login-google-and-multiple-users)
+- [9. Review changes, baselines and visual policies](#9-review-changes-baselines-and-visual-policies)
+- [10. Audit, recovery and backups](#10-audit-recovery-and-backups)
+- [11. Run a built dashboard or package candidate](#11-run-a-built-dashboard-or-package-candidate)
+- [12. Troubleshooting and checks](#12-troubleshooting-and-checks)
 
 ## 1. Install the repository
 
@@ -85,7 +89,61 @@ Inspect the reference/candidate/diff images and findings. The color-only example
 
 This workflow needs **no dashboard, database, upload token, Google account or AI key**. It writes run evidence on the execution machine. To try other fixture cases, add `/identical`, `/hidden`, `/alignment` or `/dynamic-change` to `routes`.
 
-## 4. Run the local dashboard with SQLite
+## 4. Run source visual regression with AI
+
+**Use this section when:** you want AI explanations/classification while running the repository locally. Complete sections 1–2; a dashboard/database is not required. AI runs on the capture machine, independently of where the dashboard stores results.
+
+### Gemini
+
+1. Create a Gemini API key through [Google AI Studio](https://ai.google.dev/gemini-api/docs/api-key).
+2. Add the real key to an ignored `.env.local` in the **repository root**, not `apps/platform/.env.local`:
+
+```dotenv
+GEMINI_API_KEY=YOUR_REAL_GEMINI_API_KEY
+```
+
+3. Run from that root, omitting `--no-ai`:
+
+```sh
+node packages/visualguard/dist/cli.js test \
+  --config output/local-demo.json --provider gemini
+node packages/visualguard/dist/cli.js report --config output/local-demo.json
+```
+
+`--provider gemini` overrides the demo configuration's `provider: none`. Only removing `--no-ai` would leave that configuration's AI disabled. The CLI loads the runner's `.env`/`.env.local`; existing process settings take precedence. Google OAuth sign-in credentials are unrelated to this API key.
+
+Inspect the report's findings/analysis. AI is used only where configured/eligible; provider/key/quota/model/network failures fall back to deterministic analysis. A saved report alone does not prove a model call succeeded. To explain deterministic regressions too, set `ai.analyze` to `all` in the demo configuration. To retain deterministic statuses while adding AI explanation, set `ai.advisory` to `true`.
+
+### Local Ollama
+
+Install/start Ollama using its [official instructions](https://docs.ollama.com/quickstart). Use a local vision-capable model, for example the [Qwen2.5-VL model](https://ollama.com/library/qwen2.5vl) supported by this integration:
+
+```sh
+ollama pull qwen2.5vl
+```
+
+Keep the Ollama service running (use `ollama serve` if it is not already started by the app). In the capture terminal:
+
+```sh
+export OLLAMA_HOST=http://127.0.0.1:11434
+node packages/visualguard/dist/cli.js test \
+  --config output/local-demo.json --provider ollama --model qwen2.5vl
+```
+
+A downloaded local model needs adequate resources but no Gemini API key. Requests go to the selected Ollama host. Use `--no-ai` to return to deterministic-only comparison.
+
+### Combine AI with the dashboard
+
+First start a dashboard and create a project using the SQLite, PostgreSQL or MongoDB section below. Then, with provider credentials/service configured in the **runner terminal**:
+
+```sh
+node packages/visualguard/dist/cli.js test storefront \
+  --dashboard http://127.0.0.1:4400 --config output/local-demo.json --provider gemini
+```
+
+Use the project ID you actually created (`storefront`, `source-postgres` or `source-mongodb`). Login-enabled dashboards also require the project upload token. AI does not need database credentials and does not grant visual approval or bypass missing evidence.
+
+## 5. Run source visual regression with a local SQLite dashboard
 
 SQLite is an embedded database file, so “without a database setup” means **without installing a database service**. The dashboard always persists state somewhere.
 
@@ -136,28 +194,108 @@ Only use a revision label that actually describes the captured evidence. Repeati
 
 This example's database is `.visualguard/platform-dev/metadata.sqlite`. New screenshots/DOM objects, accounts, runs, reviews, baselines, policies and platform state live in that database. The original runner output remains under `.visualguard/local-demo-runs/` independently. Restarting the dashboard with the same directory retains its history.
 
-## 5. Choose PostgreSQL or MongoDB
+## 6. Run source visual regression with PostgreSQL
 
-Use one backend at a time. Stop the dashboard before changing its database settings; switching a URL selects another workspace and does not migrate existing data.
+**Use this section when:** you run the VisualGuard repository locally and want the dashboard's runs, images and team state stored in PostgreSQL. Standalone visual regression still needs no database.
 
-The [npm guide's database section](NPM-PACKAGE-SETUP.md#5-use-postgresql-or-mongodb) provides complete local Docker setup for PostgreSQL and a transaction-capable MongoDB replica set. Those databases work with the source dashboard too. After starting the desired database, use a **new terminal B**, still at the repository root:
+Complete sections 1–2 first and leave the fixture sites running in terminal A. Stop the dashboard in terminal B before choosing another backend. If PostgreSQL is already available, skip container creation and substitute its real dedicated database URI. Otherwise, with Docker installed:
 
 ```sh
-export VISUALGUARD_PLATFORM_DATA_DIR="$PWD/.visualguard/platform-dev"
-export VISUALGUARD_AUTH_MODE=local
-export VISUALGUARD_PUBLIC_URL="" DATABASE_URL=""
-# Choose exactly one actual connection URL:
+docker run --detach --name visualguard-postgres-local \
+  --publish 127.0.0.1:5433:5432 \
+  --env POSTGRES_USER=visualguard \
+  --env POSTGRES_PASSWORD=visualguard_local_only \
+  --env POSTGRES_DB=visualguard \
+  --volume visualguard_pg_local:/var/lib/postgresql/data \
+  postgres:17
+
+docker exec visualguard-postgres-local pg_isready -U visualguard -d visualguard
+```
+
+Wait for accepting connections. Reuse this container if you created it from the npm guide; do not create a second container on the same port. The password and loopback binding are a local development example, not production credentials.
+
+### Start the source dashboard with PostgreSQL — terminal B
+
+From the repository root:
+
+```sh
 export VISUALGUARD_DATABASE_URL='postgresql://visualguard:visualguard_local_only@127.0.0.1:5433/visualguard'
-# Or, after starting the documented replica set:
-# export VISUALGUARD_DATABASE_URL='mongodb://127.0.0.1:27018/visualguard?replicaSet=visualguard_local&directConnection=true'
+export DATABASE_URL="" VISUALGUARD_PUBLIC_URL=""
+export VISUALGUARD_AUTH_MODE=local
+export VISUALGUARD_PLATFORM_DATA_DIR="$PWD/.visualguard/platform-postgres-dev"
 pnpm platform:dev
 ```
 
-For CLI imports/project creation/baseline pulls, set the same database URL in terminal C. For HTTP publishing, use `--dashboard` and the running server instead. The connection scheme selects the adapter automatically; `DATABASE_URL` is a fallback, so avoid accidentally inheriting another application's database.
+Open `http://127.0.0.1:4400`. The adapter creates its `vg_*` schema using the real database role. New screenshot/DOM objects and platform history are stored in PostgreSQL. The role needs schema initialization permissions.
 
-PostgreSQL initializes its `vg_*` tables/indexes. MongoDB initializes collections/indexes. Use a dedicated database and a role with schema permissions. Invite mode, Google linking, baseline mutations and recovery require SQLite, PostgreSQL or transaction-capable MongoDB. A standalone MongoDB instance is a compatibility option with `VISUALGUARD_USER_ADMISSION=legacy`, not the full team-feature configuration.
+### Create a project and run the test — terminal C
 
-## 6. Test password login, Google and multiple users
+From the repository root, talk to the running server so this terminal does not need its database credentials:
+
+```sh
+node packages/visualguard/dist/cli.js dashboard project create source-postgres \
+  --name "Source PostgreSQL demo" --server http://127.0.0.1:4400
+node packages/visualguard/dist/cli.js test source-postgres \
+  --dashboard http://127.0.0.1:4400 --config output/local-demo.json --no-ai
+```
+
+Open the run, inspect both images, restart the dashboard with the same URL and confirm the run remains. For AI, use `--provider gemini` instead of `--no-ai`, following section 4. No upload token is needed for this local-owner trial; login mode requires one.
+
+## 7. Run source visual regression with MongoDB
+
+**Use this section when:** you run the repository locally and want dashboard storage in MongoDB. Complete sections 1–2 first. Use a replica set for the full team feature set, including invitations/linking/baseline mutations. A standalone server is a limited compatibility option.
+
+If a transaction-capable MongoDB database already exists, use its real URI and skip the fixture below. Otherwise, with Docker installed:
+
+```sh
+docker run --detach --name visualguard-mongo-local \
+  --publish 127.0.0.1:27018:27018 \
+  --volume visualguard_mongo_local:/data/db \
+  mongo:7 --replSet visualguard_local --port 27018 --bind_ip_all
+
+docker exec visualguard-mongo-local mongosh --port 27018 --quiet \
+  --eval 'db.runCommand({ping: 1})'
+```
+
+Wait for the ping, then initialize once on a new volume:
+
+```sh
+docker exec visualguard-mongo-local mongosh --port 27018 --quiet \
+  --eval 'rs.initiate({_id: "visualguard_local", members: [{_id: 0, host: "127.0.0.1:27018"}]})'
+docker exec visualguard-mongo-local mongosh --port 27018 --quiet \
+  --eval 'db.hello().isWritablePrimary'
+```
+
+Repeat the primary check until it returns `true`. Reuse an existing initialized fixture if you created it earlier. This unauthenticated loopback database is for local development; use the managed deployment's authentication/network settings in production.
+
+### Start the source dashboard with MongoDB — terminal B
+
+Stop any dashboard still listening on port 4400, then run from the repository root:
+
+```sh
+export VISUALGUARD_DATABASE_URL='mongodb://127.0.0.1:27018/visualguard?replicaSet=visualguard_local&directConnection=true'
+export DATABASE_URL="" VISUALGUARD_PUBLIC_URL=""
+export VISUALGUARD_AUTH_MODE=local
+export VISUALGUARD_PLATFORM_DATA_DIR="$PWD/.visualguard/platform-mongo-dev"
+pnpm platform:dev
+```
+
+For Atlas, use its supplied `mongodb+srv://.../visualguard` URI and appropriate access settings, not the local `directConnection` example. Metadata and new screenshot/DOM objects live in the selected MongoDB database.
+
+### Create a project and run the test — terminal C
+
+```sh
+node packages/visualguard/dist/cli.js dashboard project create source-mongodb \
+  --name "Source MongoDB demo" --server http://127.0.0.1:4400
+node packages/visualguard/dist/cli.js test source-mongodb \
+  --dashboard http://127.0.0.1:4400 --config output/local-demo.json --no-ai
+```
+
+Inspect the run and verify persistence after restarting with the same URI. To add AI, use the provider instructions in section 4 and replace `--no-ai` with `--provider gemini` or the Ollama provider/model flags.
+
+A URL change selects another workspace; it does not migrate PostgreSQL/SQLite history. Standalone MongoDB requires explicit `VISUALGUARD_USER_ADMISSION=legacy` on compatible releases and cannot support the full transactional team workflow. `docker stop`/`docker start` retain these fixture volumes; deleting a volume erases its database.
+
+## 8. Test password login, Google and multiple users
 
 ### Password login without Google
 
@@ -227,9 +365,9 @@ In **People & integrations**:
 
 Do not describe these current-source controls as part of an older published npm version. Existing deployments must back up and explicitly choose `invite` or `legacy` when migrating from an unrecorded admission policy, with all writers upgraded consistently.
 
-## 7. Review changes, baselines and visual policies
+## 9. Review changes, baselines and visual policies
 
-For the shortest local trial, return to the local-owner workspace from section 4; retain the same workspace/database in each terminal. These features also work with properly authorized users in the login trial.
+For the shortest local trial, return to the local-owner workspace from section 5; retain the same workspace/database in each terminal. These features also work with properly authorized users in the login trial.
 
 ### Review exact evidence
 
@@ -292,13 +430,13 @@ node packages/visualguard/dist/cli.js dashboard policy assess \
   --project storefront --revision "$(git rev-parse HEAD)"
 ```
 
-`--enforce` exits unsuccessfully unless satisfied. Operational errors always fail. For GitHub setup, exact PR-head capture and scheduled reconciliation, see the [final package guide](NPM-PACKAGE-SETUP.md#9-team-reviews-approved-baselines-and-github-checks). Named journeys remain deferred.
+`--enforce` exits unsuccessfully unless satisfied. Operational errors always fail. For GitHub setup, exact PR-head capture and scheduled reconciliation, see the [final package guide](NPM-PACKAGE-SETUP.md#11-team-reviews-approved-baselines-and-github-checks). Named journeys remain deferred.
 
 ### Names and deletion
 
 Maintainers can edit display names/run names and the project's public ID; old IDs remain aliases. `--run-name` labels new project-bound captures. Deletion requires explicit confirmation and permission, preserves evidence shared/referenced elsewhere, and does not erase original runner output or backups. Deleted project IDs remain reserved; create a new ID rather than trying to reuse one.
 
-## 8. Audit, recovery and backups
+## 10. Audit, recovery and backups
 
 Administrators open **Audit & recovery** at `/operations`. Audit filters and Previous/Next pages keep history bounded. Readiness summarizes admission, transaction support and administrators; it is not production certification.
 
@@ -342,7 +480,7 @@ node packages/visualguard/dist/cli.js dashboard export /absolute/path/team-evide
 
 Restore into a fresh isolated destination and verify accounts, permissions, old screenshots and baseline selection before trusting a native backup. Keep deployment secrets separately. A rollback of code does not roll back a migrated database.
 
-## 9. Run a built dashboard or package candidate
+## 11. Run a built dashboard or package candidate
 
 For the source dashboard with compiled UI, keep its settings loaded and use:
 
@@ -361,7 +499,7 @@ pnpm --dir packages/visualguard pack --pack-destination "$PWD/output/package-can
 
 Install that actual `.tgz` path in a separate consumer project. This is an explicit way to test newer source before npm publication; the ordinary [npm guide](NPM-PACKAGE-SETUP.md) needs no tarball or source checkout. The public release pipeline remains responsible for full declarations, release validation and a distinct published version.
 
-## 10. Troubleshooting and checks
+## 12. Troubleshooting and checks
 
 | Symptom | Check |
 | --- | --- |
