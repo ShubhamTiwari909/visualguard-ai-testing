@@ -369,7 +369,7 @@ Developers can use the package API for configuration parsing, run creation, even
 | Command or API | Main use |
 | --- | --- |
 | URL mode | Explore one site or compare two URLs quickly |
-| `init` / `doctor` | Create config and diagnose setup |
+| `init` / `doctor` | Generate `visualguard.config.ts` with the setup wizard and diagnose setup; see the [npx initialization walkthrough](NPM-PACKAGE-SETUP.md#initialize-the-project-with-npx) |
 | `test` | Compare configured application pages or stored references |
 | `test PROJECT` | Compare and save new evidence to a dashboard project |
 | `report` / `analyze` | Inspect or re-analyze saved evidence |

@@ -57,6 +57,8 @@ Leave it running. Open:
 
 The button has a deliberate color difference. These are application pages under test; the dashboard will use port **4400**.
 
+The source fixture walkthrough deliberately uses a manual JSON config at `output/local-demo.json` to keep it separate from repository configs. It does not come from `init`. For a normal application setup, `npx visualguard init` generates `visualguard.config.ts`; follow the [npm initialization walkthrough](NPM-PACKAGE-SETUP.md#initialize-the-project-with-npx). The same config fields work in either format, but JSON needs an explicit `--config` path.
+
 In **terminal C**, also at the repository root, create `output/local-demo.json`:
 
 ```sh
