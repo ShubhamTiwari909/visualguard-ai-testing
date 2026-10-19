@@ -10,6 +10,9 @@ Every `npx --no-install visualguard` command below runs the npm package installe
 
 - [1. Choose your setup](#1-choose-your-setup)
 - [2. Run visual regression only in another project with npx](#2-run-visual-regression-only-in-another-project-with-npx)
+  - [Initialize the project with npx](#initialize-the-project-with-npx)
+  - [Understand the generated TypeScript config](#understand-the-generated-typescript-config)
+  - [Optional JSON configuration](#optional-use-a-manually-maintained-json-config)
 - [3. Run visual regression with AI in another project with npx](#3-run-visual-regression-with-ai-in-another-project-with-npx)
 - [4. Use local reports and baselines](#4-use-local-reports-and-baselines)
 - [5. Run npx visual regression with a local SQLite dashboard](#5-run-npx-visual-regression-with-a-local-sqlite-dashboard)
@@ -65,9 +68,60 @@ Add these entries to `.gitignore` if absent:
 .env.dashboard-admin
 ```
 
-### Configure the comparison
+### Initialize the project with npx
 
-Start your app normally, for example with `npm run dev`. Create `visualguard.config.json` in the application root:
+Start your application normally, for example with `npm run dev`. From that application's root, run the setup wizard:
+
+```sh
+npx --no-install visualguard init
+```
+
+This is the installed-package form of `npx visualguard init`. The wizard asks for:
+
+1. Your production/reference URL and staging/candidate URL, such as `https://your-app.example.com` and `http://127.0.0.1:3000`.
+2. Routes to test and viewport presets.
+3. An AI provider; choose **None** for the first visual-only run.
+4. Whether to add a GitHub Actions workflow; you can decline for local setup.
+
+For setup without prompts, use real reachable application URLs:
+
+```sh
+npx --no-install visualguard init --yes \
+  --production https://your-app.example.com \
+  --staging http://127.0.0.1:3000 --ai none
+```
+
+Choose the wizard or the noninteractive command, not both. Noninteractive setup selects discovered routes and the desktop/mobile viewport presets; review the generated file before running tests. These URLs describe the application under test, not the dashboard. For a fully local comparison, use two application servers on different ports.
+
+### Understand the generated TypeScript config
+
+On a fresh project, `init` creates **`visualguard.config.ts`**. Keep that file for the commands in this guide; do not rename it to `.json`. VisualGuard loads the TypeScript config directly, including in JavaScript applications, without a separate TypeScript compilation step.
+
+The wizard can also add a `visual` script to `package.json` if absent, update `.gitignore`, save a supplied Gemini key in `.env.local`, and create the GitHub workflow if selected. It does not create a database, dashboard server or dashboard project. Keep existing files when already configured; `--force` deliberately overwrites the discovered config.
+
+A minimal config using the same format is:
+
+```ts
+import { defineConfig } from "visualguard";
+
+export default defineConfig({
+  baseURL: {
+    production: "https://your-app.example.com",
+    staging: "http://127.0.0.1:3000",
+  },
+  routes: ["/"],
+  viewports: {
+    desktop: { width: 1280, height: 800 },
+  },
+  ai: { provider: "none" },
+});
+```
+
+The generated file can have additional discovered routes, viewports, comments and stabilization settings. Edit its existing values rather than replacing it blindly with this smaller example. `init --ai none` sets the provider during setup; later tests use `--provider gemini` or `--provider ollama` when enabling AI.
+
+### Optional: use a manually maintained JSON config
+
+JSON is supported when explicitly selected, but `init` generates TypeScript. If you deliberately prefer JSON, create `visualguard.config.json` instead of running the initializer, using the same config fields as plain JSON without the import/export or `defineConfig` wrapper. For example:
 
 ```json
 {
@@ -76,42 +130,36 @@ Start your app normally, for example with `npm run dev`. Create `visualguard.con
     "staging": "http://127.0.0.1:3000"
   },
   "routes": ["/"],
-  "viewports": {
-    "desktop": { "width": 1280, "height": 800 }
-  },
+  "viewports": { "desktop": { "width": 1280, "height": 800 } },
   "ai": { "provider": "none" }
 }
 ```
 
-Replace both URLs/port and routes with real reachable pages. These are application-under-test URLs, not a dashboard URL. For a completely local comparison, run your production/reference build and candidate build on two different ports and use those origins.
-
-If you already have a VisualGuard config, keep it. Alternatively `npx --no-install visualguard init` writes a TypeScript config interactively; do not create competing configs unintentionally. JSON examples in this guide use an explicit `--config` because automatic discovery targets the supported JavaScript/TypeScript config filenames.
+Run it with `npx --no-install visualguard test --config visualguard.config.json --no-ai`. Automatic discovery finds supported JavaScript/TypeScript filenames, not this JSON filename. The remaining examples use the generated `.ts` file; replace their `--config` path only if you chose JSON. Keep one intended config to avoid testing different settings accidentally.
 
 ### Compare and inspect
 
 ```sh
-npx --no-install visualguard test --config visualguard.config.json --no-ai
-npx --no-install visualguard report --config visualguard.config.json
+npx --no-install visualguard test --config visualguard.config.ts --no-ai
+npx --no-install visualguard report --config visualguard.config.ts
 ```
 
 Change a button's color or spacing in staging, rerun and inspect reference/candidate/diff views and findings. Reports are saved under `.visualguard/runs/RUN_ID/` by default. The report command serves the selected run locally until Ctrl+C.
 
-A plain `test` without a project argument stays offline. No dashboard, database, upload token or AI key is required. A nonzero test exit may mean a detected regression rather than installation failure; read the saved report/status. Use `doctor --config visualguard.config.json` to inspect configuration/reachability.
+A plain `test` without a project argument stays offline. No dashboard, database, upload token or AI key is required. A nonzero test exit may mean a detected regression rather than installation failure; read the saved report/status. Use `doctor --config visualguard.config.ts` to inspect configuration/reachability.
 
 ### Optional authentication for application pages
 
-For logged-in application pages, use the existing capture authentication workflow, for example `npx --no-install visualguard auth staging --config visualguard.config.json`, and the corresponding production setup. Add the saved state paths to the comparison configuration so captures use them:
+For logged-in application pages, use the existing capture authentication workflow, for example `npx --no-install visualguard auth staging --config visualguard.config.ts`, and the corresponding production setup. Add the saved state paths as an `environments` property inside your existing `defineConfig({ ... })` object so captures use them:
 
-```json
-{
-  "environments": {
-    "production": { "storageState": ".visualguard/auth/production.json" },
-    "staging": { "storageState": ".visualguard/auth/staging.json" }
-  }
-}
+```ts
+  environments: {
+    production: { storageState: ".visualguard/auth/production.json" },
+    staging: { storageState: ".visualguard/auth/staging.json" },
+  },
 ```
 
-This is a fragment to merge into the existing configuration after saving each session. Application login cookies belong to the runner, not dashboard account login.
+This is a property fragment, not a second config file. Keep the existing URLs, routes and viewport settings. Application login cookies belong to the runner, not dashboard account login.
 
 ## 3. Run visual regression with AI in another project with npx
 
@@ -129,8 +177,8 @@ GEMINI_API_KEY=YOUR_REAL_GEMINI_API_KEY
 3. From that application root, run:
 
 ```sh
-npx --no-install visualguard test --config visualguard.config.json --provider gemini
-npx --no-install visualguard report --config visualguard.config.json
+npx --no-install visualguard test --config visualguard.config.ts --provider gemini
+npx --no-install visualguard report --config visualguard.config.ts
 ```
 
 Do not append `--no-ai`. `--provider gemini` overrides the sample config's `ai.provider: none`; just removing `--no-ai` would not enable that config's AI. The test loads `.env`/`.env.local`, with existing process variables taking precedence. The key belongs to the visual-test runner, not the dashboard database or Google sign-in client.
@@ -151,7 +199,7 @@ Leave its local service running; use `ollama serve` if the app has not already s
 
 ```sh
 export OLLAMA_HOST=http://127.0.0.1:11434
-npx --no-install visualguard test --config visualguard.config.json \
+npx --no-install visualguard test --config visualguard.config.ts \
   --provider ollama --model qwen2.5vl
 ```
 
@@ -163,7 +211,7 @@ First complete one dashboard setup below and create its project. Then use the sa
 
 ```sh
 npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.json --provider gemini
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --provider gemini
 ```
 
 This captures, analyzes and publishes in one run. Replace `storefront`/the server with your actual values. For Ollama, replace the provider with `--provider ollama --model qwen2.5vl`. Login-enabled local/hosted dashboards also need the project upload token from section 8. The same command applies to SQLite, PostgreSQL and MongoDB: database choice changes dashboard storage, not the AI integration.
@@ -172,30 +220,32 @@ This captures, analyzes and publishes in one run. Replace `storefront`/the serve
 
 ### Saved local reference images
 
-To compare one candidate application against stored screenshots, create `visualguard.baseline.json`:
+To compare one candidate application against stored screenshots, create a separate `visualguard.baseline.ts` configuration:
 
-```json
-{
-  "mode": "baseline",
-  "baseURL": { "staging": "http://127.0.0.1:3000" },
-  "routes": ["/"],
-  "viewports": { "desktop": { "width": 1280, "height": 800 } },
-  "baseline": { "dir": "visualguard/baselines", "missing": "error" },
-  "ai": { "provider": "none" }
-}
+```ts
+import { defineConfig } from "visualguard";
+
+export default defineConfig({
+  mode: "baseline",
+  baseURL: { staging: "http://127.0.0.1:3000" },
+  routes: ["/"],
+  viewports: { desktop: { width: 1280, height: 800 } },
+  baseline: { dir: "visualguard/baselines", missing: "error" },
+  ai: { provider: "none" },
+});
 ```
 
 Create a reference only after checking that the current appearance is expected:
 
 ```sh
-npx --no-install visualguard test --config visualguard.baseline.json --update-baselines --no-ai
+npx --no-install visualguard test --config visualguard.baseline.ts --update-baselines --no-ai
 ```
 
 After changing the application, compare without the update flag:
 
 ```sh
-npx --no-install visualguard test --config visualguard.baseline.json --no-ai
-npx --no-install visualguard report --config visualguard.baseline.json
+npx --no-install visualguard test --config visualguard.baseline.ts --no-ai
+npx --no-install visualguard report --config visualguard.baseline.ts
 ```
 
 Keep rendering settings consistent. Store local baselines according to your repository/artifact policy. Local baseline creation is different from the later shared **approved baseline registry** described in section 11. Do not update baselines automatically just to make CI pass.
@@ -252,7 +302,7 @@ In another terminal at the application root:
 npx --no-install visualguard dashboard project create storefront \
   --name "Storefront Web" --server http://127.0.0.1:4400
 npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.json --no-ai
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
 ```
 
 The explicit `--server` creates the project in the running dashboard's storage, even if it uses a custom data directory. If using port 4500, change both `--server` and `--dashboard` to that port. For later direct-storage imports, use the same selected `--data-dir`.
@@ -315,7 +365,7 @@ In the test terminal, run the full PostgreSQL-backed workflow:
 
 ```sh
 npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.json --no-ai
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
 ```
 
 Open the stored run and its screenshots, restart the dashboard with the same `.env.visualguard`, and confirm its history remains. For AI plus PostgreSQL, replace `--no-ai` with `--provider gemini` after section 3's key setup, or use its Ollama provider/model flags. This local-owner configuration needs no upload token; login mode does. The app role must be able to create/update `vg_*` tables/indexes; an existing restricted role may need schema grants from its database administrator. Do not copy a literal `USER` placeholder or rely on your laptop's username being a database role.
@@ -370,7 +420,7 @@ With the application environments from section 2 still running:
 npx --no-install visualguard dashboard project create storefront \
   --name "Storefront Web" --server http://127.0.0.1:4400
 npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.json --no-ai
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
 ```
 
 The first command creates the dashboard project. The second binds this test execution to `storefront`, captures the comparison and uploads its evidence to the running dashboard. The runner needs the dashboard URL, not the MongoDB password. See the [command reference](#13-command-reference) for each argument.
@@ -419,7 +469,7 @@ For the login-enabled loopback trial, use `http://127.0.0.1:4400` instead. Remot
 3. Run from that application's root:
 
 ```sh
-npx --no-install visualguard test storefront --config visualguard.config.json --no-ai
+npx --no-install visualguard test storefront --config visualguard.config.ts --no-ai
 ```
 
 The command loads `.env`/`.env.local`; existing process values win. HTTP publishing requires a project token even when the dashboard is on localhost if it runs in login mode. The runner needs neither the database URI nor dashboard admin credentials. Browsers stay on the developer's computer/CI, with network access to both tested applications and the dashboard.
@@ -706,6 +756,7 @@ Administrators use **Audit & recovery** for bounded, filtered history and sign-i
 | `role "USER" does not exist` | Actual PostgreSQL URI/user and schema grants; replace all placeholders |
 | Dashboard unexpectedly uses another app's DB | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings |
 | Empty history after a restart | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data |
+| `test "My Application"` ran but the dashboard is empty | Start the dashboard with its actual `--env-file`, then run `test PROJECT --dashboard http://127.0.0.1:4400`; see [missing project/run recovery](#project-or-run-missing-from-the-dashboard) |
 | Project-bound test fails before capture | Project already exists, unique name/ID, dashboard version and correct project token |
 | Upload fails after successful capture | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits |
 | Missing package/command/UI | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main` |
@@ -722,13 +773,13 @@ The two final guides replace the earlier phase/setup walkthroughs. Examples, loc
 
 ## 13. Command reference
 
-Run these commands from the application root after installing VisualGuard. `npx --no-install` uses that project's installed version. Examples assume `visualguard.config.json` from section 2, a running dashboard at `http://127.0.0.1:4400`, and the local-owner mode from section 5 or 7. Replace the project ID, paths and URLs with your actual values.
+Run these commands from the application root after installing VisualGuard. `npx --no-install` uses that project's installed version. Examples assume `visualguard.config.ts` from section 2, a running dashboard at `http://127.0.0.1:4400`, and the local-owner mode from section 5 or 7. Replace the project ID, paths and URLs with your actual values.
 
 ### Run a visual test or open its report
 
 ```sh
-npx --no-install visualguard test --config visualguard.config.json --no-ai
-npx --no-install visualguard report --config visualguard.config.json
+npx --no-install visualguard test --config visualguard.config.ts --no-ai
+npx --no-install visualguard report --config visualguard.config.ts
 ```
 
 `test` compares the configured production/reference and staging/candidate pages and saves evidence locally. Without a project argument, it does not publish to the dashboard. `report` opens/serves the latest saved report for that configuration; add `--run RUN_ID` to select another saved run. Stop the report server with Ctrl+C.
@@ -757,7 +808,7 @@ npx --no-install visualguard dashboard project create storefront \
 ```sh
 npx --no-install visualguard test storefront \
   --dashboard http://127.0.0.1:4400 \
-  --config visualguard.config.json --no-ai \
+  --config visualguard.config.ts --no-ai \
   --run-name "Homepage color change"
 ```
 
@@ -771,7 +822,49 @@ To save the server setting for subsequent test commands, add this to the runner'
 VISUALGUARD_DASHBOARD_URL=http://127.0.0.1:4400
 ```
 
-Then `npx --no-install visualguard test storefront --config visualguard.config.json --no-ai` uses that server. Local-owner mode needs no upload token. Login mode requires `VISUALGUARD_UPLOAD_TOKEN` for this project in the runner's private environment, even for localhost. An upload token publishes to an existing permitted project; it does not create projects. See section 8 for token setup.
+Then `npx --no-install visualguard test storefront --config visualguard.config.ts --no-ai` uses that server. Local-owner mode needs no upload token. Login mode requires `VISUALGUARD_UPLOAD_TOKEN` for this project in the runner's private environment, even for localhost. An upload token publishes to an existing permitted project; it does not create projects. See section 8 for token setup.
+
+### Project or run missing from the dashboard
+
+If `npx visualguard test "My Application"` runs but `npx visualguard dashboard` shows another workspace, first check which storage each process selected:
+
+| Process | Settings it reads |
+| --- | --- |
+| `test PROJECT` | Runner process settings and `.env`/`.env.local`; with no dashboard URL, it writes to the runner's configured database or local SQLite storage |
+| `test PROJECT --dashboard URL` | Publishes through that running dashboard, which selects the database; the runner needs no database URL |
+| `dashboard --env-file .env.visualguard` | Explicitly loads that file, then starts the dashboard; existing process settings take precedence |
+| `dashboard` without `--env-file` | Uses process settings or defaults; it does not automatically read `.env.visualguard` or the runner's `.env.local` |
+
+Relative local SQLite storage also depends on the calling directory. Use the same application root and a single running dashboard for this workflow. To select the MongoDB workspace from section 7, stop the old dashboard and run in terminal A:
+
+```sh
+npx --no-install visualguard dashboard --env-file .env.visualguard --host 127.0.0.1 --port 4400
+```
+
+In terminal B, run against that exact server:
+
+```sh
+npx --no-install visualguard test "My Application" \
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
+```
+
+The display name must already identify exactly one project in that dashboard. If it does not exist there yet, create it first with a valid ID, then use that ID for tests:
+
+```sh
+npx --no-install visualguard dashboard project create my-app \
+  --name "My Application" --server http://127.0.0.1:4400
+npx --no-install visualguard test my-app \
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
+```
+
+To recover the previous execution without recapturing, find its saved run directory in the earlier test output (by default `.visualguard/runs/RUN_ID`) and upload it after creating/selecting the project:
+
+```sh
+npx --no-install visualguard dashboard publish .visualguard/runs/RUN_ID \
+  --project my-app --server http://127.0.0.1:4400
+```
+
+Replace `RUN_ID` with the actual saved directory containing `manifest.json`. Pointing a new dashboard at MongoDB does not migrate runs from an earlier SQLite workspace. Login mode requires this project's upload token for both testing and publishing; these examples assume local-owner mode.
 
 ### Import or publish an already saved run
 
@@ -818,15 +911,16 @@ Choose the command for your host. `dashboard init` generates a deployment projec
 
 ### Other commands
 
-Use `npx --no-install visualguard` before each command below. These are alternatives for specific tasks, not a sequence to execute together. Keep `--config visualguard.config.json` on comparison/configuration commands when using this guide's JSON file.
+Use `npx --no-install visualguard` before each command below. These are alternatives for specific tasks, not a sequence to execute together. The generated `visualguard.config.ts` is discovered automatically from the application root. The explicit `--config visualguard.config.ts` in these examples makes the selected file clear; keep explicit paths for a custom filename or JSON.
 
 | Command | Use and prerequisites |
 | --- | --- |
 | `https://example.com` or `https://production.example.com https://staging.example.com` | Run URL mode for a quick single-site scan or a two-site comparison |
-| `init` | Interactively create a comparison config; inspect existing configs before creating another |
-| `doctor --config visualguard.config.json` | Diagnose comparison configuration and application reachability |
-| `test --config visualguard.config.json --list` | List planned URL pairs without capturing screenshots |
-| `auth staging --config visualguard.config.json` | Save application-under-test login state; configure the resulting storage-state path for captures |
+| `init` | Run the setup wizard and generate `visualguard.config.ts`; see [npx initialization](#initialize-the-project-with-npx) |
+| `init --yes --production URL --staging URL --ai none` | Generate the TypeScript config without prompts; review discovered routes and default desktop/mobile viewports |
+| `doctor --config visualguard.config.ts` | Diagnose comparison configuration and application reachability |
+| `test --config visualguard.config.ts --list` | List planned URL pairs without capturing screenshots |
+| `auth staging --config visualguard.config.ts` | Save application-under-test login state; configure the resulting storage-state path for captures |
 | `analyze` | Re-analyze saved evidence with configured analysis settings |
 | `accept` | Record an intentional local visual change; distinct from a dashboard review decision |
 | `fix` | Propose/apply/verify an AI repair with the configured source/verification setup |

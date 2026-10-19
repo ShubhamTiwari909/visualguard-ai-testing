@@ -57,6 +57,8 @@ Leave it running. Open:
 
 The button has a deliberate color difference. These are application pages under test; the dashboard will use port **4400**.
 
+The source fixture walkthrough deliberately uses a manual JSON config at `output/local-demo.json` to keep it separate from repository configs. It does not come from `init`. For a normal application setup, `npx visualguard init` generates `visualguard.config.ts`; follow the [npm initialization walkthrough](NPM-PACKAGE-SETUP.md#initialize-the-project-with-npx). The same config fields work in either format, but JSON needs an explicit `--config` path.
+
 In **terminal C**, also at the repository root, create `output/local-demo.json`:
 
 ```sh
@@ -502,7 +504,7 @@ Install that actual `.tgz` path in a separate consumer project. This is an expli
 | Symptom | Check |
 | --- | --- |
 | Browser executable missing | Install Chromium in the workspace package; on Linux include required browser system dependencies |
-| Wrong/empty dashboard history | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory |
+| Wrong/empty dashboard history | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory. Use `test PROJECT --dashboard URL` to select the running dashboard; see [missing project/run recovery](NPM-PACKAGE-SETUP.md#project-or-run-missing-from-the-dashboard) |
 | `role "USER" does not exist` | Replace placeholder credentials with the actual PostgreSQL username/password and ensure that role owns/can initialize the dedicated schema |
 | Google controls missing | Use login mode and a complete OIDC configuration, load it in the actual server terminal, then restart |
 | Google `redirect_uri_mismatch` | Match scheme, hostname, port and `/api/auth/callback` exactly; keep `localhost` and `127.0.0.1` consistent |
