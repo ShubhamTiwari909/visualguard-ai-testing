@@ -1,5 +1,35 @@
 # visualguard
 
+## 3.2.0
+
+### Upgrade from 3.1.0
+
+- Take a native operational database backup and stop older dashboard writers before upgrading. Upgrade all dashboard instances consistently; keep the runner and server on compatible releases. A code rollback does not restore an older database schema.
+- Existing installations with users but no recorded admission policy must explicitly choose `VISUALGUARD_USER_ADMISSION=invite` or `legacy` before startup. Fresh hosted workspaces default to invite-only admission. Use SQLite, PostgreSQL or a transaction-capable MongoDB replica set/sharded deployment for the full team workflow; standalone MongoDB needs explicit legacy mode and does not support invitations, account linking, managed lifecycle changes, baseline mutations or administrator recovery.
+- Preserve existing account IDs and use explicit Google linking with current-account proof. Matching email addresses do not merge identities. Keep a tested password administrator; changing bootstrap environment credentials does not reset an existing account.
+- Rebuild/redeploy the dashboard package and generated hosting assets as well as updating the test runner. Verify direct navigation to all supported pages. The current Vercel scaffold needs the documented `/policies` rewrite correction; do not assume an old generated deployment gains new routes automatically.
+- GitHub checks need server-side supported credentials, repository mappings, a webhook secret/raw-body forwarding and external scheduled reconciliation. Credential rotation and scheduler monitoring remain operator responsibilities. Start in Informative mode; checks are point-in-time observations, not continuous release authorization.
+- Native database backups include new screenshot/DOM chunks and operational state. Portable evidence exports exclude authentication state and cannot replace a full recovery backup. Test a restore in a separate environment before relying on the upgrade.
+
+See the [npm setup guide](../../docs/NPM-PACKAGE-SETUP.md) for application/dashboard setup and the [local source guide](../../docs/LOCAL-SETUP.md) for operator recovery. These are upgrade instructions, not a claim that a real Google/cloud deployment has been validated.
+
+### Minor Changes
+
+- 8fc79e5: Add approved baseline sets with immutable versions, exact-evidence review requirements, concurrent promotion protection, restore history, and project-scoped downloads. Introduce `dashboard baseline pull` to pin verified references for offline CLI and Playwright comparisons, with selected-version provenance and local update protection.
+- c70e0df: Add explicit Google account linking with current-account proof, canonical identity mappings, legacy user-ID continuity, transactional uniqueness/auditing, and session revocation. Support SQLite/PostgreSQL and transaction-capable MongoDB while preserving standalone MongoDB sign-in and existing CLI/review workflows.
+- a9e3c2d: Add a documented Google sign-in pilot to the dashboard with a named login entry point, complete OIDC configuration validation, Google token-signature and verified-email checks, and safe browser retry after provider failures. Preserve existing project roles, generic company OIDC, issuer-bound identities, and local/offline access.
+- Add a searchable workspace user directory, explicit role promotion/demotion, disable/restore, password reset, and session/upload-credential revocation with current administrator proof, version checks, transactional auditing, and last-administrator protection. Preserve project memberships and historical review attribution.
+- 76540eb: Add single-use project invitations with verified account proof, atomic membership grants, and invite-only admission for new hosted workspaces. Existing installations must explicitly choose invite or legacy admission on upgrade. Transactional onboarding supports SQLite, PostgreSQL, and MongoDB replica sets; CLI/offline access remains available.
+- 53a5d40: Add versioned visual regression policies and exact-revision GitHub Check Runs using current approved baselines, required screenshot coverage, capture reliability, evidence freshness, and visual review decisions. Include project-scoped assessment/reconciliation commands, signed pull-request webhooks, informative/required modes, expiring review exceptions, and retry/lease recovery. Operators must configure server-side GitHub credentials, token renewal and scheduled reconciliation; named journeys remain deferred.
+- 9dd1c0e: Add administrative audit history with bounded filters and safe details, workspace readiness checks, and source-host recovery tooling for existing password administrators with atomic credential revocation and audit recording.
+
+### Patch Changes
+
+- 693ef06: Give Audit & recovery a dedicated administrator page with bounded Previous/Next pagination, direct deployment routes, and expandable event details. Refine dashboard spacing, form alignment, select-arrow padding, keyboard focus, and mobile workspace navigation.
+- 4caa762: Add a dashboard Profile link and a personal profile section showing the signed-in account's name, email, and workspace role, with an explicit local-access state.
+- 1d4bbec: Serve direct `/reviews` navigation in the development dashboard and generated Vercel deployments. Strengthen packaged route checks to reject redirects and verify the generated Vercel rewrite.
+- 53a5d40: Replace phase-by-phase walkthroughs with three maintained guides for local source setup, npm package setup, and product features. Document separate visual-only, AI, SQLite dashboard, PostgreSQL and MongoDB workflows for source and npx users, plus Vercel/Cloud Run deployment, image storage, review/baseline policies and operational recovery. Update package homepage and documentation links.
+
 ## 3.1.0
 
 ### Minor Changes

@@ -8,7 +8,7 @@ It can compare two running versions of an application, compare an application wi
 
 This document explains the current source implementation in ordinary product terms. For installation, use [local source setup](LOCAL-SETUP.md) or [npm package setup](NPM-PACKAGE-SETUP.md).
 
-**Release note — 17 October 2026:** npm currently reports `visualguard@3.1.0`, from revision `b8f2cb04`. Some team features described here were merged after that release, including Google onboarding/account linking, expanded administration, approved baselines and visual policies. Those need a compatible newer release or a current-source installation. This guide is not a claim that every feature is already in the published npm package, or that cloud deployments have been validated.
+**Release note — 19 October 2026:** this release preparation targets `visualguard@3.2.0`. Registry metadata still reports `3.1.0`, from revision `b8f2cb04`. The Google onboarding/account linking, expanded administration, approved baselines and visual policies described here require version 3.2.0 or a current-source installation. Check npm availability before upgrading; this guide does not announce publication or live cloud certification. Existing operators should read the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310).
 
 ## Contents
 
