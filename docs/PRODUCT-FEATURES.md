@@ -260,6 +260,8 @@ Select a project in the dashboard sidebar to find **Delete project** in that pro
 
 Project deletion removes its runs/access/upload credentials while preserving unrelated workspace accounts and evidence still referenced elsewhere. Deleted project IDs remain reserved. Deletion does not erase original runner copies or independent backups, and hosting does not enable automatic time-based retention.
 
+Each project can save independent production/staging base URLs, explicit routes, viewports and an optional AI provider/model. Configuration edits require maintainer/admin access and reject stale versions. The saved configuration is data only: credentials, cookies, hooks and executable config files stay on the runner. Existing offline CLI config files remain independent.
+
 ## 13. Accounts, Google sign-in and permissions
 
 ### Access choices

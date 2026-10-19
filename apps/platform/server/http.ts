@@ -17,6 +17,7 @@ import { Baselines, baselineSet, baselinePromotion, baselineRestore } from "./ba
 import { Operations } from "./operations.js";
 import { Policies, policyMutation, assessmentInput, pullRequestNumber } from "./policies.js";
 import { PolicyGitHub } from "./policy-github.js";
+import { ProjectTests } from "./project-tests.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -87,6 +88,7 @@ export function createApi(
   const baselines = new Baselines(repository, auth.state, auth);
   const policies = new Policies(repository, auth.state, auth);
   const policyGitHub = new PolicyGitHub(policies);
+  const projectTests = new ProjectTests(repository, auth.state, auth);
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
@@ -254,6 +256,18 @@ export function createApi(
           `/api/projects/${requestedProjectId}`,
           `/api/projects/${canonical}`,
         );
+      }
+      const testConfig = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-config$/);
+      if (testConfig) {
+        response.setHeader("Cache-Control", "no-store");
+        if (request.method === "GET") {
+          json(response, 200, await projectTests.read(actor, testConfig[1]!));
+          return true;
+        }
+        if (request.method === "PUT") {
+          json(response, 200, await projectTests.save(actor, testConfig[1]!, await body(request)));
+          return true;
+        }
       }
       if (await uploads.handle(request, response, url, actor)) return true;
       if (request.method === "GET" && url.pathname === "/api/publishing/project") {
