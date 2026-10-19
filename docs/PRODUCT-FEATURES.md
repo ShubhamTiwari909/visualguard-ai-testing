@@ -405,6 +405,18 @@ Choose the smallest useful starting point:
 - **Team adding PR requirements:** start policies in Informative mode and validate reconciliation/failure recovery before requiring checks.
 - **Operator:** choose the database/host, preserve backups and verify access/restore behavior before sharing the installation.
 
+### Find the exact run instructions
+
+| Workflow | From the VisualGuard source repository | In another application using npx |
+| --- | --- | --- |
+| Visual regression only, no database/dashboard | [Source-only comparison](LOCAL-SETUP.md#3-run-visual-regression-without-a-dashboard-or-database) | [npm comparison](NPM-PACKAGE-SETUP.md#2-run-visual-regression-only-in-another-project-with-npx) |
+| Visual regression with AI | [Source Gemini/Ollama setup](LOCAL-SETUP.md#4-run-source-visual-regression-with-ai) | [npm Gemini/Ollama setup](NPM-PACKAGE-SETUP.md#3-run-visual-regression-with-ai-in-another-project-with-npx) |
+| Visual regression with a local dashboard, no database service | [Source SQLite dashboard](LOCAL-SETUP.md#5-run-source-visual-regression-with-a-local-sqlite-dashboard) | [npm SQLite dashboard](NPM-PACKAGE-SETUP.md#5-run-npx-visual-regression-with-a-local-sqlite-dashboard) |
+| Dashboard and tests with PostgreSQL | [Source PostgreSQL workflow](LOCAL-SETUP.md#6-run-source-visual-regression-with-postgresql) | [npm PostgreSQL workflow](NPM-PACKAGE-SETUP.md#6-run-npx-visual-regression-with-postgresql) |
+| Dashboard and tests with MongoDB | [Source MongoDB workflow](LOCAL-SETUP.md#7-run-source-visual-regression-with-mongodb) | [npm MongoDB workflow](NPM-PACKAGE-SETUP.md#7-run-npx-visual-regression-with-mongodb) |
+
+Each AI section also shows the AI-plus-dashboard command. Database choice changes where evidence is stored; provider settings belong on the visual-test runner.
+
 Next reading:
 
 - [Run the repository locally](LOCAL-SETUP.md) — current-source demo and team/operator walkthrough.

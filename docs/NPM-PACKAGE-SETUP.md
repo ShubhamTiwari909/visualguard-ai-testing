@@ -4,18 +4,22 @@ For an explanation of all product capabilities before setup, read the [product f
 
 This is the complete user setup guide for the published npm package. You do not need to clone VisualGuard or build its source. For repository development and testing the latest merged features, use [local source setup](LOCAL-SETUP.md).
 
+Every `npx --no-install visualguard` command below runs the npm package installed in **your application**, not this repository's source CLI. Work at that application's root. Keep its reference/candidate servers running, use a separate terminal for a dashboard, and run comparisons in another terminal. Choose one storage workflow; PostgreSQL and MongoDB are alternatives, not simultaneous requirements.
+
 ## Contents
 
-- [Choose your setup](#1-choose-your-setup)
-- [Install and run the first visual test](#2-install-and-run-the-first-visual-test)
-- [Use local reports and baselines](#3-use-local-reports-and-baselines)
-- [Run a dashboard without a database service](#4-run-a-dashboard-without-a-database-service)
-- [Use PostgreSQL or MongoDB](#5-use-postgresql-or-mongodb)
-- [Enable login and connect other projects](#6-enable-login-and-connect-other-projects)
-- [Deploy to Vercel or Google Cloud Run](#7-deploy-to-vercel-or-google-cloud-run)
-- [Understand storage, backups and upgrades](#8-understand-storage-backups-and-upgrades)
-- [Team reviews, approved baselines and GitHub checks](#9-team-reviews-approved-baselines-and-github-checks)
-- [Troubleshooting and final checks](#10-troubleshooting-and-final-checks)
+- [1. Choose your setup](#1-choose-your-setup)
+- [2. Run visual regression only in another project with npx](#2-run-visual-regression-only-in-another-project-with-npx)
+- [3. Run visual regression with AI in another project with npx](#3-run-visual-regression-with-ai-in-another-project-with-npx)
+- [4. Use local reports and baselines](#4-use-local-reports-and-baselines)
+- [5. Run npx visual regression with a local SQLite dashboard](#5-run-npx-visual-regression-with-a-local-sqlite-dashboard)
+- [6. Run npx visual regression with PostgreSQL](#6-run-npx-visual-regression-with-postgresql)
+- [7. Run npx visual regression with MongoDB](#7-run-npx-visual-regression-with-mongodb)
+- [8. Enable login and connect other projects](#8-enable-login-and-connect-other-projects)
+- [9. Deploy to Vercel or Google Cloud Run](#9-deploy-to-vercel-or-google-cloud-run)
+- [10. Understand storage, backups and upgrades](#10-understand-storage-backups-and-upgrades)
+- [11. Team reviews, approved baselines and GitHub checks](#11-team-reviews-approved-baselines-and-github-checks)
+- [12. Troubleshooting and final checks](#12-troubleshooting-and-final-checks)
 
 ## 1. Choose your setup
 
@@ -31,9 +35,9 @@ This is the complete user setup guide for the published npm package. You do not 
 
 Use one hosted installation per customer organization/team. That instance can contain multiple projects/users with separate permissions; each person does not need their own server.
 
-**Version boundary:** npm metadata checked on 17 October 2026 reported `visualguard@3.1.0`, from source revision `b8f2cb04`. It supports the core test/dashboard/project/publish/scaffold commands below. Later merged Google onboarding, administration, approved baselines and visual-policy features need a newer release containing them; section 9 is explicitly for such a release. Installing the current npm version does not install unreleased `main` changes. Keep client/server releases compatible and pin the version in the lockfile.
+**Version boundary:** npm metadata checked on 17 October 2026 reported `visualguard@3.1.0`, from source revision `b8f2cb04`. It supports the core test/dashboard/project/publish/scaffold commands below. Later merged Google onboarding, administration, approved baselines and visual-policy features need a newer release containing them; section 11 is explicitly for such a release. Installing the current npm version does not install unreleased `main` changes. Keep client/server releases compatible and pin the version in the lockfile.
 
-## 2. Install and run the first visual test
+## 2. Run visual regression only in another project with npx
 
 ### Prerequisites
 
@@ -93,7 +97,7 @@ Change a button's color or spacing in staging, rerun and inspect reference/candi
 
 A plain `test` without a project argument stays offline. No dashboard, database, upload token or AI key is required. A nonzero test exit may mean a detected regression rather than installation failure; read the saved report/status. Use `doctor --config visualguard.config.json` to inspect configuration/reachability.
 
-### Optional authentication and AI
+### Optional authentication for application pages
 
 For logged-in application pages, use the existing capture authentication workflow, for example `npx --no-install visualguard auth staging --config visualguard.config.json`, and the corresponding production setup. Add the saved state paths to the comparison configuration so captures use them:
 
@@ -108,9 +112,62 @@ For logged-in application pages, use the existing capture authentication workflo
 
 This is a fragment to merge into the existing configuration after saving each session. Application login cookies belong to the runner, not dashboard account login.
 
-AI is optional. To use Gemini, configure the supported provider in `ai`, place `GEMINI_API_KEY` in a private runner environment, and omit `--no-ai`. Ollama is another supported route. Keep the initial setup on provider `none`; AI neither grants visual approval nor overrides a missing capture.
+## 3. Run visual regression with AI in another project with npx
 
-## 3. Use local reports and baselines
+**Use this section when:** VisualGuard is installed in your application and you want AI-assisted visual analysis. Complete section 2 first. Keep the tested application environments running. The AI-enabled runner still works without a dashboard or database.
+
+### Gemini
+
+1. Create a Gemini API key using [Google's API-key instructions](https://ai.google.dev/gemini-api/docs/api-key).
+2. Add the key to an ignored `.env.local` in the **application root**, or its CI secret manager:
+
+```dotenv
+GEMINI_API_KEY=YOUR_REAL_GEMINI_API_KEY
+```
+
+3. From that application root, run:
+
+```sh
+npx --no-install visualguard test --config visualguard.config.json --provider gemini
+npx --no-install visualguard report --config visualguard.config.json
+```
+
+Do not append `--no-ai`. `--provider gemini` overrides the sample config's `ai.provider: none`; just removing `--no-ai` would not enable that config's AI. The test loads `.env`/`.env.local`, with existing process variables taking precedence. The key belongs to the visual-test runner, not the dashboard database or Google sign-in client.
+
+Check the saved analysis/provider information in the report. Missing/invalid keys, quota, model access or network errors can cause deterministic fallback, so a completed report alone is not proof an AI request succeeded. By default, AI targets uncertain changes; use `ai.analyze: "all"` to explain deterministic regressions too. `ai.advisory: true` adds explanation without changing deterministic statuses. These are properties to merge into the existing `ai` configuration, not separate top-level settings.
+
+To select an account-supported model explicitly, add `--model YOUR_MODEL_ID`. Configure token/call/time budgets for repeatable CI rather than assuming unlimited model access. AI does not authorize team approvals or bypass capture problems.
+
+### Local Ollama
+
+Install/start Ollama following its [official setup](https://docs.ollama.com/quickstart), then download a compatible vision model such as [Qwen2.5-VL](https://ollama.com/library/qwen2.5vl):
+
+```sh
+ollama pull qwen2.5vl
+```
+
+Leave its local service running; use `ollama serve` if the app has not already started it. From the application root:
+
+```sh
+export OLLAMA_HOST=http://127.0.0.1:11434
+npx --no-install visualguard test --config visualguard.config.json \
+  --provider ollama --model qwen2.5vl
+```
+
+The downloaded local model requires sufficient machine resources but no Gemini API key. Requests use the selected Ollama host. Return to deterministic-only testing with `--no-ai`.
+
+### Add AI to a dashboard-backed test
+
+First complete one dashboard setup below and create its project. Then use the same application-root AI credentials/provider service:
+
+```sh
+npx --no-install visualguard test storefront \
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.json --provider gemini
+```
+
+This captures, analyzes and publishes in one run. Replace `storefront`/the server with your actual values. For Ollama, replace the provider with `--provider ollama --model qwen2.5vl`. Login-enabled local/hosted dashboards also need the project upload token from section 8. The same command applies to SQLite, PostgreSQL and MongoDB: database choice changes dashboard storage, not the AI integration.
+
+## 4. Use local reports and baselines
 
 ### Saved local reference images
 
@@ -140,7 +197,7 @@ npx --no-install visualguard test --config visualguard.baseline.json --no-ai
 npx --no-install visualguard report --config visualguard.baseline.json
 ```
 
-Keep rendering settings consistent. Store local baselines according to your repository/artifact policy. Local baseline creation is different from the later shared **approved baseline registry** described in section 9. Do not update baselines automatically just to make CI pass.
+Keep rendering settings consistent. Store local baselines according to your repository/artifact policy. Local baseline creation is different from the later shared **approved baseline registry** described in section 11. Do not update baselines automatically just to make CI pass.
 
 ### Existing Playwright tests
 
@@ -157,7 +214,7 @@ test("checkout summary", async ({ page, visualguard }) => {
 
 Use the project's normal Playwright configuration and VisualGuard reference configuration. For interactions that change the expected reference state, supply the corresponding fixture/reference setup rather than comparing unrelated application states. Full capture/configuration/API options remain in the [package reference](../packages/visualguard/README.md).
 
-## 4. Run a dashboard without a database service
+## 5. Run npx visual regression with a local SQLite dashboard
 
 ### Select local SQLite explicitly
 
@@ -191,13 +248,13 @@ Keep the server running. A dashboard-only host needs no Playwright browser, Reac
 In another terminal at the application root:
 
 ```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard \
-  project create storefront --name "Storefront Web"
+npx --no-install visualguard dashboard project create storefront \
+  --name "Storefront Web" --server http://127.0.0.1:4400
 npx --no-install visualguard test storefront \
   --dashboard http://127.0.0.1:4400 --config visualguard.config.json --no-ai
 ```
 
-With default directories, project creation uses the same SQLite file as the dashboard. If you selected another directory, use that same `--data-dir` for direct storage commands or create the project in the dashboard UI. If using port 4500, change the `--dashboard` URL accordingly.
+The explicit `--server` creates the project in the running dashboard's storage, even if it uses a custom data directory. If using port 4500, change both `--server` and `--dashboard` to that port. For later direct-storage imports, use the same selected `--data-dir`.
 
 The project ID is stable. An exact unique display name also works, such as `test "Storefront Web"`. Repeated creation of an existing ID preserves its name/history rather than resetting it.
 
@@ -212,11 +269,11 @@ npx --no-install visualguard dashboard --env-file .env.visualguard \
 
 Refresh the dashboard. Import copies/indexes the evidence; deleting the original runner output later does not remove the imported database objects. An incomplete/error run remains visibly incomplete, rather than being turned into a pass by importing it.
 
-## 5. Use PostgreSQL or MongoDB
+## 6. Run npx visual regression with PostgreSQL
 
-You can use an existing database or the local Docker recipes below. Use a dedicated database with a real application user. **Changing the URL does not migrate SQLite/history automatically.** Stop the dashboard, change `.env.visualguard`, and restart against the chosen workspace.
+**Use this section when:** VisualGuard is installed in another application and you want its dashboard stored in PostgreSQL. Complete section 2 first; work from the application root throughout, with the application environments still running.
 
-### PostgreSQL
+Use a dedicated database with a real application user. Stop any dashboard already on port 4400. Changing the database URL selects another workspace; it does not migrate SQLite/MongoDB history automatically. PostgreSQL and MongoDB below are alternative setup paths, not dependencies you must install together.
 
 If you already have PostgreSQL, copy its real URI and required TLS settings. Otherwise, with Docker installed, create a disposable local development instance:
 
@@ -249,13 +306,22 @@ npx --no-install visualguard dashboard --env-file .env.visualguard
 ```
 
 ```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard \
-  project create storefront --name "Storefront Web"
+npx --no-install visualguard dashboard project create storefront \
+  --name "Storefront Web" --server http://127.0.0.1:4400
 ```
 
-Run the project-bound HTTP test from section 4. Restart the dashboard and confirm its history remains. The app role must be able to create/update `vg_*` tables/indexes; an existing restricted role may need schema grants from its database administrator. Do not copy a literal `USER` placeholder or rely on your laptop's username being a database role.
+In the test terminal, run the full PostgreSQL-backed workflow:
 
-### MongoDB with transactions
+```sh
+npx --no-install visualguard test storefront \
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.json --no-ai
+```
+
+Open the stored run and its screenshots, restart the dashboard with the same `.env.visualguard`, and confirm its history remains. For AI plus PostgreSQL, replace `--no-ai` with `--provider gemini` after section 3's key setup, or use its Ollama provider/model flags. This local-owner configuration needs no upload token; login mode does. The app role must be able to create/update `vg_*` tables/indexes; an existing restricted role may need schema grants from its database administrator. Do not copy a literal `USER` placeholder or rely on your laptop's username being a database role.
+
+## 7. Run npx visual regression with MongoDB
+
+**Use this section when:** you installed VisualGuard in another application and want its dashboard stored in MongoDB. Complete section 2 first; run the following from that application's root. Stop an existing dashboard on port 4400 before switching databases. You do not need to complete the PostgreSQL section first.
 
 For full team features, use MongoDB Atlas or another replica set/sharded deployment supporting transactions. Include the actual database name in the URI. A local one-member replica set can be used for development:
 
@@ -289,7 +355,24 @@ VISUALGUARD_PUBLIC_URL=
 VISUALGUARD_DATABASE_URL=mongodb://127.0.0.1:27018/visualguard?replicaSet=visualguard_local&directConnection=true
 ```
 
-Start/create/test exactly as for PostgreSQL. The same VisualGuard CLI and dashboard UI work with either backend. For Atlas, use its supplied `mongodb+srv://.../visualguard` URI, real database-user credentials and network access configuration; do not use this local `directConnection` recipe there.
+In **dashboard terminal A**, start:
+
+```sh
+npx --no-install visualguard dashboard --env-file .env.visualguard
+```
+
+In **test terminal B** at the application root, create/select the project and capture:
+
+```sh
+npx --no-install visualguard dashboard project create storefront \
+  --name "Storefront Web" --server http://127.0.0.1:4400
+npx --no-install visualguard test storefront \
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.json --no-ai
+```
+
+Open the dashboard, inspect the images and verify the run survives a restart using the same URI. For AI plus MongoDB, replace `--no-ai` with the configured `--provider gemini` or Ollama provider/model flags from section 3. No upload token is needed in default local-owner mode; login mode requires one.
+
+The dashboard uses MongoDB for metadata and new screenshot/DOM artifacts. For Atlas, use its supplied `mongodb+srv://.../visualguard` URI, real database-user credentials and network access configuration; do not use this local `directConnection` recipe there.
 
 ### Standalone MongoDB compatibility
 
@@ -299,7 +382,7 @@ A standalone MongoDB server can retain ordinary evidence/review/publishing and c
 
 Use `docker stop visualguard-postgres-local` / `docker start visualguard-postgres-local`, or the corresponding MongoDB container name. These commands retain named volumes. Do not delete a volume or production database to resolve a connection error. If a container name/port is already occupied, use the existing intended instance or choose different names/ports and update its URI.
 
-## 6. Enable login and connect other projects
+## 8. Enable login and connect other projects
 
 ### Turn a local dashboard into a login trial
 
@@ -357,7 +440,7 @@ npx --no-install visualguard dashboard --env-file .env.visualguard-upload \
 
 Explicit `--env-file` is useful here: do not assume every dashboard subcommand reads application `.env.local` automatically. The same immutable evidence can resume an upload for up to 24 hours; changed bytes/metadata cannot overwrite existing evidence under a reused identity. Transfers use 1 MiB chunks, checksums and bounded retries. A failed publication keeps the local run for inspection/retry. Current upload limits are 4096 referenced artifacts, 32 MiB per artifact, a 16 MiB raw manifest and 512 MiB of referenced bytes; MongoDB additionally bounds the complete metadata envelope to 12 MiB. Split exceptionally large executions into appropriately scoped complete runs.
 
-## 7. Deploy to Vercel or Google Cloud Run
+## 9. Deploy to Vercel or Google Cloud Run
 
 Both hosts require an **external persistent database**; SQLite under their ephemeral filesystem is not supported. A managed PostgreSQL service is the simplest shared example here. A transaction-capable MongoDB URI can be used instead with provider-appropriate network access. Each new database starts as a separate empty workspace; deployment does not migrate your local history.
 
@@ -399,7 +482,7 @@ vercel --prod
 
 Use the actual stable project origin, for example `https://my-app-visualguard.vercel.app`; enter `login` for auth mode. If the hostname is assigned only after deployment, update the public URL and redeploy before login. A local `.env` does not set production variables. [Vercel environments](https://vercel.com/docs/environment-variables), [deployment CLI](https://vercel.com/docs/cli/deploy).
 
-Open the canonical URL, sign in, create a project/token and configure your application as in section 6. Keep previews disabled or isolated with their own database/URL. To use a custom domain, add it in Vercel, follow its DNS instructions, then update the canonical URL and redeploy.
+Open the canonical URL, sign in, create a project/token and configure your application as in section 8. Keep previews disabled or isolated with their own database/URL. To use a custom domain, add it in Vercel, follow its DNS instructions, then update the canonical URL and redeploy.
 
 Vercel documents a 4.5 MB function request/response limit. VisualGuard chunks uploads/downloads; test a real large screenshot, manifest and baseline pull with the exact release. Direct unchunked large-artifact requests can be rejected. Test database connection capacity during cold starts/concurrency too: current PostgreSQL pools allow up to five connections per runtime instance. [Vercel limits](https://vercel.com/docs/functions/limitations).
 
@@ -469,7 +552,7 @@ Update the URL inside the private YAML file too, so the next deploy does not res
 
 Environment files configure service variables, not Secret Manager references. For ongoing operations, put the DB/admin secrets in Secret Manager, grant the runtime identity access to just those secrets, and map pinned enabled versions to their environment names. [Cloud Run secret configuration](https://docs.cloud.google.com/run/docs/configuring/services/secrets).
 
-Open the assigned HTTPS URL and follow section 6. A custom production domain can use a supported ingress option such as an external Application Load Balancer/serverless NEG; update the canonical origin afterward. Google's direct domain mapping is currently documented as preview and not recommended for production. [Cloud Run domain options](https://docs.cloud.google.com/run/docs/mapping-custom-domains).
+Open the assigned HTTPS URL and follow section 8. A custom production domain can use a supported ingress option such as an external Application Load Balancer/serverless NEG; update the canonical origin afterward. Google's direct domain mapping is currently documented as preview and not recommended for production. [Cloud Run domain options](https://docs.cloud.google.com/run/docs/mapping-custom-domains).
 
 ### Cloud Run with Cloud SQL specifically
 
@@ -489,7 +572,7 @@ postgresql://visualguard:HEX_PASSWORD@localhost:5432/visualguard?host=%2Fcloudsq
 
 Follow [Google's Cloud SQL connection instructions](https://docs.cloud.google.com/sql/docs/postgres/connect-run) and [Secret Manager configuration](https://docs.cloud.google.com/run/docs/configuring/services/secrets) for the chosen network/IAM setup. The app uses the existing `pg` driver/socket support; it does not install a separate Cloud SQL connector automatically.
 
-## 8. Understand storage, backups and upgrades
+## 10. Understand storage, backups and upgrades
 
 ### Where are images saved?
 
@@ -519,7 +602,7 @@ npx --no-install visualguard dashboard --env-file .env.visualguard-sqlite \
   --data-dir ./review-workspace
 ```
 
-Create that ignored `.env.visualguard-sqlite` first with the three local-mode/empty URL settings from section 4, and add it to `.gitignore`. Restoration is append-only/deduplicating and can reject conflicting evidence; prefer a fresh destination rather than expecting overwrite semantics. Legacy file-backed workspaces may require their original `objects/` directory or a portable export collecting it.
+Create that ignored `.env.visualguard-sqlite` first with the three local-mode/empty URL settings from section 5, and add it to `.gitignore`. Restoration is append-only/deduplicating and can reject conflicting evidence; prefer a fresh destination rather than expecting overwrite semantics. Legacy file-backed workspaces may require their original `objects/` directory or a portable export collecting it.
 
 ### Native operational backups
 
@@ -544,7 +627,7 @@ Restore into a **separate isolated database** and verify old screenshot bytes, a
 
 Pin the next supported package version in both runner and deployment. Rebuild/regenerate hosting assets as required, back up and validate against a restored test database before upgrading production. A previous hosting deployment does not roll back a migrated schema. Stop old writers and upgrade consistently for identity, administration and reference changes.
 
-## 9. Team reviews, approved baselines and GitHub checks
+## 11. Team reviews, approved baselines and GitHub checks
 
 The following describes the merged feature implementation. **Use a published release that actually contains it**; `3.1.0` is not a claim that all these later controls are available. For a current-source trial, the [source guide](LOCAL-SETUP.md) provides a complete local color-change/review/baseline/policy exercise.
 
@@ -609,9 +692,9 @@ Checks are point-in-time observations; GitHub may retain an old conclusion durin
 
 ### Audit and recovery
 
-Administrators use **Audit & recovery** for bounded, filtered history and sign-in readiness. Readiness is an inventory, not live-production certification. Host-side administrator recovery is source/operator tooling, not an installed npm recovery endpoint. The [source guide](LOCAL-SETUP.md#8-audit-recovery-and-backups) explains its proof/version/backup/password-file requirements. Never edit identity rows or overwrite password hashes to simulate recovery.
+Administrators use **Audit & recovery** for bounded, filtered history and sign-in readiness. Readiness is an inventory, not live-production certification. Host-side administrator recovery is source/operator tooling, not an installed npm recovery endpoint. The [source guide](LOCAL-SETUP.md#10-audit-recovery-and-backups) explains its proof/version/backup/password-file requirements. Never edit identity rows or overwrite password hashes to simulate recovery.
 
-## 10. Troubleshooting and final checks
+## 12. Troubleshooting and final checks
 
 | Symptom | What to check |
 | --- | --- |

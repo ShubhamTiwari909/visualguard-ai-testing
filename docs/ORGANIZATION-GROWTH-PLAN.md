@@ -13,13 +13,13 @@ Current setup instructions are consolidated in [local source setup](LOCAL-SETUP.
 
 **Scope update, 17 October 2026:** Keep current work focused on visual regression. F04 approved baselines has merged; F05 named journeys and deterministic datasets is deferred at the user's request. Continue using existing screenshot checks and capture profiles without requiring a scenario catalog, application fixtures, or journey authoring. Before selecting the next implementation, assess remaining F06 CI upload gaps; F07 can then build visual review and exact-revision checks around the existing check identities. Managed runner scheduling remains demand-driven. This update takes precedence over the original journey-oriented sequencing and targets below; it does not authorize another feature implementation.
 
-**Next standalone unit, after merge of PR #9:** the Phase C F03 pilot combines review storage, permission-checked APIs, and the run review/inbox UI on `codex/collaborative-review`, branched from merged `main`. It adds job-level visual decisions, discussion, assignment and deadlines with exact-evidence concurrency checks. See the [implementation boundary and manual walkthrough](NPM-PACKAGE-SETUP.md#9-team-reviews-approved-baselines-and-github-checks). No local checks, builds, or tests were run for this follow-up. F05 named checkpoints and F04 approved reference promotion form the next reference-workflow release, with separate feature commits; F07 remains a later informative gate.
+**Next standalone unit, after merge of PR #9:** the Phase C F03 pilot combines review storage, permission-checked APIs, and the run review/inbox UI on `codex/collaborative-review`, branched from merged `main`. It adds job-level visual decisions, discussion, assignment and deadlines with exact-evidence concurrency checks. See the [implementation boundary and manual walkthrough](NPM-PACKAGE-SETUP.md#11-team-reviews-approved-baselines-and-github-checks). No local checks, builds, or tests were run for this follow-up. F05 named checkpoints and F04 approved reference promotion form the next reference-workflow release, with separate feature commits; F07 remains a later informative gate.
 
-**Standalone follow-up:** confirmed project/run deletion with project permissions, access/upload cleanup, and preservation of shared evidence is implemented separately. See the [deletion guide](NPM-PACKAGE-SETUP.md#9-team-reviews-approved-baselines-and-github-checks). No build, formatting, lint, type checking, or tests were run for that follow-up, per the user's updated instruction.
+**Standalone follow-up:** confirmed project/run deletion with project permissions, access/upload cleanup, and preservation of shared evidence is implemented separately. See the [deletion guide](NPM-PACKAGE-SETUP.md#11-team-reviews-approved-baselines-and-github-checks). No build, formatting, lint, type checking, or tests were run for that follow-up, per the user's updated instruction.
 
-**CLI follow-up:** `visualguard test [project]` binds new evidence to a local or hosted project by ID or exact permitted name. See the [project binding guide](NPM-PACKAGE-SETUP.md#6-enable-login-and-connect-other-projects). It is a separate feature commit with no executed checks or builds, per the same instruction.
+**CLI follow-up:** `visualguard test [project]` binds new evidence to a local or hosted project by ID or exact permitted name. See the [project binding guide](NPM-PACKAGE-SETUP.md#8-enable-login-and-connect-other-projects). It is a separate feature commit with no executed checks or builds, per the same instruction.
 
-**Project setup follow-up:** idempotent `visualguard dashboard project create <id>`/`project add` adds projects from the CLI, locally or through an authorized administrator session. See the [setup guide](NPM-PACKAGE-SETUP.md#4-run-a-dashboard-without-a-database-service). This is another separate feature commit with no executed checks or builds.
+**Project setup follow-up:** idempotent `visualguard dashboard project create <id>`/`project add` adds projects from the CLI, locally or through an authorized administrator session. See the [setup guide](NPM-PACKAGE-SETUP.md#5-run-npx-visual-regression-with-a-local-sqlite-dashboard). This is another separate feature commit with no executed checks or builds.
 
 Grow VisualGuard into **an internal UI quality platform that helps teams understand, review, and resolve changes before and after release**.
 
@@ -202,7 +202,7 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 ### 6.4 F04 — Baseline registry, lineage, and promotion
 
-**Implementation:** see [approved baseline implementation and local testing guide](LOCAL-SETUP.md#7-review-changes-baselines-and-visual-policies). The maintainer confirms that the source revision landed; automatic repository merge verification remains part of later repository/release integration.
+**Implementation:** see [approved baseline implementation and local testing guide](LOCAL-SETUP.md#9-review-changes-baselines-and-visual-policies). The maintainer confirms that the source revision landed; automatic repository merge verification remains part of later repository/release integration.
 
 **Problem:** “latest capture” and “approved expected appearance” are different references, especially with concurrent PRs and moving production.
 
@@ -242,7 +242,7 @@ Do not treat the catalog as an obligation to build everything. The sections belo
 
 ### 6.7 F07 — Release policy and exact-revision PR checks
 
-**Visual regression implementation:** [F07 scope and testing guide](LOCAL-SETUP.md#7-review-changes-baselines-and-visual-policies). Uses existing screenshot IDs and profiles; named journeys remain deferred. GitHub delivery starts informative and needs scheduled/on-demand reconciliation for later changes and expiry.
+**Visual regression implementation:** [F07 scope and testing guide](LOCAL-SETUP.md#9-review-changes-baselines-and-visual-policies). Uses existing screenshot IDs and profiles; named journeys remain deferred. GitHub delivery starts informative and needs scheduled/on-demand reconciliation for later changes and expiry.
 
 **Problem:** an engine status alone does not express the organization's reviewer, coverage, freshness, or exception rules.
 
