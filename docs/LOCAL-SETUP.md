@@ -504,7 +504,7 @@ Install that actual `.tgz` path in a separate consumer project. This is an expli
 | Symptom | Check |
 | --- | --- |
 | Browser executable missing | Install Chromium in the workspace package; on Linux include required browser system dependencies |
-| Wrong/empty dashboard history | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory |
+| Wrong/empty dashboard history | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory. Use `test PROJECT --dashboard URL` to select the running dashboard; see [missing project/run recovery](NPM-PACKAGE-SETUP.md#project-or-run-missing-from-the-dashboard) |
 | `role "USER" does not exist` | Replace placeholder credentials with the actual PostgreSQL username/password and ensure that role owns/can initialize the dedicated schema |
 | Google controls missing | Use login mode and a complete OIDC configuration, load it in the actual server terminal, then restart |
 | Google `redirect_uri_mismatch` | Match scheme, hostname, port and `/api/auth/callback` exactly; keep `localhost` and `127.0.0.1` consistent |

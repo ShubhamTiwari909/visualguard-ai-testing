@@ -756,6 +756,7 @@ Administrators use **Audit & recovery** for bounded, filtered history and sign-i
 | `role "USER" does not exist` | Actual PostgreSQL URI/user and schema grants; replace all placeholders |
 | Dashboard unexpectedly uses another app's DB | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings |
 | Empty history after a restart | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data |
+| `test "My Application"` ran but the dashboard is empty | Start the dashboard with its actual `--env-file`, then run `test PROJECT --dashboard http://127.0.0.1:4400`; see [missing project/run recovery](#project-or-run-missing-from-the-dashboard) |
 | Project-bound test fails before capture | Project already exists, unique name/ID, dashboard version and correct project token |
 | Upload fails after successful capture | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits |
 | Missing package/command/UI | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main` |
@@ -822,6 +823,48 @@ VISUALGUARD_DASHBOARD_URL=http://127.0.0.1:4400
 ```
 
 Then `npx --no-install visualguard test storefront --config visualguard.config.ts --no-ai` uses that server. Local-owner mode needs no upload token. Login mode requires `VISUALGUARD_UPLOAD_TOKEN` for this project in the runner's private environment, even for localhost. An upload token publishes to an existing permitted project; it does not create projects. See section 8 for token setup.
+
+### Project or run missing from the dashboard
+
+If `npx visualguard test "My Application"` runs but `npx visualguard dashboard` shows another workspace, first check which storage each process selected:
+
+| Process | Settings it reads |
+| --- | --- |
+| `test PROJECT` | Runner process settings and `.env`/`.env.local`; with no dashboard URL, it writes to the runner's configured database or local SQLite storage |
+| `test PROJECT --dashboard URL` | Publishes through that running dashboard, which selects the database; the runner needs no database URL |
+| `dashboard --env-file .env.visualguard` | Explicitly loads that file, then starts the dashboard; existing process settings take precedence |
+| `dashboard` without `--env-file` | Uses process settings or defaults; it does not automatically read `.env.visualguard` or the runner's `.env.local` |
+
+Relative local SQLite storage also depends on the calling directory. Use the same application root and a single running dashboard for this workflow. To select the MongoDB workspace from section 7, stop the old dashboard and run in terminal A:
+
+```sh
+npx --no-install visualguard dashboard --env-file .env.visualguard --host 127.0.0.1 --port 4400
+```
+
+In terminal B, run against that exact server:
+
+```sh
+npx --no-install visualguard test "My Application" \
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
+```
+
+The display name must already identify exactly one project in that dashboard. If it does not exist there yet, create it first with a valid ID, then use that ID for tests:
+
+```sh
+npx --no-install visualguard dashboard project create my-app \
+  --name "My Application" --server http://127.0.0.1:4400
+npx --no-install visualguard test my-app \
+  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
+```
+
+To recover the previous execution without recapturing, find its saved run directory in the earlier test output (by default `.visualguard/runs/RUN_ID`) and upload it after creating/selecting the project:
+
+```sh
+npx --no-install visualguard dashboard publish .visualguard/runs/RUN_ID \
+  --project my-app --server http://127.0.0.1:4400
+```
+
+Replace `RUN_ID` with the actual saved directory containing `manifest.json`. Pointing a new dashboard at MongoDB does not migrate runs from an earlier SQLite workspace. Login mode requires this project's upload token for both testing and publishing; these examples assume local-owner mode.
 
 ### Import or publish an already saved run
 
