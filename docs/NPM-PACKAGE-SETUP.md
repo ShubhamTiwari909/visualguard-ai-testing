@@ -35,7 +35,7 @@ Every `npx --no-install visualguard` command below runs the npm package installe
 
 Use one hosted installation per customer organization/team. That instance can contain multiple projects/users with separate permissions; each person does not need their own server.
 
-**Version boundary:** this release preparation targets `visualguard@3.2.0`, which includes the Google onboarding, administration, approved baselines and visual-policy features in section 11. Registry metadata checked on 19 October 2026 still reported `3.1.0`, from revision `b8f2cb04`; preparing or merging documentation alone does not publish a package. Check `npm view visualguard version` before installing a specific release. Until 3.2.0 is published, the current npm install retains the older feature boundary. See the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310) before updating an existing hosted installation. Keep client/server releases compatible and pin the version in the lockfile.
+**Version boundary:** this source release is `visualguard@3.2.0`, which includes the Google onboarding, administration, approved baselines and visual-policy features in section 11. Registry metadata checked on 19 October 2026 still reported `3.1.0`, from revision `b8f2cb04`; preparing or merging documentation alone does not publish a package. Check `npm view visualguard version` before installing a specific release. Until 3.2.0 is published, the current npm install retains the older feature boundary. See the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310) before updating an existing hosted installation. Keep client/server releases compatible and pin the version in the lockfile.
 
 ## 2. Run visual regression only in another project with npx
 
