@@ -35,7 +35,7 @@ Every `npx --no-install visualguard` command below runs the npm package installe
 
 Use one hosted installation per customer organization/team. That instance can contain multiple projects/users with separate permissions; each person does not need their own server.
 
-**Version boundary:** npm metadata checked on 17 October 2026 reported `visualguard@3.1.0`, from source revision `b8f2cb04`. It supports the core test/dashboard/project/publish/scaffold commands below. Later merged Google onboarding, administration, approved baselines and visual-policy features need a newer release containing them; section 11 is explicitly for such a release. Installing the current npm version does not install unreleased `main` changes. Keep client/server releases compatible and pin the version in the lockfile.
+**Version boundary:** this release preparation targets `visualguard@3.2.0`, which includes the Google onboarding, administration, approved baselines and visual-policy features in section 11. Registry metadata checked on 19 October 2026 still reported `3.1.0`, from revision `b8f2cb04`; preparing or merging documentation alone does not publish a package. Check `npm view visualguard version` before installing a specific release. Until 3.2.0 is published, the current npm install retains the older feature boundary. See the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310) before updating an existing hosted installation. Keep client/server releases compatible and pin the version in the lockfile.
 
 ## 2. Run visual regression only in another project with npx
 
@@ -629,7 +629,7 @@ Pin the next supported package version in both runner and deployment. Rebuild/re
 
 ## 11. Team reviews, approved baselines and GitHub checks
 
-The following describes the merged feature implementation. **Use a published release that actually contains it**; `3.1.0` is not a claim that all these later controls are available. For a current-source trial, the [source guide](LOCAL-SETUP.md) provides a complete local color-change/review/baseline/policy exercise.
+The following describes the feature implementation included in the 3.2.0 release preparation. **Use published version 3.2.0 or newer once available**; installing 3.1.0 does not provide these later controls. For a current-source trial, the [source guide](LOCAL-SETUP.md) provides a complete local color-change/review/baseline/policy exercise.
 
 ### Google, invitations, roles and profile
 
