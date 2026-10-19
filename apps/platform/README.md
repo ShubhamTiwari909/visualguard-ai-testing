@@ -1,81 +1,10 @@
-# Standalone VisualGuard dashboard
+# VisualGuard dashboard application
 
-A separate UI quality evidence app, also distributed through the `visualguard` package. It provides project/run history, filters, immutable screenshots and DOM evidence, and the existing comparison viewer.
+See the [product feature guide](../../docs/PRODUCT-FEATURES.md) for a readable overview. Use the two maintained setup guides:
 
-Read the [complete walkthrough](../../docs/STANDALONE-DASHBOARD-WALKTHROUGH.md) for local use, installation in another project, team access, backups/database dumps, CI publishing, and Cloud Run/Vercel hosting. The implementation is a validated local release candidate; npm publication and live cloud deployment have not been performed.
+- [Local source setup](../../docs/LOCAL-SETUP.md): repository installation, fixture demo, dashboard, team features and operator recovery.
+- [npm package setup](../../docs/NPM-PACKAGE-SETUP.md): consumer installation, offline tests, SQLite/PostgreSQL/MongoDB, publishing and Vercel/Cloud Run deployment.
 
-The naming follow-up adds `test <project> --run-name "Release smoke"`, **Edit run name** on run detail, and **Edit project name & ID** in project settings. Public ID edits preserve existing links, upload tokens, and history. See the [naming guide](../../docs/DASHBOARD-NAMING.md) for setup, storage details, suggestions, and manual checks. These extensions have no executed local checks, builds, or tests.
+This app is the shared dashboard/API. Browser captures execute on developer machines or CI runners. Its development adapter is separate from the installed package runtime.
 
-Project/run deletion is now implemented as a follow-up extension, with typed confirmation, maintainer/admin permissions, and shared-artifact cleanup. Open a run to delete it, or use **People & integrations → Project access → Delete project**. See the [deletion guide and manual checklist](../../docs/DASHBOARD-DELETION.md). No build or checks were run for this extension, per the user's instruction.
-
-You can also bind a run while executing tests: `npx visualguard test storefront`, or `npx visualguard test "Storefront Web"`. Use `--dashboard <origin>` or `VISUALGUARD_DASHBOARD_URL` with the applicable upload token for an existing server. See the [project binding guide](../../docs/DASHBOARD-TEST-BINDING.md). No build or checks were run for this follow-up either.
-
-## Start from this repository
-
-```sh
-pnpm install
-pnpm platform:dev
-```
-
-Open http://127.0.0.1:4400. The local default needs no database service or login setup. SQLite is stored in the calling project's `.visualguard/platform/metadata.sqlite`; new artifact objects are stored in that database too. Add `.visualguard/` to the consuming project's `.gitignore` before committing files: the dashboard command does not update `.gitignore`, and this directory can contain screenshots, DOM evidence, and authentication state. Old F01 filesystem objects remain readable.
-
-For compiled workspace UI:
-
-```sh
-pnpm platform:build
-pnpm platform:start
-```
-
-## Use the installed package
-
-After installing a dashboard-enabled release or a local candidate tarball:
-
-```sh
-npx visualguard dashboard project create storefront --name "Storefront Web"
-npx visualguard dashboard
-npx visualguard dashboard import /absolute/path/to/run --project storefront
-npx visualguard dashboard export evidence.vgbackup.gz
-npx visualguard dashboard --data-dir ./review restore evidence.vgbackup.gz
-npx visualguard dashboard --data-dir ./review
-```
-
-There is no repository source, Vite, React install, browser install, or AI key requirement in the consuming/hosting project. See the walkthrough's release-candidate section before using public npm commands.
-
-The [CLI project creation guide](../../docs/DASHBOARD-CLI-PROJECTS.md) covers `project create`/`project add`, existing IDs, `--server`, and administrator login. This follow-up has no executed checks or regenerated distribution build.
-
-## Shared hosting
-
-Google sign-in is available as the first phase of team onboarding. See the [Google sign-in guide](../../docs/GOOGLE-SIGN-IN.md) for the required environment values, OAuth callback registration, recovery administrator, local setup, and phase boundaries. P03 adds [invitations and invite-only admission](../../docs/TEAM-INVITATIONS.md); unknown identities join through an administrator-created link. Existing installations must explicitly choose `VISUALGUARD_USER_ADMISSION=invite|legacy` when upgrading.
-
-P02 now adds [explicit Google account linking and identity continuity](../../docs/GOOGLE-ACCOUNT-LINKING.md) under Your sign-in methods. It preserves account IDs and review authorship, requires current-account proof, and rotates sessions after linking. SQLite/PostgreSQL and transactional MongoDB are supported; standalone MongoDB keeps ordinary sign-in while reporting linking unavailable. P03 now adds invitation management and atomic recipient acceptance on transactional storage.
-
-P04 adds [workspace user administration](../../docs/USER-ADMINISTRATION.md): search/filter/pagination, account details, explicit admin promotion/demotion, disable/restore, password reset, and session/upload revocation with last-admin protection. It adds no environment variables. Lifecycle APIs now require a target version and current administrator proof; direct admin grants during account creation are replaced by a separate promotion.
-
-Configure the database, public URL, administrator credentials, and admission policy: `VISUALGUARD_DATABASE_URL`, `VISUALGUARD_PUBLIC_URL`, `VISUALGUARD_ADMIN_EMAIL`, `VISUALGUARD_ADMIN_PASSWORD`, and `VISUALGUARD_USER_ADMISSION=invite`. PostgreSQL and MongoDB are selected from the URL automatically. The hosted public origin enables login and project permissions. Use a host secret store for credentials.
-
-```sh
-npx visualguard dashboard init --target vercel --out visualguard-dashboard
-# or --target cloud-run
-```
-
-Both hosts use database-backed metadata, artifacts, sessions, and upload progress; local ephemeral filesystem storage is not required. Full provider setup and canonical URL bootstrapping are in the walkthrough.
-
-## Scope and boundaries
-
-Implemented: F01 history/comparison; F02 password accounts, optional OIDC, project roles, session/password revocation, scoped upload credentials and auditing; F03 job-level visual decisions, assignments, deadlines, discussion and inbox; F06 chunked remote publishing; portable evidence backups; SQLite file inspection; database adapters; installed-package CLI/API; deployment scaffolds; confirmed project/run deletion.
-
-Use **Team review** on a run to discuss or decide an individual check, and **Review inbox** to find assigned work. The [F03 guide](../../docs/COLLABORATIVE-REVIEW.md) includes setup, API details, boundaries, and a manual walkthrough. No checks, builds, or tests were run locally for this extension.
-
-The comparison viewer remains read-only; review decisions live separately beside the immutable evidence. Region-level approval, approved-baseline promotion (F04), managed browser scheduling, release gates, and automatic artifact retention remain separate features.
-
-## Validation
-
-```sh
-pnpm platform:test
-pnpm --filter visualguard build:dashboard
-pnpm platform:test:package
-```
-
-Set `VISUALGUARD_TEST_DATABASE_URL` and `VISUALGUARD_TEST_MONGODB_URL` to disposable databases to include live adapter tests. Other configurations skip those optional integration cases. Formatting, lint, and type checks remain deferred until after F36.
-
-[Access/storage details](ACCESS-AND-STORAGE.md) · [Remote publishing](REMOTE-PUBLISHING.md) · [Growth roadmap](../../docs/ORGANIZATION-GROWTH-PLAN.md)
+For architecture and future scope, see the [package architecture](../../docs/PACKAGE-ARCHITECTURE.md) and [organization growth plan](../../docs/ORGANIZATION-GROWTH-PLAN.md). Planning and validation records describe their own historical revisions; the setup guides describe the current supported workflows and release boundaries.
