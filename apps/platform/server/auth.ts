@@ -311,8 +311,15 @@ export class AuthService {
       if (!entry) return undefined;
       if (this.mode === "local") {
         if (!entry.value.runner || entry.value.ownerId !== "local-owner") return undefined;
-        return { id: "local-owner", name: "Local runner", email: "", admin: false,
-          csrf: "", credentialId: id, uploadProject: entry.value.projectId };
+        return {
+          id: "local-owner",
+          name: "Local runner",
+          email: "",
+          admin: false,
+          csrf: "",
+          credentialId: id,
+          uploadProject: entry.value.projectId,
+        };
       }
       const owner = await this.state.get<User>("users", entry.value.ownerId);
       if (
@@ -646,7 +653,10 @@ export class AuthService {
       ))
     )
       throw new PlatformError(409, "Unable to create upload credential; retry");
-    await this.audit(actor, runner ? "runner-token.created" : "upload-token.created", { projectId, tokenId: id });
+    await this.audit(actor, runner ? "runner-token.created" : "upload-token.created", {
+      projectId,
+      tokenId: id,
+    });
     return { id, token, expiresAt };
   }
   async tokens(projectId: string) {

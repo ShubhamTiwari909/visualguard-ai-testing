@@ -17,13 +17,7 @@ async function get<T>(path: string): Promise<T> {
   return value as T;
 }
 
-export function Settings({
-  projects,
-  onUpdated,
-}: {
-  projects: Project[];
-  onUpdated: () => void;
-}) {
+export function Settings({ projects, onUpdated }: { projects: Project[]; onUpdated: () => void }) {
   const session = useSession();
   useEffect(() => {
     document.title = "People & integrations · VisualGuard";
