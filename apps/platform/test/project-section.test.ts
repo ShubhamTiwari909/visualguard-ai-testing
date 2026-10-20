@@ -5,13 +5,20 @@ import { ProjectSection } from "../client/project-section.js";
 import type { Project } from "../shared/contracts.js";
 
 const project: Project = {
-  id: "storefront", publicId: "shop", name: "Storefront", runCount: 3,
+  id: "storefront",
+  publicId: "shop",
+  name: "Storefront",
+  runCount: 3,
   createdAt: "2026-10-19T00:00:00.000Z",
 };
 const render = (selected: Project | undefined, canManage: boolean) =>
-  renderToStaticMarkup(createElement(ProjectSection, {
-    project: selected, canManage, onDeleted: () => {},
-  }));
+  renderToStaticMarkup(
+    createElement(ProjectSection, {
+      project: selected,
+      canManage,
+      onDeleted: () => {},
+    }),
+  );
 
 describe("selected project section", () => {
   it("shows project identity, run count and the confirmed deletion action for managers", () => {
