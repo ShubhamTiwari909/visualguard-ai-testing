@@ -23,13 +23,13 @@ Every `npx --no-install visualguard` command below runs the npm package installe
 
 ## 1. Choose your setup
 
-| You want | Database requirement | Login / token |
-| --- | --- | --- |
-| Visual tests and HTML reports only | None | None |
-| Local dashboard/history on your computer | SQLite created automatically; no database service | None in default loopback local mode |
-| Local dashboard with PostgreSQL | Dedicated PostgreSQL database | Optional login; token needed when login is enabled |
-| Local dashboard with MongoDB | Dedicated MongoDB database; replica set for full team features | Same as PostgreSQL |
-| Shared dashboard on Vercel/Cloud Run | External PostgreSQL or transaction-capable MongoDB | Login and project upload tokens |
+| You want                                 | Database requirement                                           | Login / token                                      |
+| ---------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
+| Visual tests and HTML reports only       | None                                                           | None                                               |
+| Local dashboard/history on your computer | SQLite created automatically; no database service              | None in default loopback local mode                |
+| Local dashboard with PostgreSQL          | Dedicated PostgreSQL database                                  | Optional login; token needed when login is enabled |
+| Local dashboard with MongoDB             | Dedicated MongoDB database; replica set for full team features | Same as PostgreSQL                                 |
+| Shared dashboard on Vercel/Cloud Run     | External PostgreSQL or transaction-capable MongoDB             | Login and project upload tokens                    |
 
 “Without database” applies literally to standalone visual tests. The dashboard's zero-setup option is an embedded SQLite file. You do not have to install PostgreSQL or MongoDB to use the product locally.
 
@@ -464,7 +464,7 @@ Create a **separate dashboard project**, not your application's existing Vercel 
 Check `vercel.json` before deployment:
 
 - The `3.1.0` source's scaffold omits `/reviews`; add `{ "source": "/reviews", "destination": "/index.html" }` to `rewrites` if absent.
-- Current merged feature source also needs a `/policies` rewrite in its generated output until the pending scaffold correction is released. For a release containing the relevant pages, preserve routes for `/settings`, `/operations`, `/reviews`, `/baselines`, `/policies`, `/invite`, `/runs/:path*` and `/`.
+- The published `3.2.0` scaffold omits `/policies`; this source includes the correction for the next release. Preserve routes for `/settings`, `/operations`, `/reviews`, `/baselines`, `/policies`, `/invite`, `/runs/:path*` and `/`. Updating the installed package does not update an existing deployment folder; regenerate into an empty directory and review the configuration, or add `{ "source": "/policies", "destination": "/index.html" }` if absent, then redeploy.
 - Keep `/api/:path*` routed to the API function, not `index.html`. Invitation pages in newer releases also need the scaffold's no-referrer/no-store headers.
 
 Create/connect a dedicated PostgreSQL resource through the [Vercel Marketplace](https://vercel.com/docs/marketplace-storage), or use your existing managed database. Set its actual URI as `VISUALGUARD_DATABASE_URL`; provider integration variable names can differ. Select nearby database/function regions and an appropriate pooled endpoint with provider-required TLS.
@@ -617,7 +617,7 @@ docker exec visualguard-postgres-local pg_dump -U visualguard -d visualguard -Fc
   > visualguard-native.dump
 ```
 
-  [PostgreSQL native dump documentation](https://www.postgresql.org/docs/17/app-pgdump.html).
+[PostgreSQL native dump documentation](https://www.postgresql.org/docs/17/app-pgdump.html).
 
 - **MongoDB:** use the deployment's supported consistent snapshot/backup procedure. With the Database Tools installed, a logical replica-set backup can use `mongodump --uri='mongodb://127.0.0.1:27018/?replicaSet=visualguard_local&directConnection=true' --oplog --out /absolute/private/backup-directory`. This is a full replica-set dump, not a `--db`-filtered dump; restrict and handle its contents accordingly. [MongoDB dump options](https://www.mongodb.com/docs/database-tools/mongodump/).
 
@@ -696,18 +696,18 @@ Administrators use **Audit & recovery** for bounded, filtered history and sign-i
 
 ## 12. Troubleshooting and final checks
 
-| Symptom | What to check |
-| --- | --- |
-| `role "USER" does not exist` | Actual PostgreSQL URI/user and schema grants; replace all placeholders |
-| Dashboard unexpectedly uses another app's DB | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings |
-| Empty history after a restart | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data |
-| Project-bound test fails before capture | Project already exists, unique name/ID, dashboard version and correct project token |
-| Upload fails after successful capture | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits |
-| Missing package/command/UI | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main` |
-| Google callback rejected | Exact origin/callback, configured test users/audience, complete OIDC settings and login mode |
-| MongoDB transaction/admission error | Replica set primary/network access, correct URI and appropriate `invite`/limited `legacy` choice |
-| Vercel page reload returns 404 | Generated SPA rewrite for that supported page, without breaking API routing |
-| Cloud Run starts then loses data | A real external DB is required; never rely on a container-local SQLite file |
+| Symptom                                      | What to check                                                                                             |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `role "USER" does not exist`                 | Actual PostgreSQL URI/user and schema grants; replace all placeholders                                    |
+| Dashboard unexpectedly uses another app's DB | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings          |
+| Empty history after a restart                | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data      |
+| Project-bound test fails before capture      | Project already exists, unique name/ID, dashboard version and correct project token                       |
+| Upload fails after successful capture        | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits       |
+| Missing package/command/UI                   | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main` |
+| Google callback rejected                     | Exact origin/callback, configured test users/audience, complete OIDC settings and login mode              |
+| MongoDB transaction/admission error          | Replica set primary/network access, correct URI and appropriate `invite`/limited `legacy` choice          |
+| Vercel page reload returns 404               | Generated SPA rewrite for that supported page, without breaking API routing                               |
+| Cloud Run starts then loses data             | A real external DB is required; never rely on a container-local SQLite file                               |
 
 Before sharing a hosted instance, verify health, login, role isolation, a small/large run, image retrieval after redeploy and an isolated native restore. Test signed webhooks/scheduled reconciliation if advertised. Keep unsupported preview hosts and databases separate.
 
