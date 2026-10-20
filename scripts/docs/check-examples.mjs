@@ -20,5 +20,5 @@ const releases = JSON.parse(await readFile(join(root, 'apps/docs/src/data/releas
 assert.match(article, new RegExp(`visualguard@${releases.publishedVersion.replaceAll('.', '\\.')}`));
 const action = await readFile(join(root, 'action/action.yml'), 'utf8');
 const actionDoc = await readFile(join(contentRoot, 'ci/github-actions.md'), 'utf8');
-for (const input of [...action.split('outputs:')[0].matchAll(/^  ([a-z-]+):$/gm)].map(x => x[1])) assert.ok(actionDoc.includes('`' + input + '`'), `Undocumented Action input ${input}`);
+for (const input of [...action.split('outputs:')[0].matchAll(/^ {2}([a-z-]+):$/gm)].map(x => x[1])) assert.ok(actionDoc.includes('`' + input + '`'), `Undocumented Action input ${input}`);
 console.log('Examples passed: quickstart config/constraints, release pin and every Action input.');

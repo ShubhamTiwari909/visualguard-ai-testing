@@ -20,7 +20,11 @@ async function command(executable, args, allowed = [0]) {
     child.stdout.on('data', chunk => { output += chunk; });
     child.stderr.on('data', chunk => { output += chunk; });
     child.on('error', error => { clearTimeout(timer); reject(error); });
-    child.on('exit', exit => { clearTimeout(timer); allowed.includes(exit) ? resolveCommand({ exit, output }) : reject(new Error(`${args.join(' ')} exited ${exit}\n${output.slice(-6000)}`)); });
+    child.on('exit', exit => {
+      clearTimeout(timer);
+      if (allowed.includes(exit)) resolveCommand({ exit, output });
+      else reject(new Error(`${args.join(' ')} exited ${exit}\n${output.slice(-6000)}`));
+    });
   });
 }
 async function startDemo(source) {
