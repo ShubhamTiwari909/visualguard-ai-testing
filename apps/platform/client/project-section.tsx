@@ -37,7 +37,12 @@ export function ProjectSection({
           />
         )}
       </div>
-      <ProjectTestControls key={project.id} project={project} canManage={canManage} onCompleted={onRunCompleted} />
+      <ProjectTestControls
+        key={project.id}
+        project={project}
+        canManage={canManage}
+        onCompleted={onRunCompleted}
+      />
     </section>
   );
 }

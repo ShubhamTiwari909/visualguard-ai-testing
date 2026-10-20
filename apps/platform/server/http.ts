@@ -237,19 +237,24 @@ export function createApi(
         }
         throw new PlatformError(404, "API endpoint not found");
       }
-      const runnerRoute = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-runner\/(claim|heartbeat|complete)$/);
+      const runnerRoute = url.pathname.match(
+        /^\/api\/projects\/([a-z0-9-]+)\/test-runner\/(claim|heartbeat|complete)$/,
+      );
       if (runnerRoute && request.method === "POST") {
         if (!actor) throw new PlatformError(401, "Runner credential rejected");
         response.setHeader("Cache-Control", "no-store");
         const project = await repository.resolveProjectId(runnerRoute[1]!);
-        const bearer = request.headers.authorization?.startsWith("Bearer ") ? request.headers.authorization.slice(7) : "";
+        const bearer = request.headers.authorization?.startsWith("Bearer ")
+          ? request.headers.authorization.slice(7)
+          : "";
         const runnerId = await testExecutions.runner(actor, project, bearer);
         const input = await body(request);
-        const value = runnerRoute[2] === "claim"
-          ? (z.object({}).strict().parse(input), await testExecutions.claim(project, runnerId))
-          : runnerRoute[2] === "heartbeat"
-            ? await testExecutions.heartbeat(project, runnerId, input)
-            : await testExecutions.complete(project, runnerId, input);
+        const value =
+          runnerRoute[2] === "claim"
+            ? (z.object({}).strict().parse(input), await testExecutions.claim(project, runnerId))
+            : runnerRoute[2] === "heartbeat"
+              ? await testExecutions.heartbeat(project, runnerId, input)
+              : await testExecutions.complete(project, runnerId, input);
         json(response, 200, value);
         return true;
       }
@@ -283,15 +288,26 @@ export function createApi(
           return true;
         }
         if (request.method === "POST") {
-          json(response, 202, await testExecutions.request(actor, testExecution[1]!, await body(request)));
+          json(
+            response,
+            202,
+            await testExecutions.request(actor, testExecution[1]!, await body(request)),
+          );
           return true;
         }
       }
       const runnerKey = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-runner-key$/);
       if (runnerKey && request.method === "POST") {
         await projectTests.access(actor, runnerKey[1]!, true);
-        const input = z.object({ name: z.string().min(1).max(120), days: z.number().int().min(1).max(90) }).strict().parse(await body(request));
-        json(response, 201, await auth.mintToken(actor, runnerKey[1]!, input.name, input.days, true));
+        const input = z
+          .object({ name: z.string().min(1).max(120), days: z.number().int().min(1).max(90) })
+          .strict()
+          .parse(await body(request));
+        json(
+          response,
+          201,
+          await auth.mintToken(actor, runnerKey[1]!, input.name, input.days, true),
+        );
         return true;
       }
       const testConfig = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/test-config$/);
