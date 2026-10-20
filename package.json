@@ -27,7 +27,10 @@
     "release": "pnpm build && changeset publish",
     "test:pack": "pnpm build && node scripts/pack-smoke.mjs",
     "eval": "pnpm build && node evals/run.mjs",
-    "demo:gif": "pnpm build && node scripts/demo-gif.mjs"
+    "demo:gif": "pnpm build && node scripts/demo-gif.mjs",
+    "docs:dev": "pnpm --filter @visualguard/docs dev",
+    "docs:build": "pnpm --filter @visualguard/docs build",
+    "docs:preview": "pnpm --filter @visualguard/docs preview"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

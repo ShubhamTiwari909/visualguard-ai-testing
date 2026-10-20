@@ -1,0 +1,36 @@
+---
+title: Visual testing, with evidence.
+description: Find visual changes, understand the evidence and make confident release decisions with VisualGuard.
+audience: developer
+docType: explanation
+channel: both
+lastReviewed: '2026-10-20'
+verifiedAgainst: 'Source main at 69ccdf1; npm 3.2.3 availability checked'
+template: splash
+hero:
+  title: Visual testing,<br />with evidence.
+  tagline: Compare your application, understand what changed, and give your team a clear path from screenshots to a release decision.
+  actions:
+    - text: Run your first test
+      link: ./start/quickstart/
+      icon: right-arrow
+    - text: Explore on GitHub
+      link: https://github.com/ShubhamTiwari909/visualguard-ai-testing
+      variant: secondary
+---
+
+import SetupChooser from '../../components/SetupChooser';
+
+<SetupChooser base={import.meta.env.BASE_URL} client:idle />
+
+## Start with the workflow you need
+
+VisualGuard compares browser screenshots and DOM evidence between two environments, against saved baselines, or inside existing Playwright tests. Deterministic analysis works without AI. Gemini or Ollama can add explanations and repair proposals.
+
+Browser capture runs on your computer or CI worker. A shared dashboard adds persistent history, project access, team reviews and approved baselines. Dashboard-triggered tests use your connected private runner.
+
+## Small setup. Clear next steps.
+
+Install the package in the application you want to test. Start with one route and one viewport. Inspect the report before changing tolerances or adding optional services.
+
+The website is being implemented on a feature branch. Published-versus-source applicability appears on each guide; see release notes before upgrading an existing workspace.
