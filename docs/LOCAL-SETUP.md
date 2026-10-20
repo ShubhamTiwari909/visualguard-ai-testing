@@ -501,18 +501,18 @@ Install that actual `.tgz` path in a separate consumer project. This is an expli
 
 ## 12. Troubleshooting and checks
 
-| Symptom | Check |
-| --- | --- |
-| Browser executable missing | Install Chromium in the workspace package; on Linux include required browser system dependencies |
-| Wrong/empty dashboard history | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory |
-| `role "USER" does not exist` | Replace placeholder credentials with the actual PostgreSQL username/password and ensure that role owns/can initialize the dedicated schema |
-| Google controls missing | Use login mode and a complete OIDC configuration, load it in the actual server terminal, then restart |
-| Google `redirect_uri_mismatch` | Match scheme, hostname, port and `/api/auth/callback` exactly; keep `localhost` and `127.0.0.1` consistent |
-| Token rejected | Correct project token, current owner access and correct canonical server; login-mode loopback needs a token too |
-| MongoDB invite startup fails | Use a replica set/sharded deployment with transactions, or deliberately select limited `legacy` compatibility mode |
-| Development deep link returns 404 | Navigate from the dashboard sidebar; for complete direct-route behavior, build the source UI and use `platform:start` |
-| UI/CLI feature missing | Correct checkout and a rebuilt package/UI; old `dist`/npm assets do not update themselves |
-| Baseline/policy blocked | Read the exact evidence, revision, coverage, rendering, freshness and approval reasons rather than relabeling old evidence |
+| Symptom                           | Check                                                                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Browser executable missing        | Install Chromium in the workspace package; on Linux include required browser system dependencies                                           |
+| Wrong/empty dashboard history     | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory                   |
+| `role "USER" does not exist`      | Replace placeholder credentials with the actual PostgreSQL username/password and ensure that role owns/can initialize the dedicated schema |
+| Google controls missing           | Use login mode and a complete OIDC configuration, load it in the actual server terminal, then restart                                      |
+| Google `redirect_uri_mismatch`    | Match scheme, hostname, port and `/api/auth/callback` exactly; keep `localhost` and `127.0.0.1` consistent                                 |
+| Token rejected                    | Correct project token, current owner access and correct canonical server; login-mode loopback needs a token too                            |
+| MongoDB invite startup fails      | Use a replica set/sharded deployment with transactions, or deliberately select limited `legacy` compatibility mode                         |
+| Development deep link returns 404 | Navigate from the dashboard sidebar; for complete direct-route behavior, build the source UI and use `platform:start`                      |
+| UI/CLI feature missing            | Correct checkout and a rebuilt package/UI; old `dist`/npm assets do not update themselves                                                  |
+| Baseline/policy blocked           | Read the exact evidence, revision, coverage, rendering, freshness and approval reasons rather than relabeling old evidence                 |
 
 For implementation changes, use the focused test/build that exercises the change. The current repository instruction defers formatter/lint/type commands unless the user explicitly changes it; this guide does not claim those checks passed. No application build, behavior suite or live provider test was run while consolidating this documentation; examples were checked statically.
 

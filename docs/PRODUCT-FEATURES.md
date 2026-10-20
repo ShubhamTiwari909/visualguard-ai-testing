@@ -35,13 +35,13 @@ This document explains the current source implementation in ordinary product ter
 
 ## 1. Who it is for and how it works
 
-| Reader | Typical use |
-| --- | --- |
-| Developer | Check a branch or local change before opening a pull request |
-| QA engineer | Compare important screens across releases and investigate differences |
-| Designer or reviewer | Inspect screenshots and approve the intended appearance |
-| Team lead or maintainer | Manage shared references and visual review requirements |
-| Platform/operator | Host the dashboard, manage access, preserve evidence and recover the installation |
+| Reader                  | Typical use                                                                       |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| Developer               | Check a branch or local change before opening a pull request                      |
+| QA engineer             | Compare important screens across releases and investigate differences             |
+| Designer or reviewer    | Inspect screenshots and approve the intended appearance                           |
+| Team lead or maintainer | Manage shared references and visual review requirements                           |
+| Platform/operator       | Host the dashboard, manage access, preserve evidence and recover the installation |
 
 VisualGuard tests pages a browser can open. It is not limited to the framework used to build those pages: React, Next.js, Vue and ordinary HTML applications can all be comparison targets.
 
@@ -130,21 +130,21 @@ Deterministic checks can flag problems such as removed controls, new overlaps, c
 
 Optional independent checks include:
 
-| Check | What it adds | Practical limit |
-| --- | --- | --- |
-| Accessibility | axe-based comparison of new/worsened violations, even if pixels look similar | An automated check is not a complete accessibility assessment |
-| Performance | Browser timings/resource signals and configured increases in loading time (LCP), layout movement (CLS) or page/JavaScript weight | Compare equivalent builds and environments; local development timings are not a production benchmark |
-| Capture/page health | Evidence of failed requests, missing images and other supported page problems | Only the visited pages and observed execution are covered |
+| Check               | What it adds                                                                                                                     | Practical limit                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Accessibility       | axe-based comparison of new/worsened violations, even if pixels look similar                                                     | An automated check is not a complete accessibility assessment                                        |
+| Performance         | Browser timings/resource signals and configured increases in loading time (LCP), layout movement (CLS) or page/JavaScript weight | Compare equivalent builds and environments; local development timings are not a production benchmark |
+| Capture/page health | Evidence of failed requests, missing images and other supported page problems                                                    | Only the visited pages and observed execution are covered                                            |
 
 ### Read the result correctly
 
-| Status | Meaning |
-| --- | --- |
-| **Pass** | Within configured visual tolerance, or permitted noise handling without independent blocking findings |
-| **Review** | A difference or independent check needs a decision |
-| **Regression** | A deterministic problem or qualifying AI-classified regression was found |
-| **Accepted** | The appearance matches a locally recorded intentional change, without hiding new independent problems |
-| **Error** | Capture or processing failed |
+| Status         | Meaning                                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| **Pass**       | Within configured visual tolerance, or permitted noise handling without independent blocking findings |
+| **Review**     | A difference or independent check needs a decision                                                    |
+| **Regression** | A deterministic problem or qualifying AI-classified regression was found                              |
+| **Accepted**   | The appearance matches a locally recorded intentional change, without hiding new independent problems |
+| **Error**      | Capture or processing failed                                                                          |
 
 CLI failure policy can fail on regressions alone or include review results. Errors and explicitly incomplete merged executions fail. A failed command can therefore mean a correctly detected regression, not a broken installation.
 
@@ -199,11 +199,11 @@ Verification covers captured/configured behavior, not every possible application
 
 Three related features serve different purposes:
 
-| Action | Where it lives | What it means |
-| --- | --- | --- |
-| **Accept a local change** | A local/version-controlled acceptance file | Similar or exact intentional differences can be recognized in later local engine runs |
-| **Approve a visual change** | Dashboard review history for exact check evidence | An authorized reviewer accepts that specific shared visual difference |
-| **Promote an approved baseline** | Dashboard baseline registry | An authorized maintainer publishes reviewed evidence as an immutable future reference |
+| Action                           | Where it lives                                    | What it means                                                                         |
+| -------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Accept a local change**        | A local/version-controlled acceptance file        | Similar or exact intentional differences can be recognized in later local engine runs |
+| **Approve a visual change**      | Dashboard review history for exact check evidence | An authorized reviewer accepts that specific shared visual difference                 |
+| **Promote an approved baseline** | Dashboard baseline registry                       | An authorized maintainer publishes reviewed evidence as an immutable future reference |
 
 A comment does not substitute for a visual decision. Local acceptance does not substitute for shared review. Promoting a reference does not rewrite an older run or prove a GitHub merge.
 
@@ -270,12 +270,12 @@ Invite-only admission allows administrators to issue expiring project/role invit
 
 ### Roles
 
-| Role | Main responsibility |
-| --- | --- |
-| Viewer | Read evidence in assigned projects |
-| Reviewer | Participate in review and record visual decisions |
-| Maintainer | Manage the project's access, upload credentials, references and policies, as permitted |
-| Workspace administrator | Manage accounts and projects across this installation |
+| Role                    | Main responsibility                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| Viewer                  | Read evidence in assigned projects                                                     |
+| Reviewer                | Participate in review and record visual decisions                                      |
+| Maintainer              | Manage the project's access, upload credentials, references and policies, as permitted |
+| Workspace administrator | Manage accounts and projects across this installation                                  |
 
 Project permissions and workspace administrator status are separate. There is one workspace per installation, not a vendor-wide multi-tenant super-admin console.
 
@@ -311,11 +311,11 @@ A visual policy answers: **does the evidence for this exact revision meet this p
 
 Requirements can cover the target branch/environment, required screenshot checks, current approved baseline, evidence age, complete/reliable execution and exact visual approval for changed screenshots.
 
-| Assessment | Meaning |
-| --- | --- |
-| Pending | Required evidence is not yet available |
-| Satisfied | Available evidence meets the current policy |
-| Blocked | Evidence or a decision fails one or more requirements |
+| Assessment | Meaning                                               |
+| ---------- | ----------------------------------------------------- |
+| Pending    | Required evidence is not yet available                |
+| Satisfied  | Available evidence meets the current policy           |
+| Blocked    | Evidence or a decision fails one or more requirements |
 
 Policies are versioned with actor/reason. Temporary exceptions are scoped to an exact check/revision with a reason/expiry; they do not waive capture/coverage failures or explicit rejection.
 
@@ -327,13 +327,13 @@ Checks are point-in-time observations. GitHub can retain an old conclusion durin
 
 ## 17. Storage, hosting and data ownership
 
-| Setup | Where data persists |
-| --- | --- |
-| Standalone tests | Local run/report/reference files; no dashboard database |
-| Local dashboard with no DB service | Embedded SQLite file |
-| PostgreSQL dashboard | Dedicated PostgreSQL database |
-| MongoDB dashboard | Dedicated MongoDB database |
-| Vercel/Cloud Run dashboard | Configured external database, not the host's ephemeral filesystem |
+| Setup                              | Where data persists                                               |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| Standalone tests                   | Local run/report/reference files; no dashboard database           |
+| Local dashboard with no DB service | Embedded SQLite file                                              |
+| PostgreSQL dashboard               | Dedicated PostgreSQL database                                     |
+| MongoDB dashboard                  | Dedicated MongoDB database                                        |
+| Vercel/Cloud Run dashboard         | Configured external database, not the host's ephemeral filesystem |
 
 New uploaded screenshot/DOM bytes are stored as database-backed artifact chunks alongside platform data. Cloud hosting does not automatically create a Vercel Blob, S3 or Google Cloud Storage bucket. Those are not configurable artifact adapters today.
 
@@ -366,28 +366,28 @@ It is not an HTTP recovery endpoint or an npm account-creation command. It canno
 
 Developers can use the package API for configuration parsing, run creation, events/results, reporters and cancellation. Capture hooks prepare application state; custom reporters can integrate results into existing tools. CLI HTML/JUnit/webhook behavior is not automatically implied by every programmatic API call.
 
-| Command or API | Main use |
-| --- | --- |
-| URL mode | Explore one site or compare two URLs quickly |
-| `init` / `doctor` | Create config and diagnose setup |
-| `test` | Compare configured application pages or stored references |
-| `test PROJECT` | Compare and save new evidence to a dashboard project |
-| `report` / `analyze` | Inspect or re-analyze saved evidence |
-| `accept` | Record an intentional local change |
-| `fix` | Propose/apply/verify a configured repair |
-| `auth` | Save application login state for browser captures |
-| `watch` / `monitor` | Re-test on edits or compare a live site over time |
-| `merge` | Combine compatible shards and validate coverage |
-| `comment` | Publish/update a PR summary comment |
-| `dashboard` | Run the dashboard |
-| `dashboard project create` | Create/reuse a project with appropriate authority |
-| `dashboard import` / `publish` | Store local evidence or upload to a running server |
-| `dashboard export` / `restore` | Move portable evidence |
-| `dashboard baseline pull` | Download immutable approved references in a compatible feature release |
-| `dashboard policy assess` / `reconcile` | Assess evidence and refresh GitHub delivery in a compatible feature release |
-| `dashboard init` | Generate Vercel/Cloud Run hosting files |
-| `visualguard/playwright` | Check an interactive state inside an existing Playwright test |
-| `visualguard` / `visualguard/dashboard` APIs | Build supported run/reporting/dashboard integrations |
+| Command or API                               | Main use                                                                    |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| URL mode                                     | Explore one site or compare two URLs quickly                                |
+| `init` / `doctor`                            | Create config and diagnose setup                                            |
+| `test`                                       | Compare configured application pages or stored references                   |
+| `test PROJECT`                               | Compare and save new evidence to a dashboard project                        |
+| `report` / `analyze`                         | Inspect or re-analyze saved evidence                                        |
+| `accept`                                     | Record an intentional local change                                          |
+| `fix`                                        | Propose/apply/verify a configured repair                                    |
+| `auth`                                       | Save application login state for browser captures                           |
+| `watch` / `monitor`                          | Re-test on edits or compare a live site over time                           |
+| `merge`                                      | Combine compatible shards and validate coverage                             |
+| `comment`                                    | Publish/update a PR summary comment                                         |
+| `dashboard`                                  | Run the dashboard                                                           |
+| `dashboard project create`                   | Create/reuse a project with appropriate authority                           |
+| `dashboard import` / `publish`               | Store local evidence or upload to a running server                          |
+| `dashboard export` / `restore`               | Move portable evidence                                                      |
+| `dashboard baseline pull`                    | Download immutable approved references in a compatible feature release      |
+| `dashboard policy assess` / `reconcile`      | Assess evidence and refresh GitHub delivery in a compatible feature release |
+| `dashboard init`                             | Generate Vercel/Cloud Run hosting files                                     |
+| `visualguard/playwright`                     | Check an interactive state inside an existing Playwright test               |
+| `visualguard` / `visualguard/dashboard` APIs | Build supported run/reporting/dashboard integrations                        |
 
 This is a capability map, not a command sequence to run all at once. Use the setup guides and installed command help for version-specific options.
 
@@ -407,13 +407,13 @@ Choose the smallest useful starting point:
 
 ### Find the exact run instructions
 
-| Workflow | From the VisualGuard source repository | In another application using npx |
-| --- | --- | --- |
-| Visual regression only, no database/dashboard | [Source-only comparison](LOCAL-SETUP.md#3-run-visual-regression-without-a-dashboard-or-database) | [npm comparison](NPM-PACKAGE-SETUP.md#2-run-visual-regression-only-in-another-project-with-npx) |
-| Visual regression with AI | [Source Gemini/Ollama setup](LOCAL-SETUP.md#4-run-source-visual-regression-with-ai) | [npm Gemini/Ollama setup](NPM-PACKAGE-SETUP.md#3-run-visual-regression-with-ai-in-another-project-with-npx) |
-| Visual regression with a local dashboard, no database service | [Source SQLite dashboard](LOCAL-SETUP.md#5-run-source-visual-regression-with-a-local-sqlite-dashboard) | [npm SQLite dashboard](NPM-PACKAGE-SETUP.md#5-run-npx-visual-regression-with-a-local-sqlite-dashboard) |
-| Dashboard and tests with PostgreSQL | [Source PostgreSQL workflow](LOCAL-SETUP.md#6-run-source-visual-regression-with-postgresql) | [npm PostgreSQL workflow](NPM-PACKAGE-SETUP.md#6-run-npx-visual-regression-with-postgresql) |
-| Dashboard and tests with MongoDB | [Source MongoDB workflow](LOCAL-SETUP.md#7-run-source-visual-regression-with-mongodb) | [npm MongoDB workflow](NPM-PACKAGE-SETUP.md#7-run-npx-visual-regression-with-mongodb) |
+| Workflow                                                      | From the VisualGuard source repository                                                                 | In another application using npx                                                                            |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Visual regression only, no database/dashboard                 | [Source-only comparison](LOCAL-SETUP.md#3-run-visual-regression-without-a-dashboard-or-database)       | [npm comparison](NPM-PACKAGE-SETUP.md#2-run-visual-regression-only-in-another-project-with-npx)             |
+| Visual regression with AI                                     | [Source Gemini/Ollama setup](LOCAL-SETUP.md#4-run-source-visual-regression-with-ai)                    | [npm Gemini/Ollama setup](NPM-PACKAGE-SETUP.md#3-run-visual-regression-with-ai-in-another-project-with-npx) |
+| Visual regression with a local dashboard, no database service | [Source SQLite dashboard](LOCAL-SETUP.md#5-run-source-visual-regression-with-a-local-sqlite-dashboard) | [npm SQLite dashboard](NPM-PACKAGE-SETUP.md#5-run-npx-visual-regression-with-a-local-sqlite-dashboard)      |
+| Dashboard and tests with PostgreSQL                           | [Source PostgreSQL workflow](LOCAL-SETUP.md#6-run-source-visual-regression-with-postgresql)            | [npm PostgreSQL workflow](NPM-PACKAGE-SETUP.md#6-run-npx-visual-regression-with-postgresql)                 |
+| Dashboard and tests with MongoDB                              | [Source MongoDB workflow](LOCAL-SETUP.md#7-run-source-visual-regression-with-mongodb)                  | [npm MongoDB workflow](NPM-PACKAGE-SETUP.md#7-run-npx-visual-regression-with-mongodb)                       |
 
 Each AI section also shows the AI-plus-dashboard command. Database choice changes where evidence is stored; provider settings belong on the visual-test runner.
 
