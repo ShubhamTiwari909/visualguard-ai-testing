@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { MongoClient, type ClientSession, type Collection, type Db, type Document } from "mongodb";
 import type { ArtifactStore } from "./artifacts.js";
 import { OBJECT_CHUNK_BYTES, sha256 } from "./artifacts.js";
+import { cleanupMongoArtifacts, queueMongoArtifactCleanup } from "./mongo-cleanup.js";
 import type { EvidenceRepository, StateRecord, StateStore } from "./storage-contracts.js";
 import { ProjectDirectory } from "./project-directory.js";
 import type {
@@ -198,27 +199,8 @@ class MongoEvidenceRepository implements EvidenceRepository {
     }
   }
 
-  private async queueCleanup(hashes: Iterable<string>) {
-    for (const hash of new Set(hashes)) {
-      try {
-        await this.db.collection("vg_state").updateOne(
-          { namespace: "artifact-cleanup", id: hash },
-          {
-            $setOnInsert: {
-              namespace: "artifact-cleanup",
-              id: hash,
-              value: { hash },
-              expiresAt: null,
-            },
-            $inc: { version: 1 },
-          },
-          { upsert: true },
-        );
-      } catch (error) {
-        if (!(error && typeof error === "object" && "code" in error && error.code === 11000))
-          throw error;
-      }
-    }
+  private queueCleanup(hashes: Iterable<string>) {
+    return queueMongoArtifactCleanup(this.db, hashes);
   }
 
   private async removeAccessAndUploads(project?: string, runId?: string) {
@@ -249,105 +231,8 @@ class MongoEvidenceRepository implements EvidenceRepository {
     }
   }
 
-  private async cleanup(runs: number): Promise<DeletionResult> {
-    let artifactsDeleted = 0,
-      cleanupPending = false;
-    try {
-      const candidates = await this.db
-        .collection("vg_state")
-        .find({ namespace: "artifact-cleanup" })
-        .limit(1000)
-        .toArray();
-      for (const candidate of candidates) {
-        const hash = candidate.id as string;
-        // Older runs predate per-object pins; keep their objects too.
-        if (await this.db.collection("vg_runs").findOne({ "artifacts.hash": hash })) {
-          await this.db
-            .collection("vg_state")
-            .deleteOne({ _id: candidate._id, version: candidate.version });
-          continue;
-        }
-        if (
-          await this.db.collection("vg_state").findOne({
-            namespace: "upload-files",
-            "value.hash": hash,
-            $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date().toISOString() } }],
-          })
-        ) {
-          cleanupPending = true;
-          continue;
-        }
-        const current = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
-        if (current) {
-          const id = `${hash}:${current.generation ?? "legacy"}`;
-          try {
-            await this.db.collection("vg_state").updateOne(
-              { namespace: "artifact-generations", id },
-              {
-                $setOnInsert: {
-                  namespace: "artifact-generations",
-                  id,
-                  value: { hash, generation: current.generation ?? null },
-                  version: 1,
-                  expiresAt: null,
-                },
-              },
-              { upsert: true },
-            );
-          } catch (error) {
-            if (!(error && typeof error === "object" && "code" in error && error.code === 11000))
-              throw error;
-          }
-        }
-        const object =
-          current &&
-          (await this.db.collection<MongoObject>("vg_objects").findOneAndDelete({
-            hash,
-            generation: current.generation ?? { $exists: false },
-            $or: [{ runRefs: { $exists: false } }, { runRefs: { $size: 0 } }],
-          }));
-        if (object) {
-          // Generation-scoped chunks allow a concurrent re-upload to create a new copy safely.
-          await this.db
-            .collection("vg_object_chunks")
-            .deleteMany({ hash, generation: object.generation ?? { $exists: false } });
-          artifactsDeleted++;
-        } else if (await this.db.collection<MongoObject>("vg_objects").findOne({ hash })) {
-          cleanupPending = true;
-          continue;
-        }
-        await this.db
-          .collection("vg_state")
-          .deleteOne({ _id: candidate._id, version: candidate.version });
-      }
-      // Persist chunk cleanup separately before removing object metadata, so an interrupted
-      // deletion can safely finish later without touching a newer upload of the same hash.
-      for await (const task of this.db
-        .collection("vg_state")
-        .find({ namespace: "artifact-generations" })
-        .limit(1000)) {
-        const { hash, generation } = task.value;
-        const current = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
-        if (current && (current.generation ?? null) === generation) {
-          cleanupPending = true;
-          continue;
-        }
-        await this.db
-          .collection("vg_object_chunks")
-          .deleteMany({ hash, generation: generation ?? { $exists: false } });
-        await this.db.collection("vg_state").deleteOne({ _id: task._id });
-      }
-      if (
-        await this.db
-          .collection("vg_state")
-          .findOne({ namespace: { $in: ["artifact-cleanup", "artifact-generations"] } })
-      )
-        cleanupPending = true;
-    } catch (error) {
-      console.error("Evidence deletion completed; artifact cleanup remains queued", error);
-      cleanupPending = true;
-    }
-    return { runs, artifactsDeleted, cleanupPending };
+  private cleanup(runs: number): Promise<DeletionResult> {
+    return cleanupMongoArtifacts(this.db, runs);
   }
 
   async deleteRun(id: string, expectedProject?: string): Promise<DeletionResult> {
@@ -728,12 +613,16 @@ export async function openMongo(url: string) {
       db.collection("vg_projects").createIndex({ id: 1 }, { unique: true }),
       db.collection("vg_project_tombstones").createIndex({ id: 1 }, { unique: true }),
       db.collection("vg_runs").createIndex({ id: 1 }, { unique: true }),
+      db.collection("vg_runs").createIndex({ "artifacts.hash": 1 }),
       db.collection("vg_runs").createIndex({ projectId: 1, engineRunId: 1 }, { unique: true }),
       db.collection("vg_runs").createIndex({ projectId: 1, startedAt: -1, id: -1 }),
       db.collection("vg_state").createIndex({ namespace: 1, id: 1 }, { unique: true }),
       db.collection("vg_state").createIndex({ expiresOn: 1 }, { expireAfterSeconds: 0 }),
       db.collection("vg_objects").createIndex({ hash: 1 }, { unique: true }),
+      db.collection("vg_objects").createIndex({ runRefs: 1 }),
+      db.collection("vg_state").createIndex({ namespace: 1, "value.hash": 1, expiresAt: 1 }),
       db.collection("vg_object_chunks").createIndex({ key: 1 }, { unique: true }),
+      db.collection("vg_object_chunks").createIndex({ hash: 1, generation: 1, chunk: 1 }),
     ]);
     return {
       repository: new MongoRepository(db),

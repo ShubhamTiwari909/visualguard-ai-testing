@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { mutation, useSession } from "./auth";
 import type { Project } from "../shared/contracts";
-import { DeleteAction, deletionMessage } from "./delete-action";
 import { ProjectNameEditor } from "./naming";
 import { InvitationSettings } from "./invitations";
 import { UserAdministration } from "./users";
@@ -18,15 +17,7 @@ async function get<T>(path: string): Promise<T> {
   return value as T;
 }
 
-export function Settings({
-  projects,
-  onDeleted,
-  onUpdated,
-}: {
-  projects: Project[];
-  onDeleted: (message: string) => void;
-  onUpdated: () => void;
-}) {
+export function Settings({ projects, onUpdated }: { projects: Project[]; onUpdated: () => void }) {
   const session = useSession();
   useEffect(() => {
     document.title = "People & integrations · VisualGuard";
@@ -384,27 +375,6 @@ export function Settings({
           </>
         )}
       </section>
-      {managed.find((item) => item.id === project) && (
-        <section className="vg-panel vg-settings-section vg-danger-zone">
-          <h2>Delete project</h2>
-          <p className="vg-muted">
-            Permanently remove this project and its run history. Export a backup first if you need a
-            local copy.
-          </p>
-          <DeleteAction
-            key={project}
-            kind="project"
-            id={project}
-            displayId={managed.find((item) => item.id === project)!.publicId ?? project}
-            name={managed.find((item) => item.id === project)!.name}
-            runCount={managed.find((item) => item.id === project)!.runCount}
-            onDeleted={(result) => {
-              setIssued("");
-              onDeleted(deletionMessage("project", result));
-            }}
-          />
-        </section>
-      )}
     </main>
   );
 }

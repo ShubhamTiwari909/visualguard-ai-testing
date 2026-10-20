@@ -17,6 +17,7 @@ import "./styles.css";
 import { AccountMenu, SessionProvider, useSession } from "./auth";
 import { InvitationPage } from "./invitations";
 import { Settings } from "./settings";
+import { ProjectSection } from "./project-section";
 import { DeleteAction, deletionMessage } from "./delete-action";
 import { RunNameEditor } from "./naming";
 import { ReviewInbox, RunReviews } from "./reviews";
@@ -313,10 +314,12 @@ function RunHistory({
   projects,
   refreshProjects,
   search,
+  onDeleted,
 }: {
   projects: Project[];
   refreshProjects: () => void;
   search: string;
+  onDeleted: (message: string) => void;
 }) {
   const session = useSession();
   const [page, setPage] = useState<RunPage>();
@@ -324,6 +327,13 @@ function RunHistory({
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const params = new URLSearchParams(search);
+  const selector = params.get("project");
+  const selectedProject = projects.find(
+    (project) =>
+      project.id === selector ||
+      project.publicId === selector ||
+      project.aliases?.includes(selector ?? ""),
+  );
   useEffect(() => {
     const abort = new AbortController();
     setLoading(true);
@@ -372,6 +382,11 @@ function RunHistory({
         </div>
         {session.user?.admin && <ProjectForm onCreated={refresh} />}
       </div>
+      <ProjectSection
+        project={selectedProject}
+        canManage={Boolean(session.user?.admin || selectedProject?.role === "maintainer")}
+        onDeleted={onDeleted}
+      />
       <div className="vg-stat-grid">
         <div className="vg-stat">
           <span>Projects</span>
@@ -426,16 +441,8 @@ function RunHistory({
               <span className="vg-sr-only">Project</span>
               <select
                 name="project"
-                defaultValue={
-                  projects.find(
-                    (project) =>
-                      project.id === params.get("project") ||
-                      project.publicId === params.get("project") ||
-                      project.aliases?.includes(params.get("project") ?? ""),
-                  )?.id ??
-                  params.get("project") ??
-                  ""
-                }
+                key={selectedProject?.id ?? ""}
+                defaultValue={selectedProject?.id ?? params.get("project") ?? ""}
               >
                 <option value="">All projects</option>
                 {projects.map((project) => (
@@ -987,7 +994,7 @@ function Platform() {
         </div>
       )}
       {location.path === "/settings" ? (
-        <Settings projects={projects} onDeleted={deleted} onUpdated={refresh} />
+        <Settings projects={projects} onUpdated={refresh} />
       ) : location.path === "/operations" ? (
         <OperationsPage />
       ) : location.path === "/policies" ? (
@@ -1002,6 +1009,7 @@ function Platform() {
           projects={projects}
           refreshProjects={refresh}
           search={location.search}
+          onDeleted={deleted}
         />
       )}
     </Shell>

@@ -502,6 +502,12 @@
   border-radius: 11px;
   overflow: hidden;
 }
+.vg-project-section {
+  margin-bottom: 22px;
+}
+.vg-project-section > .vg-panel-heading {
+  border-bottom: 0;
+}
 .vg-panel-heading {
   display: flex;
   align-items: center;

@@ -254,6 +254,10 @@ Features include:
 
 Publishing transfers evidence in checksummed chunks and can resume the same credential-bound upload after interruption. Original local run files remain available. A run is committed only after its required uploaded evidence validates; importing a genuinely incomplete capture does not make its coverage complete.
 
+MongoDB deletion batches artifact cleanup queue writes and cleans independent artifacts with bounded concurrency. Shared screenshots, active uploads and interrupted cleanup remain protected; failed cleanup stays queued for retry. Network latency and the amount of evidence still affect deletion time.
+
+Select a project in the dashboard sidebar to find **Delete project** in that project's run-history section. The action is available to workspace administrators and project maintainers and requires explicit project-ID and run-count confirmation. People & integrations continues to manage access and upload tokens.
+
 Project deletion removes its runs/access/upload credentials while preserving unrelated workspace accounts and evidence still referenced elsewhere. Deleted project IDs remain reserved. Deletion does not erase original runner copies or independent backups, and hosting does not enable automatic time-based retention.
 
 ## 13. Accounts, Google sign-in and permissions
