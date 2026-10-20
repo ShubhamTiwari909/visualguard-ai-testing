@@ -54,6 +54,7 @@ export async function runDashboardRunner(options: {
           .finally(() => { renewing = undefined; });
       }, 15000);
       const stopHeartbeat = async () => { clearInterval(timer); await renewing; };
+      let uploaded: Awaited<ReturnType<typeof uploadRun>> | undefined;
       try {
         const config = projectTestConfig.parse(job.config);
         const workDir = resolve(root, job.id);
@@ -64,19 +65,33 @@ export async function runDashboardRunner(options: {
         });
         console.log(`Starting dashboard test ${job.id} (configuration v${job.configVersion}).`);
         const outcome = await createRun(resolved, { signal }).start();
-        const result = await uploadRun({
+        const result = uploaded = await uploadRun({
           server: server.origin, project: job.projectId, token: options.token,
           runDir: outcome.runDir, signal,
           metadata: { environment: "dashboard", deployment: job.id, runName: `Dashboard test · config v${job.configVersion}` },
         });
         await stopHeartbeat();
         signal.throwIfAborted();
-        await request("complete", { ...lease, runId: result.id }, signal);
+        // Completion is idempotent: retry the same uploaded run if its acknowledgement
+        // was lost. Never replace a finalized upload with a capture-failure outcome.
+        for (let attempt = 0; ; attempt++) {
+          try {
+            await request("complete", { ...lease, runId: result.id }, signal);
+            break;
+          } catch (error) {
+            if (attempt === 2 || signal.aborted) throw error;
+            await delay(500 * (attempt + 1), undefined, { signal });
+          }
+        }
         console.log(`Dashboard test finished: ${new URL(result.url, server).href} [${result.status}]`);
       } catch (error) {
         await stopHeartbeat();
-        await request("complete", { ...lease, failed: true }).catch(() => {});
-        console.error(`Dashboard test failed; evidence remains under ${root}.`, error instanceof Error ? error.message : "Runner error");
+        if (uploaded) {
+          console.error(`Run uploaded: ${new URL(uploaded.url, server).href}. Completion could not be acknowledged; retain this result instead of repeating the capture.`, error instanceof Error ? error.message : "Runner error");
+        } else {
+          await request("complete", { ...lease, failed: true }).catch(() => {});
+          console.error(`Dashboard test failed; evidence remains under ${root}.`, error instanceof Error ? error.message : "Runner error");
+        }
         if (options.once) throw error;
       } finally { clearInterval(timer); }
     }
