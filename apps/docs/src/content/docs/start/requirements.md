@@ -25,6 +25,10 @@ npx playwright install --with-deps chromium
 
 This may require permission to install operating-system packages. For Firefox/WebKit, install the selected browser as well. The CLI supports Windows; POSIX shell/Docker examples use WSL there. Do not paste `export`, heredocs or backslash continuations directly into PowerShell. Simple one-line npm/VisualGuard commands work in its normal shell.
 
+## Install or select Node first
+
+If `node --version` fails or shows an older release, install a supported LTS release from [the official Node.js download page](https://nodejs.org/en/download), reopen the terminal and check `node --version` and `npm --version`. If you use nvm and already have Node 24 installed, `nvm use 24` selects it for the current shell. Select the same runtime in each terminal used for this guide.
+
 ## Optional services
 
 | Workflow | Additional prerequisites |

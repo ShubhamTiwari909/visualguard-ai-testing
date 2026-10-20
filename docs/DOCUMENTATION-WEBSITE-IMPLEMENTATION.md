@@ -49,3 +49,13 @@ Functional docs checks validate article metadata/prerequisites, planned route co
 Validation: `pnpm docs:test`, root-path production build and internal links passed (80 generated pages, 9228 internal links/assets/anchors). A separate `/visualguard-ai-testing` build and base-path link check also passed (80 pages, 9228 links before the final diagram update). Browser checks confirmed React chooser state, Pagefind MongoDB results/navigation, mobile menu and a 390px article without horizontal page overflow. Desktop/mobile screenshots were inspected locally. External provider deployments remain outside the verified scope.
 
 The npm artifact inspection also showed its scaffold derives the dependency pin from the stale embedded CLI version. Vercel/Cloud Run guides now correct the generated dependency to 3.2.3 before installation and explain the release-specific caveat. No product code was changed.
+
+## D08 — Deployment preparation and branch handoff
+
+Added read-only documentation CI and a separate manual GitHub Pages workflow restricted to accepted `main`, production/preview indexing controls, project-path sitemap/robots settings, a complete launch/rollback checklist and a README entry to the new workspace. The public package homepage and existing Markdown guides remain intact until a real public deployment passes its smoke checklist. The read-only Pages API returned 404; this branch did not change repository hosting settings or merge/publish production.
+
+Validation: all three focused docs behavior tests passed, alongside 80-article/549-heading completeness checks, quickstart/schema/Action contracts and generated-reference drift. Root preview and a production `/visualguard-ai-testing` build passed with over 9200 internal links/assets/anchors; the final root build checked 9235. Production canonical/indexability, preview noindex, error-page noindex and sitemap/robots metadata were checked. Browser checks covered hydrated chooser, production Pagefind search/result links, mobile menu, light/dark themes and 390px reference-table containment. Browser console reported no errors or warnings. Final build logs contain no warnings/errors. No formatting, lint or semantic type checks ran.
+
+### Remaining publication step
+
+Implementation and launch tooling are complete on the separate branch. Public Pages publication, live-URL verification and final npm/README homepage cutover require the reviewed branch to be accepted and the manual deployment run described in [the launch checklist](DOCUMENTATION-WEBSITE-LAUNCH.md). Cloud/OAuth/database articles disclose their source-reviewed scope; this work does not claim real cloud-provider certification.

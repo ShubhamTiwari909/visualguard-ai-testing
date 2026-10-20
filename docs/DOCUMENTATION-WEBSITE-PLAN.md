@@ -1,7 +1,7 @@
 # VisualGuard documentation website plan
 
 Prepared: 20 October 2026  
-Status: planning only; the website, dependencies, guides and deployment described below are not yet implemented.  
+Status: original planning record. The website is now implemented on `codex/documentation-website`; see [implementation evidence](DOCUMENTATION-WEBSITE-IMPLEMENTATION.md) and [publication steps](DOCUMENTATION-WEBSITE-LAUNCH.md). Public deployment remains pending branch review.  
 Requested stack: Astro, React, Tailwind CSS and Astro Starlight.  
 Proposed workspace: `apps/docs`, package name `@visualguard/docs`.
 

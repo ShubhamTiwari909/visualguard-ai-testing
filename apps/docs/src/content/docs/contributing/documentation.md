@@ -64,3 +64,12 @@ pnpm docs:check-links
 Build before the link check. `docs:test` checks metadata, planned routes, source-heading coverage, examples, Action inputs and generated CLI/configuration drift. It does not run formatting, lint or semantic type checks. Update tables with `node scripts/docs/generate-reference.mjs` after a source contract changes and review the generated diff. Keep every source heading represented in `apps/docs/src/data/coverage.json` with an accurate migrated, superseded or historical disposition.
 
 The optional `pnpm docs:smoke` executes the pinned published quickstart and local SQLite workflow in a temporary project using local Playwright browsers and free ports 4100/4101. It installs test dependencies and cleans up its processes/data afterward. It does not configure real cloud, database or Google accounts.
+
+
+## Publish the static documentation
+
+The deployment workflow is manual and runs only from accepted `main`. After reviewing/merging the documentation branch, an administrator enables **Settings → Pages → GitHub Actions**, then runs **Actions → Deploy documentation** with canonical origin `https://shubhamtiwari909.github.io` and base `/visualguard-ai-testing`. The workflow rebuilds/checks the site before publishing the static artifact. It needs no dashboard database or AI secret.
+
+For a dedicated custom domain, configure its verified DNS/Pages domain and use that HTTPS origin with base `/`. Repeat search, asset, deep-link and canonical checks. Preview articles are noindex by default; only the production workflow sets `DOCS_PRODUCTION=true`. The error page stays noindex.
+
+Do not change npm homepage links to an unverified public URL. Keep legacy Markdown headings/links navigable until the live site passes the release checklist. Repository maintainers can follow the [complete launch checklist](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/DOCUMENTATION-WEBSITE-LAUNCH.md) for review, publication, cutover and rollback. The documentation implementation itself does not claim a public deployment.

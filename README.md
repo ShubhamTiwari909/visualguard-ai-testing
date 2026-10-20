@@ -6,6 +6,8 @@
 
 VisualGuard uses Playwright to compare production and staging, a site and saved baselines, or checkpoints inside your existing browser tests. Pixel diffs and DOM snapshots explain changes without AI. Gemini or Ollama can add classifications and patch proposals. Reports keep screenshots, findings and verification evidence together.
 
+**Documentation website:** the new Astro + Starlight site lives in [apps/docs](apps/docs/README.md), with focused setup, testing, dashboard, CI, deployment and reference pages. From this repository, use Node 22.22+ and pnpm 9, then run `pnpm docs:dev`. [Launch instructions](docs/DOCUMENTATION-WEBSITE-LAUNCH.md) cover the public deployment; existing setup links remain usable until the public cutover.
+
 ![VisualGuard terminal run and HTML report showing a regression, ignored dynamic content and an explained alignment change](docs/assets/demo.gif)
 
 > **Release status:** This README describes the current source checkout, including features newer than the published npm release. Read the [product feature guide](docs/PRODUCT-FEATURES.md) for release boundaries and the [reliability and migration guide](docs/RELIABILITY-CHANGES.md) before upgrading; older npm versions may behave differently.
