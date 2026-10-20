@@ -11,6 +11,7 @@ const cwd = await mkdtemp(join(tmpdir(), 'visualguard-docs-quickstart-'));
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^(VISUALGUARD_|GEMINI_|GOOGLE_API_KEY|OLLAMA_|DATABASE_URL)/.test(key)));
 env.CI = '1';
 let server;
+let dashboard;
 async function command(executable, args, allowed = [0]) {
   return await new Promise((resolveCommand, reject) => {
     const child = spawn(executable, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -36,6 +37,28 @@ async function startDemo(source) {
 async function stopDemo() {
   if (!server || server.exitCode !== null) return;
   await new Promise(done => { server.once('exit', done); server.kill('SIGTERM'); });
+}
+async function startDashboard() {
+  const article = await readFile(join(root, 'apps/docs/src/content/docs/dashboard/local.md'), 'utf8');
+  const settings = article.match(/```dotenv\n([\s\S]*?)\n```/)[1];
+  await writeFile(join(cwd, '.env.visualguard'), settings);
+  dashboard = spawn(process.execPath, ['node_modules/visualguard/dist/cli.js', 'dashboard', '--env-file', '.env.visualguard', '--port', '0'], { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
+  return await new Promise((ready, reject) => {
+    let output = '';
+    const timer = setTimeout(() => reject(new Error(`Dashboard did not start: ${output}`)), 15_000);
+    dashboard.stdout.on('data', chunk => {
+      output += chunk;
+      const url = output.match(/VisualGuard dashboard: (http:\/\/[^\s]+)/)?.[1];
+      if (url) { clearTimeout(timer); ready(url); }
+    });
+    dashboard.stderr.on('data', chunk => { output += chunk; });
+    dashboard.on('error', reject);
+    dashboard.on('exit', exit => { clearTimeout(timer); reject(new Error(`Dashboard exited ${exit}: ${output}`)); });
+  });
+}
+async function stopDashboard() {
+  if (!dashboard || dashboard.exitCode !== null) return;
+  await new Promise(done => { dashboard.once('exit', done); dashboard.kill('SIGTERM'); });
 }
 try {
   await writeFile(join(cwd, 'package.json'), JSON.stringify({ name: 'visualguard-docs-smoke', private: true }));
@@ -65,7 +88,23 @@ try {
   const second = JSON.parse(await readFile(join(runs, secondDirectory, 'manifest.json'), 'utf8'));
   assert.equal(second.jobs[0].status, 'pass');
   console.log(`Quickstart passed: npm 3.2.3, doctor, comparison list, ${first.jobs[0].status} → pass, and HTML report.`);
+  if (process.argv.includes('--dashboard')) {
+    let origin = await startDashboard();
+    assert.equal((await (await fetch(new URL('/api/health', origin))).json()).status, 'ok');
+    await command('npx', [...cli, 'dashboard', 'project', 'create', 'storefront', '--name', 'Storefront Web', '--server', origin]);
+    await command('npx', [...cli, 'test', 'storefront', '--dashboard', origin, '--config', 'visualguard.config.ts', '--no-ai']);
+    const projects = await (await fetch(new URL('/api/projects', origin))).json();
+    assert.match(JSON.stringify(projects), /Storefront Web/);
+    assert.match(JSON.stringify(projects), /"runCount":1/);
+    await stopDashboard();
+    origin = await startDashboard();
+    const persisted = await (await fetch(new URL('/api/projects', origin))).json();
+    assert.match(JSON.stringify(persisted), /Storefront Web/);
+    assert.match(JSON.stringify(persisted), /"runCount":1/);
+    console.log('Dashboard guide passed: explicit SQLite environment, project creation, bound capture, history and restart persistence.');
+  }
 } finally {
+  await stopDashboard();
   await stopDemo();
   await rm(cwd, { recursive: true, force: true });
 }

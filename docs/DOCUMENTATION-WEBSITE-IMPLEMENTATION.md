@@ -21,3 +21,9 @@ Validation: documentation build passed (12 generated routes). The fresh npm 3.2.
 Added focused guides for configuration, routing/discovery, browser/viewports, stability/noise, reports, local baselines/acceptance, Playwright checkpoints, application authentication/hooks, Gemini/Ollama, AI intent/budgets, repairs, independent checks, watch/monitoring and the public API/reporters. Complete examples and clearly labeled property fragments preserve existing behavior and its limits.
 
 Validation: production docs build passed with 31 generated routes. Examples were checked against current schema, CLI registration and existing fixture capability documentation. The npm first-run smoke from D02 remains the live deterministic capture evidence; live AI services and arbitrary consumer application interactions are not certified by this prose migration. No formatting, lint or type checks ran.
+
+## D04 — Dashboard and team setup
+
+Added local SQLite, PostgreSQL/MongoDB alternatives, projects/identities, publishing/retry, per-project profiles, private runners/progress, login, Google linking and people/permissions guides. Environment loading, foreground processes and distinct upload/runner/admin credentials are explicit. Extended the consumer smoke to execute the dashboard guide's actual SQLite environment and verify project creation, bound capture and history after restart.
+
+Validation: docs build passed with 43 routes. The clean npm 3.2.3 quickstart and local dashboard smoke passed, including restart persistence. Google and external PostgreSQL/MongoDB deployment instructions are source-reviewed, not live deployment certifications; the local Docker service is unavailable. No formatting, lint or type checks ran.
