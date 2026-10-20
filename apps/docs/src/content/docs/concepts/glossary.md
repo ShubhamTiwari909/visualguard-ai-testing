@@ -26,7 +26,8 @@ sidebar: {"order": 4}
 | Internal project key | Immutable storage identity underlying renamable IDs and names. |
 | Revision | Source commit associated with the captured application; it must match the actual tested preview. |
 | Upload token | Scoped credential for publishing evidence; not an administrator login. |
-| Runner credential | Separate scoped credential that lets a private worker claim requested tests. |
+| Runner credential | Separate scoped credential that lets a private worker claim requested tests. Not needed when the dashboard host runs the test itself. |
+| Built-in runner | The dashboard server capturing a requested test itself, authorized by the signed-in user; controlled by `VISUALGUARD_BUILT_IN_RUNNER`. |
 | Execution request | Dashboard request to run a specific saved project profile version. |
 | Review | Human decision tied to exact evidence; distinct from an original engine status. |
 | Visual policy | Configured rule for whether current evidence/review/baseline requirements are satisfied. |

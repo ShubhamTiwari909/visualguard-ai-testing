@@ -12,7 +12,7 @@ sidebar: {"order": 7}
 
 ## Before you start
 
-[Connect a private runner](/dashboard/private-runners/) and save the selected project's test profile. Use a dashboard and runner release containing progress reporting; older workers can execute but display an indeterminate running state.
+Save the selected project's test profile. The test runs on the dashboard host, or on a [connected private runner](/dashboard/private-runners/), which takes priority. **Availability:** dashboard capture without a runner credential is in the source checkout and the next release after 3.2.3. With the published 3.2.3 package, **Run test** still needs a [connected private runner](/dashboard/private-runners/). Older private runners can execute but display an indeterminate running state.
 
 ## Read each stage
 
@@ -30,7 +30,7 @@ A label such as **2 of 4 comparisons (50%)** counts completed route/viewport job
 
 ## Diagnose a stalled execution
 
-Keep the foreground worker process running and inspect its local output. Verify network access and the project-scoped credential. Requests use a saved profile version; unsaved UI edits cannot affect an already queued request. Queue/lease expiry and worker timeout are bounded; see the runner guide for current values. The system does not silently recapture after a lost lease.
+For a dashboard-host capture, inspect the dashboard server log and confirm the host can reach both application URLs. For a private runner, keep the foreground worker running, inspect its output and verify the project-scoped credential. Requests use a saved profile version; unsaved UI edits cannot affect an already queued request. Queue/lease expiry and worker timeout are bounded; see the runner guide for current values. The system does not silently recapture after a lost lease.
 
 ## Verify the result
 

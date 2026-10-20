@@ -36,4 +36,4 @@ Project maintainers/admins can choose **Run test** in the selected project. Sign
 
 ## Capture stays on your worker
 
-A dashboard can run a test from a saved project profile. On a local or container host it uses its own Chromium with your sign-in; a connected private runner is optional and takes priority. Serverless hosts need a private runner, and there is no schedule. [Start locally](/dashboard/local/), then [use a private runner](/dashboard/private-runners/) or [publish CLI evidence](/dashboard/publishing/).
+A dashboard can run a test from a saved project profile. On a local or container host it uses its own Chromium with your sign-in; a connected private runner is optional and takes priority. Serverless hosts need a private runner, and there is no schedule. Built-in capture is in the source checkout and releases after 3.2.3; 3.2.3 needs a private runner. [Start locally](/dashboard/local/), then [use a private runner](/dashboard/private-runners/) or [publish CLI evidence](/dashboard/publishing/).

@@ -451,6 +451,8 @@ You can start a comparison from the browser instead of the terminal.
 
 You should see the finished run in the project's history. A finished run can still contain regressions, so read the result. Finishing is not approval.
 
+> **Version note:** this needs a VisualGuard release newer than 3.2.3 (or a source checkout). With 3.2.3, **Run test** stays disabled until a [private runner](#optional-a-private-runner) is connected.
+
 The dashboard server captures the pages itself with its own Chromium. The only authorization it needs is your signed-in account, and no runner token is needed. The URLs must be reachable from the machine running the dashboard, where `localhost` means that machine. `VISUALGUARD_BUILT_IN_RUNNER` turns this on or off in the dashboard env file. It is on by default, except on Vercel. `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` limits how many tests run at once (default 1). If Chromium is missing there, the run fails and tells you to run `npx playwright install chromium` on that machine.
 
 ### Optional: a private runner

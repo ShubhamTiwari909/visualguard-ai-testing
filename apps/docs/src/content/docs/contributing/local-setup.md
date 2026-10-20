@@ -517,14 +517,14 @@ Install that actual `.tgz` path in a separate consumer project. This is an expli
 
 Select a dashboard project and use **Configure tests** to save its own reference/candidate URLs, routes and viewports. Other projects keep their own settings. Existing `output/local-demo.json` or `visualguard.config.ts` files continue to control ordinary CLI tests independently.
 
-For dashboard-triggered tests, create that project's runner credential in **Connect a runner for this project**, save it in an ignored `.env.visualguard-runner`, and keep the fixture/application sites and dashboard running. In a separate terminal at the repository root, use the built CLI:
+For dashboard-triggered tests from source, keep the fixture sites and dashboard running. The dashboard captures the test itself with the workspace Chromium and your local session, so no runner credential is needed. To exercise the private-runner path instead, create the project's credential in **Use a private runner instead**, save it in an ignored `.env.visualguard-runner`, and start the built CLI from the repository root (a connected runner takes priority):
 
 ```sh
 node packages/visualguard/dist/cli.js dashboard --env-file .env.visualguard-runner \
   runner --project storefront --server http://127.0.0.1:4400
 ```
 
-Set the UI config to `http://127.0.0.1:4100` and `http://127.0.0.1:4101` with route `/color-change` for this guide's fixture. When connected, choose **Run test** and open **View result**. For another app, save that project's own URLs and start its project-scoped runner. Read the [complete runner setup and operational limits](/dashboard/private-runners/).
+Set the UI config to `http://127.0.0.1:4100` and `http://127.0.0.1:4101` with route `/color-change` for this guide's fixture. Choose **Run test** and open **View result**. For another app, save that project's own URLs. Read the [complete runner setup and operational limits](/dashboard/private-runners/).
 
 For implementation validation after the JavaScript/assets build, `pnpm platform:test:runner` runs an isolated dashboard-to-CLI workflow with real Chromium capture and temporary local HTTP sites. It does not connect to a production dashboard or external database.
 

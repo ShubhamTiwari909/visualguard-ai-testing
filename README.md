@@ -109,7 +109,7 @@ npx visualguard dashboard project create storefront --name "Storefront" --server
 npx visualguard test storefront --dashboard http://127.0.0.1:4400   # run and publish
 ```
 
-Open `http://127.0.0.1:4400`, select the project, choose **Configure tests**, then **Run test**. The dashboard captures the pages itself with only your sign-in; no runner token is needed. A private runner (`dashboard runner`) is optional, for sites the dashboard cannot reach.
+Open `http://127.0.0.1:4400`, select the project, choose **Configure tests**, then **Run test**. The dashboard captures the pages itself with only your sign-in; no runner token is needed. A private runner (`dashboard runner`) is optional, for sites the dashboard cannot reach. (Token-free **Run test** is newer than the npm 3.2.3 release; with 3.2.3, connect a private runner.)
 
 | Dashboard topic                            | Where to set it up                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------- |

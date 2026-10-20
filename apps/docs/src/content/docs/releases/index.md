@@ -22,6 +22,7 @@ The npm registry reports **visualguard 3.2.3**. Its tarball was downloaded and u
 | 3.2.0 | Google linking/admission, administration, approved baseline sets, visual policy and operational readiness; read the migration before upgrading existing users. |
 | 3.2.3 artifact | Contains per-project saved test profiles, private-runner execution and progress assets. Fresh CLI/report/SQLite commands were smoke-tested; artifact source was inspected for runner/progress. Its embedded CLI version label is stale. |
 | Source main at `69ccdf1` | Documentation source-review baseline for this implementation. Subsequent changes require their own review/release note. |
+| Source after 3.2.3 (unreleased) | **Run test** captures on the dashboard host with the signed-in user's authorization, no runner credential; Cloud Run scaffolds install Chromium. 3.2.3 still requires a connected private runner. Covered by focused unit tests; no live Chromium end-to-end run recorded yet. |
 | Engineering plans | Future scope only. Named journeys/managed capture are not implied by a roadmap entry. |
 
 ## Generated hosting scaffold caveat

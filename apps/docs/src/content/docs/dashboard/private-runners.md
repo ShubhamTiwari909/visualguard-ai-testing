@@ -1,5 +1,5 @@
 ---
-title: "Connect a private runner"
+title: "Run dashboard tests and private runners"
 description: "Run a dashboard test with just your sign-in, or connect a project-scoped private runner when the dashboard cannot reach your application."
 audience: "developer"
 docType: "tutorial"
@@ -10,15 +10,25 @@ sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts"
 sidebar: {"order": 6}
 ---
 
+## Run a test with just your sign-in
+
+**Availability:** this is in the source checkout and the next release after 3.2.3. With the published 3.2.3 package, **Run test** still needs a private runner; follow [Before you start](#before-you-start) below.
+
+The dashboard server captures the test itself using Chromium on its host, authorized only by your signed-in account (maintainer or administrator). No runner credential is needed. This is the default on a local dashboard (`visualguard dashboard`) and on Cloud Run (the generated image installs Chromium; deploy with `--no-cpu-throttling`, at least one instance and 2 GiB of memory, because capture continues after the request returns). The project shows **Runs on this dashboard** instead of a runner status.
+
+Connect a **private runner** only when the dashboard host cannot reach your application URLs (for example a staging site behind a VPN) or cannot run a browser, as on Vercel and other serverless hosts. A connected private runner takes priority over the built-in capture.
+
+| Setting | Effect |
+| --- | --- |
+| `VISUALGUARD_BUILT_IN_RUNNER=off` | Every test needs a private runner. |
+| `VISUALGUARD_BUILT_IN_RUNNER=on` | Enables built-in capture on a host not detected as long-running, such as Vercel. Only use it where a browser can keep running after the response. |
+| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | Maximum simultaneous built-in tests across projects (default 1); a request beyond it is refused until one finishes. |
+
+If Chromium is missing on the host, the execution fails with a message telling you to run `npx playwright install chromium` there. A profile that selects Gemini or Ollama uses the dashboard host's own `GEMINI_API_KEY` or Ollama service.
+
 ## Before you start
 
-This section applies to the private runner. Use an installed VisualGuard release containing the described features and administrator access to the selected dashboard. Complete [local dashboard setup](/dashboard/local/) first. Work from your application root unless a step names a deployment folder. The shell examples use macOS/Linux POSIX syntax; use WSL for shell/Docker walkthroughs on Windows. Keep existing application/dashboard processes running in separate terminals.
-
-**Run test needs no token.** The dashboard server captures the test itself using Chromium on its host, authorized only by your signed-in account (maintainer or administrator). This is the default on a local dashboard (`visualguard dashboard`) and on Cloud Run (the generated image installs Chromium; deploy with `--no-cpu-throttling`, at least one instance and 2 GiB of memory, because capture continues after the request returns). The project shows **Runs on this dashboard** instead of a runner status.
-
-Connect a **private runner** only when the dashboard host cannot reach your application URLs (for example a staging site behind a VPN) or when it cannot run a browser, as on Vercel and other serverless hosts. A connected private runner takes priority over the built-in capture. Set `VISUALGUARD_BUILT_IN_RUNNER=off` to force every test onto private runners, or `=on` to enable it on a host that is not detected as long-running. `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` (default 1) limits simultaneous built-in tests across projects; a request beyond it is refused until one finishes. If Chromium is missing on the host, the execution fails with a message telling you to run `npx playwright install chromium` there.
-
-The rest of this guide covers the private runner.
+The rest of this guide covers the private runner. Use an installed VisualGuard release containing the described features and administrator access to the selected dashboard. Complete [local dashboard setup](/dashboard/local/) first. Work from your application root unless a step names a deployment folder. The shell examples use macOS/Linux POSIX syntax; use WSL for shell/Docker walkthroughs on Windows. Keep existing application/dashboard processes running in separate terminals.
 
 1. Save the project's configuration as above. Choose AI **None** for the first test.
 2. Expand **Connect a runner for this project** and choose **Create 30-day runner credential**. Save the credential when shown; it is different from an upload-only token. Existing upload-only tokens cannot claim tests.

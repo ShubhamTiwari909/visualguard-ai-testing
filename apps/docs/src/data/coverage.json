@@ -2,6 +2,11 @@
   "reviewedOn": "2026-10-20",
   "sourceRevision": "69ccdf157326ef52788948cb8fc479c121ec0f0b",
   "sources": [
+    "README.md",
+    "docs/PRODUCT-FEATURES.md",
+    "docs/NPM-PACKAGE-SETUP.md",
+    "docs/LOCAL-SETUP.md",
+    "docs/COMMAND-REFERENCE.md",
     "packages/visualguard/README.md",
     "docs/RELIABILITY-CHANGES.md",
     "docs/RELEASE-3.1.0-VALIDATION.md",
@@ -18,6 +23,1392 @@
     "packages/visualguard/CHANGELOG.md"
   ],
   "sections": [
+    {
+      "source": "README.md",
+      "heading": "VisualGuard",
+      "anchor": "visualguard",
+      "destination": "/start/choose-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Quick start",
+      "anchor": "quick-start",
+      "destination": "/start/quickstart/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Set up a project",
+      "anchor": "set-up-a-project",
+      "destination": "/guides/configuration/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Everyday tasks",
+      "anchor": "everyday-tasks",
+      "destination": "/reference/cli/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Use it in Playwright tests",
+      "anchor": "use-it-in-playwright-tests",
+      "destination": "/guides/playwright/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Share results with your team",
+      "anchor": "share-results-with-your-team",
+      "destination": "/dashboard/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Learn more",
+      "anchor": "learn-more",
+      "destination": "/start/choose-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Troubleshooting",
+      "anchor": "troubleshooting",
+      "destination": "/troubleshooting/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Contributing",
+      "anchor": "contributing",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "License",
+      "anchor": "license",
+      "destination": "/start/choose-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "VisualGuard product features",
+      "anchor": "visualguard-product-features",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "The basic loop",
+      "anchor": "the-basic-loop",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "What you can do",
+      "anchor": "what-you-can-do",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Compare",
+      "anchor": "compare",
+      "destination": "/concepts/comparison-modes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Understand",
+      "anchor": "understand",
+      "destination": "/concepts/results/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Review and accept",
+      "anchor": "review-and-accept",
+      "destination": "/guides/accepting-changes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Automate",
+      "anchor": "automate",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Work as a team",
+      "anchor": "work-as-a-team",
+      "destination": "/dashboard/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Hosting and data",
+      "anchor": "hosting-and-data",
+      "destination": "/deployment/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Where to start",
+      "anchor": "where-to-start",
+      "destination": "/start/choose-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Limits",
+      "anchor": "limits",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Use VisualGuard in your project",
+      "anchor": "use-visualguard-in-your-project",
+      "destination": "/start/install/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Contents",
+      "anchor": "contents",
+      "destination": "/start/install/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "1. Choose your setup",
+      "anchor": "1-choose-your-setup",
+      "destination": "/start/choose-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "2. Install and run your first test",
+      "anchor": "2-install-and-run-your-first-test",
+      "destination": "/start/install/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Try it with no config",
+      "anchor": "try-it-with-no-config",
+      "destination": "/start/quickstart/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Create a config file",
+      "anchor": "create-a-config-file",
+      "destination": "/guides/configuration/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Run, check and report",
+      "anchor": "run-check-and-report",
+      "destination": "/guides/reports/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "3. Accept changes and keep local baselines",
+      "anchor": "3-accept-changes-and-keep-local-baselines",
+      "destination": "/guides/accepting-changes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Compare with saved screenshots",
+      "anchor": "compare-with-saved-screenshots",
+      "destination": "/guides/local-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "4. Add AI explanations",
+      "anchor": "4-add-ai-explanations",
+      "destination": "/guides/ai-policy-and-budgets/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Gemini",
+      "anchor": "gemini",
+      "destination": "/guides/ai-gemini/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Ollama (local model)",
+      "anchor": "ollama-local-model",
+      "destination": "/guides/ai-ollama/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Re-analyze a saved run",
+      "anchor": "re-analyze-a-saved-run",
+      "destination": "/guides/ai-policy-and-budgets/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "5. Test pages behind a login",
+      "anchor": "5-test-pages-behind-a-login",
+      "destination": "/guides/application-auth/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "6. More checks and modes",
+      "anchor": "6-more-checks-and-modes",
+      "destination": "/guides/accessibility-and-performance/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Accessibility and performance",
+      "anchor": "accessibility-and-performance",
+      "destination": "/guides/accessibility-and-performance/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Playwright fixture",
+      "anchor": "playwright-fixture",
+      "destination": "/guides/playwright/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Watch mode",
+      "anchor": "watch-mode",
+      "destination": "/guides/watch/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Monitor mode",
+      "anchor": "monitor-mode",
+      "destination": "/guides/monitoring/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Fix regressions",
+      "anchor": "fix-regressions",
+      "destination": "/guides/fixes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "7. Run in CI",
+      "anchor": "7-run-in-ci",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Generated GitHub workflow",
+      "anchor": "generated-github-workflow",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "GitHub Action",
+      "anchor": "github-action",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Pull request comment",
+      "anchor": "pull-request-comment",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Shards and merge",
+      "anchor": "shards-and-merge",
+      "destination": "/ci/sharding/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "8. Start a dashboard with local SQLite",
+      "anchor": "8-start-a-dashboard-with-local-sqlite",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Save a run you already have",
+      "anchor": "save-a-run-you-already-have",
+      "destination": "/dashboard/publishing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "9. Run a test from the dashboard",
+      "anchor": "9-run-a-test-from-the-dashboard",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Optional: a private runner",
+      "anchor": "optional-a-private-runner",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "10. Store the dashboard in PostgreSQL",
+      "anchor": "10-store-the-dashboard-in-postgresql",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Get a database",
+      "anchor": "get-a-database",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Point the dashboard at it",
+      "anchor": "point-the-dashboard-at-it",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "11. Store the dashboard in MongoDB",
+      "anchor": "11-store-the-dashboard-in-mongodb",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Get the URL",
+      "anchor": "get-the-url",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Point the dashboard at it",
+      "anchor": "point-the-dashboard-at-it",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Check that it is saved",
+      "anchor": "check-that-it-is-saved",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Your own MongoDB server",
+      "anchor": "your-own-mongodb-server",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "12. Turn on login, tokens and teammates",
+      "anchor": "12-turn-on-login-tokens-and-teammates",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Password administrator",
+      "anchor": "password-administrator",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Project upload tokens",
+      "anchor": "project-upload-tokens",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Google sign-in",
+      "anchor": "google-sign-in",
+      "destination": "/dashboard/google-sign-in/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Users, roles and invitation links",
+      "anchor": "users-roles-and-invitation-links",
+      "destination": "/dashboard/people-and-permissions/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "13. Deploy to Vercel or Cloud Run",
+      "anchor": "13-deploy-to-vercel-or-cloud-run",
+      "destination": "/deployment/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Vercel",
+      "anchor": "vercel",
+      "destination": "/deployment/vercel/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Google Cloud Run",
+      "anchor": "google-cloud-run",
+      "destination": "/deployment/cloud-run/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "14. Storage, backups and recovery",
+      "anchor": "14-storage-backups-and-recovery",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Portable export and restore",
+      "anchor": "portable-export-and-restore",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Full backups",
+      "anchor": "full-backups",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Audit page, recovery and upgrades",
+      "anchor": "audit-page-recovery-and-upgrades",
+      "destination": "/deployment/operations-and-recovery/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "15. Team workflow: reviews, baselines and policies",
+      "anchor": "15-team-workflow-reviews-baselines-and-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Reviews",
+      "anchor": "reviews",
+      "destination": "/dashboard/reviews/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Approved baselines",
+      "anchor": "approved-baselines",
+      "destination": "/dashboard/approved-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Visual policies",
+      "anchor": "visual-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "GitHub checks",
+      "anchor": "github-checks",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "16. Troubleshooting",
+      "anchor": "16-troubleshooting",
+      "destination": "/troubleshooting/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "17. Command cheat sheet",
+      "anchor": "17-command-cheat-sheet",
+      "destination": "/reference/cli/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Run VisualGuard from source",
+      "anchor": "run-visualguard-from-source",
+      "destination": "/contributing/local-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Contents",
+      "anchor": "contents",
+      "destination": "/contributing/local-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "1. What you need",
+      "anchor": "1-what-you-need",
+      "destination": "/start/install/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "2. Install and build",
+      "anchor": "2-install-and-build",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "3. Try the demo without a dashboard",
+      "anchor": "3-try-the-demo-without-a-dashboard",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Exit codes",
+      "anchor": "exit-codes",
+      "destination": "/reference/exit-codes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "4. Add AI (Gemini or Ollama)",
+      "anchor": "4-add-ai-gemini-or-ollama",
+      "destination": "/guides/ai-gemini/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Gemini",
+      "anchor": "gemini",
+      "destination": "/guides/ai-gemini/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Ollama (local, no key)",
+      "anchor": "ollama-local-no-key",
+      "destination": "/guides/ai-ollama/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Analyze an existing run, or turn AI off",
+      "anchor": "analyze-an-existing-run-or-turn-ai-off",
+      "destination": "/guides/ai-policy-and-budgets/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "AI together with a dashboard",
+      "anchor": "ai-together-with-a-dashboard",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "5. Run the local dashboard (SQLite)",
+      "anchor": "5-run-the-local-dashboard-sqlite",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Start it",
+      "anchor": "start-it",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Create a project and publish a run",
+      "anchor": "create-a-project-and-publish-a-run",
+      "destination": "/dashboard/publishing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Publish or import a run you already have",
+      "anchor": "publish-or-import-a-run-you-already-have",
+      "destination": "/dashboard/publishing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "What is saved",
+      "anchor": "what-is-saved",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "6. Run a test from the dashboard",
+      "anchor": "6-run-a-test-from-the-dashboard",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Settings for the built-in runner",
+      "anchor": "settings-for-the-built-in-runner",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Optional: a private runner",
+      "anchor": "optional-a-private-runner",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "7. Use PostgreSQL",
+      "anchor": "7-use-postgresql",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "8. Use MongoDB",
+      "anchor": "8-use-mongodb",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Option 1: MongoDB Atlas",
+      "anchor": "option-1-mongodb-atlas",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Option 2: a local replica set with Docker",
+      "anchor": "option-2-a-local-replica-set-with-docker",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Save the settings and start",
+      "anchor": "save-the-settings-and-start",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "9. Login, Google sign-in and users",
+      "anchor": "9-login-google-sign-in-and-users",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Password administrator",
+      "anchor": "password-administrator",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Google sign-in and account linking",
+      "anchor": "google-sign-in-and-account-linking",
+      "destination": "/dashboard/google-sign-in/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Users, roles and invitations",
+      "anchor": "users-roles-and-invitations",
+      "destination": "/dashboard/people-and-permissions/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "10. Reviews, approved baselines and visual policies",
+      "anchor": "10-reviews-approved-baselines-and-visual-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Review a change",
+      "anchor": "review-a-change",
+      "destination": "/dashboard/reviews/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Approve a baseline and pull it",
+      "anchor": "approve-a-baseline-and-pull-it",
+      "destination": "/dashboard/approved-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Local baselines without a dashboard",
+      "anchor": "local-baselines-without-a-dashboard",
+      "destination": "/guides/local-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Visual policies",
+      "anchor": "visual-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "11. Audit, recovery and backups",
+      "anchor": "11-audit-recovery-and-backups",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Back up and restore evidence",
+      "anchor": "back-up-and-restore-evidence",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Native backups",
+      "anchor": "native-backups",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Host-side inspection",
+      "anchor": "host-side-inspection",
+      "destination": "/deployment/operations-and-recovery/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Recover a password administrator",
+      "anchor": "recover-a-password-administrator",
+      "destination": "/deployment/operations-and-recovery/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "12. Run a built dashboard or package candidate",
+      "anchor": "12-run-a-built-dashboard-or-package-candidate",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Built dashboard",
+      "anchor": "built-dashboard",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Hosting files",
+      "anchor": "hosting-files",
+      "destination": "/deployment/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Package candidate",
+      "anchor": "package-candidate",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "13. Try the Next.js example",
+      "anchor": "13-try-the-nextjs-example",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "14. Develop and test this repository",
+      "anchor": "14-develop-and-test-this-repository",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "15. Troubleshooting",
+      "anchor": "15-troubleshooting",
+      "destination": "/troubleshooting/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "16. Command cheat sheet",
+      "anchor": "16-command-cheat-sheet",
+      "destination": "/reference/cli/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "VisualGuard command reference",
+      "anchor": "visualguard-command-reference",
+      "destination": "/reference/cli/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "Contents",
+      "anchor": "contents",
+      "destination": "/reference/cli/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "1. Zero-config scan",
+      "anchor": "1-zero-config-scan",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "2. Testing commands",
+      "anchor": "2-testing-commands",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "init",
+      "anchor": "init",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "doctor",
+      "anchor": "doctor",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "test",
+      "anchor": "test",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "report",
+      "anchor": "report",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "analyze",
+      "anchor": "analyze",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "accept",
+      "anchor": "accept",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "fix",
+      "anchor": "fix",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "watch",
+      "anchor": "watch",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "monitor",
+      "anchor": "monitor",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "auth",
+      "anchor": "auth",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "merge",
+      "anchor": "merge",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "comment",
+      "anchor": "comment",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "3. Dashboard commands",
+      "anchor": "3-dashboard-commands",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard (start the dashboard)",
+      "anchor": "dashboard-start-the-dashboard",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard runner",
+      "anchor": "dashboard-runner",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard project create",
+      "anchor": "dashboard-project-create",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard import",
+      "anchor": "dashboard-import",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard publish",
+      "anchor": "dashboard-publish",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard export",
+      "anchor": "dashboard-export",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard restore",
+      "anchor": "dashboard-restore",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard assets",
+      "anchor": "dashboard-assets",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard init",
+      "anchor": "dashboard-init",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard baseline pull",
+      "anchor": "dashboard-baseline-pull",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard policy assess",
+      "anchor": "dashboard-policy-assess",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard policy reconcile",
+      "anchor": "dashboard-policy-reconcile",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "4. Exit codes",
+      "anchor": "4-exit-codes",
+      "destination": "/reference/exit-codes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "5. Useful environment variables",
+      "anchor": "5-useful-environment-variables",
+      "destination": "/reference/environment/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
     {
       "source": "packages/visualguard/README.md",
       "heading": "VisualGuard",
@@ -191,7 +1582,7 @@
     },
     {
       "source": "docs/RELIABILITY-CHANGES.md",
-      "heading": "Reliability changes: F01–F12",
+      "heading": "Reliability changes: F01\u2013F12",
       "anchor": "reliability-changes-f01f12",
       "destination": "/releases/migration/",
       "disposition": "superseded",
@@ -1829,7 +3220,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 0: Foundation (2–3 days)",
+      "heading": "Phase 0: Foundation (2\u20133 days)",
       "anchor": "phase-0-foundation-23-days",
       "destination": null,
       "disposition": "retained historical",
@@ -1838,7 +3229,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 1: Capture and diff MVP (6–8 days)",
+      "heading": "Phase 1: Capture and diff MVP (6\u20138 days)",
       "anchor": "phase-1-capture-and-diff-mvp-68-days",
       "destination": null,
       "disposition": "retained historical",
@@ -1847,7 +3238,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 2: Setup and zero-config (4–5 days) → **release 0.1.0**",
+      "heading": "Phase 2: Setup and zero-config (4\u20135 days) \u2192 **release 0.1.0**",
       "anchor": "phase-2-setup-and-zero-config-45-days--release-010",
       "destination": null,
       "disposition": "retained historical",
@@ -1856,7 +3247,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 3: HTML report (6–8 days)",
+      "heading": "Phase 3: HTML report (6\u20138 days)",
       "anchor": "phase-3-html-report-68-days",
       "destination": null,
       "disposition": "retained historical",
@@ -1865,7 +3256,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 4: DOM mapping and heuristics (5–6 days) → **0.2.0**",
+      "heading": "Phase 4: DOM mapping and heuristics (5\u20136 days) \u2192 **0.2.0**",
       "anchor": "phase-4-dom-mapping-and-heuristics-56-days--020",
       "destination": null,
       "disposition": "retained historical",
@@ -1874,7 +3265,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 5: AI analysis (6–8 days) → **0.3.0**",
+      "heading": "Phase 5: AI analysis (6\u20138 days) \u2192 **0.3.0**",
       "anchor": "phase-5-ai-analysis-68-days--030",
       "destination": null,
       "disposition": "retained historical",
@@ -1883,7 +3274,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 6: CI and GitHub (4–5 days) → **0.4.0, the first \"CI-ready AI tool\" release**",
+      "heading": "Phase 6: CI and GitHub (4\u20135 days) \u2192 **0.4.0, the first \"CI-ready AI tool\" release**",
       "anchor": "phase-6-ci-and-github-45-days--040-the-first-ci-ready-ai-tool-release",
       "destination": null,
       "disposition": "retained historical",
@@ -1892,7 +3283,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 7: Interactive fix (8–10 days) → **0.5.0**",
+      "heading": "Phase 7: Interactive fix (8\u201310 days) \u2192 **0.5.0**",
       "anchor": "phase-7-interactive-fix-810-days--050",
       "destination": null,
       "disposition": "retained historical",
@@ -1901,7 +3292,7 @@
     },
     {
       "source": "PLAN.md",
-      "heading": "Phase 8: Automatic fix and watch mode (6–8 days) → **0.6.0**",
+      "heading": "Phase 8: Automatic fix and watch mode (6\u20138 days) \u2192 **0.6.0**",
       "anchor": "phase-8-automatic-fix-and-watch-mode-68-days--060",
       "destination": null,
       "disposition": "retained historical",

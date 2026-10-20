@@ -7,6 +7,7 @@
     "quickstart": "smoke-tested: macOS, Node 24.13.0, Chromium",
     "sqlite": "smoke-tested: project, capture, restart",
     "privateRunner": "existing real Chromium smoke passed",
-    "externalProviders": "source-reviewed; no live cloud/Google/PostgreSQL/MongoDB deployment"
+    "externalProviders": "source-reviewed; no live cloud/Google/PostgreSQL/MongoDB deployment",
+    "builtInRunner": "source only (unreleased after 3.2.3); focused unit tests, no live Chromium end-to-end run"
   }
 }

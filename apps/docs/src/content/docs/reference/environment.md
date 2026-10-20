@@ -26,7 +26,7 @@ Real passwords, API keys, cookies, token files and DB URIs are private. Do not p
 
 | Variable | Process | Default / fallback | Sensitive | Purpose |
 | --- | --- | --- | --- | --- |
-| `VISUALGUARD_BUILT_IN_RUNNER` | Dashboard | on, except on Vercel | No | `on`/`off`. Lets the dashboard run **Run test** itself with the signed-in user's authorization; off requires a private runner. Needs Chromium on the host. |
+| `VISUALGUARD_BUILT_IN_RUNNER` | Dashboard | on, except on Vercel | No | Source and releases after 3.2.3. `on`/`off`. Lets the dashboard run **Run test** itself with the signed-in user's authorization; off requires a private runner. Needs Chromium on the host. |
 | `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | Dashboard | 1 | No | Maximum simultaneous built-in tests across projects. |
 | `VISUALGUARD_PRODUCTION_URL` | Runner | config production URL | No | Overrides the reference base URL. |
 | `VISUALGUARD_STAGING_URL` | Runner | config staging URL | No | Overrides the candidate base URL; use the actual ready preview. |

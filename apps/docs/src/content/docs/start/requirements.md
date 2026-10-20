@@ -39,9 +39,9 @@ If `node --version` fails or shows an older release, install a supported LTS rel
 | Google login | Web OAuth client and configured callback/audience; password access can be used without it. |
 | AI analysis | Gemini key or a reachable Ollama service with the selected model. |
 | Remote publishing | Dashboard URL, existing project and project upload token. |
-| Dashboard-triggered tests | Connected browser worker with a separate project runner credential. |
+| Dashboard-triggered tests | Chromium on the dashboard host and a signed-in maintainer (source and releases after 3.2.3). With 3.2.3, or on Vercel, a connected private runner with a project runner credential. |
 
-A dashboard-only host does not need Playwright browsers. The browser worker does. Do not omit optional package dependencies when installing a dashboard: database and OIDC drivers use that packaging mechanism.
+A dashboard host that only stores and displays results does not need Playwright browsers. A host that runs **Run test** itself, and any private runner, does. Do not omit optional package dependencies when installing a dashboard: database and OIDC drivers use that packaging mechanism.
 
 ## Repository and documentation contributors
 

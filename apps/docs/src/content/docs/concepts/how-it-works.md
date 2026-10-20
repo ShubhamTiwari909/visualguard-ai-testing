@@ -31,6 +31,6 @@ A typical workflow is:
 
 ![Application versions are captured by your browser worker, saved locally and optionally published to a shared dashboard with persistent storage.](/diagrams/execution.svg)
 
-The runner executes the browser. A dashboard can request an on-demand test when a private worker is connected; hosting the dashboard does not run a browser or create a managed schedule. See [private runners](/dashboard/private-runners/).
+The runner executes the browser. **Run test** captures on the dashboard host itself, using the signed-in user's authorization, unless a connected private worker claims it first. Vercel and other serverless hosts need the private worker. Built-in capture is in the source checkout and releases after 3.2.3. Hosting the dashboard never creates a managed schedule. See [private runners](/dashboard/private-runners/).
 
 A **run** is one execution. A **check** is an individual page/viewport or interactive checkpoint comparison. A **baseline** is a saved expected appearance. A **project** groups an application's dashboard history and access permissions. A **revision** is the source commit associated with captured evidence.
