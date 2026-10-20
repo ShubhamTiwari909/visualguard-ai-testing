@@ -78,7 +78,7 @@ These two variables exist in the source checkout and the next release after 3.2.
 | Variable | Read by | Default | Secret | Purpose |
 | --- | --- | --- | --- | --- |
 | `VISUALGUARD_BUILT_IN_RUNNER` | Dashboard | On, except on Vercel | No | `on` lets the dashboard capture **Run test** itself, using the signed-in user's login, when no private runner is connected. `off`, `0`, `false` or `no` turns it off, so a private runner is required. The host needs Chromium (the generated Cloud Run image includes it). |
-| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | Dashboard | `1` | No | Most built-in tests that can run at the same time across all projects. Extra requests see `The dashboard is running another test; try again shortly`. |
+| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | Dashboard | `1` | No | Most built-in tests that can run at the same time across all projects in one dashboard process. Each server replica has its own limit. Extra requests see `The dashboard is running another test; try again shortly`. |
 
 ## Google sign-in and GitHub checks
 

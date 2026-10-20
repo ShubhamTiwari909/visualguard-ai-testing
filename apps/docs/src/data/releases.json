@@ -8,7 +8,7 @@
     "sqlite": "smoke-tested: project, capture, restart",
     "privateRunner": "existing real Chromium smoke passed",
     "externalProviders": "source-reviewed; no live cloud/Google/PostgreSQL/MongoDB deployment",
-    "builtInRunner": "source only (unreleased after 3.2.3); 4 focused tests and real Chromium/SQLite capture, live progress and restart smoke passed"
+    "builtInRunner": "source only (unreleased after 3.2.3); 7 focused built-in runner tests (30 tests across affected execution suites) and real Chromium/SQLite capture, live progress and restart smoke passed"
   },
   "sourceVersion": "3.2.4"
 }

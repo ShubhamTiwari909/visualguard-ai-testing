@@ -23,7 +23,7 @@ export function builtInRunnerEnabled(env: NodeJS.ProcessEnv) {
  * takes priority when one is connected.
  */
 export class BuiltInRunner {
-  private active = new Set<string>();
+  private reservations = 0;
   constructor(
     private executions: TestExecutions,
     private repository: PlatformRepository,
@@ -34,15 +34,24 @@ export class BuiltInRunner {
     return this.options.enabled;
   }
   get hasCapacity() {
-    return this.active.size < (this.options.concurrency ?? 1);
+    return this.reservations < (this.options.concurrency ?? 1);
+  }
+  /** Reserve synchronously, before request persistence yields to another project. */
+  reserve(): (() => void) | undefined {
+    if (!this.enabled || !this.hasCapacity) return undefined;
+    this.reservations++;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.reservations--;
+    };
   }
   /** Runs in the background; the execution record carries every outcome. */
-  start(project: string) {
-    if (this.active.has(project)) return;
-    this.active.add(project);
+  start(project: string, release: () => void) {
     void this.run(project)
       .catch((error: unknown) => console.error("Built-in test runner failed", error))
-      .finally(() => this.active.delete(project));
+      .finally(release);
   }
   private async run(project: string) {
     const job = await this.executions.claim(project, BUILT_IN_RUNNER);

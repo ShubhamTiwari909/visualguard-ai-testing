@@ -66,7 +66,8 @@ const expired = (job: Execution) =>
 export interface BuiltInExecutor {
   readonly enabled: boolean;
   readonly hasCapacity: boolean;
-  start(project: string): void;
+  reserve(): (() => void) | undefined;
+  start(project: string, release: () => void): void;
 }
 const BUILT_IN_ID = "built-in";
 
@@ -124,7 +125,8 @@ export class TestExecutions {
     const builtIn = !privateRunner && this.builtIn?.enabled ? this.builtIn : undefined;
     if (!privateRunner && !builtIn)
       throw new PlatformError(409, "Connect a runner for this project before running a test");
-    if (builtIn && !builtIn.hasCapacity)
+    const release = builtIn?.reserve();
+    if (builtIn && !release)
       throw new PlatformError(409, "The dashboard is running another test; try again shortly");
     const job: Execution = {
       requestedBy: actor.id,
@@ -134,17 +136,22 @@ export class TestExecutions {
       status: "queued",
       requestedAt: new Date().toISOString(),
     };
-    const saved = current
-      ? await this.tests.state.replace("project-test-executions", { ...current, value: job })
-      : await this.tests.state.create("project-test-executions", project, job);
-    if (!saved) throw new PlatformError(409, "Another test was requested; refresh the project");
-    await this.tests.auth.audit(actor, "project-test.requested", {
-      projectId: project,
-      requestId: job.id,
-      configVersion: job.configVersion,
-    });
-    builtIn?.start(project);
-    return publicExecution(job);
+    try {
+      const saved = current
+        ? await this.tests.state.replace("project-test-executions", { ...current, value: job })
+        : await this.tests.state.create("project-test-executions", project, job);
+      if (!saved) throw new PlatformError(409, "Another test was requested; refresh the project");
+      await this.tests.auth.audit(actor, "project-test.requested", {
+        projectId: project,
+        requestId: job.id,
+        configVersion: job.configVersion,
+      });
+      if (builtIn && release) builtIn.start(project, release);
+      return publicExecution(job);
+    } catch (error) {
+      release?.();
+      throw error;
+    }
   }
   async runner(actor: Actor, project: string, secret: string) {
     const id = sha256(secret);

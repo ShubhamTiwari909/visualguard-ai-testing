@@ -94,9 +94,11 @@ Set these in the dashboard's environment, for example in `.env.visualguard` or y
 | Setting | What it does | Default |
 | --- | --- | --- |
 | `VISUALGUARD_BUILT_IN_RUNNER` | `on` lets the dashboard capture tests itself. `off` (also `0`, `false` or `no`) means every test needs a private runner | On, except on Vercel (when `VERCEL` is set), where it is off |
-| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | How many built-in tests may run at the same time across all projects. Extra requests are refused until one finishes | `1` |
+| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | How many built-in tests may run at the same time across all projects served by this dashboard process. Extra requests are refused until one finishes | `1` |
 
 Only turn the built-in runner on where a browser can keep running after the web request returns.
+
+Capacity is reserved before saving a request, so simultaneous requests from different projects cannot exceed the process limit. A rejected request does not leave a queued test behind, and a failed save releases its reserved slot. Separate server replicas each have their own limit.
 
 ## Rules that always apply
 
