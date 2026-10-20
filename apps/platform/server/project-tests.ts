@@ -13,7 +13,7 @@ const baseURL = z.string().max(2048).refine((value) => {
 export const projectTestConfig = z.object({
   baseURL: z.object({ production: baseURL, staging: baseURL }).strict(),
   routes: z.array(z.string().max(1000).refine((value) =>
-    value.startsWith("/") && !value.startsWith("//") && !/[\\\r\n\u0000]/.test(value),
+    value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") && !Array.from(value).some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127),
   "Use a relative route starting with one slash")).min(1).max(100),
   viewports: z.record(z.string().regex(/^[a-zA-Z0-9_-]{1,40}$/), z.object({
     width: z.number().int().min(200).max(3840),

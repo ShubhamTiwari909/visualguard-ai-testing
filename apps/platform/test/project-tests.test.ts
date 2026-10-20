@@ -50,6 +50,7 @@ describe("project-specific test configuration", () => {
       { ...config, baseURL: { ...config.baseURL, staging: "https://user:password@example.test" } },
       { ...config, ai: { provider: "gemini", apiKey: "secret" } },
       { ...config, routes: ["//other.example.test"] },
+      ...["\0", "\n", "\r", "\t", "\u007f", "\\"].map((character) => ({ ...config, routes: [`/bad${character}route`] })),
       { ...config, routes: Array(101).fill("/") },
       { ...config, viewports: { desktop: { width: 9000, height: 800 } } },
     ]) expect(projectTestConfig.safeParse(invalid).success).toBe(false);
