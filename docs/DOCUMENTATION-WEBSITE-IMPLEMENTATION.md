@@ -33,3 +33,9 @@ Validation: docs build passed with 43 routes. The clean npm 3.2.3 quickstart and
 Added reviewer/inbox, approved baseline promotion/pull, visual policy, GitHub Action, preview revision, sharding/merge and GitHub Check Runs guides. The guides distinguish original verdicts, local acceptance, exact-evidence human decisions and policy checks, including separate token scopes and stale PR-head behavior.
 
 Validation: docs production build passed with 51 routes. The existing real dashboard runner smoke also passed: isolated configs, scoped queue/claim, Chromium capture, persisted measured progress, uploaded result and revocation. Action inputs/outputs and command examples were reviewed against current source. A live GitHub App/check/webhook/cloud deployment was not configured by this change. No formatting, lint or type checks ran.
+
+## D06 — Deployment and operations
+
+Added dashboard hosting overview, full Vercel/Cloud Run/Cloud SQL steps, artifact persistence, portable versus operational backups, upgrade migration and source-only administrator recovery. Provider instructions link to primary documentation and visibly disclose that this pass did not configure a real cloud/OAuth installation or certify production restore procedures.
+
+Validation: production docs build passed with 58 generated routes. Deployment settings and commands were reviewed against the repository scaffolds/runtime and official provider references. Local SQLite persistence and real private-runner capture are verified; external cloud/database/identity paths remain source-reviewed, as stated on those guides. No formatting, lint or semantic type checks ran.
