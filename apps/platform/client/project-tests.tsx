@@ -13,6 +13,18 @@ async function read<T>(path: string, signal: AbortSignal): Promise<T> {
   if (!response.ok) throw new Error(value.error ?? "Unable to load project tests");
   return value as T;
 }
+export function ProjectTestConfiguration({ config }: { config: ProjectTestConfig }) {
+  return <details className="vg-runner-setup">
+    <summary>Saved test configuration</summary>
+    <dl>
+      <dt>Production / reference URL</dt><dd>{config.baseURL.production}</dd>
+      <dt>Staging / candidate URL</dt><dd>{config.baseURL.staging}</dd>
+      <dt>Routes</dt><dd>{config.routes.join(", ")}</dd>
+      <dt>Viewports</dt><dd>{Object.entries(config.viewports).map(([name, size]) => `${name}: ${size.width} × ${size.height}`).join(", ")}</dd>
+      <dt>AI provider / model</dt><dd>{config.ai.provider}{config.ai.model ? ` / ${config.ai.model}` : ""}</dd>
+    </dl>
+  </details>;
+}
 export function ProjectTestControls({ project, canManage, onCompleted }: {
   project: Project; canManage: boolean; onCompleted?: () => void;
 }) {
@@ -80,6 +92,7 @@ export function ProjectTestControls({ project, canManage, onCompleted }: {
         {execution.error && <p>{execution.error}</p>}
         {execution.runId && <a className="vg-button" href={`/runs/${execution.runId}`}>View result</a>}
       </div>}
+      {settings && <ProjectTestConfiguration config={settings.config} />}
       {loaded && canManage && (editing || !settings) && <form className="vg-test-config" onSubmit={(event) => {
         event.preventDefault();
         void act("save", async () => {

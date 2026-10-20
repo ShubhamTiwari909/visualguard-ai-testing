@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProjectSection } from "../client/project-section.js";
+import { ProjectTestConfiguration } from "../client/project-tests.js";
 import type { Project } from "../shared/contracts.js";
 
 const project: Project = {
@@ -36,4 +37,15 @@ describe("selected project section", () => {
   it("does not offer deletion in the all-projects view", () => {
     expect(render(undefined, true)).toBe("");
   });
+});
+
+it("shows the saved comparison settings without management actions", () => {
+  const html = renderToStaticMarkup(createElement(ProjectTestConfiguration, { config: {
+    baseURL: { production: "https://reference.example.test", staging: "https://candidate.example.test" },
+    routes: ["/", "/pricing"], viewports: { desktop: { width: 1280, height: 800 } }, ai: { provider: "gemini", model: "selected-model" },
+  } }));
+  for (const value of ["https://reference.example.test", "https://candidate.example.test", "/pricing", "desktop: 1280 × 800", "gemini", "selected-model"])
+    expect(html).toContain(value);
+  expect(html).not.toContain("<input");
+  expect(html).not.toContain("<button");
 });
