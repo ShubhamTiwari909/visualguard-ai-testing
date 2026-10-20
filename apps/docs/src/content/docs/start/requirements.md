@@ -5,7 +5,7 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["package.json", "packages/visualguard/package.json", "docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 2}
 ---

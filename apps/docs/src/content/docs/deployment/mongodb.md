@@ -5,7 +5,7 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 3}
 ---
@@ -14,7 +14,7 @@ sidebar: {"order": 3}
 
 Use an installed VisualGuard release containing the described features and administrator access to the selected dashboard. Complete [local dashboard setup](/dashboard/local/) first. Work from your application root unless a step names a deployment folder. The shell examples use macOS/Linux POSIX syntax; use WSL for shell/Docker walkthroughs on Windows. Keep existing application/dashboard processes running in separate terminals.
 
-**Use this section when:** VisualGuard is installed in your application and you want its dashboard stored in MongoDB. Complete section 2 first and work from your application's root. Use MongoDB Atlas for this setup; no Docker, local database installation or replica-set initialization is needed.
+**Use this section when:** VisualGuard is installed in your application and you want its dashboard stored in MongoDB. Complete [the related setup guide](/start/quickstart/) first and work from your application's root. Use MongoDB Atlas for this setup; no Docker, local database installation or replica-set initialization is needed.
 
 ### Get your MongoDB URL
 
@@ -52,11 +52,11 @@ Stop any dashboard already listening on port 4400, then run:
 npx --no-install visualguard dashboard --env-file .env.visualguard --host 127.0.0.1 --port 4400
 ```
 
-Open `http://127.0.0.1:4400` and leave the command running. Use `--env-file` explicitly; dashboard commands do not automatically load this file. Previously exported process settings win over file values, so remove a stale exported `VISUALGUARD_DATABASE_URL` if it points elsewhere. Local mode needs no dashboard password or upload token and must remain on loopback. For shared login, follow section 8.
+Open `http://127.0.0.1:4400` and leave the command running. Use `--env-file` explicitly; dashboard commands do not automatically load this file. Previously exported process settings win over file values, so remove a stale exported `VISUALGUARD_DATABASE_URL` if it points elsewhere. Local mode needs no dashboard password or upload token and must remain on loopback. For shared login, follow [the related setup guide](/dashboard/login/).
 
 ### Create a project and run tests — terminal B
 
-With the application environments from section 2 still running:
+With the application environments from [the related setup guide](/start/quickstart/) still running:
 
 ```sh
 npx --no-install visualguard dashboard project create storefront \
@@ -65,13 +65,13 @@ npx --no-install visualguard test storefront \
   --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
 ```
 
-The first command creates the dashboard project. The second binds this test execution to `storefront`, captures the comparison and uploads its evidence to the running dashboard. The runner needs the dashboard URL, not the MongoDB password. See the [command reference](#13-command-reference) for each argument.
+The first command creates the dashboard project. The second binds this test execution to `storefront`, captures the comparison and uploads its evidence to the running dashboard. The runner needs the dashboard URL, not the MongoDB password. See the [command reference](/reference/cli/) for each argument.
 
 ### Confirm your data is saved
 
 Open the run and its screenshots in the dashboard. In Atlas's collection browser or MongoDB Compass, inspect the `visualguard` database: VisualGuard uses collections such as `vg_projects`, `vg_runs`, `vg_state`, `vg_objects` and `vg_object_chunks`. Metadata and uploaded screenshot/DOM artifacts are stored there. Stop and restart the dashboard with the same environment file and confirm its history remains. Switching the database URL selects a different workspace; it does not migrate existing SQLite/PostgreSQL history.
 
-For AI plus MongoDB, replace `--no-ai` with the configured `--provider gemini` or Ollama flags from section 3. No upload token is needed in local mode; login mode requires one.
+For AI plus MongoDB, replace `--no-ai` with the configured `--provider gemini` or Ollama flags from [the related setup guide](/guides/ai-gemini/). No upload token is needed in local mode; login mode requires one.
 
 ### Already have MongoDB?
 

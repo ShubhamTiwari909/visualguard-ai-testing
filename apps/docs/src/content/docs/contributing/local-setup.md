@@ -5,7 +5,7 @@ audience: "contributor"
 docType: "tutorial"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/LOCAL-SETUP.md"]
 sidebar: {"order": 1}
 ---
@@ -14,9 +14,9 @@ sidebar: {"order": 1}
 
 This is the source workflow. Use **Node 22.22+** when installing the complete workspace including the documentation; Node 24 is used for website verification. The engine itself declares 22.12+. Commands use pnpm 9 and a POSIX shell (WSL for these shell examples on Windows). All source commands below run at the repository root. The source application processes and capture CLI use separate terminals.
 
-For an explanation of all product capabilities before setup, read the [product feature guide](PRODUCT-FEATURES.md).
+For an explanation of all product capabilities before setup, read the [product feature guide](/concepts/how-it-works/).
 
-Use this guide to develop this repository or try the latest merged features on your own computer. To install the published package in another application, use the other final guide: [npm package setup](NPM-PACKAGE-SETUP.md).
+Use this guide to develop this repository or try the latest merged features on your own computer. To install the published package in another application, use the other final guide: [npm package setup](/start/install/).
 
 Use terminal A for the demo application sites, terminal B for a dashboard, and terminal C for comparison commands. Skip terminal B when running visual regression alone. AI can be added to any comparison without changing the selected dashboard database.
 
@@ -71,7 +71,7 @@ Leave it running. Open:
 
 The button has a deliberate color difference. These are application pages under test; the dashboard will use port **4400**.
 
-The source fixture walkthrough deliberately uses a manual JSON config at `output/local-demo.json` to keep it separate from repository configs. It does not come from `init`. For a normal application setup, `npx visualguard init` generates `visualguard.config.ts`; follow the [npm initialization walkthrough](NPM-PACKAGE-SETUP.md#initialize-the-project-with-npx). The same config fields work in either format, but JSON needs an explicit `--config` path.
+The source fixture walkthrough deliberately uses a manual JSON config at `output/local-demo.json` to keep it separate from repository configs. It does not come from `init`. For a normal application setup, `npx --no-install visualguard init` generates `visualguard.config.ts`; follow the [npm initialization walkthrough](/start/install/). The same config fields work in either format, but JSON needs an explicit `--config` path.
 
 In **terminal C**, also at the repository root, create `output/local-demo.json`:
 
@@ -269,7 +269,7 @@ Open the run, inspect both images, restart the dashboard with the same URL and c
 3. Allow your dashboard computer's current public IP under **Network Access**.
 4. Copy the URI from **Connect → Drivers**, replace its credentials and include `/visualguard` before the query string.
 
-See the [Atlas connection instructions](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/) or the [npm guide's detailed connection steps](NPM-PACKAGE-SETUP.md#get-your-mongodb-url). The database user is separate from your Atlas website login. URL-encode special characters in credentials, such as `@` as `%40`.
+See the [Atlas connection instructions](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/) or the [npm guide's detailed connection steps](/deployment/mongodb/#get-your-mongodb-url). The database user is separate from your Atlas website login. URL-encode special characters in credentials, such as `@` as `%40`.
 
 ### Save settings and start the dashboard — terminal B
 
@@ -294,7 +294,7 @@ Open `http://127.0.0.1:4400` and leave the terminal running. This command loads 
 
 ### Create a project and run the test — terminal C
 
-Keep section 2's fixture websites running in terminal A:
+Keep [the related setup guide](/start/quickstart/)'s fixture websites running in terminal A:
 
 ```sh
 node packages/visualguard/dist/cli.js dashboard project create source-mongodb \
@@ -381,7 +381,7 @@ Do not describe these current-source controls as part of an older published npm 
 
 ## 9. Review changes, baselines and visual policies
 
-For the shortest local trial, return to the local-owner workspace from section 5; retain the same workspace/database in each terminal. These features also work with properly authorized users in the login trial.
+For the shortest local trial, return to the local-owner workspace from [the related setup guide](/dashboard/local/); retain the same workspace/database in each terminal. These features also work with properly authorized users in the login trial.
 
 ### Review exact evidence
 
@@ -444,7 +444,7 @@ node packages/visualguard/dist/cli.js dashboard policy assess \
   --project storefront --revision "$(git rev-parse HEAD)"
 ```
 
-`--enforce` exits unsuccessfully unless satisfied. Operational errors always fail. For GitHub setup, exact PR-head capture and scheduled reconciliation, see the [final package guide](NPM-PACKAGE-SETUP.md#11-team-reviews-approved-baselines-and-github-checks). Named journeys remain deferred.
+`--enforce` exits unsuccessfully unless satisfied. Operational errors always fail. For GitHub setup, exact PR-head capture and scheduled reconciliation, see the [final package guide](/dashboard/overview/). Named journeys remain deferred.
 
 ### Names and deletion
 
@@ -511,7 +511,7 @@ mkdir -p output/package-candidate
 pnpm --dir packages/visualguard pack --pack-destination "$PWD/output/package-candidate"
 ```
 
-Install that actual `.tgz` path in a separate consumer project. This is an explicit way to test newer source before npm publication; the ordinary [npm guide](NPM-PACKAGE-SETUP.md) needs no tarball or source checkout. The public release pipeline remains responsible for full declarations, release validation and a distinct published version.
+Install that actual `.tgz` path in a separate consumer project. This is an explicit way to test newer source before npm publication; the ordinary [npm guide](/start/install/) needs no tarball or source checkout. The public release pipeline remains responsible for full declarations, release validation and a distinct published version.
 
 ### Project configuration and UI-triggered tests from source
 
@@ -524,7 +524,7 @@ node packages/visualguard/dist/cli.js dashboard --env-file .env.visualguard-runn
   runner --project storefront --server http://127.0.0.1:4400
 ```
 
-Set the UI config to `http://127.0.0.1:4100` and `http://127.0.0.1:4101` with route `/color-change` for this guide's fixture. When connected, choose **Run test** and open **View result**. For another app, save that project's own URLs and start its project-scoped runner. Read the [complete runner setup and operational limits](NPM-PACKAGE-SETUP.md#run-a-test-from-the-dashboard).
+Set the UI config to `http://127.0.0.1:4100` and `http://127.0.0.1:4101` with route `/color-change` for this guide's fixture. When connected, choose **Run test** and open **View result**. For another app, save that project's own URLs and start its project-scoped runner. Read the [complete runner setup and operational limits](/dashboard/private-runners/).
 
 For implementation validation after the JavaScript/assets build, `pnpm platform:test:runner` runs an isolated dashboard-to-CLI workflow with real Chromium capture and temporary local HTTP sites. It does not connect to a production dashboard or external database.
 
@@ -535,7 +535,7 @@ Dashboard-triggered runs show live stages and the number of completed route/view
 | Symptom                                           | Check                                                                                                                                                                                                                                                                                            |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Browser executable missing                        | Install Chromium in the workspace package; on Linux include required browser system dependencies                                                                                                                                                                                                 |
-| Wrong/empty dashboard history                     | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory. Use `test PROJECT --dashboard URL` to select the running dashboard; see [missing project/run recovery](NPM-PACKAGE-SETUP.md#project-or-run-missing-from-the-dashboard) |
+| Wrong/empty dashboard history                     | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory. Use `test PROJECT --dashboard URL` to select the running dashboard; see [missing project/run recovery](/troubleshooting/dashboard/) |
 | `role "USER" does not exist`                      | Replace placeholder credentials with the actual PostgreSQL username/password and ensure that role owns/can initialize the dedicated schema                                                                                                                                                       |
 | Google controls missing                           | Use login mode and a complete OIDC configuration, load it in the actual server terminal, then restart                                                                                                                                                                                            |
 | Google `redirect_uri_mismatch`                    | Match scheme, hostname, port and `/api/auth/callback` exactly; keep `localhost` and `127.0.0.1` consistent                                                                                                                                                                                       |
@@ -553,7 +553,7 @@ Planning, architecture and historical validation documents remain reference mate
 
 ## 13. Command reference
 
-Run source commands at the repository root after section 1's package/dashboard build. `node packages/visualguard/dist/cli.js` runs this checkout's built CLI. In another application's npm installation, use `npx --no-install visualguard` instead. The [full command explanations](NPM-PACKAGE-SETUP.md#13-command-reference) apply to both entry points; use `output/local-demo.json` for this guide's fixture configuration.
+Run source commands at the repository root after section 1's package/dashboard build. `node packages/visualguard/dist/cli.js` runs this checkout's built CLI. In another application's npm installation, use `npx --no-install visualguard` instead. The [full command explanations](/reference/cli/) apply to both entry points; use `output/local-demo.json` for this guide's fixture configuration.
 
 ### Common source commands
 
@@ -607,4 +607,4 @@ node packages/visualguard/dist/cli.js dashboard init --target vercel --out outpu
 node packages/visualguard/dist/cli.js dashboard init --target cloud-run --out output/cloud-run-dashboard
 ```
 
-Choose one host. `dashboard init` creates files in an empty output directory, not cloud resources or an automatically deployed dashboard. Follow the [hosting guide](NPM-PACKAGE-SETUP.md#9-deploy-to-vercel-or-google-cloud-run). For authentication, repair, baselines, policies, backups and other commands, use the [command reference](NPM-PACKAGE-SETUP.md#other-commands) and the installed command's help.
+Choose one host. `dashboard init` creates files in an empty output directory, not cloud resources or an automatically deployed dashboard. Follow the [hosting guide](/deployment/overview/). For authentication, repair, baselines, policies, backups and other commands, use the [command reference](/reference/cli/) and the installed command's help.

@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md", "docs/RELIABILITY-CHANGES.md", "packages/visualguard/src/playwright/index.ts"]
 sidebar: {"order": 8}
 ---
@@ -76,7 +76,7 @@ test("cart opened", async ({ page, visualguard }) => {
 
 The fixture shares classification, AI/cache, acceptance and configured checks with the CLI, and attaches screenshots plus `result.json` evidence. Configure `config`, `configPath` and `failOn` through `visualguardOptions`; each check accepts `name`, `waitFor`, `mask`, `hide`, `failOn` and `referenceSetup`.
 
-`collectHealth: true` instruments the provided `page` before navigation. Events that occurred before instrumentation on an externally created page cannot be recovered. AI sessions are per test; the test-owned clock stays under test control, and the fixture does not automatically replay the current page for a second noise capture. See the [fixture capability table](docs/RELIABILITY-CHANGES.md#playwright-fixture-capability-contract).
+`collectHealth: true` instruments the provided `page` before navigation. Events that occurred before instrumentation on an externally created page cannot be recovered. AI sessions are per test; the test-owned clock stays under test control, and the fixture does not automatically replay the current page for a second noise capture. See the [fixture capability table](/releases/migration/).
 
 ## Fixture capability boundaries
 

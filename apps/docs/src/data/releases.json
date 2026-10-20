@@ -1,0 +1,12 @@
+{
+  "checkedOn": "2026-10-20",
+  "publishedVersion": "3.2.3",
+  "reportedCliVersion": "3.2.2",
+  "sourceRevision": "69ccdf157326ef52788948cb8fc479c121ec0f0b",
+  "validation": {
+    "quickstart": "smoke-tested: macOS, Node 24.13.0, Chromium",
+    "sqlite": "smoke-tested: project, capture, restart",
+    "privateRunner": "existing real Chromium smoke passed",
+    "externalProviders": "source-reviewed; no live cloud/Google/PostgreSQL/MongoDB deployment"
+  }
+}

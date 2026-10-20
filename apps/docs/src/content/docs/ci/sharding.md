@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md", "docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 4}
 ---
@@ -17,10 +17,10 @@ Complete [the first-comparison guide](/start/quickstart/) and keep both tested a
 Use the same unique execution group, configuration, source revision and job scope on every shard:
 
 ```bash
-npx visualguard test --ci --shard 1/2 --run-group ci-execution-123
-npx visualguard test --ci --shard 2/2 --run-group ci-execution-123
+npx --no-install visualguard test --ci --shard 1/2 --run-group ci-execution-123
+npx --no-install visualguard test --ci --shard 2/2 --run-group ci-execution-123
 # Download/copy the shard run directories into a common folder first.
-npx visualguard merge downloaded-shards --ci --junit merged-junit.xml
+npx --no-install visualguard merge downloaded-shards --ci --junit merged-junit.xml
 ```
 
 GitHub Actions derives the group from the run ID/attempt automatically; other systems can set `VISUALGUARD_RUN_GROUP`. Jobs are sorted and distributed round-robin. Merge rejects mixed groups/settings/revisions, duplicate shards/jobs, legacy provenance and incomplete coverage. `--allow-partial` explicitly produces a diagnostic report with an incomplete banner and a failing exit code.
@@ -30,9 +30,9 @@ GitHub Actions derives the group from the run ID/attempt automatically; other sy
 Use one unique group value for each execution, shared by all its shards:
 
 ```sh
-npx visualguard test --shard 1/2 --run-group my-ci-execution-123
-npx visualguard test --shard 2/2 --run-group my-ci-execution-123
-npx visualguard merge downloaded-artifacts
+npx --no-install visualguard test --shard 1/2 --run-group my-ci-execution-123
+npx --no-install visualguard test --shard 2/2 --run-group my-ci-execution-123
+npx --no-install visualguard merge downloaded-artifacts
 ```
 
 GitHub Actions uses its run ID and attempt automatically. Other CI systems can set `VISUALGUARD_RUN_GROUP`. Legacy runs without provenance must be recaptured. `merge --allow-partial` creates an explicitly incomplete diagnostic report and returns a failing exit code.

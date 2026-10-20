@@ -5,7 +5,7 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 5}
 ---
@@ -29,6 +29,7 @@ From the application root:
 ```sh
 npx --no-install visualguard dashboard init --target cloud-run --out deploy/visualguard-cloud-run
 cd deploy/visualguard-cloud-run
+npm pkg set dependencies.visualguard=3.2.3
 npm install
 ```
 
@@ -88,7 +89,11 @@ Update the URL inside the private YAML file too, so the next deploy does not res
 
 Environment files configure service variables, not Secret Manager references. For ongoing operations, put the DB/admin secrets in Secret Manager, grant the runtime identity access to just those secrets, and map pinned enabled versions to their environment names. [Cloud Run secret configuration](https://docs.cloud.google.com/run/docs/configuring/services/secrets).
 
-Open the assigned HTTPS URL and follow section 8. A custom production domain can use a supported ingress option such as an external Application Load Balancer/serverless NEG; update the canonical origin afterward. Google's direct domain mapping is currently documented as preview and not recommended for production. [Cloud Run domain options](https://docs.cloud.google.com/run/docs/mapping-custom-domains).
+Open the assigned HTTPS URL and follow [the related setup guide](/dashboard/login/). A custom production domain can use a supported ingress option such as an external Application Load Balancer/serverless NEG; update the canonical origin afterward. Google's direct domain mapping is currently documented as preview and not recommended for production. [Cloud Run domain options](https://docs.cloud.google.com/run/docs/mapping-custom-domains).
+
+## Check the generated package pin
+
+The 3.2.3 artifact currently embeds CLI version 3.2.2. Its scaffold may therefore pin 3.2.2. The `npm pkg set` step above corrects the generated dependency to the intended tested 3.2.3 release before installation. Inspect the generated `package.json` and commit its deployment lockfile. [Read the artifact caveat](/releases/).
 
 ## Verify before using this installation
 

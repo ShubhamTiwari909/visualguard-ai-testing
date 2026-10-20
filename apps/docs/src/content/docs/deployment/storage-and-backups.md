@@ -5,7 +5,7 @@ audience: "operator"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/backup.ts"]
 sidebar: {"order": 7}
 ---
@@ -42,7 +42,7 @@ npx --no-install visualguard dashboard --env-file .env.visualguard-sqlite \
   --data-dir ./review-workspace
 ```
 
-Create that ignored `.env.visualguard-sqlite` first with the three local-mode/empty URL settings from section 5, and add it to `.gitignore`. Restoration is append-only/deduplicating and can reject conflicting evidence; prefer a fresh destination rather than expecting overwrite semantics. Legacy file-backed workspaces may require their original `objects/` directory or a portable export collecting it.
+Create that ignored `.env.visualguard-sqlite` first with the three local-mode/empty URL settings from [the related setup guide](/dashboard/local/), and add it to `.gitignore`. Restoration is append-only/deduplicating and can reject conflicting evidence; prefer a fresh destination rather than expecting overwrite semantics. Legacy file-backed workspaces may require their original `objects/` directory or a portable export collecting it.
 
 ### Native operational backups
 
@@ -59,7 +59,7 @@ docker exec visualguard-postgres-local pg_dump -U visualguard -d visualguard -Fc
 
 [PostgreSQL native dump documentation](https://www.postgresql.org/docs/17/app-pgdump.html).
 
-- **MongoDB:** use the Atlas/deployment backup and restore procedure supported by your cluster. Confirm backup availability and retention for your chosen deployment. If your operator uses MongoDB Database Tools, follow the [MongoDB dump options](https://www.mongodb.com/docs/database-tools/mongodump/) for a consistent backup of the actual deployment; the connection-only setup in section 7 does not configure backups.
+- **MongoDB:** use the Atlas/deployment backup and restore procedure supported by your cluster. Confirm backup availability and retention for your chosen deployment. If your operator uses MongoDB Database Tools, follow the [MongoDB dump options](https://www.mongodb.com/docs/database-tools/mongodump/) for a consistent backup of the actual deployment; the connection-only setup in [the related setup guide](/deployment/mongodb/) does not configure backups.
 
 Restore into a **separate isolated database** and verify old screenshot bytes, accounts, permissions, reviews and current baselines. A restore also restores historical credential state, so revoke compromised sessions/tokens/invitations before reconnecting an incident recovery. Keep backups private and outside Git/CI artifacts.
 

@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 3}
 ---
@@ -39,7 +39,7 @@ Project deletion removes its configuration, requests, memberships and credential
 
 ## Project or run is missing
 
-If `npx visualguard test "My Application"` runs but `npx visualguard dashboard` shows another workspace, first check which storage each process selected:
+If `npx --no-install visualguard test "My Application"` runs but `npx --no-install visualguard dashboard` shows another workspace, first check which storage each process selected:
 
 | Process                                 | Settings it reads                                                                                                                             |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -48,7 +48,7 @@ If `npx visualguard test "My Application"` runs but `npx visualguard dashboard` 
 | `dashboard --env-file .env.visualguard` | Explicitly loads that file, then starts the dashboard; existing process settings take precedence                                              |
 | `dashboard` without `--env-file`        | Uses process settings or defaults; it does not automatically read `.env.visualguard` or the runner's `.env.local`                             |
 
-Relative local SQLite storage also depends on the calling directory. Use the same application root and a single running dashboard for this workflow. To select the MongoDB workspace from section 7, stop the old dashboard and run in terminal A:
+Relative local SQLite storage also depends on the calling directory. Use the same application root and a single running dashboard for this workflow. To select the MongoDB workspace from [the related setup guide](/deployment/mongodb/), stop the old dashboard and run in terminal A:
 
 ```sh
 npx --no-install visualguard dashboard --env-file .env.visualguard --host 127.0.0.1 --port 4400

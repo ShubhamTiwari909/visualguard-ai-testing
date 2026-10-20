@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md"]
 sidebar: {"order": 15}
 ---
@@ -16,13 +16,13 @@ Complete [the first-comparison guide](/start/quickstart/) and keep both tested a
 
 ```bash
 # Compare your dev server with production as source files change.
-npx visualguard watch --staging http://localhost:3000
+npx --no-install visualguard watch --staging http://localhost:3000
 
 # Compare production with its previous capture.
-npx visualguard monitor https://example.com
+npx --no-install visualguard monitor https://example.com
 
 # Generate a scheduled GitHub workflow; this writes a workflow file.
-npx visualguard monitor --workflow "0 */6 * * *"
+npx --no-install visualguard monitor --workflow "0 */6 * * *"
 ```
 
 Watch mode re-tests routes connected to changed files through page imports; untraceable/shared changes re-test the full scope. It uses `fix.verify.server.url` or the staging override for the local site.

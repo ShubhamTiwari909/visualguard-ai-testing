@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md"]
 sidebar: {"order": 12}
 ---
@@ -33,9 +33,9 @@ fix: {
 ```
 
 ```bash
-npx visualguard fix
-npx visualguard fix /checkout --include-review
-npx visualguard fix --run <run-id> --allow-dirty
+npx --no-install visualguard fix
+npx --no-install visualguard fix /checkout --include-review
+npx --no-install visualguard fix --run <run-id> --allow-dirty
 ```
 
 The repair loop locates likely source files, proposes deterministic class/CSS repairs or AI search/replace edits, shows the diff, asks for confirmation, applies edits and verifies. It requires a Git repository and a clean working tree unless you explicitly use `--allow-dirty`. Editable scope excludes lockfiles, environment and configuration files. AI edits are restricted to supplied candidate files, and source upload requires consent or `fix.allowSourceUpload: true`.

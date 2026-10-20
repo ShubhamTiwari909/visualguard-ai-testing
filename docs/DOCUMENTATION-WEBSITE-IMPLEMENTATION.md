@@ -39,3 +39,13 @@ Validation: docs production build passed with 51 routes. The existing real dashb
 Added dashboard hosting overview, full Vercel/Cloud Run/Cloud SQL steps, artifact persistence, portable versus operational backups, upgrade migration and source-only administrator recovery. Provider instructions link to primary documentation and visibly disclose that this pass did not configure a real cloud/OAuth installation or certify production restore procedures.
 
 Validation: production docs build passed with 58 generated routes. Deployment settings and commands were reviewed against the repository scaffolds/runtime and official provider references. Local SQLite persistence and real private-runner capture are verified; external cloud/database/identity paths remain source-reviewed, as stated on those guides. No formatting, lint or semantic type checks ran.
+
+## D07 — Reference, troubleshooting and migration coverage
+
+Completed 80 Markdown/MDX entries covering every planned route, including the 404, contributor guides, release/migration notes and symptom-based help. Added source-generated CLI option tables and 142 configuration-schema entries, a scoped environment reference, central release data and a 549-heading migration map across 25 source documents. Historical plans/changelogs stay explicitly historical. Copied links now target the appropriate website task or repository source. Added an execution/storage diagram and preserved the detailed contributor flow source.
+
+Functional docs checks validate article metadata/prerequisites, planned route coverage, source-heading disposition, example constraints, Action input coverage, generated-reference drift and internal links/assets/fragments. The link checker has focused tests for encoded anchors, missing anchors and project-base escapes. These commands do not run formatting, lint or semantic type checks.
+
+Validation: `pnpm docs:test`, root-path production build and internal links passed (80 generated pages, 9228 internal links/assets/anchors). A separate `/visualguard-ai-testing` build and base-path link check also passed (80 pages, 9228 links before the final diagram update). Browser checks confirmed React chooser state, Pagefind MongoDB results/navigation, mobile menu and a 390px article without horizontal page overflow. Desktop/mobile screenshots were inspected locally. External provider deployments remain outside the verified scope.
+
+The npm artifact inspection also showed its scaffold derives the dependency pin from the stale embedded CLI version. Vercel/Cloud Run guides now correct the generated dependency to 3.2.3 before installation and explain the release-specific caveat. No product code was changed.

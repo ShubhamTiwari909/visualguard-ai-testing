@@ -5,7 +5,7 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 2}
 ---
@@ -75,7 +75,7 @@ Stop the server with Ctrl+C and restart with the same environment and data direc
 
 The dashboard is a separate server. **`test --dashboard URL` connects to an already running dashboard; it does not start one.** Keep your production/reference and staging/candidate applications running too. The dashboard URL is different from both application URLs in `visualguard.config.ts`.
 
-Use this complete local SQLite sequence from your application's root. It requires no separate database service or upload token. Complete section 2's installation/configuration and the Gemini key setup above first.
+Use this complete local SQLite sequence from your application's root. It requires no separate database service or upload token. Complete [the related setup guide](/start/quickstart/)'s installation/configuration and the Gemini key setup above first.
 
 1. Create an ignored **`.env.visualguard-local`** file (leave any existing PostgreSQL/MongoDB environment file unchanged):
 
@@ -113,7 +113,7 @@ npx --no-install visualguard test storefront \
 
 This captures, analyzes and publishes in one run. Keep the Gemini key in terminal B's application-root `.env.local`. For Ollama, use its running service and replace the provider with `--provider ollama --model qwen2.5vl`.
 
-**Already using PostgreSQL or MongoDB?** Start terminal A with your existing `.env.visualguard` from [PostgreSQL setup](#6-run-npx-visual-regression-with-postgresql) or [MongoDB setup](#7-run-npx-visual-regression-with-mongodb) instead of the SQLite file. Keep the health check, project creation and test pointed at that same dashboard URL. Login-enabled dashboards also require the project upload token from section 8. For an already hosted dashboard, use its actual HTTPS origin in `--server` and `--dashboard`; do not start a second local workspace just for this test.
+**Already using PostgreSQL or MongoDB?** Start terminal A with your existing `.env.visualguard` from [PostgreSQL setup](/deployment/postgresql/) or [MongoDB setup](/deployment/mongodb/) instead of the SQLite file. Keep the health check, project creation and test pointed at that same dashboard URL. Login-enabled dashboards also require the project upload token from [the related setup guide](/dashboard/login/). For an already hosted dashboard, use its actual HTTPS origin in `--server` and `--dashboard`; do not start a second local workspace just for this test.
 
 **`Cannot bind dashboard project: fetch failed`?** The project lookup could not contact the dashboard; Gemini analysis has not started. Check terminal A for startup errors, verify `/api/health` from terminal B, and use the same host/port printed by the server. A custom port such as 4500 must appear in the health URL, `--server` and `--dashboard`. Inside Docker/WSL, `127.0.0.1` may refer to a different environment: run the two commands together in the same environment or use a correctly reachable, authenticated dashboard address. Do not remove `--dashboard` to hide a connection error; that can select a different workspace.
 

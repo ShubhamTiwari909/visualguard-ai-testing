@@ -5,7 +5,7 @@ audience: "operator"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["packages/visualguard/CHANGELOG.md", "docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 8}
 ---
@@ -33,7 +33,7 @@ The 3.2.0 migration from 3.1.0 requires the following behavior:
 - GitHub checks need server-side supported credentials, repository mappings, a webhook secret/raw-body forwarding and external scheduled reconciliation. Credential rotation and scheduler monitoring remain operator responsibilities. Start in Informative mode; checks are point-in-time observations, not continuous release authorization.
 - Native database backups include new screenshot/DOM chunks and operational state. Portable evidence exports exclude authentication state and cannot replace a full recovery backup. Test a restore in a separate environment before relying on the upgrade.
 
-See the [npm setup guide](../../docs/NPM-PACKAGE-SETUP.md) for application/dashboard setup and the [local source guide](../../docs/LOCAL-SETUP.md) for operator recovery. These are upgrade instructions, not a claim that a real Google/cloud deployment has been validated.
+See the [npm setup guide](/start/install/) for application/dashboard setup and the [local source guide](/contributing/local-setup/) for operator recovery. These are upgrade instructions, not a claim that a real Google/cloud deployment has been validated.
 
 ## 4. Upgrade consistently
 

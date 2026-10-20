@@ -5,7 +5,7 @@ audience: "contributor"
 docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/DOCUMENTATION-WEBSITE-PLAN.md"]
 sidebar: {"order": 5}
 ---
@@ -51,3 +51,16 @@ Open the printed preview URL. Verify the article, navigation, code copying and p
 ## Verification and review
 
 Read the rendered article on desktop and mobile, follow its commands against the stated version, and record what was actually tested. Keep implementation, documentation and focused checks in the same feature commit. Formatting, lint and type checks remain deferred under the current repository instruction. Do not invoke them indirectly through a docs script.
+
+
+## Run focused content and contract checks
+
+```sh
+pnpm docs:test
+pnpm docs:build
+pnpm docs:check-links
+```
+
+Build before the link check. `docs:test` checks metadata, planned routes, source-heading coverage, examples, Action inputs and generated CLI/configuration drift. It does not run formatting, lint or semantic type checks. Update tables with `node scripts/docs/generate-reference.mjs` after a source contract changes and review the generated diff. Keep every source heading represented in `apps/docs/src/data/coverage.json` with an accurate migrated, superseded or historical disposition.
+
+The optional `pnpm docs:smoke` executes the pinned published quickstart and local SQLite workflow in a temporary project using local Playwright browsers and free ports 4100/4101. It installs test dependencies and cleans up its processes/data afterward. It does not configure real cloud, database or Google accounts.

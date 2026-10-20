@@ -5,7 +5,7 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts"]
 sidebar: {"order": 6}
 ---
@@ -32,7 +32,7 @@ npx playwright install chromium
 VISUALGUARD_RUNNER_TOKEN=YOUR_PROJECT_RUNNER_CREDENTIAL
 ```
 
-Add `.env.visualguard-runner` to `.gitignore`. The runner needs network access to both application URLs and the dashboard. It needs no dashboard database URL or administrator password. If using Gemini, supply `GEMINI_API_KEY` in that private file/environment; for Ollama, start its service and provide the selected model on the runner. Capture can fall back to deterministic analysis on provider failure, as in section 3.
+Add `.env.visualguard-runner` to `.gitignore`. The runner needs network access to both application URLs and the dashboard. It needs no dashboard database URL or administrator password. If using Gemini, supply `GEMINI_API_KEY` in that private file/environment; for Ollama, start its service and provide the selected model on the runner. Capture can fall back to deterministic analysis on provider failure, as in [the related setup guide](/guides/ai-gemini/).
 
 5. Start the foreground runner using the exact command shown by your dashboard. For a local dashboard:
 

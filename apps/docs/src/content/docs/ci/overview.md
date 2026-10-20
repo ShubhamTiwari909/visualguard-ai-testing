@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md"]
 sidebar: {"order": 1}
 ---
@@ -18,7 +18,7 @@ The essential CI commands are:
 
 ```bash
 npx playwright install --with-deps chromium
-npx visualguard test --ci --junit visualguard-junit.xml
+npx --no-install visualguard test --ci --junit visualguard-junit.xml
 ```
 
 Upload the entire run directory and JUnit file even when the test exits nonzero. `init` can generate a GitHub workflow with report artifacts and a sticky PR comment. GitHub runs can append a job summary; `visualguard comment --link <artifact-url>` updates the PR comment and needs a token with PR write permission. Fork PR tokens may lack that permission.
@@ -27,7 +27,7 @@ For preview deployments, pass their URL through `VISUALGUARD_STAGING_URL` or `--
 
 ### GitHub Action
 
-The repository's [composite Action](action/README.md) installs the selected browser, runs the test, uploads artifacts, optionally comments and propagates failures. Select a release tag or commit containing the desired behavior.
+The repository's [composite Action](/ci/github-actions/) installs the selected browser, runs the test, uploads artifacts, optionally comments and propagates failures. Select a release tag or commit containing the desired behavior.
 
 Inputs include `working-directory`, `browser`, `output-directory`, `artifact-name`, `junit-path`, `args`, `fail-on`, `staging-url`, `gemini-api-key`, `comment`, `github-token` and `exec`. Browser/output inputs override configuration and match installation/artifact paths. Use distinct artifact names in matrix jobs. The Action exposes `report-url` and `outcome`; configure an AI provider as well as supplying credentials when AI is desired.
 
@@ -36,10 +36,10 @@ Inputs include `working-directory`, `browser`, `output-directory`, `artifact-nam
 Use the same unique execution group, configuration, source revision and job scope on every shard:
 
 ```bash
-npx visualguard test --ci --shard 1/2 --run-group ci-execution-123
-npx visualguard test --ci --shard 2/2 --run-group ci-execution-123
+npx --no-install visualguard test --ci --shard 1/2 --run-group ci-execution-123
+npx --no-install visualguard test --ci --shard 2/2 --run-group ci-execution-123
 # Download/copy the shard run directories into a common folder first.
-npx visualguard merge downloaded-shards --ci --junit merged-junit.xml
+npx --no-install visualguard merge downloaded-shards --ci --junit merged-junit.xml
 ```
 
 GitHub Actions derives the group from the run ID/attempt automatically; other systems can set `VISUALGUARD_RUN_GROUP`. Jobs are sorted and distributed round-robin. Merge rejects mixed groups/settings/revisions, duplicate shards/jobs, legacy provenance and incomplete coverage. `--allow-partial` explicitly produces a diagnostic report with an incomplete banner and a failing exit code.

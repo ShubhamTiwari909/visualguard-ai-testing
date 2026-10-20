@@ -5,7 +5,7 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 2}
 ---
@@ -14,7 +14,7 @@ sidebar: {"order": 2}
 
 Use an installed VisualGuard release containing the described features and administrator access to the selected dashboard. Complete [local dashboard setup](/dashboard/local/) first. Work from your application root unless a step names a deployment folder. The shell examples use macOS/Linux POSIX syntax; use WSL for shell/Docker walkthroughs on Windows. Keep existing application/dashboard processes running in separate terminals.
 
-**Use this section when:** VisualGuard is installed in another application and you want its dashboard stored in PostgreSQL. Complete section 2 first; work from the application root throughout, with the application environments still running.
+**Use this section when:** VisualGuard is installed in another application and you want its dashboard stored in PostgreSQL. Complete [the related setup guide](/start/quickstart/) first; work from the application root throughout, with the application environments still running.
 
 Use a dedicated database with a real application user. Stop any dashboard already on port 4400. Changing the database URL selects another workspace; it does not migrate SQLite/MongoDB history automatically. PostgreSQL and MongoDB below are alternative setup paths, not dependencies you must install together.
 
@@ -60,7 +60,7 @@ npx --no-install visualguard test storefront \
   --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
 ```
 
-Open the stored run and its screenshots, restart the dashboard with the same `.env.visualguard`, and confirm its history remains. For AI plus PostgreSQL, replace `--no-ai` with `--provider gemini` after section 3's key setup, or use its Ollama provider/model flags. This local-owner configuration needs no upload token; login mode does. The app role must be able to create/update `vg_*` tables/indexes; an existing restricted role may need schema grants from its database administrator. Do not copy a literal `USER` placeholder or rely on your laptop's username being a database role.
+Open the stored run and its screenshots, restart the dashboard with the same `.env.visualguard`, and confirm its history remains. For AI plus PostgreSQL, replace `--no-ai` with `--provider gemini` after [the related setup guide](/guides/ai-gemini/)'s key setup, or use its Ollama provider/model flags. This local-owner configuration needs no upload token; login mode does. The app role must be able to create/update `vg_*` tables/indexes; an existing restricted role may need schema grants from its database administrator. Do not copy a literal `USER` placeholder or rely on your laptop's username being a database role.
 
 ## Verify the setup
 

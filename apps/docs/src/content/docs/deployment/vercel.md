@@ -5,7 +5,7 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 4}
 ---
@@ -29,6 +29,7 @@ From the application root:
 ```sh
 npx --no-install visualguard dashboard init --target vercel --out deploy/visualguard-vercel
 cd deploy/visualguard-vercel
+npm pkg set dependencies.visualguard=3.2.3
 npm install
 npm install --global vercel
 vercel login
@@ -58,9 +59,13 @@ vercel --prod
 
 Use the actual stable project origin, for example `https://my-app-visualguard.vercel.app`; enter `login` for auth mode. If the hostname is assigned only after deployment, update the public URL and redeploy before login. A local `.env` does not set production variables. [Vercel environments](https://vercel.com/docs/environment-variables), [deployment CLI](https://vercel.com/docs/cli/deploy).
 
-Open the canonical URL, sign in, create a project/token and configure your application as in section 8. Keep previews disabled or isolated with their own database/URL. To use a custom domain, add it in Vercel, follow its DNS instructions, then update the canonical URL and redeploy.
+Open the canonical URL, sign in, create a project/token and configure your application as in [the related setup guide](/dashboard/login/). Keep previews disabled or isolated with their own database/URL. To use a custom domain, add it in Vercel, follow its DNS instructions, then update the canonical URL and redeploy.
 
 Vercel documents a 4.5 MB function request/response limit. VisualGuard chunks uploads/downloads; test a real large screenshot, manifest and baseline pull with the exact release. Direct unchunked large-artifact requests can be rejected. Test database connection capacity during cold starts/concurrency too: current PostgreSQL pools allow up to five connections per runtime instance. [Vercel limits](https://vercel.com/docs/functions/limitations).
+
+## Check the generated package pin
+
+The 3.2.3 artifact currently embeds CLI version 3.2.2. Its scaffold may therefore pin 3.2.2. The `npm pkg set` step above corrects the generated dependency to the intended tested 3.2.3 release before installation. Inspect the generated `package.json` and commit its deployment lockfile. [Read the artifact caveat](/releases/).
 
 ## Verify before using this installation
 

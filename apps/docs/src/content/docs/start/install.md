@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "published"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/init.ts"]
 sidebar: {"order": 3}
 ---
@@ -30,7 +30,7 @@ If already installed, check the version and continue. Keep existing Playwright s
 
 Add these entries to `.gitignore` if absent:
 
-```gitignore
+```text
 .visualguard/
 .env.local
 .env.visualguard
@@ -45,7 +45,7 @@ Start your application normally, for example with `npm run dev`. From that appli
 npx --no-install visualguard init
 ```
 
-This is the installed-package form of `npx visualguard init`. The wizard asks for:
+This is the installed-package form of `npx --no-install visualguard init`. The wizard asks for:
 
 1. Your production/reference URL and staging/candidate URL, such as `https://your-app.example.com` and `http://127.0.0.1:3000`.
 2. Routes to test and viewport presets.

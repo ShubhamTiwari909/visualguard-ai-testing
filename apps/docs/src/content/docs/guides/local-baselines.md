@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 6}
 ---
@@ -42,14 +42,14 @@ npx --no-install visualguard test --config visualguard.baseline.ts --no-ai
 npx --no-install visualguard report --config visualguard.baseline.ts
 ```
 
-Keep rendering settings consistent. Store local baselines according to your repository/artifact policy. Local baseline creation is different from the later shared **approved baseline registry** described in section 11. Do not update baselines automatically just to make CI pass.
+Keep rendering settings consistent. Store local baselines according to your repository/artifact policy. Local baseline creation is different from the later shared **approved baseline registry** described in [the related setup guide](/dashboard/overview/). Do not update baselines automatically just to make CI pass.
 
 ## Missing or incompatible references
 
 Missing baselines now fail by default. Create/update them explicitly:
 
 ```sh
-npx visualguard test --update-baselines
+npx --no-install visualguard test --update-baselines
 # Inside Playwright tests:
 npx playwright test --update-snapshots
 ```

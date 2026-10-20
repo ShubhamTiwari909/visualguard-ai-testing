@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "README.md"]
 sidebar: {"order": 8}
 ---
@@ -28,8 +28,8 @@ This is a property fragment, not a second config file. Keep the existing URLs, r
 ## Capture and prepare each environment
 
 ```bash
-npx visualguard auth production
-npx visualguard auth staging --until-url '**/dashboard'
+npx --no-install visualguard auth production
+npx --no-install visualguard auth staging --until-url '**/dashboard'
 ```
 
 Log in in the browser and save the session, then configure each environment:

@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md"]
 sidebar: {"order": 11}
 ---
@@ -48,8 +48,8 @@ Analysis sends prepared screenshot images and DOM context to the selected provid
 
 ```bash
 # Analyze saved artifacts without capturing the site again.
-npx visualguard analyze --run <run-id> --provider gemini
-npx visualguard analyze --run <run-id> --provider gemini --no-cache
+npx --no-install visualguard analyze --run <run-id> --provider gemini
+npx --no-install visualguard analyze --run <run-id> --provider gemini --no-cache
 ```
 
 Caches hash the complete prepared request, validate stored answers and expire by default after 24 hours. Analysis and later repair share saved token/attempt usage. Each invocation has its own deadline. Reports and fix artifacts expose usage; limits stop subsequent work, but an in-flight request can exceed the token limit and some failed requests do not return billable usage.

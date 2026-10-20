@@ -5,7 +5,7 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/PRODUCT-FEATURES.md"]
 sidebar: {"order": 1}
 ---
@@ -29,13 +29,7 @@ A typical workflow is:
 5. **Reuse:** promote approved evidence as a future reference when appropriate.
 6. **Check again:** use the same workflow locally, in CI or through a scheduled run.
 
-```mermaid
-flowchart LR
-    A["Application pages"] --> B["VisualGuard runner on a developer computer or CI"]
-    B --> C["Local report and evidence files"]
-    B -->|"Optional upload"| D["Shared dashboard"]
-    D --> E["Customer database"]
-```
+![Application versions are captured by your browser worker, saved locally and optionally published to a shared dashboard with persistent storage.](/diagrams/execution.svg)
 
 The runner executes the browser. A dashboard can request an on-demand test when a private worker is connected; hosting the dashboard does not run a browser or create a managed schedule. See [private runners](/dashboard/private-runners/).
 

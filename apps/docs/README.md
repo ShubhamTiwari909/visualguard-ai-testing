@@ -25,3 +25,22 @@ Search is generated during the build. Output is `apps/docs/dist`, and Astro's ca
 `DOCS_BASE_PATH` controls a project deployment path (default `/`). `DOCS_SITE_URL` controls canonical metadata (default `https://shubhamtiwari909.github.io`). Builds are noindex by default; only production deployment sets `DOCS_PRODUCTION=true`. These are public build settings, never credentials.
 
 Formatting, lint and semantic type checks are deferred under the repository's current instructions. A documentation production build does not constitute a passed type check.
+
+
+## Focused documentation checks
+
+From the repository root, after installing the workspace dependencies:
+
+```sh
+pnpm docs:test
+pnpm docs:build
+pnpm docs:check-links
+```
+
+`docs:test` checks article metadata, every planned route, heading-level migration coverage, the quickstart config, Action inputs, generated CLI/schema reference drift and link-checker behavior. It transpiles trusted source contracts with jiti without running semantic type checks. `docs:check-links` inspects generated output, so build first. It checks internal pages, assets and anchor targets; it does not certify external URLs or cloud deployments.
+
+After changing CLI registration or config fields, run `node scripts/docs/generate-reference.mjs`, review the generated tables and commit them with the feature. Do not hand-edit content below `generated-reference` markers. No CLI/platform build is needed for ordinary article edits or reference extraction.
+
+`pnpm docs:smoke` is an optional, slower live guide check. It downloads pinned npm dependencies into a disposable project, uses existing matching Playwright browsers, starts its own demo on ports 4100/4101, compares changed/matching pages and verifies SQLite dashboard persistence. Keep those ports free. It deletes its temporary project and stops owned processes afterward; it does not exercise cloud providers or use your private settings.
+
+Migration tracking lives in `src/data/coverage.json`; assign each source heading a destination or an explicit historical/superseded reason. The release record is `src/data/releases.json`. Change verified versions only after inspecting the actual registry artifact and testing the claimed scope. Do not replace legacy guides until the public site is reachable.

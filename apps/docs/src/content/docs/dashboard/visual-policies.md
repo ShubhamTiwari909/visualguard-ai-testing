@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "docs/LOCAL-SETUP.md", "apps/platform/server/policies.ts"]
 sidebar: {"order": 13}
 ---
@@ -48,7 +48,7 @@ node packages/visualguard/dist/cli.js dashboard policy assess \
   --project storefront --revision "$(git rev-parse HEAD)"
 ```
 
-`--enforce` exits unsuccessfully unless satisfied. Operational errors always fail. For GitHub setup, exact PR-head capture and scheduled reconciliation, see the [final package guide](NPM-PACKAGE-SETUP.md#11-team-reviews-approved-baselines-and-github-checks). Named journeys remain deferred.
+`--enforce` exits unsuccessfully unless satisfied. Operational errors always fail. For GitHub setup, exact PR-head capture and scheduled reconciliation, see the [final package guide](/dashboard/overview/). Named journeys remain deferred.
 
 ## Verify and troubleshoot
 

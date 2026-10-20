@@ -5,7 +5,7 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md", "packages/visualguard/src/core/status.ts"]
 sidebar: {"order": 3}
 ---
@@ -25,9 +25,9 @@ Each route/viewport job receives a status:
 Every run writes `.visualguard/runs/<run>/` with `manifest.json`, available screenshots, DOM snapshots, diff images/region crops and `index.html`. The report supports search, status filters, light/dark themes, deep links and keyboard navigation (`j`/`k` for jobs, `1`–`4` for image views, `/` for search).
 
 ```bash
-npx visualguard report
-npx visualguard report --run <run-id>
-npx visualguard report --no-serve  # write the HTML and print its location
+npx --no-install visualguard report
+npx --no-install visualguard report --run <run-id>
+npx --no-install visualguard report --no-serve  # write the HTML and print its location
 ```
 
 HTML embeds application JS/CSS but references screenshot files: **share the entire run directory**. Static reports can open from disk; acceptance and fix actions require the local served report. `output.keepRuns` defaults to 10. Add `.visualguard/` to `.gitignore` (`init` does this).

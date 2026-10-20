@@ -5,7 +5,7 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "Source main 69ccdf1; npm 3.2.3 availability checked"
+verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
 sourcePaths: ["README.md"]
 sidebar: {"order": 7}
 ---
@@ -15,8 +15,8 @@ sidebar: {"order": 7}
 Complete [the first-comparison guide](/start/quickstart/) and keep both tested application environments running. Run commands from your application root, where `visualguard.config.ts` lives. Examples use the locally installed package; `npx --no-install` prevents accidentally running another release. Property fragments below belong inside the existing `defineConfig({ ... })` object. Shell examples use POSIX syntax; use the documented Windows alternative or WSL when shell features are needed.
 
 ```bash
-npx visualguard accept /pricing --note "Approved pricing redesign"
-npx visualguard accept --all  # accept jobs marked review
+npx --no-install visualguard accept /pricing --note "Approved pricing redesign"
+npx --no-install visualguard accept --all  # accept jobs marked review
 ```
 
 The served report also has an **Accept change** action. Acceptance is recorded in `visualguard.accepted.json` (configurable with `output.acceptedFile`) for sharing through version control.
