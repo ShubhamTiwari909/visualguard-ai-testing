@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProjectSection } from "../client/project-section.js";
+import { ProjectTestConfiguration } from "../client/project-tests.js";
 import type { Project } from "../shared/contracts.js";
 
 const project: Project = {
@@ -29,14 +30,45 @@ describe("selected project section", () => {
     expect(html).toContain("3 stored runs");
     expect(html).toContain('aria-label="Delete Storefront"');
     expect(html).toContain("Delete project");
+    expect(html).toContain("Configure tests");
+    expect(html).toContain("Run test");
     expect(html).not.toContain("Permanently delete project");
   });
   it("hides the deletion action for readers/reviewers", () => {
     const html = render(project, false);
     expect(html).toContain("Storefront");
     expect(html).not.toContain("Delete project");
+    expect(html).not.toContain("Configure tests");
+    expect(html).not.toContain("Run test");
   });
   it("does not offer deletion in the all-projects view", () => {
     expect(render(undefined, true)).toBe("");
   });
+});
+
+it("shows the saved comparison settings without management actions", () => {
+  const html = renderToStaticMarkup(
+    createElement(ProjectTestConfiguration, {
+      config: {
+        baseURL: {
+          production: "https://reference.example.test",
+          staging: "https://candidate.example.test",
+        },
+        routes: ["/", "/pricing"],
+        viewports: { desktop: { width: 1280, height: 800 } },
+        ai: { provider: "gemini", model: "selected-model" },
+      },
+    }),
+  );
+  for (const value of [
+    "https://reference.example.test",
+    "https://candidate.example.test",
+    "/pricing",
+    "desktop: 1280 × 800",
+    "gemini",
+    "selected-model",
+  ])
+    expect(html).toContain(value);
+  expect(html).not.toContain("<input");
+  expect(html).not.toContain("<button");
 });

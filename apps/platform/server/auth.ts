@@ -45,7 +45,8 @@ export interface Membership {
   projectId: string;
   role: ProjectRole;
 }
-interface UploadToken {
+export interface UploadToken {
+  runner?: boolean;
   authVersion?: number;
   projectId: string;
   ownerId: string;
@@ -295,7 +296,8 @@ export class AuthService {
 
   async actor(request: IncomingMessage): Promise<Actor | undefined> {
     await this.ready;
-    if (this.mode === "local")
+    const authorization = request.headers.authorization;
+    if (this.mode === "local" && !authorization?.startsWith("Bearer vg_runner_"))
       return {
         id: "local-owner",
         name: "Local workspace",
@@ -303,11 +305,22 @@ export class AuthService {
         admin: true,
         csrf: this.localToken,
       };
-    const authorization = request.headers.authorization;
     if (authorization?.startsWith("Bearer ")) {
       const id = sha256(authorization.slice(7));
       const entry = await this.state.get<UploadToken>("tokens", id);
       if (!entry) return undefined;
+      if (this.mode === "local") {
+        if (!entry.value.runner || entry.value.ownerId !== "local-owner") return undefined;
+        return {
+          id: "local-owner",
+          name: "Local runner",
+          email: "",
+          admin: false,
+          csrf: "",
+          credentialId: id,
+          uploadProject: entry.value.projectId,
+        };
+      }
       const owner = await this.state.get<User>("users", entry.value.ownerId);
       if (
         !owner ||
@@ -601,7 +614,7 @@ export class AuthService {
       .map((row) => row.value)
       .filter((row) => row.projectId === projectId);
   }
-  async mintToken(actor: Actor, projectId: string, name: string, days: number) {
+  async mintToken(actor: Actor, projectId: string, name: string, days: number, runner = false) {
     await this.requireRole(actor, projectId, "maintainer");
     if (!name.trim() || name.length > 120 || !Number.isInteger(days) || days < 1 || days > 90)
       throw new PlatformError(400, "Use a token name and expiry of 1–90 days");
@@ -621,7 +634,7 @@ export class AuthService {
         throw new PlatformError(401, "Sign in again before creating upload credentials");
       ownerVersion = owner.value.authVersion;
     }
-    const token = `vg_upload_${secret()}`,
+    const token = `${runner ? "vg_runner" : "vg_upload"}_${secret()}`,
       id = sha256(token),
       expiresAt = expires(days * 86400);
     if (
@@ -631,6 +644,7 @@ export class AuthService {
         {
           ownerId: actor.id,
           projectId,
+          ...(runner ? { runner: true } : {}),
           name,
           createdAt: new Date().toISOString(),
           ...(ownerVersion === undefined ? {} : { authVersion: ownerVersion }),
@@ -639,7 +653,10 @@ export class AuthService {
       ))
     )
       throw new PlatformError(409, "Unable to create upload credential; retry");
-    await this.audit(actor, "upload-token.created", { projectId, tokenId: id });
+    await this.audit(actor, runner ? "runner-token.created" : "upload-token.created", {
+      projectId,
+      tokenId: id,
+    });
     return { id, token, expiresAt };
   }
   async tokens(projectId: string) {

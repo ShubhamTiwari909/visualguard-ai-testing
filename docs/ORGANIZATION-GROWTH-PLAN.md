@@ -629,3 +629,12 @@ Primary documentation was consulted on 14 October 2026. The observations below e
 | [OpenTelemetry traces](https://opentelemetry.io/docs/concepts/signals/traces/)                                            | Traces correlate operations through context across services                                    | Link visual incidents to trace evidence when applications expose that context |
 
 Repository review was static and selective. Historical test/evaluation results are attributed to the repository's recorded validation, not rerun here. Organizational requirements, runtime, workload, and adoption assumptions must be replaced by pilot measurements. Proposed paths, endpoint names, priorities, timelines, and acceptance targets are design choices available for revision.
+
+## Project configuration and dashboard-triggered visual tests — 19 October 2026
+
+The user requested a Run test action in the dashboard and independent test configuration for every project. Build this on the selected-project section from PR #61, preserving offline CLI testing and the existing upload-only credential boundary.
+
+1. Persist a bounded, data-only comparison config per immutable project ID: production/staging URLs, explicit routes, viewports and optional AI provider/model. Maintainers/admins edit with version checks; project-scoped readers can inspect it. Do not store secrets, cookies, executable TypeScript, hooks or arbitrary filesystem paths. Include focused API/storage validation and developer documentation in this feature commit.
+2. Add the project configuration editor and Run test UI. A maintainer/admin can request one active execution per project against an exact saved config version. A foreground private runner on the user's computer/CI polls with a separately scoped, expiring runner credential, claims a lease, captures with the existing engine and publishes through the existing evidence upload protocol. Persist progress/result links; handle disconnected runners, lost leases, failures and revocation without silently retrying captures. Hosted dashboard requests must not start browser subprocesses or rely on background serverless tasks. Keep runner/AI credentials on the worker. Include lifecycle/auth tests, a local end-to-end capture and package validation in this feature commit.
+
+This is an on-demand visual-regression workflow. It does not add scheduled managed runners, named journeys, arbitrary job commands, vendor-hosted capture or a general scenario catalog. Formatting, lint and type checks remain deferred under the current repository instruction.

@@ -378,6 +378,7 @@ function RunHistory({
           <h1>Run history</h1>
           <p className="vg-muted">
             A shared view of what changed, with the evidence to understand it.
+            {!selectedProject && " Select a project to configure and run a test."}
           </p>
         </div>
         {session.user?.admin && <ProjectForm onCreated={refresh} />}
@@ -386,6 +387,7 @@ function RunHistory({
         project={selectedProject}
         canManage={Boolean(session.user?.admin || selectedProject?.role === "maintainer")}
         onDeleted={onDeleted}
+        onRunCompleted={refresh}
       />
       <div className="vg-stat-grid">
         <div className="vg-stat">

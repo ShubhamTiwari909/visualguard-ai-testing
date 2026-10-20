@@ -22,6 +22,8 @@ Every `npx --no-install visualguard` command below runs the npm package installe
 - [9. Deploy to Vercel or Google Cloud Run](#9-deploy-to-vercel-or-google-cloud-run)
 - [10. Understand storage, backups and upgrades](#10-understand-storage-backups-and-upgrades)
 - [11. Team reviews, approved baselines and GitHub checks](#11-team-reviews-approved-baselines-and-github-checks)
+  - [Per-project test configuration](#separate-test-configuration-for-each-dashboard-project)
+  - [Run a test from the dashboard](#run-a-test-from-the-dashboard)
 - [12. Troubleshooting and final checks](#12-troubleshooting-and-final-checks)
 - [13. Command reference](#13-command-reference)
 
@@ -748,6 +750,57 @@ Checks are point-in-time observations; GitHub may retain an old conclusion durin
 ### Audit and recovery
 
 Administrators use **Audit & recovery** for bounded, filtered history and sign-in readiness. Readiness is an inventory, not live-production certification. Host-side administrator recovery is source/operator tooling, not an installed npm recovery endpoint. The [source guide](LOCAL-SETUP.md#10-audit-recovery-and-backups) explains its proof/version/backup/password-file requirements. Never edit identity rows or overwrite password hashes to simulate recovery.
+
+### Separate test configuration for each dashboard project
+
+Select a project in the sidebar, or select it in the Run history project filter and apply the filter. Its project section has **Configure tests** and **Run test** for workspace administrators and project maintainers.
+
+Choose **Configure tests**, then enter that project's production/reference URL, staging/candidate URL, routes (one per line), viewports and AI provider/model. Save the configuration. Each project stores its own values in the dashboard database; configuring one app does not change another app. A request runs an exact snapshot of the saved version. Save pending edits before starting a test; refresh before editing again if another maintainer changed the version.
+
+For example, project `storefront` can compare `https://shop.example.com` with `https://preview-shop.example.com`, while project `docs` compares `https://docs.example.com` with `http://127.0.0.1:3001`. The URLs must be reachable from the runner. `localhost` refers to the runner's computer, including when the dashboard is hosted elsewhere.
+
+The dashboard config is a bounded comparison profile: explicit routes (up to 100), one to eight viewports, and an optional AI provider/model. It stores no passwords, API keys, application cookies, arbitrary file paths, executable TypeScript or capture hooks. Keep full-feature local configuration in `visualguard.config.ts` when using ordinary CLI tests, including application login state, custom hooks and baseline mode. Saving a dashboard profile does not rewrite that file or change existing `visualguard test --config ...` behavior.
+
+### Run a test from the dashboard
+
+Browser capture runs on a connected private runner on your computer or CI worker. The same flow works with a local dashboard, Vercel or Cloud Run. The dashboard stores requests/status/results; its web request does not start Playwright or rely on a serverless background process.
+
+1. Save the project's configuration as above. Choose AI **None** for the first test.
+2. Expand **Connect a runner for this project** and choose **Create 30-day runner credential**. Save the credential when shown; it is different from an upload-only token. Existing upload-only tokens cannot claim tests.
+3. In the application/runner directory, install the package version containing this feature and its browser prerequisites:
+
+```sh
+npm install --save-dev --save-exact visualguard
+npm install --save-dev playwright
+npx playwright install chromium
+```
+
+4. Create an ignored `.env.visualguard-runner` file on that computer, using the actual credential:
+
+```dotenv
+VISUALGUARD_RUNNER_TOKEN=YOUR_PROJECT_RUNNER_CREDENTIAL
+```
+
+Add `.env.visualguard-runner` to `.gitignore`. The runner needs network access to both application URLs and the dashboard. It needs no dashboard database URL or administrator password. If using Gemini, supply `GEMINI_API_KEY` in that private file/environment; for Ollama, start its service and provide the selected model on the runner. Capture can fall back to deterministic analysis on provider failure, as in section 3.
+
+5. Start the foreground runner using the exact command shown by your dashboard. For a local dashboard:
+
+```sh
+npx --no-install visualguard dashboard --env-file .env.visualguard-runner \
+  runner --project storefront --server http://127.0.0.1:4400
+```
+
+For a hosted dashboard, replace `--server` with its canonical HTTPS origin. Keep the terminal/process running. Connect separate project-scoped runners/credentials for different projects. Use `--work-dir /absolute/private/runner-evidence` if you need a dedicated evidence directory; the default is `.visualguard/runner`. Install the browser dependencies required by your operating system, as for ordinary CLI captures.
+
+6. When the project shows **Runner connected**, choose **Run test**. The UI shows queued/running/finished status and a **View result** link after upload. A finished execution can contain visual regressions; inspect the result rather than treating completion as approval. The run appears in that project's history.
+
+Only one test is active per project. Captures use Chromium, bounded concurrency and a 15-minute worker timeout. Workers renew a 60-second lease; a lost lease or revoked credential stops the connected worker. A disconnected execution expires with a visible failure instead of silently recapturing. Queued requests expire after five minutes without a claim. The UI's connection indicator reflects a recent heartbeat, so it can briefly remain connected after a worker exits.
+
+Captured evidence remains on the runner if capture/upload/completion is interrupted; use the normal saved-run publish workflow when appropriate. Revoking a runner credential does not revoke an unrelated project's credentials. Use **Revoke this runner credential** while the new credential is shown, or revoke it later under **People & integrations → Upload credentials**. Hosted login mode also stops accepting credentials whose owner is disabled, loses maintainer access, or has credentials invalidated. Runner credentials can upload evidence only for their project; they cannot edit configuration, trigger tests, approve reviews or manage accounts.
+
+For a one-shot worker, `dashboard runner --once --project storefront --server URL` polls once, executes an already queued request if present and exits. It does not keep the dashboard connected; the default foreground loop is the normal UI workflow. `--poll 3000` controls polling in milliseconds (1000–30000). Use `dashboard runner --help` for the installed version's options.
+
+Project configuration and execution/credential state belong in native operational database backups. Portable evidence exports do not replace that backup. Deleting the project removes its saved configuration, active request and runner credentials. New UI/runner commands require a published feature release; upgrading docs or a source checkout alone does not update an older installed npm package.
 
 ## 12. Troubleshooting and final checks
 

@@ -1,14 +1,17 @@
 import type { Project } from "../shared/contracts";
 import { DeleteAction, deletionMessage } from "./delete-action";
+import { ProjectTestControls } from "./project-tests";
 
 export function ProjectSection({
   project,
   canManage,
   onDeleted,
+  onRunCompleted,
 }: {
   project?: Project;
   canManage: boolean;
   onDeleted: (message: string) => void;
+  onRunCompleted?: () => void;
 }) {
   if (!project) return null;
   return (
@@ -34,6 +37,12 @@ export function ProjectSection({
           />
         )}
       </div>
+      <ProjectTestControls
+        key={project.id}
+        project={project}
+        canManage={canManage}
+        onCompleted={onRunCompleted}
+      />
     </section>
   );
 }
