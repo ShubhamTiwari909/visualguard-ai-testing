@@ -1,80 +1,194 @@
 ---
-title: "Run dashboard tests and private runners"
-description: "Run a dashboard test with just your sign-in, or connect a project-scoped private runner when the dashboard cannot reach your application."
+title: "Connect a private runner"
+description: "Run dashboard-requested tests on your own computer or CI worker with a project-scoped runner credential, when the dashboard host cannot reach your app or run a browser."
 audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts"]
-sidebar: {"order": 6}
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/client/project-tests.tsx", "packages/visualguard/src/cli/commands/dashboard.ts"]
+sidebar: {"order": 8}
 ---
 
-## Run a test with just your sign-in
+A private runner is a small VisualGuard process you keep running on your own computer or CI worker. It picks up tests that people request with **Run test** in the dashboard, captures them there and uploads the result. This tutorial connects one to a project.
 
-**Availability:** this is in the source checkout and the next release after 3.2.3. With the published 3.2.3 package, **Run test** still needs a private runner; follow [Before you start](#before-you-start) below.
+New to **Run test**? Start with [Run tests from the dashboard](/dashboard/run-tests/). On a dashboard that includes the built-in runner (the source checkout and the next release after 3.2.3), you only need a private runner in the cases below. With the published 3.2.3 package, **Run test** always needs one.
 
-The dashboard server captures the test itself using Chromium on its host, authorized only by your signed-in account (maintainer or administrator). No runner credential is needed. This is the default on a local dashboard (`visualguard dashboard`) and on Cloud Run (the generated image installs Chromium; deploy with `--no-cpu-throttling`, at least one instance and 2 GiB of memory, because capture continues after the request returns). The project shows **Runs on this dashboard** instead of a runner status.
+## When you need a private runner
 
-Connect a **private runner** only when the dashboard host cannot reach your application URLs (for example a staging site behind a VPN) or cannot run a browser, as on Vercel and other serverless hosts. A connected private runner takes priority over the built-in capture.
+- The dashboard cannot reach your app. Examples: a staging site behind a VPN, or an app on your laptop's `127.0.0.1` while the dashboard is hosted.
+- The dashboard host cannot run a browser, as on Vercel and other serverless hosts.
+- Your app's login state or AI keys must stay on your own machine.
+- You use the published 3.2.3 package.
 
-| Setting | Effect |
-| --- | --- |
-| `VISUALGUARD_BUILT_IN_RUNNER=off` | Every test needs a private runner. |
-| `VISUALGUARD_BUILT_IN_RUNNER=on` | Enables built-in capture on a host not detected as long-running, such as Vercel. Only use it where a browser can keep running after the response. |
-| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | Maximum simultaneous built-in tests across projects (default 1); a request beyond it is refused until one finishes. |
+A connected private runner always takes priority over the built-in runner.
 
-If Chromium is missing on the host, the execution fails with a message telling you to run `npx playwright install chromium` there. A profile that selects Gemini or Ollama uses the dashboard host's own `GEMINI_API_KEY` or Ollama service.
+## How it works
+
+1. The runner asks the dashboard for work every 3 seconds, using a runner credential for one project.
+2. When someone chooses **Run test**, the runner claims the request and gets a copy of the saved test profile.
+3. It captures with Chromium on its own machine and reports progress while it works.
+4. It uploads the run to the project and links it to the request. **View result** appears in the dashboard.
+
+The runner needs no database URL and no dashboard password. It only needs the credential and network access.
 
 ## Before you start
 
-The rest of this guide covers the private runner. Use an installed VisualGuard release containing the described features and administrator access to the selected dashboard. Complete [local dashboard setup](/dashboard/local/) first. Work from your application root unless a step names a deployment folder. The shell examples use macOS/Linux POSIX syntax; use WSL for shell/Docker walkthroughs on Windows. Keep existing application/dashboard processes running in separate terminals.
+- A project with a saved test profile. See [Configure tests per project](/dashboard/project-configuration/). Choose AI provider **None** for the first test.
+- Maintainer access to the project, or workspace administrator access, to create the credential.
+- A runner machine (your computer or a CI worker) that can reach:
+  - both URLs in the profile, and
+  - the dashboard, over HTTPS, or over plain HTTP only on `localhost`, `127.0.0.1` or `[::1]`.
+- A VisualGuard version that matches your dashboard. Run commands on the runner from your app's root folder. Examples use macOS or Linux shells; on Windows use WSL.
 
-1. Save the project's configuration as above. Choose AI **None** for the first test.
-2. Expand **Connect a runner for this project** and choose **Create 30-day runner credential**. Save the credential when shown; it is different from an upload-only token. Existing upload-only tokens cannot claim tests.
-3. In the application/runner directory, install the package version containing this feature and its browser prerequisites:
+## 1. Create a runner credential
 
-```sh
+1. In the dashboard, choose the project under **PROJECTS**.
+2. In the **PROJECT** panel, expand **Connect a runner for this project**. When the built-in runner is on, it is called **Use a private runner instead**.
+3. Choose **Create 30-day runner credential**.
+
+You should see a line like this, shown only once:
+
+```dotenv
+VISUALGUARD_RUNNER_TOKEN=vg_runner_...
+```
+
+Copy it now. The panel also shows the exact command to start the runner for this project. If you copied the credential somewhere unsafe, choose **Revoke this runner credential** right away and create a new one.
+
+:::note
+A runner credential is not an upload token. Upload tokens cannot claim tests, and runner credentials cannot be used to browse the dashboard.
+:::
+
+## 2. Install VisualGuard and Chromium on the runner
+
+On the runner machine, in your app's folder:
+
+```bash
 npm install --save-dev --save-exact visualguard
 npm install --save-dev playwright
 npx playwright install chromium
 ```
 
-4. Create an ignored `.env.visualguard-runner` file on that computer, using the actual credential:
+You should see Playwright download Chromium. Also install any system packages your operating system needs for browsers, as for ordinary CLI tests. See [Install VisualGuard](/start/install/).
+
+## 3. Store the credential privately
+
+Create `.env.visualguard-runner` with the real credential:
 
 ```dotenv
-VISUALGUARD_RUNNER_TOKEN=YOUR_PROJECT_RUNNER_CREDENTIAL
+VISUALGUARD_RUNNER_TOKEN=vg_runner_YOUR_CREDENTIAL
 ```
 
-Add `.env.visualguard-runner` to `.gitignore`. The runner needs network access to both application URLs and the dashboard. It needs no dashboard database URL or administrator password. If using Gemini, supply `GEMINI_API_KEY` in that private file/environment; for Ollama, start its service and provide the selected model on the runner. Capture can fall back to deterministic analysis on provider failure, as in [the related setup guide](/guides/ai-gemini/).
+Keep it out of Git:
 
-5. Start the foreground runner using the exact command shown by your dashboard. For a local dashboard:
+```bash
+echo ".env.visualguard-runner" >> .gitignore
+```
 
-```sh
+If the profile uses Gemini, put `GEMINI_API_KEY` in this file or in `.env.local`; the runner reads `.env` and `.env.local` too. For Ollama, start the service on the runner and install the model. If AI fails, the comparison can still finish without AI, as described in [Use Gemini](/guides/ai-gemini/).
+
+## 4. Start the runner
+
+Use the command the dashboard showed you. For a local dashboard it looks like this:
+
+```bash
 npx --no-install visualguard dashboard --env-file .env.visualguard-runner \
   runner --project storefront --server http://127.0.0.1:4400
 ```
 
-For a hosted dashboard, replace `--server` with its canonical HTTPS origin. Keep the terminal/process running. Connect separate project-scoped runners/credentials for different projects. Use `--work-dir /absolute/private/runner-evidence` if you need a dedicated evidence directory; the default is `.visualguard/runner`. Install the browser dependencies required by your operating system, as for ordinary CLI captures.
+For a hosted dashboard, use its HTTPS address, such as `--server https://visual.example.com`.
 
-6. When the project shows **Runner connected**, choose **Run test**. The UI shows queued/running/finished status and a **View result** link after upload. A finished execution can contain visual regressions; inspect the result rather than treating completion as approval. The run appears in that project's history.
+You should see:
 
-Only one test is active per project. Captures use Chromium, bounded concurrency and a 15-minute worker timeout. Workers renew a 60-second lease; a lost lease or revoked credential stops the connected worker. A disconnected execution expires with a visible failure instead of silently recapturing. Queued requests expire after five minutes without a claim. The UI's connection indicator reflects a recent heartbeat, so it can briefly remain connected after a worker exits.
+```text
+Connecting runner to http://127.0.0.1:4400, project storefront.
+Runner connected. Waiting for dashboard tests.
+```
 
-Captured evidence remains on the runner if capture/upload/completion is interrupted; use the normal saved-run publish workflow when appropriate. Revoking a runner credential does not revoke an unrelated project's credentials. Use **Revoke this runner credential** while the new credential is shown, or revoke it later under **People & integrations → Upload credentials**. Hosted login mode also stops accepting credentials whose owner is disabled, loses maintainer access, or has credentials invalidated. Runner credentials can upload evidence only for their project; they cannot edit configuration, trigger tests, approve reviews or manage accounts.
+Leave this terminal open. The runner works only while it runs. Stop it with Ctrl+C.
 
-While a dashboard test runs, its project section shows the current stage, route/viewport and a **comparisons completed** bar (for example, 2 of 4 comparisons, 50%). Counts come from completed engine jobs, not a timer or an estimated completion time. Each comparison is one planned route/viewport. Upload and finalization have separate waiting indicators because their duration is not represented by comparison counts. A finished execution links to its actual result; it is not an automatic passing verdict.
+| Option | What it does | Default |
+| --- | --- | --- |
+| `--project <id>` | The project ID. Display names are not accepted here | Required |
+| `--server <url>` | The dashboard address, without a path | Required |
+| `--poll <milliseconds>` | How often to ask for work, from 1000 to 30000 | `3000` |
+| `--work-dir <directory>` | Where captured evidence is written | `.visualguard/runner` |
+| `--once` | Ask once, run a waiting test if there is one, then exit | Off |
 
-Progress is saved in dashboard storage and survives page refreshes. Failed or disconnected executions retain their last reported counts. Upgrade both the dashboard and private runner to a version containing progress reporting; older runners can still execute work but show a generic indeterminate running state. Offline CLI tests are unchanged.
+Run `npx --no-install visualguard dashboard runner --help` to see the options of your installed version.
 
-For a one-shot worker, `dashboard runner --once --project storefront --server URL` polls once, executes an already queued request if present and exits. It does not keep the dashboard connected; the default foreground loop is the normal UI workflow. `--poll 3000` controls polling in milliseconds (1000–30000). Use `dashboard runner --help` for the installed version's options.
+## 5. Run a test
 
-Project configuration and execution/credential state belong in native operational database backups. Portable evidence exports do not replace that backup. Deleting the project removes its saved configuration, active request and runner credentials. New UI/runner commands require a published feature release; upgrading docs or a source checkout alone does not update an older installed npm package.
+1. In the dashboard, wait until the **Visual test** line says **Runner connected**. This can take a few seconds.
+2. Choose **Run test**.
 
-## Verify the setup
+You should see the progress box move from **Waiting for the runner…** to **Starting the browser…**, **Capturing screenshots…** and onward. The runner terminal prints:
 
-Request one test from the UI; confirm the foreground worker captures the saved profile and View result opens that project’s evidence. Stop the worker and verify disconnected/expired work remains visible.
+```text
+Starting dashboard test <request id> (configuration v1).
+Dashboard test finished: http://127.0.0.1:4400/runs/<run id> [<status>]
+```
 
-## Troubleshooting and next steps
+When the box says **Test finished**, choose **View result**. The run appears in the project's **Run history**.
 
-Check the canonical origin, selected project, environment file and installed dashboard/runner versions. [Diagnose dashboard symptoms](/troubleshooting/dashboard/) before creating another workspace. [Continue the dashboard workflow](/dashboard/execution-progress/). Keep long-running dashboard/runner processes open; stop with Ctrl+C when finished.
+## Check the connection
+
+- The **Visual test** line says **Runner connected** while the runner is running.
+- **Run test** produces a run you can open with **View result**.
+- Stop the runner, wait about 30 seconds and refresh. The line should say **Runner offline**, or **Runs on this dashboard** if the built-in runner is on.
+
+The connected status reflects the last check-in within 30 seconds, so it can stay **Runner connected** briefly after the runner stops.
+
+## Manage runner credentials
+
+- Runner credentials last 30 days when created from the panel. Create a new one before the old one expires.
+- They appear in **People & integrations** under **Upload credentials**, named **Runner for** and the project name. Choose **Revoke** there to stop one.
+- Each credential works for one project only. Revoking it does not affect other projects. Use one runner and one credential per project.
+- A runner credential can claim tests, report progress and upload runs for its project. It cannot edit settings, start tests, approve reviews or manage people.
+- In login mode, a credential stops working when its owner is disabled, loses Maintainer access, or has sessions and credentials revoked.
+
+## What happens when something goes wrong
+
+- **Capture fails.** The dashboard shows `Capture or upload failed. Check runner output; any captured evidence remains on the runner.` The runner prints `Dashboard test failed; evidence remains under <work dir>.` You can inspect that evidence, or publish a saved run with an upload token as in [Publish and retry saved evidence](/dashboard/publishing/).
+- **The upload worked, but the dashboard did not confirm it.** The runner retries the confirmation a few times with the same run. If it still fails, it prints `Run uploaded: <link>. Completion could not be acknowledged; retain this result instead of repeating the capture.` Use that link instead of testing again.
+- **The runner loses contact.** It renews a 60-second lease while it works. If the dashboard rejects it, or no renewal succeeds for 45 seconds, it stops the capture. The dashboard marks the test `Runner disconnected or timed out. Start the runner and request a new test.` It never captures again on its own.
+- **Nobody picks up the request.** A request waits 5 minutes for a runner, then fails.
+- **A test runs too long.** Each test stops after 15 minutes.
+
+Only one test can be active per project at a time.
+
+## One-shot runners in CI
+
+`--once` asks for work a single time. If a test is waiting, it runs it and exits; otherwise it exits at once.
+
+```bash
+npx --no-install visualguard dashboard runner --once \
+  --project storefront --server https://visual.example.com
+```
+
+Set `VISUALGUARD_RUNNER_TOKEN` from a CI secret. A one-shot runner does not keep the project connected, so someone must request the test first. For everyday use, keep the normal runner running.
+
+## Backups and upgrades
+
+Saved profiles, test requests and credentials live in the dashboard database. Include them in your native database backups; a portable evidence export does not replace that. See [Storage and backups](/deployment/storage-and-backups/).
+
+Upgrade the dashboard and the runner together. An older runner can still run tests, but shows a plain "running" state without detailed progress. Updating the docs or a source checkout does not upgrade an installed npm package.
+
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| `Set VISUALGUARD_RUNNER_TOKEN to this project's runner credential` | The variable is missing or is an upload token. Use the `vg_runner_...` credential and pass `--env-file .env.visualguard-runner` |
+| `Runner claim request rejected (403); check the runner credential, project and server` | The credential is revoked, expired or for another project, or `--project` is wrong. Create a new credential for this project |
+| `Use an HTTPS dashboard origin, or HTTP on loopback` | Use the dashboard's `https://` address with no path |
+| `Use the project's ID` | `--project` needs the project ID, such as `storefront`, not the display name |
+| The panel stays **Runner offline** | Check the runner terminal for errors, and that `--server` is the same address you open in the browser |
+| `Capture or upload failed...` | Read the runner output. Usually a URL the runner cannot reach, a missing browser, or a missing AI key |
+
+More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
+
+## Next steps
+
+- [Understand execution progress](/dashboard/execution-progress/): read each stage of a running test.
+- [Run tests from the dashboard](/dashboard/run-tests/): the full **Run test** flow and the built-in runner.
+- [Publish and retry saved evidence](/dashboard/publishing/): publish runs from CI instead.

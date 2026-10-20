@@ -1,16 +1,59 @@
 ---
 title: "Testing CLI options"
-description: "Inspect all registered testing commands, arguments, defaults and failure-policy controls."
+description: "Look up every option, default and choice for the VisualGuard testing commands, from zero-config scans to test, report, analyze, fix and merge."
 audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["packages/visualguard/src/cli/program.ts"]
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["packages/visualguard/src/cli/program.ts", "packages/visualguard/src/cli/commands/test.ts", "scripts/docs/generate-reference.mjs"]
 sidebar: {"order": 1}
 ---
 
-Use `npx --no-install` (npm) or `pnpm exec` before these command names when running a local application dependency. [The quickstart](/start/quickstart/) provides a complete setup. These tables are generated from source; check the installed release’s help.
+This page lists every option of the testing commands: the commands that capture, compare, report, analyse and fix screenshots on your own machine or in CI. Use it when you know which command you need and want its exact flags and defaults. For a shorter overview of all commands, see the [command reference](/reference/cli/).
+
+## Before you start
+
+- Install VisualGuard and Playwright in your app. The [quickstart](/start/quickstart/) gives a complete setup.
+- Run commands from your app's root folder, with `npx --no-install` (npm) or `pnpm exec` (pnpm) in front of `visualguard`.
+- The tables are generated from the source code. An older installed release may lack newer options, so also check `npx --no-install visualguard COMMAND --help`.
+
+## How to read this page
+
+Each command below has its own section with three parts:
+
+1. A one-line description of what the command does.
+2. A `--help` line that shows the command's arguments. `<name>` means the argument is required, `[name]` means it is optional, and `...` means you can give several.
+3. A table with every option. **Default** shows the value used when you leave the option out. `not set` means a switch is off, or the value comes from your config file or a built-in default. **Choices** lists the only allowed values.
+
+Command-line options win over environment variables, which win over the config file. See [environment variables](/reference/environment/) and [configuration fields](/reference/configuration/).
+
+## Commands at a glance
+
+| Command | What it is for | Example |
+| --- | --- | --- |
+| `visualguard [urls...]` | Try VisualGuard without a config: scan one site, or compare two. | `visualguard https://example.com https://staging.example.com` |
+| `init` | Write `visualguard.config.ts`, and with `--workflow` a GitHub workflow. | `visualguard init --production https://example.com --staging http://localhost:3000 --ai none` |
+| `doctor` | Check your setup before the first run or after an upgrade. | `visualguard doctor` |
+| `test` | The main command: capture, compare and report. Add a project name or ID to save the run to a dashboard. | `visualguard test --only "/blog/**" --viewport desktop` |
+| `merge` | Combine shard runs into one report and exit code. | `visualguard merge downloaded-artifacts` |
+| `monitor` | Compare production with its own previous capture to catch content or third-party changes. | `visualguard monitor https://example.com` |
+| `report` | Open the HTML report of a saved run. | `visualguard report --run 0042` |
+| `analyze` | Add or redo AI analysis on a saved run without new screenshots. | `visualguard analyze --provider gemini --no-cache` |
+| `accept` | Record intentional changes so later runs accept them. | `visualguard accept /pricing --note "New pricing layout"` |
+| `comment` | Post the result summary on the pull request from CI. | `visualguard comment --dry-run` |
+| `fix` | Propose and check code fixes for regressions. Needs `fix.enabled`. | `visualguard fix /pricing` |
+| `watch` | Re-test routes against your dev server each time you save. | `visualguard watch /pricing --staging http://localhost:3000` |
+| `auth` | Save a logged-in browser session for captures. | `visualguard auth staging --until-url "**/dashboard"` |
+
+`report`, `analyze`, `accept`, `comment` and `fix` work on a saved run. `--run` accepts a run ID, an ID prefix or a run number; without it they use the latest run.
+
+## Related pages
+
+- [Exit codes](/reference/exit-codes/) explain what `--fail-on` changes.
+- [Run artifacts](/reference/artifacts/) list the files each run writes.
+- [Capture and report problems](/troubleshooting/capture/) help when a command fails.
+- [Dashboard CLI options](/reference/cli/dashboard/) cover `visualguard dashboard` and its subcommands.
 
 <!-- generated-reference -->
 

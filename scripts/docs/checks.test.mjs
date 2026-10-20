@@ -6,6 +6,16 @@ import { tmpdir } from 'node:os';
 import { checkLinks } from './check-links.mjs';
 import { remarkDocsLinks } from '../../apps/docs/src/lib/remark-docs-links.mjs';
 import { root, matter } from './shared.mjs';
+import { navigationErrors } from '../../apps/docs/src/data/navigation.mjs';
+
+test('navigation rejects deleted guide destinations, duplicate entries and inaccessible new articles', () => {
+  const groups = [{ label: 'Start', items: [{ slug: 'start' }, { items: [{ slug: 'missing' }, { slug: 'start' }] }] }];
+  assert.deepEqual(navigationErrors(['start', 'new-guide'], groups), [
+    'Missing navigation page: missing',
+    'Duplicate navigation page: start',
+    'Unlisted public page: new-guide',
+  ]);
+});
 
 test('project-path output resolves encoded anchors and detects missing sections and escaped assets', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'vg-docs-links-'));

@@ -1,20 +1,67 @@
 ---
 title: "Architecture and source map"
-description: "Follow the package entry points, capture flow, report UI and dashboard source boundaries."
+description: "See how the repository fits together, then follow the engine entry points, capture flow, report UI and dashboard boundaries file by file."
 audience: "contributor"
 docType: "explanation"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["docs/PACKAGE-ARCHITECTURE.md"]
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["docs/PACKAGE-ARCHITECTURE.md", "pnpm-workspace.yaml", "packages/visualguard/src/dashboard.ts", "apps/platform/server/runtime.ts", "apps/platform/server/test-executions.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/test-runner.ts", "scripts/package-map.mjs"]
 sidebar: {"order": 2}
 ---
 
-This guide maps the current source checkout. Start with the execution diagram and source flows, then use the complete inventory and expandable file connections to trace a particular feature. Source paths are relative to `packages/visualguard/` unless stated otherwise.
+This page explains how the VisualGuard repository is organized and how a comparison flows through the code. Read it before you change behavior, so you know which package owns a feature and which files and tests you will touch.
 
-![Browser capture runs on the worker; evidence can stay local or be published to a separate dashboard and database.](/diagrams/execution.svg)
+## How to use this page
 
-The Mermaid source blocks below preserve the detailed source relationships for contributors. The visual overview above explains the execution boundary.
+The page has two parts:
+
+- **The map (hand-written).** The repository layout, where tests run, the entry points, the main comparison flow, the capture and diff internals, AI and repair, and the report. Read it top to bottom once.
+- **The inventory (generated).** Below [Complete file inventory](#complete-file-inventory), every file in `packages/visualguard` is listed with its role, its dependencies and the files that use it. Use it as a lookup table when you trace one feature; do not read it front to back.
+
+A good first pass:
+
+1. Read [How the repository fits together](#how-the-repository-fits-together) and [Where tests run](#where-tests-run) below.
+2. Read [Where execution starts](#where-execution-starts) and [The main comparison flow](#the-main-comparison-flow).
+3. Follow [A practical reading order](#a-practical-reading-order) through the source files.
+4. Look up each file you open in the inventory to see what calls it and which test covers it.
+
+For the language patterns used in the code (async functions, closures, Maps and Sets, browser versus Node code), read [read the code step by step](/contributing/reading-the-code/). Paths in the sections below are relative to `packages/visualguard/` unless a section says otherwise.
+
+## How the repository fits together
+
+The repository is a pnpm workspace (`pnpm-workspace.yaml` includes `apps/*`, `packages/*` and `examples/*`). Only one package is published to npm: `visualguard`.
+
+| Folder | What it is | Ships to users? |
+| --- | --- | --- |
+| `packages/visualguard/` | The **engine and CLI**: configuration, capture with Playwright, pixel diffing, DOM mapping, AI analysis, the fixer, reporters, the Playwright fixture and the programmatic API. `report-app/` inside it is the React app for the HTML report. | Yes, as the `visualguard` npm package. |
+| `apps/platform/` | The **dashboard**. `server/` is the Node API (storage on SQLite, PostgreSQL or MongoDB, sign-in, projects, reviews, baselines, policies, test execution). `client/` is the React web app. `shared/` holds types used by both. `test/` holds its Vitest suites. | Yes, bundled inside `visualguard`. `packages/visualguard/src/dashboard.ts` re-exports the server, and the build copies the built client into `dist/dashboard-app`. The `@visualguard/platform` workspace package itself is private. |
+| `apps/docs/` | This **documentation website** (Astro and Starlight). | No. It is published to GitHub Pages. See [work on the documentation](/contributing/documentation/). |
+| `action/` | The **GitHub Action** (`action.yml`) that runs VisualGuard in a workflow and posts a pull request comment. | Yes, used from this repository. |
+| `examples/nextjs/` | A **Next.js example app** used by the repair end-to-end test. | No. |
+| `fixtures/site/` | Static **fixture pages** in `production/` and `staging/` versions, used by integration tests, evaluations and the local tutorial. | No. |
+| `evals/` | The **classification evaluation**: `labels.json`, `run.mjs` and metrics. | No. |
+| `scripts/` | **Repository helpers**: the fixture server, pack and dashboard smoke tests, the package map generator, the demo GIF and the docs checks in `scripts/docs/`. | No. |
+| `docs/` | The older repository Markdown guides, kept until this site is live. | No. |
+| `.changeset/`, `.github/workflows/` | Release notes waiting for the next version, and CI, docs, eval and release workflows. | No. |
+
+The dashboard server code lives in `apps/platform/server/`, but the CLI imports parts of it directly. For example, `cli/commands/test.ts` uses `test-binding.ts` to bind a run to a project, and `cli/commands/dashboard.ts` uses `test-runner.ts` for the private runner. So a change in `apps/platform/server/` can change CLI behavior too. Run both test suites after such a change.
+
+## Where tests run
+
+The browser capture can happen in three places. Evidence always ends up on disk first, and is optionally uploaded to the dashboard.
+
+![Browser capture runs where the test executes; evidence can stay local or be published to a separate dashboard and database.](/diagrams/execution.svg)
+
+| Where | Started by | Code path |
+| --- | --- | --- |
+| Your computer or a CI worker | `visualguard test`, the programmatic API, the Playwright fixture or the GitHub Action. | `cli/commands/test.ts` → `core/run.ts`. With a project name, the run is uploaded through `apps/platform/server/test-binding.ts`. |
+| A **private runner** | **Run test** in the dashboard, picked up by `visualguard dashboard runner` on another machine. | `apps/platform/server/test-executions.ts` queues the request. The runner polls, claims it and calls `executeClaimedTest` in `apps/platform/server/test-runner.ts`, which calls `createRun` and uploads the result. |
+| The dashboard host (**built-in runner**) | **Run test** in the dashboard when no private runner is connected. | `test-executions.ts` hands the request to `apps/platform/server/built-in-runner.ts`, which claims it and calls the same `executeClaimedTest`, then imports the run straight into storage. |
+
+A connected private runner always takes priority. The built-in runner is on by default except on Vercel, and is controlled by `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY`. It is in the source checkout and the next release after 3.2.3 only; with the published 3.2.3, **Run test** needs a private runner.
+
+The Mermaid diagrams below show the detailed source relationships for contributors.
 
 ## Where execution starts
 
@@ -28,7 +75,7 @@ There is one CLI entry and several entries for different hosts. They are not int
 | Built diff worker thread                        | [src/diff/worker.ts](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/packages/visualguard/src/diff/worker.ts)           | `dist/diff-worker.js`                                       | Message handler for CPU-bound image comparisons; normally spawned by the diff runner.                           |
 | Opening a generated report                      | [report-app/src/main.tsx](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/packages/visualguard/report-app/src/main.tsx) | `dist/report-app/assets/app.js`, later embedded in run HTML | React rendering in the user's browser, reading embedded manifest data.                                          |
 
-The packaged dashboard also exposes `visualguard/dashboard` (`src/dashboard.ts` → `dist/dashboard.js`) for the standalone dashboard runtime; capture still runs on the private worker.
+The packaged dashboard also exposes `visualguard/dashboard` (`src/dashboard.ts` → `dist/dashboard.js`) for the standalone dashboard runtime. Dashboard-started tests capture on a private runner or, in the source checkout, on the dashboard host itself (see [Where tests run](#where-tests-run)).
 
 [package.json](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/packages/visualguard/package.json) maps npm commands/imports to the built files. [tsup.config.ts](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/packages/visualguard/tsup.config.ts) maps five Node entries to their bundles; [report-app/vite.config.ts](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/packages/visualguard/report-app/vite.config.ts) builds the separate browser app. Shared chunk names in `dist/` are build outputs, not stable public APIs.
 

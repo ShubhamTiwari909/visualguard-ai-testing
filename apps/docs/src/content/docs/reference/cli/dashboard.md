@@ -1,16 +1,62 @@
 ---
 title: "Dashboard CLI options"
-description: "Inspect dashboard startup and every registered project, upload, runner, baseline and policy option."
+description: "Look up every option of visualguard dashboard and its subcommands: startup, runners, projects, import and publish, approved baselines, policies, backups and hosting files."
 audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["packages/visualguard/src/cli/commands/dashboard.ts"]
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["packages/visualguard/src/cli/commands/dashboard.ts", "apps/platform/server/runtime.ts", "apps/platform/server/test-runner.ts", "scripts/docs/generate-reference.mjs"]
 sidebar: {"order": 2}
 ---
 
-Use the same installed release for your server/worker workflow. The tables below reflect source registration. [Dashboard setup](/dashboard/local/) and [publishing](/dashboard/publishing/) explain prerequisites and credential scopes.
+This page lists every option of `visualguard dashboard` and its subcommands. Use it when you start a dashboard, connect a runner, create projects, upload runs, pull approved baselines, check policies, back up evidence or generate hosting files. For a shorter overview of all commands, see the [command reference](/reference/cli/).
+
+## Before you start
+
+- Use the same VisualGuard release on the dashboard server, private runners and test machines.
+- Know which credential each command needs. Publishing needs a project upload token (`VISUALGUARD_UPLOAD_TOKEN`). A private runner needs a separate runner credential (`VISUALGUARD_RUNNER_TOKEN`). See [publishing](/dashboard/publishing/) and [private runners](/dashboard/private-runners/).
+- [Dashboard setup](/dashboard/local/) explains the settings file and storage choices.
+
+## How to read this page
+
+Each command below has a one-line description, a `--help` line with its arguments and a table of options. `<name>` means the argument is required and `[name]` means it is optional. **Default** shows the value used when you leave the option out; `not set` means the option is off or falls back to an environment variable or local storage.
+
+Startup options (`--port`, `--host`, `--data-dir`, `--file`, `--env-file`) belong to `visualguard dashboard` itself. When you combine them with a subcommand, put them **before** the subcommand:
+
+```bash
+npx --no-install visualguard dashboard --env-file .env.visualguard project create my-app --name "My Application"
+```
+
+Commands with a `--server` option talk to a running dashboard over HTTP. Without `--server`, most of them read and write the local database that the current settings select.
+
+## Commands at a glance
+
+| Command | What it is for | Example |
+| --- | --- | --- |
+| `dashboard` | Start the dashboard server. It listens on `127.0.0.1:4400` by default. | `visualguard dashboard --env-file .env.visualguard --port 4400` |
+| `dashboard runner` | Keep a private runner open that captures tests requested with **Run test**. Needs `VISUALGUARD_RUNNER_TOKEN`. | `visualguard dashboard runner --project my-app --server https://YOUR_DASHBOARD_HOST` |
+| `dashboard project create` | Create a project with a stable ID. Does nothing if it already exists. | `visualguard dashboard project create my-app --name "My Application"` |
+| `dashboard import` | Import a saved run folder into the local database. | `visualguard dashboard import .visualguard/runs/RUN_ID --project my-app` |
+| `dashboard publish` | Upload a saved run folder to a dashboard server. Needs `VISUALGUARD_UPLOAD_TOKEN`. | `visualguard dashboard publish .visualguard/runs/RUN_ID --project my-app --server https://YOUR_DASHBOARD_HOST` |
+| `dashboard baseline pull` | Download an approved baseline set into a new, read-only folder. | `visualguard dashboard baseline pull main --project my-app --out .visualguard/approved-v1 --version 1` |
+| `dashboard policy assess` | Print the policy result for one exact commit. `--enforce` makes it exit `2` unless satisfied. | `visualguard dashboard policy assess --project my-app --revision SHA --enforce` |
+| `dashboard policy reconcile` | Recheck and publish GitHub checks. Pass exactly one of `--pr` or `--all`. | `visualguard dashboard policy reconcile --project my-app --pr 42` |
+| `dashboard export` | Write a compressed, portable evidence file without account secrets. The file must not exist yet. | `visualguard dashboard export team-evidence.vgbackup.gz` |
+| `dashboard restore` | Merge a portable evidence file without overwriting existing evidence. | `visualguard dashboard restore team-evidence.vgbackup.gz` |
+| `dashboard assets` | Copy the prebuilt dashboard UI for static or serverless hosting. | `visualguard dashboard assets --out public` |
+| `dashboard init` | Generate a Cloud Run or Vercel deployment folder. | `visualguard dashboard init --target cloud-run --out visualguard-dashboard` |
+
+:::note
+In the source checkout and the next release after 3.2.3, the dashboard can also run **Run test** itself, using the signed-in user's login, when no private runner is connected. `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` control this. Published 3.2.3 always needs a connected `dashboard runner`. See [environment variables](/reference/environment/).
+:::
+
+## Related pages
+
+- [Dashboard problems](/troubleshooting/dashboard/) cover connection, token and runner errors.
+- [Approved baselines](/dashboard/approved-baselines/) explain the review and promotion flow behind `baseline pull`.
+- [Visual policies](/dashboard/visual-policies/) explain what `policy assess` checks.
+- [Storage and backups](/deployment/storage-and-backups/) explain when `export` is not enough.
 
 <!-- generated-reference -->
 

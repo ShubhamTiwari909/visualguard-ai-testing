@@ -1,58 +1,186 @@
 ---
 title: "Run visual tests in CI"
-description: "Install reproducibly, await the tested environments and preserve evidence when comparisons fail."
+description: "Choose a CI setup, run VisualGuard on every pull request and keep the screenshots when a comparison fails."
 audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["README.md"]
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["README.md", "packages/visualguard/src/setup/workflow-template.ts", "packages/visualguard/src/cli/commands/comment.ts", "packages/visualguard/src/cli/commands/monitor.ts", "action/action.yml"]
 sidebar: {"order": 1}
 ---
 
+This page shows how to run VisualGuard in continuous integration (CI), so every pull request is compared automatically. It covers the three ways to set it up, the steps every CI job needs, and the files a job should keep.
+
 ## Before you start
 
-Complete [the first-comparison guide](/start/quickstart/) and keep both tested application environments running. Run commands from your application root, where `visualguard.config.ts` lives. Examples use the locally installed package; `npx --no-install` prevents accidentally running another release. Property fragments below belong inside the existing `defineConfig({ ... })` object. Shell examples use POSIX syntax; use the documented Windows alternative or WSL when shell features are needed.
+- Finish [the quickstart](/start/quickstart/) so `visualguard.config.ts` works on your computer.
+- Commit `visualguard.config.ts`, your lockfile, and VisualGuard and Playwright as dev dependencies.
+- Make sure the CI machine can reach both URLs in `baseURL` (the reference and the candidate). If they only run on your laptop, the job must start them first.
+- Read [statuses](/concepts/results/) and [exit codes](/reference/exit-codes/) so you know what makes a job fail.
 
-The essential CI commands are:
+## Choose a setup
+
+| Setup | Best for | What you get |
+| --- | --- | --- |
+| `visualguard init --workflow` | A first GitHub workflow with no extra decisions | A ready `.github/workflows/visualguard.yml` that tests, uploads the report, comments on the PR and then fails on regressions. |
+| [The GitHub Action](/ci/github-actions/) | GitHub workflows you want to keep short | One step that installs the browser, tests, uploads artifacts, comments and fails the job. Every input is an option. |
+| Plain commands | Any CI system (GitLab, CircleCI, Jenkins, Buildkite) | The two commands below, plus your CI's own artifact upload. |
+
+Every setup runs the same two commands:
 
 ```bash
 npx playwright install --with-deps chromium
 npx --no-install visualguard test --ci --junit visualguard-junit.xml
 ```
 
-Upload the entire run directory and JUnit file even when the test exits nonzero. `init` can generate a GitHub workflow with report artifacts and a sticky PR comment. GitHub runs can append a job summary; `visualguard comment --link <artifact-url>` updates the PR comment and needs a token with PR write permission. Fork PR tokens may lack that permission.
+`--ci` turns off prompts, colours and spinners. `--junit` writes a JUnit XML file that most CI systems can display as test results. `npx --no-install` makes sure the job runs the version in your lockfile, not a newer download.
 
-For preview deployments, pass their URL through `VISUALGUARD_STAGING_URL` or `--staging`. The webhook integration (`report.webhook` / `VISUALGUARD_WEBHOOK_URL`) POSTs a JSON run summary with a ready-to-use `text` field. `report.publicURL` provides report links; it does not host the report.
+## 1. Generate a GitHub workflow
 
-### GitHub Action
-
-The repository's [composite Action](/ci/github-actions/) installs the selected browser, runs the test, uploads artifacts, optionally comments and propagates failures. Select a release tag or commit containing the desired behavior.
-
-Inputs include `working-directory`, `browser`, `output-directory`, `artifact-name`, `junit-path`, `args`, `fail-on`, `staging-url`, `gemini-api-key`, `comment`, `github-token` and `exec`. Browser/output inputs override configuration and match installation/artifact paths. Use distinct artifact names in matrix jobs. The Action exposes `report-url` and `outcome`; configure an AI provider as well as supplying credentials when AI is desired.
-
-### Sharding
-
-Use the same unique execution group, configuration, source revision and job scope on every shard:
+`init` can write the workflow for you. It detects your package manager (npm, pnpm, Yarn or Bun) and uses its install and run commands.
 
 ```bash
-npx --no-install visualguard test --ci --shard 1/2 --run-group ci-execution-123
-npx --no-install visualguard test --ci --shard 2/2 --run-group ci-execution-123
-# Download/copy the shard run directories into a common folder first.
-npx --no-install visualguard merge downloaded-shards --ci --junit merged-junit.xml
+npx --no-install visualguard init --workflow
 ```
 
-GitHub Actions derives the group from the run ID/attempt automatically; other systems can set `VISUALGUARD_RUN_GROUP`. Jobs are sorted and distributed round-robin. Merge rejects mixed groups/settings/revisions, duplicate shards/jobs, legacy provenance and incomplete coverage. `--allow-partial` explicitly produces a diagnostic report with an incomplete banner and a failing exit code.
+You should see `Created .github/workflows/visualguard.yml`. If you run `init` without `--workflow`, it asks "Add a GitHub Actions workflow (PR comment, report artifact)?" instead. With `--yes`, an existing workflow file is kept unless you also pass `--force`.
 
-## Required sequence
+The generated workflow does this, in order:
 
-1. Check out the code whose UI is actually deployed, install its committed lockfile and select Node 22.12+.
-2. Install the Playwright browser/system dependencies used by the config.
-3. Start application servers or wait for deployed reference/candidate URLs to be ready. A port opening alone is not proof the expected build is served.
-4. Supply actual environment URLs and optional scoped upload/AI credentials through CI secret storage.
-5. Run with `--ci`, preserve the original test exit outcome, and upload the entire run directory plus JUnit file even on failure.
-6. If publishing to a dashboard, include the true captured commit/branch/PR metadata. Inspect its stored result independently from the upload outcome.
+1. Runs on `pull_request` with `contents: read` and `pull-requests: write` permissions.
+2. Checks out the code, sets up Node 22 and installs dependencies from the lockfile.
+3. Caches and installs Playwright Chromium.
+4. Runs `visualguard test --ci --junit visualguard-junit.xml` with `continue-on-error: true`, so later steps still run.
+5. Uploads `.visualguard/runs/` as the `visualguard-report` artifact, even when the test failed.
+6. Runs `visualguard comment --link <artifact URL>` to post or update one PR comment.
+7. Fails the job with `exit 1` if the test step failed.
 
-## Verify and troubleshoot
+If you chose Gemini during `init`, the test step also reads `GEMINI_API_KEY` from your repository secrets. A commented `VISUALGUARD_STAGING_URL` line shows where to plug in a [preview URL](/ci/preview-deployments/).
 
-Run an intentional regression in a trial PR. The job should preserve screenshots and return the selected failure policy. If it passes unexpectedly, inspect route coverage, masks, active URL/commit and `--fail-on`. [Use the complete GitHub example](/ci/github-actions/) before adding sharding.
+:::note
+The generated workflow uploads only `.visualguard/runs/`. Add `visualguard-junit.xml` to the upload `path` if you want the JUnit file inside the artifact too. The GitHub Action uploads both.
+:::
+
+## 2. Follow the required job order
+
+Whatever CI you use, keep this order. It makes sure a failed comparison still leaves evidence behind.
+
+1. **Check out the code you are testing.** Install from the committed lockfile and use Node 22.12 or newer.
+2. **Install the browser.** Run `npx playwright install --with-deps <browser>` for the browser your config uses.
+3. **Make the environments ready.** Start your servers, or wait until the deployed reference and candidate URLs serve the right build. An open port alone does not prove the right build is live.
+4. **Pass secrets through CI secret storage.** This includes URLs that are not public, an upload token and AI keys. Never commit them.
+5. **Run the test and remember its result.** Do not stop the job yet.
+6. **Upload the whole run folder and the JUnit file**, even when the test failed. The run folder is `.visualguard/runs/` by default (the `output.dir` setting).
+7. **Fail the job last**, using the test's saved result.
+
+## 3. Read the results
+
+A CI run can produce several outputs. Each one is separate, so one can fail while another works.
+
+| Output | Where it appears | Needs |
+| --- | --- | --- |
+| Exit code | The job passes or fails. `0` means the run meets `--fail-on`; `1` means it does not; `2` is a usage error; `3` is an environment problem. | Nothing |
+| Job summary | The GitHub run's summary page, written when `GITHUB_STEP_SUMMARY` is set (`report.githubSummary`, on by default). | Nothing; no token |
+| Run artifact | Your CI's artifact storage. Contains `index.html`, screenshots, diffs and `manifest.json`. | An upload step |
+| JUnit XML | Your CI's test view. Failing jobs follow `--fail-on`. | `--junit <path>` or `report.junit` |
+| PR comment | One sticky comment on the pull request, updated on each run. | `visualguard comment` and a token with `pull-requests: write` |
+| Webhook | A JSON summary POSTed to Slack, n8n, Zapier or similar. It includes a ready-to-post `text` field. | `report.webhook` or `VISUALGUARD_WEBHOOK_URL` |
+
+`--fail-on` decides which statuses fail the run:
+
+| Value | Fails on | Default |
+| --- | --- | --- |
+| `regression` | Regressions and errors | Yes |
+| `review` | Reviews, regressions and errors | No |
+| `any` | Currently the same statuses as `review` | No |
+
+`report.publicURL` adds a link to the report in comments and summaries. It does not host the report for you; you must publish the files there yourself.
+
+## 4. Post a pull request comment
+
+`visualguard comment` posts one comment on the pull request and updates the same comment on later runs. It finds its own comment by a hidden marker, so a PR never collects duplicates. Run it after the upload step, so the comment can link to the artifact.
+
+```bash
+npx --no-install visualguard comment --link "$ARTIFACT_URL"
+```
+
+| Option | What it does | Default |
+| --- | --- | --- |
+| `--link <url>` | Link to the full report, such as the artifact URL | `report.publicURL` |
+| `--run <id>` | Which run to describe: an ID, ID prefix or run number | The latest run |
+| `--pr <number>` | Pull request number | Read from the GitHub event |
+| `--repo <owner/name>` | Repository | `GITHUB_REPOSITORY` |
+| `--dry-run` | Print the comment instead of posting it | Off |
+| `-c, --config <path>` | Config file path | Auto-detected |
+
+The command reads its token from `GITHUB_TOKEN` (or `GH_TOKEN`). The token needs `pull-requests: write`. For events without a PR, such as `push` or `deployment_status`, it looks up the open PR that contains the commit. If there is none, it prints "No pull request for this run; skipping the comment" and exits normally.
+
+:::caution
+Pull requests from forks get a read-only `GITHUB_TOKEN` and no repository secrets. Turn the comment off for fork PRs, or post it from a separate trusted `workflow_run` workflow. Do not switch to `pull_request_target` just to run untrusted PR code with secrets.
+:::
+
+## 5. Add a scheduled monitor (optional)
+
+`visualguard monitor` compares a live site with its own previous capture, for example every night. It catches CMS edits and broken third-party scripts that no pull request caused. It can write its own workflow:
+
+```bash
+npx --no-install visualguard monitor --workflow "0 3 * * *"
+```
+
+You should see `Wrote .github/workflows/visualguard-monitor.yml`. The workflow runs on that cron schedule and on manual dispatch. It stores previous captures in the Actions cache and uploads the report as `visualguard-monitor-report`. Add the `VISUALGUARD_WEBHOOK_URL` secret to get a message when a run ends. See [monitoring](/guides/monitoring/) for details.
+
+## Example: a GitLab job
+
+This shows the same order on a CI system without the Action. It assumes the reference and candidate URLs are already deployed and stored as CI variables.
+
+```yaml
+visualguard:
+  image: node:22
+  script:
+    - npm ci
+    - npx playwright install --with-deps chromium
+    - npx --no-install visualguard test --ci --junit visualguard-junit.xml
+  variables:
+    VISUALGUARD_PRODUCTION_URL: $REFERENCE_URL
+    VISUALGUARD_STAGING_URL: $CANDIDATE_URL
+  artifacts:
+    when: always
+    paths:
+      - .visualguard/runs/
+      - visualguard-junit.xml
+    reports:
+      junit: visualguard-junit.xml
+```
+
+`VISUALGUARD_PRODUCTION_URL` and `VISUALGUARD_STAGING_URL` override `baseURL.production` and `baseURL.staging`. If the test fails, the job fails, and `when: always` still uploads the artifacts.
+
+## Verify your CI setup
+
+1. Open a trial pull request that changes something visible on purpose, such as a button color.
+2. The job should fail with the default `--fail-on regression`.
+3. Download the artifact. Open `index.html` and confirm it shows the change.
+4. Check the PR comment and the job summary.
+5. Revert the change. The next run should pass.
+
+If the trial passes when it should fail, check which routes ran, your masks, the URLs the job really used and `--fail-on`.
+
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| `Executable doesn't exist` or a missing browser | Add `npx playwright install --with-deps <browser>` before the test, for the same browser as your config. |
+| The artifact is empty | Upload `.visualguard/runs/` (or your `output.dir`), and run the upload step even when the test failed. |
+| `GITHUB_TOKEN is not set` | Pass `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` to the comment step. |
+| Comment fails with HTTP 403 or 404 | Grant `pull-requests: write`. Fork PRs have a read-only token; skip the comment there. |
+| The job passes but should fail | Check `--fail-on`, the route list and that the candidate URL really serves the new build. |
+| Baseline-mode runs fail only in CI | Baselines saved on your laptop use different fonts and OS rendering. Save baselines on the same CI image, or see [stable captures](/guides/stable-captures/). |
+
+See [CI troubleshooting](/troubleshooting/ci/) for more.
+
+## Next steps
+
+- [Use the GitHub Action](/ci/github-actions/): every input and output in one table.
+- [Test preview deployments](/ci/preview-deployments/): point the candidate at each PR's preview URL.
+- [Shard large suites](/ci/sharding/): split the work across several jobs and merge it.
+- [Deliver GitHub checks](/ci/github-checks/): add a dashboard policy check to each PR.

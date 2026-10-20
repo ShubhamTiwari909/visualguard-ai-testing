@@ -88,6 +88,24 @@ try {
   const second = JSON.parse(await readFile(join(runs, secondDirectory, 'manifest.json'), 'utf8'));
   assert.equal(second.jobs[0].status, 'pass');
   console.log(`Quickstart passed: npm 3.2.3, doctor, comparison list, ${first.jobs[0].status} → pass, and HTML report.`);
+  const apiArticle = await readFile(join(root, 'apps/docs/src/content/docs/guides/programmatic-api.md'), 'utf8');
+  const apiScript = apiArticle.match(/```js\n([\s\S]*?)\n```/)[1];
+  await writeFile(join(cwd, 'visual-check.mjs'), apiScript);
+  await command(process.execPath, ['visual-check.mjs']);
+  const reporterArticle = await readFile(join(root, 'apps/docs/src/content/docs/guides/reporters.md'), 'utf8');
+  const reporterScript = reporterArticle.match(/```js\n([\s\S]*?)\n```/)[1];
+  await writeFile(join(cwd, 'visual-reporter.mjs'), reporterScript);
+  await writeFile(join(cwd, 'visual-check.mjs'), "import { summaryReporter } from './visual-reporter.mjs';\n" + apiScript.replace('reporters: [terminalReporter()]', 'reporters: [terminalReporter(), summaryReporter]'));
+  const beforeReporter = new Set(await readdir(runs));
+  await command(process.execPath, ['visual-check.mjs']);
+  const reporterRun = (await readdir(runs)).find(name => !beforeReporter.has(name));
+  assert.ok(reporterRun, 'The custom reporter comparison must create a run');
+  const summary = JSON.parse(await readFile(join(runs, reporterRun, 'team-summary.json'), 'utf8'));
+  const reporterManifest = JSON.parse(await readFile(join(runs, reporterRun, 'manifest.json'), 'utf8'));
+  assert.equal(summary.id, reporterManifest.id);
+  assert.deepEqual(summary.summary, reporterManifest.summary);
+  assert.equal(summary.incomplete, false);
+  console.log('API/reporter guides passed: exact public API script, custom awaited reporter and manifest summary.');
   if (process.argv.includes('--dashboard')) {
     let origin = await startDashboard();
     assert.equal((await (await fetch(new URL('/api/health', origin))).json()).status, 'ok');

@@ -1,34 +1,60 @@
 ---
 title: "Install VisualGuard"
-description: "Install the pinned package and browser, initialize your application and inspect the generated configuration."
+description: "Install the pinned package and a browser in your app, create the config with init, and check that everything is ready."
 audience: "developer"
 docType: "how-to"
 channel: "published"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/init.ts"]
-sidebar: {"order": 3}
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/init.ts", "packages/visualguard/src/cli/commands/doctor.ts"]
+sidebar: {"order": 4}
 ---
 
-Start in the application you want to test. You do not need to clone VisualGuard. For a complete runnable local demo, use [the quickstart](/start/quickstart/).
+This page adds VisualGuard to the app you want to test and creates its config file. You do not need to clone the VisualGuard repository. If you want a complete runnable example first, follow [the quickstart](/start/quickstart/) instead; it includes a small demo app.
 
-## Install the package and browser
+## Before you start
 
-Use Node.js **22.12+** and a working application with two reachable environments: production/reference and staging/candidate. The runner can test React, Next.js, Vue, static sites or any other browser-accessible application; it does not need to run on the same host as that application.
+- Meet the [requirements](/start/requirements/): Node.js 22.12 or newer and permission to install a browser.
+- Have an app with two versions you can open in a browser. Usually this is production (the **reference**, what the page should look like) and staging or a local dev server (the **candidate**, the version you are checking). See the [glossary](/concepts/glossary/).
+- Run every command from your app's root folder, where `package.json` lives.
 
-From your application directory:
+VisualGuard tests any page a browser can open: React, Next.js, Vue, static HTML and more. It does not need to run on the same machine as your app.
 
-```sh
+## 1. Install the package and a browser
+
+Pin an exact version so every teammate and CI job runs the same release. Then install Playwright and its Chromium browser.
+
+```bash
 cd /path/to/your-app
 npm install --save-dev --save-exact visualguard@3.2.3
 npm install --save-dev playwright
 npx playwright install chromium
-npx --no-install visualguard --version
 ```
 
-If already installed, check the version and continue. Keep existing Playwright setup if it already satisfies the package's peer requirement. On Linux/CI, install Playwright's required system dependencies too. Keep VisualGuard's optional dependencies enabled: PostgreSQL, MongoDB and OIDC drivers are packaged that way, so do not use `--omit=optional` for a dashboard installation.
+You should see npm add `visualguard` and `playwright` to `devDependencies`, and Playwright download Chromium.
 
-Add these entries to `.gitignore` if absent:
+Notes:
+
+- If your project already has Playwright 1.45 or newer, keep it. Skip the second command.
+- On Linux and in CI, use `npx playwright install --with-deps chromium` to add system libraries.
+- Keep optional dependencies on. Do not use `--omit=optional`; the dashboard's PostgreSQL, MongoDB and sign-in drivers depend on them.
+
+### Using pnpm instead
+
+If your app uses pnpm, keep pnpm and its lockfile. Do not create a second lockfile.
+
+| Step | npm | pnpm |
+| --- | --- | --- |
+| Add VisualGuard | `npm install --save-dev --save-exact visualguard@3.2.3` | `pnpm add -D -E visualguard@3.2.3` |
+| Add Playwright | `npm install --save-dev playwright` | `pnpm add -D playwright` |
+| Install the browser | `npx playwright install chromium` | `pnpm exec playwright install chromium` |
+| Run any VisualGuard command | `npx --no-install visualguard ...` | `pnpm exec visualguard ...` |
+
+`npx --no-install` makes sure you run the copy installed in your app, not a different download.
+
+## 2. Ignore local files in Git
+
+VisualGuard writes results and secrets to files that should not be committed. Add these lines to `.gitignore` if they are missing:
 
 ```text
 .visualguard/
@@ -37,38 +63,67 @@ Add these entries to `.gitignore` if absent:
 .env.dashboard-admin
 ```
 
-## Initialize your project
+`init` adds `.visualguard/` and `.env.local` for you. The other two are for the dashboard.
 
-Start your application normally, for example with `npm run dev`. From that application's root, run the setup wizard:
+## 3. Start your app
 
-```sh
+Start the version you want to check, as you normally would. For example:
+
+```bash
+npm run dev
+```
+
+Leave it running. Note its URL, such as `http://127.0.0.1:3000`. Your reference version, such as `https://your-app.example.com`, must also be reachable.
+
+## 4. Create the config with init
+
+`init` asks a few questions and writes `visualguard.config.ts`. Run it in a second terminal at your app's root:
+
+```bash
 npx --no-install visualguard init
 ```
 
-This is the installed-package form of `npx --no-install visualguard init`. The wizard asks for:
+The wizard asks for:
 
-1. Your production/reference URL and staging/candidate URL, such as `https://your-app.example.com` and `http://127.0.0.1:3000`.
-2. Routes to test and viewport presets.
-3. An AI provider; choose **None** for the first visual-only run.
-4. Whether to add a GitHub Actions workflow; you can decline for local setup.
+| Question | What to enter |
+| --- | --- |
+| Production URL | Your reference, such as `https://your-app.example.com` |
+| Staging / preview URL | Your candidate, such as `http://127.0.0.1:3000` |
+| Routes to test | Pick the pages to compare. Start with one or two. |
+| Viewports | Pick the screen sizes, such as desktop and mobile. |
+| AI provider | Choose **None** for your first run. You can add AI later. |
+| GitHub Actions workflow | Decline for now if you only test locally. |
 
-For setup without prompts, use real reachable application URLs:
+You should see messages such as `Created visualguard.config.ts` and `Added "visual": "visualguard test" to package.json scripts`, then a final hint to run `npx visualguard test`.
 
-```sh
-npx --no-install visualguard init --yes \
-  --production https://your-app.example.com \
-  --staging http://127.0.0.1:3000 --ai none
+### Set up without questions
+
+For scripts or CI, pass the answers as options instead. Use real, reachable URLs:
+
+```bash
+npx --no-install visualguard init --yes --production https://your-app.example.com --staging http://127.0.0.1:3000 --ai none
 ```
 
-Choose the wizard or the noninteractive command, not both. Noninteractive setup selects discovered routes and the desktop/mobile viewport presets; review the generated file before running tests. These URLs describe the application under test, not the dashboard. For a fully local comparison, use two application servers on different ports.
+Use either the wizard or this command, not both. With `--yes`, init picks the routes it discovers and the desktop and mobile viewports. Review the file before your first test.
 
-## Understand the generated configuration
+| Option | What it does | Default |
+| --- | --- | --- |
+| `-y`, `--yes` | Accept defaults without asking questions | Off (asks questions) |
+| `--production URL` | Reference URL | Asked by the wizard |
+| `--staging URL` | Candidate URL | Asked by the wizard |
+| `--ai gemini\|ollama\|none` | AI provider written to the config | Asked by the wizard |
+| `--workflow` | Also write `.github/workflows/visualguard.yml` | Off |
+| `--force` | Overwrite an existing config file | Off (keeps the existing file) |
 
-On a fresh project, `init` creates **`visualguard.config.ts`**. Keep that file for the commands in this guide; do not rename it to `.json`. VisualGuard loads the TypeScript config directly, including in JavaScript applications, without a separate TypeScript compilation step.
+:::note
+These URLs describe your app, not the dashboard. For a fully local comparison, run two app servers on different ports.
+:::
 
-The wizard can also add a `visual` script to `package.json` if absent, update `.gitignore`, save a supplied Gemini key in `.env.local`, and create the GitHub workflow if selected. It does not create a database, dashboard server or dashboard project. Keep existing files when already configured; `--force` deliberately overwrites the discovered config.
+## 5. Read the generated config
 
-A minimal config using the same format is:
+On a fresh project, `init` creates `visualguard.config.ts`. Keep that name and format; do not rename it to `.json`. VisualGuard loads the TypeScript file directly, even in a JavaScript app, with no build step.
+
+A minimal config in the same format looks like this:
 
 ```ts
 import { defineConfig } from "visualguard";
@@ -86,16 +141,76 @@ export default defineConfig({
 });
 ```
 
-The generated file can have additional discovered routes, viewports, comments and stabilization settings. Edit its existing values rather than replacing it blindly with this smaller example. `init --ai none` sets the provider during setup; later tests use `--provider gemini` or `--provider ollama` when enabling AI.
+| Field | What it means |
+| --- | --- |
+| `baseURL.production` | The reference: what the page should look like. |
+| `baseURL.staging` | The candidate: the version you are checking. |
+| `routes` | The paths to test on both sites, such as `"/"` or `"/pricing"`. |
+| `viewports` | Named screen sizes. Each route is captured once per viewport. |
+| `ai.provider` | `"none"`, `"gemini"` or `"ollama"`. `"none"` uses only the built-in analysis. |
 
-## pnpm alternative
+Your generated file may have more routes, viewports, comments and stabilisation settings. Edit its values rather than replacing it with this smaller example. See [configure your project](/guides/configuration/) and [configuration fields](/reference/configuration/).
 
-If your application uses pnpm, keep that package manager and lockfile. Use `pnpm add -D -E visualguard@3.2.3`, `pnpm add -D playwright`, `pnpm exec playwright install chromium`, and `pnpm exec visualguard init`. Replace later `npx --no-install visualguard` invocations with `pnpm exec visualguard`.
+### What init does and does not do
 
-## Check the installed release
+| init can… | init does not… |
+| --- | --- |
+| Write `visualguard.config.ts` | Create a database |
+| Add a `visual` script to `package.json` if missing | Start a dashboard server |
+| Add `.visualguard/` and `.env.local` to `.gitignore` | Create a dashboard project |
+| Save a Gemini key you type into `.env.local` | Run a test |
+| Write a GitHub Actions workflow if you choose it | Overwrite an existing config, unless you pass `--force` |
 
-The published **3.2.3** artifact currently prints **3.2.2** from `visualguard --version`. This is a packaged version-label mismatch, not evidence that installation silently downgraded. Run `npm ls visualguard --depth=0` (or `pnpm list visualguard --depth=0`) to verify the installed package is 3.2.3. Keep the package version and reported CLI version in bug reports. See [release notes](/releases/).
+To turn on AI later, change `ai.provider` in the config, or pass `--provider gemini` or `--provider ollama` to `visualguard test`.
 
-## Verification
+## Check the installed version
 
-Run `npx --no-install visualguard --version` and confirm the intended installed version. Check that `visualguard.config.ts` is at the application root and uses your reachable URLs. [Run the full quickstart](/start/quickstart/) or [configure your own routes](/guides/configuration/).
+Run both commands:
+
+```bash
+npx --no-install visualguard --version
+npm ls visualguard --depth=0
+```
+
+You should see `visualguard@3.2.3` from `npm ls`.
+
+:::caution[Known version label]
+The published **3.2.3** package prints **3.2.2** from `visualguard --version`. This is a wrong label inside the package, not a downgrade. Trust `npm ls visualguard --depth=0` (or `pnpm list visualguard --depth=0`). Include both numbers when you report a bug. See [release availability](/releases/).
+:::
+
+## Verify the setup
+
+Run doctor. It checks Node.js, Playwright, the browser, your config and both URLs:
+
+```bash
+npx --no-install visualguard doctor
+```
+
+You should see a check mark on each line and `Ready.` at the end. Also confirm that:
+
+- `visualguard.config.ts` is at your app's root.
+- `npx --no-install visualguard test --list` prints your two URLs, your routes and a line such as `2 jobs (1 route × 2 viewports)`.
+
+## Example: a Vue app with a local dev server
+
+A team's Vue app runs in production at `https://shop.example.com`. A developer starts `npm run dev` on `http://127.0.0.1:5173`. They install the package, run `init --yes --production https://shop.example.com --staging http://127.0.0.1:5173 --ai none`, and trim the discovered routes to `/`, `/cart` and `/checkout`. Doctor prints `Ready.`, so they run `npx --no-install visualguard test`.
+
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| `--version` prints 3.2.2 | Expected for 3.2.3. Confirm with `npm ls visualguard --depth=0`. |
+| `npx --no-install` says the command is not found | You are not in your app's root, or the install failed. `cd` to the folder with `package.json` and reinstall. |
+| Doctor says the browser is missing | Run `npx playwright install chromium` in the same folder. |
+| Doctor cannot reach a URL | Start the app, check the port and the host spelling (`127.0.0.1` vs `localhost`). |
+| init kept your old config | It does not overwrite by default. Edit the file, or pass `--force` on purpose. |
+| A config error mentions a field | Fix the named field. See [configuration fields](/reference/configuration/). |
+
+More fixes: [installation problems](/troubleshooting/installation/).
+
+## Next steps
+
+- [Run your first visual test](/start/quickstart/): capture, compare and open the report.
+- [Configure your project](/guides/configuration/): add routes, viewports and settings.
+- [Make captures repeatable](/guides/stable-captures/): reduce noise before you rely on results.
+- [Find what you need](/start/common-tasks/): every other task in one table.

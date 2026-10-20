@@ -5,7 +5,7 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/CHANGELOG.md", "docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 1}
 ---
@@ -21,8 +21,8 @@ The npm registry reports **visualguard 3.2.3**. Its tarball was downloaded and u
 | 3.1.0 | Standalone dashboard, evidence publishing, projects/names and job-level collaborative review. |
 | 3.2.0 | Google linking/admission, administration, approved baseline sets, visual policy and operational readiness; read the migration before upgrading existing users. |
 | 3.2.3 artifact | Contains per-project saved test profiles, private-runner execution and progress assets. Fresh CLI/report/SQLite commands were smoke-tested; artifact source was inspected for runner/progress. Its embedded CLI version label is stale. |
-| Source main at `69ccdf1` | Documentation source-review baseline for this implementation. Subsequent changes require their own review/release note. |
-| Source after 3.2.3 (unreleased) | **Run test** captures on the dashboard host with the signed-in user's authorization, no runner credential; Cloud Run scaffolds install Chromium. 3.2.3 still requires a connected private runner. Covered by focused unit tests; no live Chromium end-to-end run recorded yet. |
+| Source at `e2c69cc` (manifest 3.2.4) | Reviewed source baseline for these guides. The manifest bump is not proof that 3.2.4 is published; check the registry before installing. |
+| Source after 3.2.3 (unreleased) | **Run test** captures on the dashboard host with the signed-in user's authorization, no runner credential; Cloud Run scaffolds install Chromium. 3.2.3 still requires a connected private runner. Validated with four focused tests and a real local Chromium/SQLite run: saved profile, no private runner token, live progress, stored screenshot evidence and history after restart. Cloud deployment still needs its own validation. |
 | Engineering plans | Future scope only. Named journeys/managed capture are not implied by a roadmap entry. |
 
 ## Generated hosting scaffold caveat

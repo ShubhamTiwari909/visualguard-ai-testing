@@ -2,12 +2,13 @@
   "checkedOn": "2026-10-20",
   "publishedVersion": "3.2.3",
   "reportedCliVersion": "3.2.2",
-  "sourceRevision": "69ccdf157326ef52788948cb8fc479c121ec0f0b",
+  "sourceRevision": "e2c69cc3daa88f8506dc1c079aaaef7b0bc0a6a5",
   "validation": {
-    "quickstart": "smoke-tested: macOS, Node 24.13.0, Chromium",
+    "quickstart": "smoke-tested: macOS, Node 24.13.0, Chromium; exact quickstart, public API and custom reporter examples",
     "sqlite": "smoke-tested: project, capture, restart",
     "privateRunner": "existing real Chromium smoke passed",
     "externalProviders": "source-reviewed; no live cloud/Google/PostgreSQL/MongoDB deployment",
-    "builtInRunner": "source only (unreleased after 3.2.3); focused unit tests, no live Chromium end-to-end run"
-  }
+    "builtInRunner": "source only (unreleased after 3.2.3); 4 focused tests and real Chromium/SQLite capture, live progress and restart smoke passed"
+  },
+  "sourceVersion": "3.2.4"
 }

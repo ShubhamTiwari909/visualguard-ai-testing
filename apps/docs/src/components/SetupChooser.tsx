@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 const choices = [
   { id: 'local', label: 'Run a visual test', detail: 'Compare your app and inspect the evidence. No account, database or AI key required.', path: 'start/quickstart/' },
-  { id: 'team', label: 'Set up a team dashboard', detail: 'Keep run history, share reviews and connect your own private runner.', path: 'dashboard/local/' },
+  { id: 'team', label: 'Set up a team dashboard', detail: 'Keep run history, review changes together and choose where dashboard tests run.', path: 'dashboard/local/' },
   { id: 'source', label: 'Develop from source', detail: 'Clone VisualGuard and run the included production and staging demo.', path: 'contributing/local-setup/' },
 ];
 

@@ -1,16 +1,84 @@
 ---
 title: "Configuration fields"
-description: "Look up every configuration input field, default, allowed value and schema constraint."
+description: "Look up every visualguard.config.ts field with its type, allowed values, default and limits, plus a short guide to each section of the config."
 audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/config/resolve.ts"]
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/config/resolve.ts", "packages/visualguard/src/config/load.ts", "scripts/docs/generate-reference.mjs"]
 sidebar: {"order": 2}
 ---
 
-Create `visualguard.config.ts` at the application root with `defineConfig` from `visualguard`. Keep property fragments inside that object. [Complete configuration examples](/guides/configuration/) and [environment precedence](/reference/environment/) explain how to apply these fields. Tables are generated from source and checked for drift.
+This page lists every field you can set in `visualguard.config.ts`, with its type, allowed values, default and limits. Use it to check a single field quickly. For explanations and complete examples, start with the [configuration guide](/guides/configuration/).
+
+## Before you start
+
+- Create the config at your app's root folder, or let `npx --no-install visualguard init` write one for you.
+- VisualGuard finds `visualguard.config.ts`, `.mts`, `.js`, `.mjs` and `.cjs` automatically. Any other file name needs `--config PATH`.
+- Wrap the object in `defineConfig` from `visualguard` to get type checking and editor hints.
+
+## A small example
+
+```ts
+import { defineConfig } from "visualguard";
+
+export default defineConfig({
+  baseURL: {
+    production: "https://example.com",
+    staging: "http://localhost:3000",
+  },
+  routes: ["/", "/pricing", "/blog"],
+  viewports: {
+    desktop: { width: 1440, height: 900 },
+    mobile: { width: 390, height: 844, isMobile: true, hasTouch: true },
+  },
+  stabilize: { mask: ["[data-testid=live-price]"] },
+  ai: { provider: "gemini" },
+});
+```
+
+Every field you leave out uses its default from the table below.
+
+## How to read this page
+
+The table further down is generated from the source schema, so it always matches the code.
+
+- **Field** uses dots for nesting. `ai.maxTokens` means `ai: { maxTokens: ... }`.
+- `[name]` stands for a name you choose, such as a viewport name or a header name. `[]` means an item inside a list.
+- `(variant 2)` means the field accepts a second shape. For example, `routes` can be a list of paths, or an object with `discover` settings.
+- **Direct default** is the value used when you leave the field out. `not set` means there is no direct default; the parent object's default or runtime logic still applies.
+- **Constraints** list limits such as `minimum` and `maximum`. `9007199254740991` just means "no practical upper limit".
+
+When the same setting comes from several places, VisualGuard uses this order: command-line options, then environment variables, then the config file, then defaults. See [environment variables](/reference/environment/).
+
+## Config sections at a glance
+
+| Section | What it controls | Learn more |
+| --- | --- | --- |
+| `mode`, `baseline` | Compare production with staging, or compare staging with saved baselines. | [Comparison modes](/concepts/comparison-modes/), [local baselines](/guides/local-baselines/) |
+| `baseURL`, `routes` | Which sites and pages to capture. | [Routes](/guides/routes/) |
+| `viewports`, `browser` | Screen sizes, browser, locale, time zone, theme and timeouts. | [Browsers and viewports](/guides/browsers-and-viewports/) |
+| `environments` | Headers and saved login sessions for each side. | [Application login](/guides/application-auth/) |
+| `stabilize`, `screenshot` | How pages are made steady before capture, and what is masked or hidden. | [Stable captures](/guides/stable-captures/) |
+| `diff` | How pixel differences are measured and which ones are ignored as noise. | [Diffs and noise](/guides/diff-and-noise/) |
+| `ai` | AI provider, model, budgets and deadline. | [AI policy and budgets](/guides/ai-policy-and-budgets/) |
+| `report`, `output` | HTML report, JUnit, webhook, output folder and run retention. | [Reports](/guides/reports/), [run artifacts](/reference/artifacts/) |
+| `fix` | Automatic fixes and how they are verified. | [Automatic fixes](/guides/fixes/) |
+| `checks` | Accessibility and performance checks. | [Accessibility and performance](/guides/accessibility-and-performance/) |
+| `monitor` | Where monitor snapshots live and when they update. | [Monitoring](/guides/monitoring/) |
+| `concurrency`, `reporters`, `hooks` | Parallel captures, custom reporters and code that runs before navigation or capture. | [Reporters](/guides/reporters/) |
+
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| `Config file not found: PATH` | Check the path given to `--config`. |
+| A value seems to be ignored | An environment variable or CLI option may override it. Check `VISUALGUARD_*` variables. |
+| `VISUALGUARD_BROWSER must be chromium, firefox or webkit.` | Fix or unset that environment variable. |
+| Hooks or reporters do not work from a JSON config | Functions only work in a JavaScript or TypeScript config. |
+
+More help: [installation problems](/troubleshooting/installation/).
 
 <!-- generated-reference -->
 

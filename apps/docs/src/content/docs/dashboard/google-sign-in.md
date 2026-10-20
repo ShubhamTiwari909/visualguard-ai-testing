@@ -5,7 +5,7 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/LOCAL-SETUP.md", "apps/platform/.env.example"]
 sidebar: {"order": 9}
 ---

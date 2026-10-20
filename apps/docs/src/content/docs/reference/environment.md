@@ -1,99 +1,160 @@
 ---
 title: "Environment variables"
-description: "Identify variable scope, defaults, secret handling and the file loader used by each VisualGuard process."
+description: "Every environment variable VisualGuard reads, grouped by purpose, with the process that reads it, its default, whether it is secret and what it does."
 audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["packages/visualguard/src/config/load.ts", "packages/visualguard/src/config/resolve.ts", "apps/platform/server/config.ts", "apps/platform/server/auth.ts", "apps/platform/.env.example"]
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["packages/visualguard/src/config/load.ts", "packages/visualguard/src/config/resolve.ts", "packages/visualguard/src/ai/factory.ts", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/runs.ts", "packages/visualguard/src/cli/shared.ts", "packages/visualguard/src/reporters/github-comment.ts", "apps/platform/server/config.ts", "apps/platform/server/runtime.ts", "apps/platform/server/auth.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/.env.example"]
 sidebar: {"order": 3}
 ---
 
+Environment variables let you change VisualGuard settings without editing the config file, and they are where secrets such as API keys and tokens belong. This page lists every variable VisualGuard reads, which process reads it, its default, whether it is secret, and what it does.
+
+## Before you start
+
+- Know which process you are configuring. A test run, the dashboard server and a private runner are separate processes. Each one only sees its own environment.
+- Command-line options win over environment variables. Environment variables win over the config file. The config file wins over built-in defaults.
+
 ## Which process loads which file?
 
-| Invocation | Environment-loading rule |
+| Process | How it gets its settings |
 | --- | --- |
-| `visualguard test` and capture configuration | Loads application-root `.env`, then `.env.local`. Later file values win, but preexisting process/CI values are never overwritten. CLI overrides win over variables, then config, then defaults. |
-| Installed `visualguard dashboard` and subcommands | Use an explicit `--env-file FILE` where your guide specifies it; do not assume all subcommands automatically read application `.env.local`. Startup options go before a subcommand. |
-| Source `pnpm platform:dev` / source operator tools | Source the intended file into that same shell/process explicitly; the source server does not automatically load `apps/platform/.env.local`. |
-| Hosted dashboard | Configure the provider's server-side environment/secrets and restart/redeploy. A file on your laptop does not configure the service. |
-| Private runner | Pass its private environment file before `runner` or use the CI secret environment. Keep application/AI credentials on the capture worker. |
+| `visualguard test` and other capture commands | Load `.env`, then `.env.local`, from your app's root folder. `.env.local` wins over `.env`. Values already set in the shell or CI are never overwritten. |
+| `visualguard dashboard` and its subcommands | Pass `--env-file FILE` before the subcommand, for example `visualguard dashboard --env-file .env.visualguard publish ...`. Do not assume a subcommand reads your app's `.env.local`. Values already in the process win over the file. |
+| Source dashboard (`pnpm platform:dev`) and source operator tools | Load the file into the same shell yourself, for example with `set -a; . apps/platform/.env.local; set +a`. The source server does not read `apps/platform/.env.local` on its own. |
+| Hosted dashboard (Vercel, Cloud Run) | Set variables and secrets in the host's settings, then redeploy or restart. A file on your laptop does not configure the hosted service. |
+| Private runner | Load its own private settings before `visualguard dashboard runner`, or use CI secrets. Keep app and AI credentials on the machine that captures. |
 
-Real passwords, API keys, cookies, token files and DB URIs are private. Do not put them in a static website build or public frontend-prefixed variables. The default column describes selection behavior; actual CLI/config overrides are explained in each guide.
+The **Secret** column marks values you must keep private. Never put secrets in a static website build or in variables with a public frontend prefix. After you change a value, restart the process that reads it.
 
 ## Capture and analysis
 
-| Variable | Process | Default / fallback | Sensitive | Purpose |
+Read by `visualguard test`, `monitor`, `watch`, `analyze`, `fix` and the zero-config scan, on your computer or a CI machine.
+
+| Variable | Read by | Default | Secret | Purpose |
 | --- | --- | --- | --- | --- |
-| `VISUALGUARD_BUILT_IN_RUNNER` | Dashboard | on, except on Vercel | No | Source and releases after 3.2.3. `on`/`off`. Lets the dashboard run **Run test** itself with the signed-in user's authorization; off requires a private runner. Needs Chromium on the host. |
-| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | Dashboard | 1 | No | Maximum simultaneous built-in tests across projects. |
-| `VISUALGUARD_PRODUCTION_URL` | Runner | config production URL | No | Overrides the reference base URL. |
-| `VISUALGUARD_STAGING_URL` | Runner | config staging URL | No | Overrides the candidate base URL; use the actual ready preview. |
-| `VISUALGUARD_BROWSER` | Runner | config; chromium default | No | chromium, firefox or webkit; browser binaries must be installed. |
-| `VISUALGUARD_OUTPUT_DIR` | Runner | config; .visualguard default | No | Local evidence output directory; use the same value for reports and artifact uploads. |
-| `VISUALGUARD_AI_PROVIDER` | Runner | config; none default | No | gemini, ollama or none; explicit CLI --provider wins. |
-| `GEMINI_API_KEY` | Runner | unset | Yes | Gemini API key; takes precedence over GOOGLE_API_KEY. |
-| `GOOGLE_API_KEY` | Runner | unset | Yes | Fallback Gemini credential, unrelated to dashboard OAuth. |
-| `OLLAMA_HOST` | Runner | http://127.0.0.1:11434 | No | Reachable local vision-model service; install/select a compatible model separately. |
-| `VISUALGUARD_GEMINI_BASE_URL` | Runner | provider endpoint | No | Provider endpoint override; use only a trusted compatible endpoint and verify evidence routing. |
-| `VISUALGUARD_WEBHOOK_URL` | Runner | config webhook or unset | Treat as private | Summary receiver; does not host reports. |
-| `VISUALGUARD_RUN_GROUP` | Runner/shards | GitHub run identity when available | No | Unique execution group shared by all shards of one run. |
-| `VISUALGUARD_UPDATE_BASELINES` | Playwright fixture | unset | No | Explicit snapshot update control; do not enable as a blanket CI fix. |
-| `VISUALGUARD_DEBUG` | Runner | unset | No | Additional capture diagnostics; inspect output before sharing. |
+| `VISUALGUARD_PRODUCTION_URL` | Capture commands | `baseURL.production` from config | No | Overrides the production (reference) base URL. `--production` wins. |
+| `VISUALGUARD_STAGING_URL` | Capture commands | `baseURL.staging` from config | No | Overrides the staging (candidate) base URL, for example a pull request preview. `--staging` wins. |
+| `VISUALGUARD_BROWSER` | Capture commands | `browser.name` from config, which defaults to `chromium` | No | `chromium`, `firefox` or `webkit`. The browser must be installed. Any other value fails with `VISUALGUARD_BROWSER must be chromium, firefox or webkit.` |
+| `VISUALGUARD_OUTPUT_DIR` | Capture, report and fix commands | `output.dir` from config, which defaults to `.visualguard` | No | Folder for run files. Use the same value for `report` and for CI artifact uploads. |
+| `VISUALGUARD_AI_PROVIDER` | Capture commands | `ai.provider` from config, which defaults to `none` | No | `gemini`, `ollama` or `none`. `--provider` wins. |
+| `GEMINI_API_KEY` | Capture, `analyze`, `fix` | Not set | Yes | Gemini API key. Without it, Gemini analysis is skipped and heuristics are used. |
+| `GOOGLE_API_KEY` | Capture, `analyze`, `fix` | Not set | Yes | Fallback Gemini key, used only when `GEMINI_API_KEY` is not set. Unrelated to dashboard Google sign-in. |
+| `VISUALGUARD_GEMINI_BASE_URL` | Capture, `analyze`, `fix` | Gemini's own endpoint | No | Sends Gemini requests to another compatible endpoint. Use only an endpoint you trust, because it receives your screenshots. |
+| `OLLAMA_HOST` | Capture, `analyze`, `fix` | `http://127.0.0.1:11434` | No | Address of your Ollama server. Install a model that can read images separately. |
+| `VISUALGUARD_WEBHOOK_URL` | `test`, `monitor` | `report.webhook` from config | Treat as secret | Receives a run summary, for example in Slack. It does not host the report. |
+| `VISUALGUARD_RUN_GROUP` | `test --shard` | `GITHUB_RUN_ID-GITHUB_RUN_ATTEMPT` in GitHub Actions; otherwise not set | No | One shared name for all shards of one execution. Required for shards outside GitHub Actions. `--run-group` wins. |
+| `VISUALGUARD_UPDATE_BASELINES` | Playwright fixture | Not set | No | Any non-empty value saves new baselines from `visualguard/playwright` tests. Do not set it in CI to hide failures. |
+| `VISUALGUARD_DEBUG` | All CLI commands | Not set | No | Prints the full stack trace for unexpected errors. Check the output for private data before you share it. |
 
-## Dashboard process and storage
+## Dashboard server and storage
 
-| Variable | Process | Default / fallback | Sensitive | Purpose |
+Read by `visualguard dashboard`, the hosted dashboard, and dashboard subcommands that use the local database.
+
+| Variable | Read by | Default | Secret | Purpose |
 | --- | --- | --- | --- | --- |
-| `VISUALGUARD_DATABASE_URL` | Dashboard/host tools | DATABASE_URL fallback | Yes | PostgreSQL or MongoDB URI. An explicit empty value selects SQLite instead of an unrelated DATABASE_URL. |
-| `DATABASE_URL` | Dashboard fallback | unset | Yes | Generic fallback only when the VisualGuard-specific setting is absent; avoid inheriting an application database accidentally. |
-| `VISUALGUARD_PLATFORM_DATA_DIR` | Dashboard/host tools | .visualguard/platform under calling project | No | Absolute directory recommended for repeatable source/operator setup; not a remote object bucket. |
-| `VISUALGUARD_SQLITE_FILE` | Dashboard/host tools | metadata.sqlite inside data directory | No | Explicit local SQLite path; dashboard --file requires an existing file and no external DB URL. |
-| `VISUALGUARD_PLATFORM_PORT` | Dashboard | PORT or 4400 | No | Listener port when no explicit --port is supplied. |
-| `PORT` | Dashboard fallback | 4400 | No | Host-provided listener port; Cloud Run scaffold uses its container port. |
-| `VISUALGUARD_HOST` | Dashboard | loopback, or 0.0.0.0 for hosted/public URL | No | Public binding requires login mode and appropriate origin settings. |
-| `VISUALGUARD_AUTH_MODE` | Dashboard | local, or login when hosted/public URL | No | Set local for a trusted loopback trial; login for shared access. |
-| `VISUALGUARD_PUBLIC_URL` | Dashboard | local runtime URL when appropriate | No | Exact canonical HTTPS origin for shared hosting; no path/query. Local trial must use the exact loopback origin. |
-| `VISUALGUARD_USER_ADMISSION` | Dashboard | invite for fresh hosted team setup | No | invite or legacy; upgraded existing-user installations must explicitly choose where required. |
-| `VISUALGUARD_ADMIN_EMAIL` | Dashboard | unset | Private identity | Initial administrator email/provider-bootstrap match as implemented; not a publication token. |
-| `VISUALGUARD_ADMIN_PASSWORD` | Dashboard | unset | Yes | Initial password bootstrap (12–256 characters). Changing it does not overwrite a persisted account. |
+| `VISUALGUARD_DATABASE_URL` | Dashboard and local subcommands | `DATABASE_URL`, then local SQLite | Yes | PostgreSQL (`postgresql://`, `postgres://`) or MongoDB (`mongodb://`, `mongodb+srv://`) URL. Set it to an empty value to force SQLite even when `DATABASE_URL` exists. |
+| `DATABASE_URL` | Dashboard and local subcommands | Not set | Yes | Generic fallback, used only when `VISUALGUARD_DATABASE_URL` is absent. Avoid picking up another app's database by accident. |
+| `VISUALGUARD_PLATFORM_DATA_DIR` | Dashboard and local subcommands | The folder of `VISUALGUARD_SQLITE_FILE` if set; otherwise `.visualguard/platform` under the starting folder | No | Local data folder. Use an absolute path for repeatable setups. `--data-dir` sets it too. It is not a cloud bucket. |
+| `VISUALGUARD_SQLITE_FILE` | Dashboard and local subcommands | `metadata.sqlite` in the data folder | No | Exact SQLite file. `dashboard --file` needs an existing file and no external database URL. |
+| `INIT_CWD` | Dashboard | Set by npm and pnpm scripts | No | The folder the package manager was started from. Used as the base for the default data folder. |
+| `VISUALGUARD_PLATFORM_PORT` | Dashboard | `PORT`, then `4400` | No | Listening port when `--port` is not given. |
+| `PORT` | Dashboard | `4400` | No | Port provided by the host. Cloud Run sets it; the generated Cloud Run image uses `8080`. |
+| `VISUALGUARD_HOST` | Dashboard | `127.0.0.1`; `0.0.0.0` on Cloud Run or when `VISUALGUARD_PUBLIC_URL` is set | No | Listening address. Listening on a public address requires login mode. |
+| `VISUALGUARD_AUTH_MODE` | Dashboard | `local`; `login` when `VISUALGUARD_PUBLIC_URL` is set, or on Vercel or Cloud Run | No | `local` for a trusted trial on your own computer, `login` for shared access. |
+| `VISUALGUARD_PUBLIC_URL` | Dashboard | Not set; a local dashboard uses its own `http://HOST:PORT` | No | The exact public origin, with no path or query, for example `https://visualguard.example.com`. Hosted login requires it. |
+| `VISUALGUARD_USER_ADMISSION` | Dashboard | `invite` for a new installation; the stored choice afterwards | No | `invite` (new users need an invitation) or `legacy`. Upgrades with existing users and no stored choice must set it, or start-up stops. |
+| `VISUALGUARD_ADMIN_EMAIL` | Dashboard | Not set | Private | Email of the first administrator. Also lets a matching verified Google login become the first administrator when no password is set. |
+| `VISUALGUARD_ADMIN_PASSWORD` | Dashboard | Not set | Yes | Password for the first administrator, 12 to 256 characters. Changing it later does not change an existing account. |
 
-## Google and GitHub server integration
+### Run test on the dashboard host
 
-| Variable | Process | Default / fallback | Sensitive | Purpose |
+:::note[Availability]
+These two variables exist in the source checkout and the next release after 3.2.3 only. In published 3.2.3, **Run test** always needs a connected private runner.
+:::
+
+| Variable | Read by | Default | Secret | Purpose |
 | --- | --- | --- | --- | --- |
-| `VISUALGUARD_OIDC_ISSUER` | Dashboard | unset | No | https://accounts.google.com for Google; issuer/client ID/secret must be supplied together. |
-| `VISUALGUARD_OIDC_CLIENT_ID` | Dashboard | unset | No | Google Web OAuth client, with exact canonical /api/auth/callback registered. |
-| `VISUALGUARD_OIDC_CLIENT_SECRET` | Dashboard | unset | Yes | Server-side OAuth client secret; never expose through frontend prefixes. |
-| `VISUALGUARD_OIDC_ADMIN_SUBJECTS` | Dashboard | unset | Private identity | Comma-separated provider subjects for supported initial bootstrap; not an ongoing role-management command. |
-| `VISUALGUARD_GITHUB_TOKEN` | Dashboard | unset | Yes | Supported server-side Checks write / PR read credential; deployment owns expiry and renewal. |
-| `VISUALGUARD_GITHUB_REPOSITORIES` | Dashboard | unset | No | Internal immutable project-key to owner/repository mappings, separated by commas. |
-| `VISUALGUARD_GITHUB_WEBHOOK_SECRET` | Dashboard | unset | Yes | Secret for verifying original signed Pull requests webhook bytes. |
+| `VISUALGUARD_BUILT_IN_RUNNER` | Dashboard | On, except on Vercel | No | `on` lets the dashboard capture **Run test** itself, using the signed-in user's login, when no private runner is connected. `off`, `0`, `false` or `no` turns it off, so a private runner is required. The host needs Chromium (the generated Cloud Run image includes it). |
+| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | Dashboard | `1` | No | Most built-in tests that can run at the same time across all projects. Extra requests see `The dashboard is running another test; try again shortly`. |
 
-## Publishing and private workers
+## Google sign-in and GitHub checks
 
-| Variable | Process | Default / fallback | Sensitive | Purpose |
+Read by the dashboard server only. Keep them server-side.
+
+| Variable | Read by | Default | Secret | Purpose |
 | --- | --- | --- | --- | --- |
-| `VISUALGUARD_DASHBOARD_URL` | Capture/publish worker | explicit --dashboard/--server or unset | No | Canonical reachable dashboard origin. Setting this does not start a dashboard process. |
-| `VISUALGUARD_UPLOAD_TOKEN` | Capture/publish worker | unset | Yes | Project-scoped upload credential; no account administration or queue-claim authority. |
-| `VISUALGUARD_RUNNER_TOKEN` | Private runner | unset | Yes | Separate project-scoped expiring runner credential, not an upload-only token. |
+| `VISUALGUARD_OIDC_ISSUER` | Dashboard | Not set | No | `https://accounts.google.com` for Google. Set issuer, client ID and client secret together. |
+| `VISUALGUARD_OIDC_CLIENT_ID` | Dashboard | Not set | No | Google web OAuth client ID. Register `PUBLIC_URL/api/auth/callback` as its callback. |
+| `VISUALGUARD_OIDC_CLIENT_SECRET` | Dashboard | Not set | Yes | Google OAuth client secret. Never expose it to the browser. |
+| `VISUALGUARD_OIDC_ADMIN_SUBJECTS` | Dashboard | Not set | Private | Comma-separated Google account IDs (subjects) allowed to become the first administrator. Not a way to manage roles later. |
+| `VISUALGUARD_GITHUB_TOKEN` | Dashboard | Not set | Yes | Token with Checks write and Pull requests read access, used to publish GitHub checks. Your deployment renews it. |
+| `VISUALGUARD_GITHUB_REPOSITORIES` | Dashboard | Not set | No | Comma-separated `projectId=owner/repo` pairs, for example `storefront=your-org/your-repo`. Use internal project IDs. |
+| `VISUALGUARD_GITHUB_WEBHOOK_SECRET` | Dashboard | Not set | Yes | Secret that verifies signed GitHub pull request webhooks. |
 
-## CI integration and host context
+## Publishing and private runners
 
-| Variable | Process | Default / fallback | Sensitive | Purpose |
+Read by test machines and runners that talk to a dashboard.
+
+| Variable | Read by | Default | Secret | Purpose |
 | --- | --- | --- | --- | --- |
-| `CI` | CLI | CI-provider environment | No | Noninteractive environment hint; use explicit --ci for predictable automation. |
-| `GITHUB_TOKEN` | Comment command | unset | Yes | PR comment authorization; distinct from the dashboard server Check Runs token. |
-| `GITHUB_REPOSITORY` | CLI/CI | unset | No | owner/repository identity for comments and CI metadata. |
-| `GITHUB_SHA` | CLI/CI | unset | No | CI revision hint; do not assume a temporary merge SHA is the actually deployed PR head. |
-| `GITHUB_EVENT_PATH` | CLI/CI | unset | No | GitHub event metadata file supplied by Actions. |
-| `GITHUB_RUN_NUMBER` | CLI/CI | unset | No | CI run label; not a source revision. |
-| `GITHUB_STEP_SUMMARY` | CLI/CI | unset | No | Summary output file supplied by Actions. |
-| `GITHUB_API_URL` | Comment integration | GitHub public API | No | API base for the supported GitHub environment. |
-| `VERCEL` | Dashboard host | unset | No | Host context enabling hosted-mode defaults; use persistent external DB. |
-| `K_SERVICE` | Dashboard host | unset | No | Cloud Run service context enabling hosted-mode defaults; use persistent external DB. |
+| `VISUALGUARD_DASHBOARD_URL` | `test PROJECT`, `dashboard project create`, `baseline pull`, `policy` commands | Not set; `--dashboard` or `--server` wins | No | Dashboard origin to use when no flag is given. Setting it does not start a dashboard. |
+| `VISUALGUARD_UPLOAD_TOKEN` | `test PROJECT --dashboard`, `dashboard publish`, `baseline pull`, `policy` commands | Not set | Yes | Project upload token. It can publish runs but cannot manage accounts or claim tests. Not needed for a loopback dashboard in local mode. |
+| `VISUALGUARD_RUNNER_TOKEN` | `dashboard runner` | Not set | Yes | Project runner credential. Separate from the upload token; an upload token does not work here. |
 
-## Verify changes
+## CI and hosting context
 
-Restart the process that owns the setting, run health/doctor as appropriate and inspect actual selected behavior. Unset stale exported values if the intended file is being ignored. Use [dashboard setup](/dashboard/local/), [AI setup](/guides/ai-gemini/) or [private runners](/dashboard/private-runners/) for complete file and command sequences.
+These are usually set by your CI system or host. You rarely set them yourself.
+
+| Variable | Read by | Default | Secret | Purpose |
+| --- | --- | --- | --- | --- |
+| `CI` | CLI | Set by most CI systems | No | Turns off prompts and colours. Values `false` and `0` count as not CI. Use `--ci` for predictable output. |
+| `GITHUB_TOKEN` | `comment` | Not set | Yes | Authorizes the pull request comment. Different from `VISUALGUARD_GITHUB_TOKEN`. |
+| `GH_TOKEN` | `comment` | Not set | Yes | Fallback when `GITHUB_TOKEN` is not set. |
+| `GITHUB_REPOSITORY` | `comment` | Set by GitHub Actions | No | `owner/repo` for the comment. `--repo` wins. |
+| `GITHUB_EVENT_PATH` | `comment` | Set by GitHub Actions | No | Event file used to find the pull request number. `--pr` wins. |
+| `GITHUB_SHA` | `comment` | Set by GitHub Actions | No | Commit shown in the comment. It can be a temporary merge commit, not the pull request head. |
+| `GITHUB_API_URL` | `comment` | `https://api.github.com` | No | GitHub API address, for GitHub Enterprise. |
+| `GITHUB_STEP_SUMMARY` | `test` | Set by GitHub Actions | No | File that receives a Markdown job summary when `report.githubSummary` is on. |
+| `GITHUB_RUN_ID`, `GITHUB_RUN_ATTEMPT` | `test --shard` | Set by GitHub Actions | No | Build the default run group for shards. |
+| `GITHUB_RUN_NUMBER` | Capture commands | Set by GitHub Actions | No | Used as the run number in the run folder name. It is a CI counter, not a commit. |
+| `CI_PIPELINE_IID` | Capture commands | Set by GitLab CI | No | Run number fallback when `GITHUB_RUN_NUMBER` is not set. |
+| `VERCEL` | Dashboard | Set by Vercel | No | Switches on hosted defaults: login mode, a required external database, and no built-in runner. |
+| `K_SERVICE` | Dashboard | Set by Cloud Run | No | Switches on hosted defaults: login mode, listening on `0.0.0.0` and a required external database. |
+
+## Example: a CI job with a preview URL
+
+```bash
+export VISUALGUARD_STAGING_URL="https://pr-42.preview.example.com"
+export GEMINI_API_KEY="..."   # from CI secrets
+npx --no-install visualguard test --ci --junit reports/visualguard.xml
+```
+
+You should see the run compare production with the preview URL, with AI explanations for changed pages.
+
+## Verify your settings
+
+1. Restart the process that reads the variable.
+2. For capture settings, run `npx --no-install visualguard doctor` and `npx --no-install visualguard test --list`. You should see the URLs, browser and AI provider you expect.
+3. For the dashboard, open `/api/health` and check the projects and sign-in mode in the UI.
+4. If a value seems ignored, look for an older exported value in your shell with `env | grep VISUALGUARD` (do not paste the output anywhere, it may contain secrets) and unset it.
+
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| A `.env.local` value is ignored | The shell or CI already sets that variable, and existing values win. Unset it. |
+| The dashboard ignores `.env.local` | The dashboard does not read it. Use `--env-file`. |
+| `VISUALGUARD_AI_PROVIDER must be gemini, ollama or none` | Fix or unset the variable. |
+| `Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data` | Set an external database URL. |
+| `Hosted login requires VISUALGUARD_PUBLIC_URL` | Set the exact public origin. |
+
+More help: [dashboard problems](/troubleshooting/dashboard/).
+
+## Next steps
+
+- [Set up the local dashboard](/dashboard/local/) with a settings file.
+- [Set up Gemini](/guides/ai-gemini/) and keep the key out of your repository.
+- [Run private runners](/dashboard/private-runners/) with their own credential.

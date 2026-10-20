@@ -1,42 +1,82 @@
 ---
 title: "Monitor a site over time"
-description: "Preserve monitor references between scheduled runs and understand reset and update policy."
+description: "Create rolling monitoring references, choose an update policy and schedule checks without losing their history."
 audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["README.md"]
-sidebar: {"order": 15}
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["packages/visualguard/src/cli/commands/monitor.ts", "packages/visualguard/src/setup/workflow-template.ts"]
+sidebar: {"order": 17}
 ---
+
+Monitoring compares a live site with its previous saved appearance. Use it to spot production changes such as CMS edits or broken third-party content. It does not require a second deployment. Monitoring and [watching local source edits](/guides/watch/) are separate workflows.
 
 ## Before you start
 
-Complete [the first-comparison guide](/start/quickstart/) and keep both tested application environments running. Run commands from your application root, where `visualguard.config.ts` lives. Examples use the locally installed package; `npx --no-install` prevents accidentally running another release. Property fragments below belong inside the existing `defineConfig({ ... })` object. Shell examples use POSIX syntax; use the documented Windows alternative or WSL when shell features are needed.
+[Install VisualGuard and Chromium](/start/install/). Choose a URL reachable by the machine or CI job that will capture it. The commands below use the candidate page from the [local quickstart](/start/quickstart/); keep its server running, or replace the address with your real production origin.
 
-```bash
-# Compare your dev server with production as source files change.
-npx --no-install visualguard watch --staging http://localhost:3000
+## 1. Create the first monitoring reference
 
-# Compare production with its previous capture.
-npx --no-install visualguard monitor https://example.com
-
-# Generate a scheduled GitHub workflow; this writes a workflow file.
-npx --no-install visualguard monitor --workflow "0 */6 * * *"
+```sh
+npx --no-install visualguard monitor http://127.0.0.1:4101 --no-ai
 ```
 
-Watch mode re-tests routes connected to changed files through page imports; untraceable/shared changes re-test the full scope. It uses `fix.verify.server.url` or the staging override for the local site.
+The first run saves snapshots under the configured `monitor.dir`, normally `.visualguard/monitor/HOST/`. Inspect that initial appearance before relying on it. First-reference creation does not certify that the current site is correct.
 
-Monitor saves its first reference under `.visualguard/monitor/<host>/`. The default `monitor.update: "unless-regression"` retains references for regressed pages until repaired or explicitly reset with `--reset`; `"always"` rolls every page forward. Persist the monitor directory between CI runs. Webhooks can deliver summaries to Slack, n8n or another receiver.
+## 2. Run again and inspect the change
 
-## Verify the setup
+Change the demo button color, restart its server and run the same monitor command. Open the report using the same config/output settings:
 
-Persist the monitor directory, run twice and inspect which reference each run used. Review `--reset` before replacing references; the generated workflow still needs an actual CI schedule and network access.
+```sh
+npx --no-install visualguard monitor http://127.0.0.1:4101 --no-ai
+npx --no-install visualguard report
+```
+
+Read the status and findings. Under the default `monitor.update: 'unless-regression'`, regressed pages retain their old reference until fixed or explicitly reset. Other pages can roll forward. This is an automated observation policy, not a human-approved baseline registry.
+
+## 3. Choose reference updates deliberately
+
+Merge this fragment into an existing config:
+
+```ts
+monitor: {
+  dir: '.visualguard/monitor',
+  update: 'unless-regression',
+},
+```
+
+`update: 'always'` rolls every page forward. Use `--reset` only after reviewing the current appearance, because it explicitly replaces monitoring snapshots:
+
+```sh
+npx --no-install visualguard monitor http://127.0.0.1:4101 --reset --no-ai
+```
+
+For references that change only after deliberate approval, use [local baselines](/guides/local-baselines/) or [approved team baselines](/dashboard/approved-baselines/).
+
+## 4. Schedule actual captures
+
+The following creates `.github/workflows/visualguard-monitor.yml` and exits; it does not start a scheduler on your computer:
+
+```sh
+npx --no-install visualguard monitor https://YOUR_REAL_SITE --workflow '0 3 * * *'
+```
+
+Replace the URL with a real address before running. Review the generated workflow, package-manager/dependency commands, browser installation and schedule, then commit it to your repository's normal default-branch workflow path. GitHub cron uses UTC. A scheduled cloud worker cannot reach a laptop's localhost unless you explicitly provide that network path.
+
+Persist `monitor.dir` between CI runs using your trusted cache/storage process, and preserve the evidence/report directory after each run. A fresh ephemeral runner without prior snapshots starts over instead of comparing with yesterday. Keep unrelated sites/projects from sharing the same writable snapshot directory accidentally.
+
+## Check the setup
+
+Confirm the first run saves references, a second run compares against them and a known regression retains the intended old reference. Restart or recreate your worker, restore the monitor directory, and verify it still uses prior captures. Check CI artifacts and any configured webhook independently from capture success.
 
 ## Troubleshooting
 
-If a step fails, check the installed version and exact working directory first. Run `npx --no-install visualguard doctor --config visualguard.config.ts` for capture prerequisites. [Find the matching symptom](/troubleshooting/). Do not interpret a failed/review verdict as an installation failure.
+| Problem | Fix |
+| --- | --- |
+| Every run behaves like a first run | Persist and restore the actual monitor directory before capture. |
+| Change disappears from the next result | Review the rolling update policy; use controlled baselines for approval workflows. |
+| Workflow never runs | Check the committed workflow/default branch, valid UTC schedule and provider execution history. |
+| Site unreachable in CI | Use the actual deployed URL or an authorized runner with network access. |
 
-## Next steps
-
-[Continue to the related reference](/reference/cli/). Stop foreground report servers with Ctrl+C when finished; keep application servers running while capturing. Local evidence remains in the configured output directory.
+[Configure CI](/ci/overview/) and [report delivery](/guides/reporters/) after the local monitor works.

@@ -5,14 +5,14 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 6}
 ---
 
 ## Before you start
 
-Complete [the first-comparison guide](/start/quickstart/) and keep both tested application environments running. Run commands from your application root, where `visualguard.config.ts` lives. Examples use the locally installed package; `npx --no-install` prevents accidentally running another release. Property fragments below belong inside the existing `defineConfig({ ... })` object. Shell examples use POSIX syntax; use the documented Windows alternative or WSL when shell features are needed.
+Complete [the first-comparison guide](/start/quickstart/) and keep its candidate demo running on port 4101. For your own app, replace that address below with its running URL. Run commands from your application root, where `visualguard.config.ts` lives. Examples use the locally installed package; `npx --no-install` prevents accidentally running another release. Property fragments below belong inside the existing `defineConfig({ ... })` object. Shell examples use POSIX syntax; use the documented Windows alternative or WSL when shell features are needed.
 
 To compare one candidate application against stored screenshots, create a separate `visualguard.baseline.ts` configuration:
 
@@ -21,7 +21,7 @@ import { defineConfig } from "visualguard";
 
 export default defineConfig({
   mode: "baseline",
-  baseURL: { staging: "http://127.0.0.1:3000" },
+  baseURL: { staging: "http://127.0.0.1:4101" },
   routes: ["/"],
   viewports: { desktop: { width: 1280, height: 800 } },
   baseline: { dir: "visualguard/baselines", missing: "error" },
@@ -49,7 +49,7 @@ Keep rendering settings consistent. Store local baselines according to your repo
 Missing baselines now fail by default. Create/update them explicitly:
 
 ```sh
-npx --no-install visualguard test --update-baselines
+npx --no-install visualguard test --config visualguard.baseline.ts --update-baselines
 # Inside Playwright tests:
 npx playwright test --update-snapshots
 ```
@@ -66,7 +66,7 @@ Create the reference once, change the candidate, and compare without the update 
 
 ## Troubleshooting
 
-If a step fails, check the installed version and exact working directory first. Run `npx --no-install visualguard doctor --config visualguard.config.ts` for capture prerequisites. [Find the matching symptom](/troubleshooting/). Do not interpret a failed/review verdict as an installation failure.
+If a step fails, check the installed version and exact working directory first. Run `npx --no-install visualguard doctor --config visualguard.baseline.ts` for capture prerequisites. [Find the matching symptom](/troubleshooting/). Do not interpret a failed/review verdict as an installation failure.
 
 ## Next steps
 

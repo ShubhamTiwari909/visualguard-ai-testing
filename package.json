@@ -33,7 +33,8 @@
     "docs:preview": "pnpm --filter @visualguard/docs preview",
     "docs:test": "node --test scripts/docs/checks.test.mjs && node scripts/docs/check-content.mjs && node scripts/docs/check-examples.mjs && node scripts/docs/generate-reference.mjs --check",
     "docs:check-links": "node scripts/docs/check-links.mjs",
-    "docs:smoke": "node scripts/docs/smoke-quickstart.mjs --dashboard"
+    "docs:smoke": "node scripts/docs/smoke-quickstart.mjs --dashboard",
+    "docs:smoke:host": "node scripts/docs/smoke-dashboard-host.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

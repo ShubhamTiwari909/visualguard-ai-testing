@@ -1,6 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { root, docsRoot, contentRoot, articles, headings, fail } from './shared.mjs';
+import { navigationErrors } from '../../apps/docs/src/data/navigation.mjs';
 
 const pages = await articles();
 const errors = [];
@@ -8,6 +9,8 @@ const routes = new Set(pages.map(page => {
   const path = relative(contentRoot, page.path).replace(/\.mdx?$/, '').replace(/\/index$/, '');
   return path === 'index' ? '/' : `/${path}/`;
 }));
+const publicSlugs = [...routes].filter(route => !['/', '/404/'].includes(route)).map(route => route.slice(1, -1));
+errors.push(...navigationErrors(publicSlugs));
 for (const page of pages) {
   const name = relative(root, page.path);
   for (const key of ['title', 'description', 'audience', 'docType', 'channel', 'lastReviewed', 'verifiedAgainst']) if (typeof page.data[key] !== 'string' || !page.data[key].trim()) errors.push(`${name}: missing ${key}`);
@@ -36,4 +39,4 @@ for (const entry of coverage.sections) {
   if (!entry.reason?.trim()) errors.push(`Missing migration reason: ${entry.source} / ${entry.heading}`);
 }
 fail(errors);
-console.log(`Content passed: ${pages.length} articles, every planned route, and ${coverage.sections.length} tracked source sections.`);
+console.log(`Content passed: ${pages.length} articles, ${publicSlugs.length} navigable guides, and ${coverage.sections.length} tracked source sections.`);

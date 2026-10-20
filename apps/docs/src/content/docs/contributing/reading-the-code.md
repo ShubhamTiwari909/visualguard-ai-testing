@@ -5,7 +5,7 @@ audience: "contributor"
 docType: "explanation"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/READING-THE-CODE.md"]
 sidebar: {"order": 3}
 ---

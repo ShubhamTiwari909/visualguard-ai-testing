@@ -1,44 +1,172 @@
 ---
 title: "Tune differences and noise"
-description: "Understand pixel tolerance, allowed change, dynamic regions and shift detection."
+description: "Learn how VisualGuard compares two screenshots, how much change it allows, how the noise map ignores areas that change on every load, and when to change each diff setting."
 audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["README.md", "packages/visualguard/src/config/schema.ts"]
-sidebar: {"order": 5}
+verifiedAgainst: "npm 3.2.3 / source e2c69cc"
+sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/diff/compute.ts", "packages/visualguard/src/diff/noise.ts", "packages/visualguard/src/diff/regions.ts", "packages/visualguard/src/diff/shift.ts", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/provenance.ts"]
+sidebar: {"order": 6}
 ---
+
+After both screenshots are taken, VisualGuard compares them pixel by pixel. The `diff` settings decide when two pixels count as different, how much difference is allowed before a page needs review, and how changed areas are grouped in the report.
+
+Change these settings only after you have looked at a real false difference in the report. The defaults catch small regressions and ignore most rendering noise.
 
 ## Before you start
 
-Complete [the first-comparison guide](/start/quickstart/) and keep both tested application environments running. Run commands from your application root, where `visualguard.config.ts` lives. Examples use the locally installed package; `npx --no-install` prevents accidentally running another release. Property fragments below belong inside the existing `defineConfig({ ... })` object. Shell examples use POSIX syntax; use the documented Windows alternative or WSL when shell features are needed.
+- Make captures repeatable first. Most false differences come from moving content, not from diff settings. See [Make captures repeatable](/guides/stable-captures/).
+- Have a recent run with a difference you want to understand. See [Inspect and share reports](/guides/reports/).
+- Have a working config file. See [Configure your project](/guides/configuration/).
 
-VisualGuard creates isolated browser contexts, disables CSS animations/transitions, waits for fonts and quiet networking, scrolls to load lazy content, hides common widgets, pauses media and the clock before capture, and checks consecutive screenshots for stability. Use `freezeTime` when dates must be repeatable.
+## How a comparison works
 
-Mask selectors preserve element dimensions; hide selectors conceal the element. Choose stable-size containers when masking variable content. You can also mark dynamic elements directly:
+For each job (one page at one viewport), VisualGuard:
 
-```html
-<span data-visualguard-ignore>Live visitor count</span>
-<div data-visualguard-ignore="hide">Rotating ticker</div>
+1. Places both screenshots on one canvas, as large as the bigger image. If the sizes differ, the smaller one is padded and the size difference is recorded.
+2. Compares every pixel. A pixel differs when its colour changes by more than `threshold`. Anti-aliased edges are ignored by default.
+3. Checks the total. If the number of different pixels is within the allowed change, the job passes and nothing else happens.
+4. Builds a noise map, if the job did not pass. It loads the reference page a second time and ignores areas that differ between the two loads. Then it checks the total again.
+5. Looks for a layout shift. When content was inserted or removed, everything below moves. VisualGuard reports this as one "shift" region instead of many changes.
+6. Groups the remaining changed pixels into rectangles called regions. It writes a diff image and crops of each region.
+7. Decides the job's status, usually `review` or `regression`, using the regions and the page structure. AI can add an explanation. See [Read result statuses](/concepts/results/).
+
+## 1. Set the allowed change
+
+Two kinds of setting work together. `threshold` decides whether one pixel counts as changed. `maxDiffPixels` and `maxDiffRatio` decide how many changed pixels are allowed in total.
+
+| Option | What it does | Default |
+| --- | --- | --- |
+| `threshold` | Colour tolerance for one pixel, from 0 to 1. `0` means any colour change counts. Higher values ignore smaller colour changes. | `0.1` |
+| `maxDiffPixels` | The job passes if at most this many pixels differ. | `20` |
+| `maxDiffRatio` | The job also passes if at most this share of all pixels differ, from 0 to 1. `0` turns this rule off. | `0` |
+| `ignoreAntialiasing` | Ignores pixels that look like smoothed edges of text and shapes. | `true` |
+
+A job passes when **either** rule is met: the count is within `maxDiffPixels`, or the share is within `maxDiffRatio` (when that is above 0).
+
+```ts
+diff: {
+  threshold: 0.1,
+  maxDiffPixels: 20,
+  maxDiffRatio: 0,
+},
 ```
 
-When a page differs, the default noise map repeats the reference capture and excludes areas that vary between reference loads. It is skipped if its area exceeds `diff.noiseMapMaxRatio` (default 25%). Disable it with `diff: { noiseMap: false }` when those changing areas matter to your comparison.
+:::caution
+`threshold` is not "how many pixels may differ". Setting `threshold: 20` is an error, because the value must be between 0 and 1. Use `maxDiffPixels` for a pixel count.
+:::
 
-`diff.threshold` is per-pixel colour tolerance; `maxDiffPixels` and `maxDiffRatio` control how much total change is allowed. Anti-aliasing is ignored by default. These settings can suppress small changes, so inspect tolerances and masks when an expected difference is absent.
+### When to change each one
 
-## Understand the two tolerances
+| Situation | What to change |
+| --- | --- |
+| Tiny colour shifts in gradients or shadows show up as differences | Raise `threshold` a little, for example to `0.15`. |
+| You need to catch very subtle colour changes, such as a brand colour tweak | Lower `threshold`, for example to `0.05`. |
+| A handful of scattered pixels differ on every run | Raise `maxDiffPixels` a little, for example to `50`. |
+| Very tall pages fail because of a few hundred noisy pixels | Set `maxDiffRatio` to a small share, for example `0.0005` (0.05% of the page). |
 
-`diff.threshold` controls whether an individual pixel differs. `maxDiffPixels` and `maxDiffRatio` bound the total difference. Ratio zero disables that alternative. Noise mapping spends an extra reference capture only when the page differs. Use the default bounds until you have inspected a known false positive; do not increase them solely to remove a regression.
+:::caution
+Every allowance can also hide a real change. A one-word text change can be fewer than 100 pixels. Raise these values in small steps, and never raise them just to make a known regression pass. Accept intentional changes instead. See [Accept intentional local changes](/guides/accepting-changes/).
+:::
 
-## Verify the setup
+## 2. Use the noise map
 
-Compare a known intentional change and a deliberately broken control before and after tuning. Verify that meaningful regressions remain visible.
+Some content changes on every page load: a random testimonial, an ad, a "people viewing now" counter. These changes are not caused by your deployment.
+
+When a job does not pass, the noise map loads the reference side once more. In compare mode that is the production site; in baseline mode it is the current site. VisualGuard then compares the two loads of the same page. Areas that differ between them are grown to the element they sit in, and left out of the comparison.
+
+| Option | What it does | Default |
+| --- | --- | --- |
+| `noiseMap` | Turns the noise map on or off. | `true` |
+| `noiseMapMaxRatio` | If the changing areas cover more than this share of the page, the noise map is not used. | `0.25` |
+
+The noise map is skipped in two cases, and the report says why:
+
+- The page height changes between loads.
+- More than `noiseMapMaxRatio` of the page changes between loads. A page that unstable needs [stabilizing](/guides/stable-captures/) instead.
+
+When it works, the job shows a finding such as `Ignored 2 areas that change on every load of production (3,412 px)`. In the **Diff** view, the ignored areas are marked.
+
+The noise map costs one extra page load, only for jobs that did not pass.
+
+### When to turn it off
+
+Set `noiseMap: false` when:
+
+- The changing area is what you want to test, such as a rotating hero banner you just redesigned.
+- Your pages are already stable, and you want to save the extra page load.
+
+## 3. Control how changes are grouped
+
+These settings change how regions look in the report and how many reach the AI. They do not change whether a job passes.
+
+| Option | What it does | Default |
+| --- | --- | --- |
+| `detectShift` | Finds content that moved up or down because something was inserted or removed, and reports it as one shift region. | `true` |
+| `regionCellSize` | Changed pixels are grouped in square cells of this size, in pixels (4 to 64). | `16` |
+| `regionMergeDistance` | Regions closer than this many pixels are merged into one. | `32` |
+| `regionPadding` | Extra pixels around each region when cropping it for the report. | `24` |
+| `maxRegions` | The most regions kept per job. The largest are kept. | `10` |
+| `engine` | The comparison engine. Only `"pixelmatch"` is available. | `"pixelmatch"` |
+
+Raise `regionMergeDistance` if one change, such as a new card, shows up as many small regions. Lower it if separate changes are merged into one big box.
+
+Keep `detectShift` on. Without it, a new banner at the top makes every element below it a separate change.
+
+:::note
+Diff settings do not change the screenshots. Changing them does not make saved baselines out of date.
+:::
+
+## Example: a marketing site with a random hero
+
+A marketing site picks one of three hero images at random. Its landing page is 22,000 pixels tall. Every run marked the page for review, and the report showed:
+
+- the finding `Ignored 1 area that changes on every load of production`, and
+- about 300 scattered pixels further down, in a gradient behind the footer.
+
+The noise map already handled the hero. The team set `diff: { maxDiffRatio: 0.0005 }`. That allows about 0.05% of the page, around 15,000 pixels on a 1440-pixel-wide page. To keep a strict check on the hero, they also added a separate route with `?hero=1`, which their site uses to show a fixed image.
+
+## Verify your tuning
+
+Check both directions after each change:
+
+1. **No false alarms.** Compare the site with itself:
+
+   ```bash
+   npx visualguard test --production http://localhost:3000 --staging http://localhost:3000 --no-ai
+   ```
+
+   You should see every job as `pass`.
+
+2. **Real changes still show.** Make a small visible change on staging, such as a changed button label. Run the normal test and open the report:
+
+   ```bash
+   npx visualguard test --no-ai
+   npx visualguard report
+   ```
+
+   You should see that page as `review` or `regression`, with a region around the label.
+
+If step 2 passes the page, your allowances are too loose.
 
 ## Troubleshooting
 
-If a step fails, check the installed version and exact working directory first. Run `npx --no-install visualguard doctor --config visualguard.config.ts` for capture prerequisites. [Find the matching symptom](/troubleshooting/). Do not interpret a failed/review verdict as an installation failure.
+| Problem | Fix |
+| --- | --- |
+| `diff.threshold: … Hint: threshold is per-pixel colour tolerance (0–1)` | Use a value between 0 and 1. Use `maxDiffPixels` to allow a number of pixels. |
+| An expected change is missing from the report | Lower `maxDiffPixels`, set `maxDiffRatio` back to `0`, or check that a mask, hide or noise area does not cover it. |
+| `Noise map not applied: the page size changes between loads` | Content loads late and changes the height. Add a route `waitFor`, or stabilize the late content. |
+| `Noise map not applied: …% of the page changes between loads` | The page is not stable. See [Make captures repeatable](/guides/stable-captures/). |
+| One change shows as many small regions | Raise `regionMergeDistance`. |
+| Everything below a new element is marked as changed | Make sure `detectShift` is `true`. |
+| A page fails with a size difference | The two pages have different heights. Look at the **Side by side** view to see which content is extra. |
+
+For other capture problems, see [Capture troubleshooting](/troubleshooting/capture/).
 
 ## Next steps
 
-[Continue to the related reference](/reference/cli/). Stop foreground report servers with Ctrl+C when finished; keep application servers running while capturing. Local evidence remains in the configured output directory.
+- [Inspect and share reports](/guides/reports/): read regions, the diff view and findings.
+- [Accept intentional local changes](/guides/accepting-changes/): record a change instead of loosening tolerances.
+- [Make captures repeatable](/guides/stable-captures/): remove the cause of noise.
+- [Configuration reference](/reference/configuration/): every `diff` field and its limits.
