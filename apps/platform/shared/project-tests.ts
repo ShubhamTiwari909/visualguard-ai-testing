@@ -1,3 +1,11 @@
+export interface ProjectTestProgress {
+  stage: "starting" | "capturing" | "comparing" | "uploading" | "finalizing";
+  completedJobs: number;
+  totalJobs: number;
+  route?: string;
+  viewport?: string;
+  updatedAt?: string;
+}
 export interface ProjectTestConfig {
   baseURL: { production: string; staging: string };
   routes: string[];
@@ -17,6 +25,7 @@ export interface ProjectTestExecution {
   finishedAt?: string;
   runId?: string;
   error?: string;
+  progress?: ProjectTestProgress;
 }
 export interface ClaimedProjectTest extends ProjectTestExecution {
   projectId: string;

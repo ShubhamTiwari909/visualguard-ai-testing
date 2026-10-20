@@ -15,6 +15,22 @@ export const executionRequest = z
 export const executionLease = z
   .object({ id: z.string().uuid(), lease: z.string().regex(/^[a-f0-9]{64}$/) })
   .strict();
+const executionProgress = z
+  .object({
+    stage: z.enum(["starting", "capturing", "comparing", "uploading", "finalizing"]),
+    completedJobs: z.number().int().min(0).max(800),
+    totalJobs: z.number().int().min(0).max(800),
+    route: z.string().max(1000).optional(),
+    viewport: z
+      .string()
+      .regex(/^[a-zA-Z0-9_-]{1,40}$/)
+      .optional(),
+  })
+  .strict()
+  .refine((value) => value.completedJobs <= value.totalJobs, "Completed comparisons exceed total");
+export const executionHeartbeat = executionLease
+  .extend({ progress: executionProgress.optional() })
+  .strict();
 export const executionCompletion = executionLease
   .extend({ runId: z.string().uuid().optional(), failed: z.boolean().optional() })
   .strict();
@@ -34,6 +50,7 @@ const publicExecution = (job: Execution): ProjectTestExecution => ({
   finishedAt: job.finishedAt,
   runId: job.runId,
   error: job.error,
+  progress: job.progress,
 });
 const expired = (job: Execution) =>
   job.status === "queued"
@@ -161,9 +178,26 @@ export class TestExecutions {
     return row;
   }
   async heartbeat(project: string, runnerId: string, raw: unknown) {
-    const input = executionLease.parse(raw),
+    const input = executionHeartbeat.parse(raw),
       row = await this.leased(project, runnerId, input);
-    const value = { ...row.value, leaseExpiresAt: new Date(Date.now() + 60_000).toISOString() };
+    const previous = row.value.progress;
+    if (
+      input.progress &&
+      previous &&
+      (input.progress.completedJobs < previous.completedJobs ||
+        (previous.totalJobs > 0 && input.progress.totalJobs !== previous.totalJobs) ||
+        (previous.stage === "finalizing" && input.progress.stage !== "finalizing") ||
+        (previous.stage === "uploading" &&
+          !["uploading", "finalizing"].includes(input.progress.stage)))
+    )
+      throw new PlatformError(409, "Test progress is older than the current execution");
+    const value = {
+      ...row.value,
+      leaseExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      ...(input.progress
+        ? { progress: { ...input.progress, updatedAt: new Date().toISOString() } }
+        : {}),
+    };
     if (!(await this.tests.state.replace("project-test-executions", { ...row, value })))
       throw new PlatformError(409, "Test lease changed");
     await this.seen(project, runnerId);

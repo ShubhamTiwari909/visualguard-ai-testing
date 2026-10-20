@@ -1704,7 +1704,6 @@
 }
 .vg-project-tests > .vg-form-error,
 .vg-project-tests > .vg-muted,
-.vg-test-status,
 .vg-test-config,
 .vg-runner-setup {
   margin: 18px 23px;
@@ -1741,6 +1740,80 @@
   padding: 12px;
   border-radius: 7px;
 }
-.vg-test-status .vg-button {
-  margin-left: 12px;
+
+.vg-execution-progress {
+  margin: 18px 23px;
+  padding: 20px;
+  border: 1px solid #dfe7e2;
+  border-radius: 10px;
+  background: #f7faf8;
+}
+.vg-execution-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+.vg-comparison-count {
+  margin-left: auto;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.vg-execution-bar {
+  display: block;
+  width: 100%;
+  height: 10px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  accent-color: #245b48;
+}
+.vg-execution-bar::-webkit-progress-bar {
+  background: #e2eae5;
+  border-radius: 999px;
+}
+.vg-execution-bar::-webkit-progress-value {
+  background: #245b48;
+  border-radius: 999px;
+}
+.vg-execution-bar::-moz-progress-bar {
+  background: #245b48;
+  border-radius: 999px;
+}
+.vg-execution-bar:indeterminate {
+  opacity: 0.65;
+}
+.vg-execution-route {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.vg-execution-progress p {
+  margin: 12px 0 0;
+}
+.vg-execution-progress .vg-button {
+  margin-top: 14px;
+}
+.vg-execution-progress[data-status="failed"] {
+  border-color: #e6c5c5;
+  background: #fff8f8;
+}
+.vg-execution-progress[data-status="failed"] .vg-execution-bar {
+  accent-color: #ae4545;
+}
+.vg-execution-progress[data-status="failed"] .vg-execution-bar::-webkit-progress-value {
+  background: #ae4545;
+}
+.vg-execution-progress[data-status="failed"] .vg-execution-bar::-moz-progress-bar {
+  background: #ae4545;
+}
+@media (max-width: 700px) {
+  .vg-execution-progress {
+    margin: 16px;
+    padding: 16px;
+  }
+  .vg-comparison-count {
+    margin-left: 0;
+    width: 100%;
+  }
 }

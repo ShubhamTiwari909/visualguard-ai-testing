@@ -6,7 +6,7 @@ import { configSchema } from "../../../packages/visualguard/src/config/schema.js
 import { resolveConfig } from "../../../packages/visualguard/src/config/resolve.js";
 import { uploadRun } from "./upload-client.js";
 import { projectTestConfig } from "./project-tests.js";
-import type { ClaimedProjectTest } from "../shared/project-tests.js";
+import type { ClaimedProjectTest, ProjectTestProgress } from "../shared/project-tests.js";
 
 export async function runDashboardRunner(options: {
   server: string;
@@ -48,8 +48,11 @@ export async function runDashboardRunner(options: {
       },
     );
     if (!response.ok)
-      throw new Error(
-        `Runner ${action} request rejected (${response.status}); check the runner credential, project and server`,
+      throw Object.assign(
+        new Error(
+          `Runner ${action} request rejected (${response.status}); check the runner credential, project and server`,
+        ),
+        { status: response.status },
       );
     return response.json() as Promise<T>;
   };
@@ -77,17 +80,51 @@ export async function runDashboardRunner(options: {
         AbortSignal.timeout(15 * 60_000),
         ...(options.signal ? [options.signal] : []),
       ]);
+      let progress: ProjectTestProgress = { stage: "starting", completedJobs: 0, totalJobs: 0 };
+      let sent: ProjectTestProgress | undefined;
+      let renewedAt = 0;
+      let confirmedAt = Date.now();
       let renewing: Promise<void> | undefined;
+      let stopped = false;
+      const renew = () => {
+        if (stopped || renewing) return renewing;
+        const snapshot = progress;
+        renewedAt = Date.now();
+        renewing = request("heartbeat", { ...lease, progress: snapshot }, signal)
+          .then(() => {
+            sent = snapshot;
+            confirmedAt = Date.now();
+          })
+          .catch((error: unknown) => {
+            const status =
+              error && typeof error === "object" && "status" in error ? Number(error.status) : 0;
+            // Retry transient reporting failures while the last confirmed lease is still
+            // safely live. Authorization/schema/lease rejection must stop capture immediately.
+            if (
+              (status >= 400 && status < 500 && status !== 429) ||
+              Date.now() - confirmedAt >= 45000 ||
+              signal.aborted
+            )
+              controller.abort(error);
+          })
+          .finally(() => {
+            renewing = undefined;
+          });
+        return renewing;
+      };
+      // Coalesce periodic engine reports at one-second intervals; flush stage boundaries explicitly.
+      // Lease renewals use the same single-flight channel so they cannot race progress writes.
       const timer = setInterval(() => {
-        if (!renewing)
-          renewing = request("heartbeat", lease, signal)
-            .then(() => {})
-            .catch((error) => controller.abort(error))
-            .finally(() => {
-              renewing = undefined;
-            });
-      }, 15000);
+        if (sent !== progress || Date.now() - renewedAt >= 15000) void renew();
+      }, 1000);
+      const flushProgress = async () => {
+        await renewing;
+        signal.throwIfAborted();
+        if (sent !== progress) await renew();
+        signal.throwIfAborted();
+      };
       const stopHeartbeat = async () => {
+        stopped = true;
         clearInterval(timer);
         await renewing;
       };
@@ -109,7 +146,40 @@ export async function runDashboardRunner(options: {
           },
         });
         console.log(`Starting dashboard test ${job.id} (configuration v${job.configVersion}).`);
-        const outcome = await createRun(resolved, { signal }).start();
+        await flushProgress();
+        const completed = new Set<string>();
+        const outcome = await createRun(resolved, {
+          signal,
+          reporters: [
+            {
+              name: "dashboard-progress",
+              onEvent(event) {
+                if (event.type === "run:start") {
+                  progress = { stage: "capturing", completedJobs: 0, totalJobs: event.jobs.length };
+                } else if (event.type === "job:start" || event.type === "job:captured") {
+                  progress = {
+                    ...progress,
+                    stage:
+                      event.type === "job:captured" && event.env === "staging"
+                        ? "comparing"
+                        : "capturing",
+                    route: event.job.route.slice(0, 1000),
+                    viewport: event.job.viewport,
+                  };
+                } else if (event.type === "job:end") {
+                  completed.add(event.job.id);
+                  progress = { ...progress, completedJobs: completed.size };
+                }
+              },
+            },
+          ],
+        }).start();
+        progress = {
+          stage: "uploading",
+          completedJobs: progress.completedJobs,
+          totalJobs: progress.totalJobs,
+        };
+        await flushProgress();
         const result = (uploaded = await uploadRun({
           server: server.origin,
           project: job.projectId,
@@ -122,6 +192,8 @@ export async function runDashboardRunner(options: {
             runName: `Dashboard test · config v${job.configVersion}`,
           },
         }));
+        progress = { ...progress, stage: "finalizing" };
+        await flushProgress();
         await stopHeartbeat();
         signal.throwIfAborted();
         // Completion is idempotent: retry the same uploaded run if its acknowledgement
