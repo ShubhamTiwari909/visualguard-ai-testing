@@ -68,23 +68,32 @@ export async function cleanupMongoArtifacts(db: Db, runs: number): Promise<Delet
     await cleanupBatch(candidates, async (candidate) => {
       const hash = candidate.id as string;
       // Older runs predate per-object pins; keep their objects too.
-      if (await db.collection("vg_runs").findOne({ "artifacts.hash": hash }, { projection: { _id: 1 } })) {
+      if (
+        await db
+          .collection("vg_runs")
+          .findOne({ "artifacts.hash": hash }, { projection: { _id: 1 } })
+      ) {
         await db
           .collection("vg_state")
           .deleteOne({ _id: candidate._id, version: candidate.version });
         return;
       }
       if (
-        await db.collection("vg_state").findOne({
-          namespace: "upload-files",
-          "value.hash": hash,
-          $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date().toISOString() } }],
-        }, { projection: { _id: 1 } })
+        await db.collection("vg_state").findOne(
+          {
+            namespace: "upload-files",
+            "value.hash": hash,
+            $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date().toISOString() } }],
+          },
+          { projection: { _id: 1 } },
+        )
       ) {
         cleanupPending = true;
         return;
       }
-      const current = await db.collection<MongoObject>("vg_objects").findOne({ hash }, { projection: { hash: 1, generation: 1 } });
+      const current = await db
+        .collection<MongoObject>("vg_objects")
+        .findOne({ hash }, { projection: { hash: 1, generation: 1 } });
       if (current) {
         const id = `${hash}:${current.generation ?? "legacy"}`;
         try {
@@ -123,13 +132,13 @@ export async function cleanupMongoArtifacts(db: Db, runs: number): Promise<Delet
           namespace: "artifact-generations",
           id: `${hash}:${object.generation ?? "legacy"}`,
         });
-      } else if (await db.collection<MongoObject>("vg_objects").findOne({ hash }, { projection: { _id: 1 } })) {
+      } else if (
+        await db.collection<MongoObject>("vg_objects").findOne({ hash }, { projection: { _id: 1 } })
+      ) {
         cleanupPending = true;
         return;
       }
-      await db
-        .collection("vg_state")
-        .deleteOne({ _id: candidate._id, version: candidate.version });
+      await db.collection("vg_state").deleteOne({ _id: candidate._id, version: candidate.version });
     });
     // Persist chunk cleanup separately before removing object metadata, so an interrupted
     // deletion can safely finish later without touching a newer upload of the same hash.
@@ -140,7 +149,9 @@ export async function cleanupMongoArtifacts(db: Db, runs: number): Promise<Delet
       .toArray();
     await cleanupBatch(generations, async (task) => {
       const { hash, generation } = task.value;
-      const current = await db.collection<MongoObject>("vg_objects").findOne({ hash }, { projection: { hash: 1, generation: 1 } });
+      const current = await db
+        .collection<MongoObject>("vg_objects")
+        .findOne({ hash }, { projection: { hash: 1, generation: 1 } });
       if (current && (current.generation ?? null) === generation) {
         cleanupPending = true;
         return;
