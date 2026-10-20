@@ -192,7 +192,9 @@ export async function runTestCommand(
         [400, 409].includes(Number(error.status))
       )
         throw new ConfigError(errorMessage(error));
-      throw new EnvironmentError(`Cannot bind dashboard project: ${errorMessage(error)}`);
+      throw new EnvironmentError(`Cannot bind dashboard project: ${errorMessage(error)}`, {
+        cause: error,
+      });
     }
     process.stderr.write(
       `Dashboard project: ${binding.name} (${binding.publicId ?? binding.id}) · ${binding.destination}\n`,

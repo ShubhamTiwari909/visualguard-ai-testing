@@ -49,11 +49,29 @@ export async function prepareTestBinding(options: {
       );
     const url = new URL("/api/publishing/project", server);
     url.searchParams.set("project", selector);
-    const response = await fetch(url, {
-      redirect: "error",
-      signal: AbortSignal.timeout(30_000),
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        redirect: "error",
+        signal: AbortSignal.timeout(30_000),
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    } catch (error) {
+      const cause = error instanceof Error ? error.cause : undefined;
+      const code = cause && typeof cause === "object" && "code" in cause ? cause.code : undefined;
+      const reason =
+        typeof code === "string" && /^[A-Z0-9_]{1,80}$/.test(code)
+          ? ` (${code})`
+          : error instanceof Error && error.name === "TimeoutError"
+            ? " (request timed out)"
+            : "";
+      const recovery = loopback
+        ? `Keep the dashboard running in another terminal on port ${server.port || (server.protocol === "https:" ? "443" : "80")}, and use its printed URL for --dashboard. The test command does not start a dashboard. With Docker or WSL, check that this address is reachable from the test terminal.`
+        : "Check that the dashboard is running and that its URL, network access and HTTPS certificate are valid from the test terminal.";
+      throw new Error(`Cannot reach dashboard at ${server.origin}${reason}. ${recovery}`, {
+        cause: error,
+      });
+    }
     let value: { id?: string; name?: string; publicId?: string; error?: string };
     try {
       value = (await response.json()) as typeof value;
