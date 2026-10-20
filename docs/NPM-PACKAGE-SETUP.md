@@ -1,107 +1,100 @@
-# Install VisualGuard in any project: visual tests and dashboard
+# Use VisualGuard in your project
 
-For an explanation of all product capabilities before setup, read the [product feature guide](PRODUCT-FEATURES.md).
+This guide takes the published `visualguard` npm package from install to a shared team dashboard in your own application. You do not need to clone this repository. Each section says what and why, gives copy-paste commands, then tells you what you should see. Follow sections 1 to 4 for a first result and open the others when you need them. To work on VisualGuard itself, use [local source setup](LOCAL-SETUP.md). For what the product can do, read the [product feature guide](PRODUCT-FEATURES.md). Every command and option is in the [command reference](COMMAND-REFERENCE.md).
 
-This is the complete user setup guide for the published npm package. You do not need to clone VisualGuard or build its source. For repository development and testing the latest merged features, use [local source setup](LOCAL-SETUP.md).
-
-Every `npx --no-install visualguard` command below runs the npm package installed in **your application**, not this repository's source CLI. Work at that application's root. Keep its reference/candidate servers running, use a separate terminal for a dashboard, and run comparisons in another terminal. Choose one storage workflow; PostgreSQL and MongoDB are alternatives, not simultaneous requirements.
+Run every command from your application's root folder.
 
 ## Contents
 
-- [1. Choose your setup](#1-choose-your-setup)
-- [2. Run visual regression only in another project with npx](#2-run-visual-regression-only-in-another-project-with-npx)
-  - [Initialize the project with npx](#initialize-the-project-with-npx)
-  - [Understand the generated TypeScript config](#understand-the-generated-typescript-config)
-  - [Optional JSON configuration](#optional-use-a-manually-maintained-json-config)
-- [3. Run visual regression with AI in another project with npx](#3-run-visual-regression-with-ai-in-another-project-with-npx)
-- [4. Use local reports and baselines](#4-use-local-reports-and-baselines)
-- [5. Run npx visual regression with a local SQLite dashboard](#5-run-npx-visual-regression-with-a-local-sqlite-dashboard)
-- [6. Run npx visual regression with PostgreSQL](#6-run-npx-visual-regression-with-postgresql)
-- [7. Run npx visual regression with MongoDB](#7-run-npx-visual-regression-with-mongodb)
-- [8. Enable login and connect other projects](#8-enable-login-and-connect-other-projects)
-- [9. Deploy to Vercel or Google Cloud Run](#9-deploy-to-vercel-or-google-cloud-run)
-- [10. Understand storage, backups and upgrades](#10-understand-storage-backups-and-upgrades)
-- [11. Team reviews, approved baselines and GitHub checks](#11-team-reviews-approved-baselines-and-github-checks)
-  - [Per-project test configuration](#separate-test-configuration-for-each-dashboard-project)
-  - [Run a test from the dashboard](#run-a-test-from-the-dashboard)
-- [12. Troubleshooting and final checks](#12-troubleshooting-and-final-checks)
-- [13. Command reference](#13-command-reference)
+1. [Choose your setup](#1-choose-your-setup)
+2. [Install and run your first test](#2-install-and-run-your-first-test)
+3. [Accept changes and keep local baselines](#3-accept-changes-and-keep-local-baselines)
+4. [Add AI explanations](#4-add-ai-explanations)
+5. [Test pages behind a login](#5-test-pages-behind-a-login)
+6. [More checks and modes](#6-more-checks-and-modes)
+7. [Run in CI](#7-run-in-ci)
+8. [Start a dashboard with local SQLite](#8-start-a-dashboard-with-local-sqlite)
+9. [Run a test from the dashboard](#9-run-a-test-from-the-dashboard)
+10. [Store the dashboard in PostgreSQL](#10-store-the-dashboard-in-postgresql)
+11. [Store the dashboard in MongoDB](#11-store-the-dashboard-in-mongodb)
+12. [Turn on login, tokens and teammates](#12-turn-on-login-tokens-and-teammates)
+13. [Deploy to Vercel or Cloud Run](#13-deploy-to-vercel-or-cloud-run)
+14. [Storage, backups and recovery](#14-storage-backups-and-recovery)
+15. [Team workflow: reviews, baselines and policies](#15-team-workflow-reviews-baselines-and-policies)
+16. [Troubleshooting](#16-troubleshooting)
+17. [Command cheat sheet](#17-command-cheat-sheet)
 
 ## 1. Choose your setup
 
-| You want                                 | Database requirement                                           | Login / token                                      |
-| ---------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
-| Visual tests and HTML reports only       | None                                                           | None                                               |
-| Local dashboard/history on your computer | SQLite created automatically; no database service              | None in default loopback local mode                |
-| Local dashboard with PostgreSQL          | Dedicated PostgreSQL database                                  | Optional login; token needed when login is enabled |
-| Local dashboard with MongoDB             | Dedicated MongoDB database; replica set for full team features | Same as PostgreSQL                                 |
-| Shared dashboard on Vercel/Cloud Run     | External PostgreSQL or transaction-capable MongoDB             | Login and project upload tokens                    |
+| You want to...                            | Do this          | You also need                    |
+| ----------------------------------------- | ---------------- | -------------------------------- |
+| Compare two sites and read a report       | Sections 2 and 3 | Nothing else                     |
+| Add AI explanations of changes            | Section 4        | Gemini key or Ollama             |
+| Test logged-in pages                      | Section 5        | A login for your app             |
+| Run checks in pull requests               | Section 7        | A CI system                      |
+| Keep history and reviews on your computer | Sections 8 and 9 | Nothing (SQLite is built in)     |
+| Keep dashboard data in your own database  | Section 10 or 11 | PostgreSQL or MongoDB            |
+| Share a dashboard with a team             | Sections 12, 13  | Hosting and an external database |
 
-“Without database” applies literally to standalone visual tests. The dashboard's zero-setup option is an embedded SQLite file. You do not have to install PostgreSQL or MongoDB to use the product locally.
+The dashboard needs no database service to start: it uses a built-in SQLite file. PostgreSQL and MongoDB are alternatives, so choose at most one.
 
-Use one hosted installation per customer organization/team. That instance can contain multiple projects/users with separate permissions; each person does not need their own server.
+## 2. Install and run your first test
 
-**Version boundary:** this source release is `visualguard@3.2.0`, which includes the Google onboarding, administration, approved baselines and visual-policy features in section 11. Registry metadata checked on 19 October 2026 reported `3.2.0`. Check `npm view visualguard version` before installing a specific release; source changes merged after publication require a later package release. See the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310) before updating an existing hosted installation. Keep client/server releases compatible and pin the version in the lockfile.
+You need Node.js 22.12 or newer. Install the package and a browser:
 
-## 2. Run visual regression only in another project with npx
+```bash
+npm install --save-dev visualguard playwright
+```
 
-### Prerequisites
-
-Use Node.js **22.12+** and a working application with two reachable environments: production/reference and staging/candidate. The runner can test React, Next.js, Vue, static sites or any other browser-accessible application; it does not need to run on the same host as that application.
-
-From your application directory:
-
-```sh
-cd /path/to/your-app
-npm install --save-dev --save-exact visualguard
-npm install --save-dev playwright
+```bash
 npx playwright install chromium
+```
+
+On Linux or CI, use `npx playwright install --with-deps chromium` to include system libraries. Check the install:
+
+```bash
 npx --no-install visualguard --version
 ```
 
-If already installed, check the version and continue. Keep existing Playwright setup if it already satisfies the package's peer requirement. On Linux/CI, install Playwright's required system dependencies too. Keep VisualGuard's optional dependencies enabled: PostgreSQL, MongoDB and OIDC drivers are packaged that way, so do not use `--omit=optional` for a dashboard installation.
-
-Add these entries to `.gitignore` if absent:
+You should see a version number. Add these lines to `.gitignore`:
 
 ```gitignore
 .visualguard/
 .env.local
 .env.visualguard
-.env.dashboard-admin
 ```
 
-### Initialize the project with npx
+### Try it with no config
 
-Start your application normally, for example with `npm run dev`. From that application's root, run the setup wizard:
+Scan one site:
 
-```sh
+```bash
+npx --no-install visualguard https://your-app.example.com
+```
+
+Or compare production with staging. Both servers must be running:
+
+```bash
+npx --no-install visualguard https://your-app.example.com http://127.0.0.1:3000
+```
+
+To test one page, put its path on the URLs, for example `https://your-app.example.com/pricing http://127.0.0.1:3000/pricing`. You should see a result for each page and viewport, and a saved report under `.visualguard/runs/`. A one-URL scan compares with your previous scan, so the second run is the first real comparison.
+
+### Create a config file
+
+For routes and viewports you choose, run the setup wizard. It writes `visualguard.config.ts`, which the CLI finds automatically. Choose **None** for AI the first time:
+
+```bash
 npx --no-install visualguard init
 ```
 
-This is the installed-package form of `npx visualguard init`. The wizard asks for:
+To skip the questions, pass real URLs:
 
-1. Your production/reference URL and staging/candidate URL, such as `https://your-app.example.com` and `http://127.0.0.1:3000`.
-2. Routes to test and viewport presets.
-3. An AI provider; choose **None** for the first visual-only run.
-4. Whether to add a GitHub Actions workflow; you can decline for local setup.
-
-For setup without prompts, use real reachable application URLs:
-
-```sh
-npx --no-install visualguard init --yes \
-  --production https://your-app.example.com \
-  --staging http://127.0.0.1:3000 --ai none
+```bash
+npx --no-install visualguard init --yes --production https://your-app.example.com --staging http://127.0.0.1:3000 --ai none
 ```
 
-Choose the wizard or the noninteractive command, not both. Noninteractive setup selects discovered routes and the desktop/mobile viewport presets; review the generated file before running tests. These URLs describe the application under test, not the dashboard. For a fully local comparison, use two application servers on different ports.
-
-### Understand the generated TypeScript config
-
-On a fresh project, `init` creates **`visualguard.config.ts`**. Keep that file for the commands in this guide; do not rename it to `.json`. VisualGuard loads the TypeScript config directly, including in JavaScript applications, without a separate TypeScript compilation step.
-
-The wizard can also add a `visual` script to `package.json` if absent, update `.gitignore`, save a supplied Gemini key in `.env.local`, and create the GitHub workflow if selected. It does not create a database, dashboard server or dashboard project. Keep existing files when already configured; `--force` deliberately overwrites the discovered config.
-
-A minimal config using the same format is:
+A minimal config looks like this. Edit the generated file instead of replacing it, and see the [configuration reference](../apps/docs/src/content/docs/reference/configuration.md) for every field:
 
 ```ts
 import { defineConfig } from "visualguard";
@@ -111,153 +104,62 @@ export default defineConfig({
     production: "https://your-app.example.com",
     staging: "http://127.0.0.1:3000",
   },
-  routes: ["/"],
+  routes: ["/", "/pricing"],
   viewports: {
-    desktop: { width: 1280, height: 800 },
+    desktop: { width: 1440, height: 900 },
+    mobile: { width: 390, height: 844, isMobile: true, hasTouch: true },
   },
   ai: { provider: "none" },
 });
 ```
 
-The generated file can have additional discovered routes, viewports, comments and stabilization settings. Edit its existing values rather than replacing it blindly with this smaller example. `init --ai none` sets the provider during setup; later tests use `--provider gemini` or `--provider ollama` when enabling AI.
+### Run, check and report
 
-### Optional: use a manually maintained JSON config
+Check your setup, config and URLs:
 
-JSON is supported when explicitly selected, but `init` generates TypeScript. If you deliberately prefer JSON, create `visualguard.config.json` instead of running the initializer, using the same config fields as plain JSON without the import/export or `defineConfig` wrapper. For example:
-
-```json
-{
-  "baseURL": {
-    "production": "https://your-app.example.com",
-    "staging": "http://127.0.0.1:3000"
-  },
-  "routes": ["/"],
-  "viewports": { "desktop": { "width": 1280, "height": 800 } },
-  "ai": { "provider": "none" }
-}
+```bash
+npx --no-install visualguard doctor
 ```
 
-Run it with `npx --no-install visualguard test --config visualguard.config.json --no-ai`. Automatic discovery finds supported JavaScript/TypeScript filenames, not this JSON filename. The remaining examples use the generated `.ts` file; replace their `--config` path only if you chose JSON. Keep one intended config to avoid testing different settings accidentally.
+You should see a pass or fail line for the browser, the config and each URL. List the pages that will be tested without capturing anything:
 
-### Compare and inspect
-
-```sh
-npx --no-install visualguard test --config visualguard.config.ts --no-ai
-npx --no-install visualguard report --config visualguard.config.ts
+```bash
+npx --no-install visualguard test --list
 ```
 
-Change a button's color or spacing in staging, rerun and inspect reference/candidate/diff views and findings. Reports are saved under `.visualguard/runs/RUN_ID/` by default. The report command serves the selected run locally until Ctrl+C.
+Run the comparison with AI off:
 
-A plain `test` without a project argument stays offline. No dashboard, database, upload token or AI key is required. A nonzero test exit may mean a detected regression rather than installation failure; read the saved report/status. Use `doctor --config visualguard.config.ts` to inspect configuration/reachability.
-
-### Optional authentication for application pages
-
-For logged-in application pages, use the existing capture authentication workflow, for example `npx --no-install visualguard auth staging --config visualguard.config.ts`, and the corresponding production setup. Add the saved state paths as an `environments` property inside your existing `defineConfig({ ... })` object so captures use them:
-
-```ts
-  environments: {
-    production: { storageState: ".visualguard/auth/production.json" },
-    staging: { storageState: ".visualguard/auth/staging.json" },
-  },
+```bash
+npx --no-install visualguard test --no-ai
 ```
 
-This is a property fragment, not a second config file. Keep the existing URLs, routes and viewport settings. Application login cookies belong to the runner, not dashboard account login.
+You should see a result for every route and viewport. A nonzero exit code usually means a real change was found. It does not mean the install failed. To test less, repeat `--only` and `--viewport` as needed:
 
-## 3. Run visual regression with AI in another project with npx
-
-**Use this section when:** VisualGuard is installed in your application and you want AI-assisted visual analysis. Complete section 2 first. Keep the tested application environments running. The AI-enabled runner still works without a dashboard or database.
-
-### Gemini
-
-1. Create a Gemini API key using [Google's API-key instructions](https://ai.google.dev/gemini-api/docs/api-key).
-2. Add the key to an ignored `.env.local` in the **application root**, or its CI secret manager:
-
-```dotenv
-GEMINI_API_KEY=YOUR_REAL_GEMINI_API_KEY
+```bash
+npx --no-install visualguard test --only "/blog/**" --viewport mobile --no-ai
 ```
 
-3. From that application root, run:
+Choose what makes the command fail with `--fail-on regression` (default), `review` or `any`. Open the latest report, which shows the reference, candidate and diff for each page. Press Ctrl+C to stop it. Use `--run RUN_ID` for an older run:
 
-```sh
-npx --no-install visualguard test --config visualguard.config.ts --provider gemini
-npx --no-install visualguard report --config visualguard.config.ts
+```bash
+npx --no-install visualguard report
 ```
 
-Do not append `--no-ai`. `--provider gemini` overrides the sample config's `ai.provider: none`; just removing `--no-ai` would not enable that config's AI. The test loads `.env`/`.env.local`, with existing process variables taking precedence. The key belongs to the visual-test runner, not the dashboard database or Google sign-in client.
+You should see the report open in your browser.
 
-Check the saved analysis/provider information in the report. Missing/invalid keys, quota, model access or network errors can cause deterministic fallback, so a completed report alone is not proof an AI request succeeded. By default, AI targets uncertain changes; use `ai.analyze: "all"` to explain deterministic regressions too. `ai.advisory: true` adds explanation without changing deterministic statuses. These are properties to merge into the existing `ai` configuration, not separate top-level settings.
+## 3. Accept changes and keep local baselines
 
-To select an account-supported model explicitly, add `--model YOUR_MODEL_ID`. Configure token/call/time budgets for repeatable CI rather than assuming unlimited model access. AI does not authorize team approvals or bypass capture problems.
+If a change is on purpose, accept it. This writes `visualguard.accepted.json`, so commit that file:
 
-### Local Ollama
-
-Install/start Ollama following its [official setup](https://docs.ollama.com/quickstart), then download a compatible vision model such as [Qwen2.5-VL](https://ollama.com/library/qwen2.5vl):
-
-```sh
-ollama pull qwen2.5vl
+```bash
+npx --no-install visualguard accept --all --note "New pricing layout"
 ```
 
-Leave its local service running; use `ollama serve` if the app has not already started it. From the application root:
+To accept one route, run `accept /pricing --note "Approved pricing redesign"`. You should see the accepted routes listed, and the next `test` no longer fails for the same change. A different change is still flagged, and acceptance never hides a new accessibility, performance or page-health problem. See [accepting changes](../apps/docs/src/content/docs/guides/accepting-changes.md).
 
-```sh
-export OLLAMA_HOST=http://127.0.0.1:11434
-npx --no-install visualguard test --config visualguard.config.ts \
-  --provider ollama --model qwen2.5vl
-```
+### Compare with saved screenshots
 
-The downloaded local model requires sufficient machine resources but no Gemini API key. Requests use the selected Ollama host. Return to deterministic-only testing with `--no-ai`.
-
-### Add AI to a dashboard-backed test
-
-The dashboard is a separate server. **`test --dashboard URL` connects to an already running dashboard; it does not start one.** Keep your production/reference and staging/candidate applications running too. The dashboard URL is different from both application URLs in `visualguard.config.ts`.
-
-Use this complete local SQLite sequence from your application's root. It requires no separate database service or upload token. Complete section 2's installation/configuration and the Gemini key setup above first.
-
-1. Create an ignored **`.env.visualguard-local`** file (leave any existing PostgreSQL/MongoDB environment file unchanged):
-
-```dotenv
-VISUALGUARD_AUTH_MODE=local
-VISUALGUARD_PUBLIC_URL=
-VISUALGUARD_DATABASE_URL=
-```
-
-Run in a fresh terminal without stale exported dashboard settings; process values take precedence over this file. Add `.env.visualguard-local` to `.gitignore`.
-
-2. **Terminal A — start the dashboard and leave it running:**
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard-local \
-  --host 127.0.0.1 --port 4400
-```
-
-Open `http://127.0.0.1:4400`. Wait for the startup URL. If startup fails, fix the error in terminal A before continuing; do not close that terminal or stop the server with Ctrl+C.
-
-3. **Terminal B — verify the dashboard, create the project, then run Gemini:**
-
-```sh
-curl --fail --show-error http://127.0.0.1:4400/api/health
-```
-
-Continue only when this returns `{"status":"ok"}`. Then run:
-
-```sh
-npx --no-install visualguard dashboard project create storefront \
-  --name "Storefront Web" --server http://127.0.0.1:4400
-npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --provider gemini
-```
-
-This captures, analyzes and publishes in one run. Keep the Gemini key in terminal B's application-root `.env.local`. For Ollama, use its running service and replace the provider with `--provider ollama --model qwen2.5vl`.
-
-**Already using PostgreSQL or MongoDB?** Start terminal A with your existing `.env.visualguard` from [PostgreSQL setup](#6-run-npx-visual-regression-with-postgresql) or [MongoDB setup](#7-run-npx-visual-regression-with-mongodb) instead of the SQLite file. Keep the health check, project creation and test pointed at that same dashboard URL. Login-enabled dashboards also require the project upload token from section 8. For an already hosted dashboard, use its actual HTTPS origin in `--server` and `--dashboard`; do not start a second local workspace just for this test.
-
-**`Cannot bind dashboard project: fetch failed`?** The project lookup could not contact the dashboard; Gemini analysis has not started. Check terminal A for startup errors, verify `/api/health` from terminal B, and use the same host/port printed by the server. A custom port such as 4500 must appear in the health URL, `--server` and `--dashboard`. Inside Docker/WSL, `127.0.0.1` may refer to a different environment: run the two commands together in the same environment or use a correctly reachable, authenticated dashboard address. Do not remove `--dashboard` to hide a connection error; that can select a different workspace.
-
-## 4. Use local reports and baselines
-
-### Saved local reference images
-
-To compare one candidate application against stored screenshots, create a separate `visualguard.baseline.ts` configuration:
+Baseline mode compares your app with screenshots you saved earlier instead of a second site. Create `visualguard.baseline.ts`:
 
 ```ts
 import { defineConfig } from "visualguard";
@@ -272,24 +174,102 @@ export default defineConfig({
 });
 ```
 
-Create a reference only after checking that the current appearance is expected:
+Save the current look as the baseline. Do this only when the current look is correct:
 
-```sh
+```bash
 npx --no-install visualguard test --config visualguard.baseline.ts --update-baselines --no-ai
 ```
 
-After changing the application, compare without the update flag:
+You should see PNG files plus `.meta.json`, `.dom.json` and `.health.json` files in `visualguard/baselines`. Commit them together. After you change the app, compare without the update flag:
 
-```sh
+```bash
 npx --no-install visualguard test --config visualguard.baseline.ts --no-ai
-npx --no-install visualguard report --config visualguard.baseline.ts
 ```
 
-Keep rendering settings consistent. Store local baselines according to your repository/artifact policy. Local baseline creation is different from the later shared **approved baseline registry** described in section 11. Do not update baselines automatically just to make CI pass.
+Keep browser, viewport and settings the same between runs, and never update baselines just to make CI pass. See [local baselines](../apps/docs/src/content/docs/guides/local-baselines.md).
 
-### Existing Playwright tests
+## 4. Add AI explanations
 
-VisualGuard can inspect an interactive state reached by an existing test:
+AI explains uncertain changes. It is off unless you ask. If a key or model is missing or fails, the run falls back to the normal comparison, so check the report for AI notes. Screenshots and page context go to the provider you choose.
+
+### Gemini
+
+Get a key from [Google AI Studio](https://ai.google.dev/gemini-api/docs/api-key) and save it in `.env.local`:
+
+```dotenv
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+```
+
+```bash
+npx --no-install visualguard test --provider gemini
+```
+
+You should see AI notes on uncertain changes in the report. Add `--model MODEL_ID` to pick a model your account supports.
+
+### Ollama (local model)
+
+Start Ollama and download a vision model:
+
+```bash
+ollama pull qwen2.5vl
+```
+
+```bash
+npx --no-install visualguard test --provider ollama --model qwen2.5vl
+```
+
+You should see the same AI notes, produced on your computer. Ollama is expected at `http://127.0.0.1:11434`. Set `OLLAMA_HOST` to change that.
+
+### Re-analyze a saved run
+
+Run AI on the latest saved run without capturing again. Add `--run ID` to choose another run or `--no-cache` to ignore cached answers:
+
+```bash
+npx --no-install visualguard analyze --provider gemini
+```
+
+To turn AI off again, add `--no-ai`. Set call, token and time limits in your config for repeatable CI. See [Gemini](../apps/docs/src/content/docs/guides/ai-gemini.md), [Ollama](../apps/docs/src/content/docs/guides/ai-ollama.md) and [AI policy and budgets](../apps/docs/src/content/docs/guides/ai-policy-and-budgets.md).
+
+## 5. Test pages behind a login
+
+Save a browser login once, then let captures reuse it. This opens a browser. Log in there, and the session is saved to `.visualguard/auth/staging.json`:
+
+```bash
+npx --no-install visualguard auth staging
+```
+
+Do the same with `auth production` if production needs a login. Add `--until-url '**/dashboard'` to save automatically when login finishes. Then add the saved files inside `defineConfig({ ... })`:
+
+```ts
+  environments: {
+    production: { storageState: ".visualguard/auth/production.json" },
+    staging: { storageState: ".visualguard/auth/staging.json" },
+  },
+```
+
+Run the test again:
+
+```bash
+npx --no-install visualguard test --no-ai
+```
+
+You should see logged-in pages in the screenshots, not a login screen. Session files hold credentials, so never commit them, and renew them when they expire. This is your app's login, separate from any dashboard account. See [application authentication](../apps/docs/src/content/docs/guides/application-auth.md).
+
+## 6. More checks and modes
+
+### Accessibility and performance
+
+`--a11y` reports new accessibility problems. `--perf` reports slower loads, layout shift and heavier pages:
+
+```bash
+npx --no-install visualguard test --a11y --perf --no-ai
+```
+
+You should see these findings next to the screenshots. Compare equivalent builds, because a development server is a poor performance reference. See [accessibility and performance](../apps/docs/src/content/docs/guides/accessibility-and-performance.md).
+
+### Playwright fixture
+
+Check one screen from inside a Playwright test. Install `@playwright/test`, set `use.baseURL` in your Playwright config to the staging URL, and write a test:
 
 ```ts
 import { test } from "visualguard/playwright";
@@ -300,13 +280,123 @@ test("checkout summary", async ({ page, visualguard }) => {
 });
 ```
 
-Use the project's normal Playwright configuration and VisualGuard reference configuration. For interactions that change the expected reference state, supply the corresponding fixture/reference setup rather than comparing unrelated application states. Full capture/configuration/API options remain in the [package reference](../packages/visualguard/README.md).
+```bash
+npx playwright test
+```
 
-## 5. Run npx visual regression with a local SQLite dashboard
+You should see VisualGuard screenshots and a `result.json` attached to the test result. See [Playwright](../apps/docs/src/content/docs/guides/playwright.md) for interactive states.
 
-### Select local SQLite explicitly
+### Watch mode
 
-At the application root, create an ignored `.env.visualguard`:
+Re-test the pages you change while you code. Keep your dev server running:
+
+```bash
+npx --no-install visualguard watch --staging http://localhost:3000
+```
+
+You should see a new comparison each time you save a file. Press Ctrl+C to stop. See [watch](../apps/docs/src/content/docs/guides/watch.md).
+
+### Monitor mode
+
+Compare a live site with its own previous capture, for example every night. The first run saves a reference and later runs compare with it:
+
+```bash
+npx --no-install visualguard monitor https://your-app.example.com
+```
+
+Add `--reset` to replace every saved reference with the current look. To write a scheduled GitHub workflow, run:
+
+```bash
+npx --no-install visualguard monitor --workflow "0 3 * * *"
+```
+
+You should see `.github/workflows/visualguard-monitor.yml`. See [monitoring](../apps/docs/src/content/docs/guides/monitoring.md).
+
+### Fix regressions
+
+`fix` proposes a code change, shows the diff and checks the result visually. It is off by default. Turn it on in your config:
+
+```ts
+  fix: {
+    enabled: true,
+    include: ["app/**", "components/**", "styles/**"],
+    verify: {
+      server: { command: "npm run dev", url: "http://localhost:3000" },
+      commands: [],
+    },
+  },
+```
+
+Run it after a test. It asks before every change, needs a Git repository with a clean working tree, and reverts edits that fail verification:
+
+```bash
+npx --no-install visualguard fix
+```
+
+You should see a proposed diff and a prompt. Use `fix /checkout` for one page and `--include-review` to include review items. `fix --auto` asks nothing and commits only verified fixes on a new branch in a separate worktree. Add `--pr` to push that branch and open a pull request. It needs the verification server and consent to upload source. See [fixes](../apps/docs/src/content/docs/guides/fixes.md).
+
+## 7. Run in CI
+
+In CI, install the browser with `npx playwright install --with-deps chromium`, then run with plain output and a JUnit file:
+
+```bash
+npx --no-install visualguard test --ci --junit visualguard-junit.xml
+```
+
+You should see no colors or prompts, a `visualguard-junit.xml` file, and a nonzero exit code if a change reaches your `--fail-on` level. Upload the whole `.visualguard/runs` folder and the JUnit file even when the test fails.
+
+### Generated GitHub workflow
+
+`init` can write a workflow that runs the test, uploads the report and comments on the pull request:
+
+```bash
+npx --no-install visualguard init --workflow
+```
+
+You should see `.github/workflows/visualguard.yml`. Commit it.
+
+### GitHub Action
+
+To write the workflow yourself, add this step after checkout, Node setup and `npm ci`. Give the job `contents: read` and `pull-requests: write` permissions:
+
+```yaml
+      - uses: ShubhamTiwari909/visualguard-ai-testing/action@v1
+        with:
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }} # optional
+          # staging-url: ${{ vars.STAGING_URL }}
+```
+
+The Action installs the browser, runs the test, uploads the report, comments and fails on regressions. A key alone does not turn AI on: also set `ai.provider` in config or pass `args: --provider gemini`. Pin the Action to a release tag. All inputs are in [GitHub Actions](../apps/docs/src/content/docs/ci/github-actions.md).
+
+### Pull request comment
+
+Post or update one summary comment. It needs a `GITHUB_TOKEN` with pull request write access. Add `--dry-run` to print the comment instead:
+
+```bash
+npx --no-install visualguard comment --link REPORT_URL
+```
+
+### Shards and merge
+
+Give every shard the same config, revision and `--run-group`:
+
+```bash
+npx --no-install visualguard test --ci --shard 1/2 --run-group ci-execution-123
+```
+
+Run `--shard 2/2` the same way on another job, then copy all shard run folders into one folder and merge them:
+
+```bash
+npx --no-install visualguard merge downloaded-shards --ci --junit merged-junit.xml
+```
+
+You should see one combined result. Merge fails if a shard is missing, and `--allow-partial` only writes a diagnostic report that still fails. GitHub Actions sets the run group for you. Other systems can set `VISUALGUARD_RUN_GROUP`. See [sharding](../apps/docs/src/content/docs/ci/sharding.md), the [CI overview](../apps/docs/src/content/docs/ci/overview.md) and [preview deployments](../apps/docs/src/content/docs/ci/preview-deployments.md).
+
+## 8. Start a dashboard with local SQLite
+
+The dashboard keeps run history, screenshots and reviews in one place. The local version needs no database service and no login. It is a separate server, and `test --dashboard URL` only connects to one that is already running.
+
+Create `.env.visualguard`. These three lines select the built-in SQLite store, even if your shell has another `DATABASE_URL`:
 
 ```dotenv
 VISUALGUARD_AUTH_MODE=local
@@ -314,72 +404,91 @@ VISUALGUARD_PUBLIC_URL=
 VISUALGUARD_DATABASE_URL=
 ```
 
-Run these in a fresh terminal without exported dashboard settings. Explicit process values take precedence over environment files. The dedicated empty database setting selects SQLite instead of an unrelated application's `DATABASE_URL`.
+In terminal A, start the dashboard and leave it running. The default address is `http://127.0.0.1:4400`. Add `--port` or `--data-dir` before any subcommand to change the port or data folder:
 
-```sh
+```bash
 npx --no-install visualguard dashboard --env-file .env.visualguard
 ```
 
-Open `http://127.0.0.1:4400`. Default local mode trusts this computer's workspace owner and accepts no public listener. It needs no email, password or upload token. The default data file is `.visualguard/platform/metadata.sqlite` under the calling project.
+In terminal B, check that it is up:
 
-To use another directory/port, put options before a subcommand:
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard \
-  --data-dir /absolute/path/to/dashboard-data --port 4500
+```bash
+curl --fail --show-error http://127.0.0.1:4400/api/health
 ```
 
-Keep the server running. A dashboard-only host needs no Playwright browser, React development project, source checkout or AI key.
+You should see `{"status":"ok"}`. Create a project. Its ID is what tests refer to, and the name is only a label:
 
-### Create a project and capture into it
-
-In another terminal at the application root:
-
-```sh
-npx --no-install visualguard dashboard project create storefront \
-  --name "Storefront Web" --server http://127.0.0.1:4400
-npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
+```bash
+npx --no-install visualguard dashboard project create storefront --name "Storefront Web" --server http://127.0.0.1:4400
 ```
 
-The explicit `--server` creates the project in the running dashboard's storage, even if it uses a custom data directory. If using port 4500, change both `--server` and `--dashboard` to that port. For later direct-storage imports, use the same selected `--data-dir`.
+Run a test and send the result to that project:
 
-The project ID is stable. An exact unique display name also works, such as `test "Storefront Web"`. Repeated creation of an existing ID preserves its name/history rather than resetting it.
-
-### Import an existing offline run
-
-Replace `RUN_ID` with a real run directory containing `manifest.json`:
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard \
-  import .visualguard/runs/RUN_ID --project storefront --name "Storefront Web"
+```bash
+npx --no-install visualguard test storefront --dashboard http://127.0.0.1:4400 --no-ai
 ```
 
-Refresh the dashboard. Import copies/indexes the evidence; deleting the original runner output later does not remove the imported database objects. An incomplete/error run remains visibly incomplete, rather than being turned into a pass by importing it.
+You should see the run under the project at `http://127.0.0.1:4400`. Add `--run-name`, `--branch`, `--commit` and `--pr` to label a run. Stop the dashboard with Ctrl+C and start it again with the same env file: the history should still be there. The data file is `.visualguard/platform/metadata.sqlite`.
 
-## 6. Run npx visual regression with PostgreSQL
+### Save a run you already have
 
-**Use this section when:** VisualGuard is installed in another application and you want its dashboard stored in PostgreSQL. Complete section 2 first; work from the application root throughout, with the application environments still running.
+Upload a saved run, for example after a failed upload. Replace `RUN_ID` with a folder in `.visualguard/runs/` that contains `manifest.json`:
 
-Use a dedicated database with a real application user. Stop any dashboard already on port 4400. Changing the database URL selects another workspace; it does not migrate SQLite/MongoDB history automatically. PostgreSQL and MongoDB below are alternative setup paths, not dependencies you must install together.
-
-If you already have PostgreSQL, copy its real URI and required TLS settings. Otherwise, with Docker installed, create a disposable local development instance:
-
-```sh
-docker run --detach --name visualguard-postgres-local \
-  --publish 127.0.0.1:5433:5432 \
-  --env POSTGRES_USER=visualguard \
-  --env POSTGRES_PASSWORD=visualguard_local_only \
-  --env POSTGRES_DB=visualguard \
-  --volume visualguard_pg_local:/var/lib/postgresql/data \
-  postgres:17
-
-docker exec visualguard-postgres-local pg_isready -U visualguard -d visualguard
+```bash
+npx --no-install visualguard dashboard publish .visualguard/runs/RUN_ID --project storefront --server http://127.0.0.1:4400
 ```
 
-Wait until it reports accepting connections. These credentials are only for the loopback development example; use distinct strong credentials and supported network/TLS controls in a shared deployment. The named volume retains data when the container is stopped/restarted.
+On the same computer, `dashboard --env-file .env.visualguard import .visualguard/runs/RUN_ID --project storefront` writes straight into the dashboard storage with no server running. You should see the run after a refresh. Neither command captures again, and an incomplete run stays visibly incomplete. See [projects](../apps/docs/src/content/docs/dashboard/projects.md) and [publishing](../apps/docs/src/content/docs/dashboard/publishing.md).
 
-Update `.env.visualguard`:
+## 9. Run a test from the dashboard
+
+You can start a comparison from the browser instead of the terminal.
+
+1. Open `http://127.0.0.1:4400` and select the project.
+2. Choose **Configure tests**. Enter the production URL, staging URL, routes and viewports, and save. Each project keeps its own settings.
+3. Choose **Run test**. The project shows progress such as "2 of 4 comparisons".
+4. When it finishes, choose **View result**.
+
+You should see the finished run in the project's history. A finished run can still contain regressions, so read the result. Finishing is not approval.
+
+The dashboard server captures the pages itself with its own Chromium. The only authorization it needs is your signed-in account, and no runner token is needed. The URLs must be reachable from the machine running the dashboard, where `localhost` means that machine. `VISUALGUARD_BUILT_IN_RUNNER` turns this on or off in the dashboard env file. It is on by default, except on Vercel. `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` limits how many tests run at once (default 1). If Chromium is missing there, the run fails and tells you to run `npx playwright install chromium` on that machine.
+
+### Optional: a private runner
+
+Use a private runner only when the dashboard cannot reach your app (for example a staging site behind a VPN) or cannot run a browser (Vercel). A connected runner takes priority over the built-in capture.
+
+1. In the project, open **Connect a runner for this project** and choose **Create 30-day runner credential**. Save it when shown.
+2. On a computer that can reach your app, put it in an ignored `.env.visualguard-runner`:
+
+```dotenv
+VISUALGUARD_RUNNER_TOKEN=YOUR_PROJECT_RUNNER_CREDENTIAL
+```
+
+3. Start the runner and leave it running. For a hosted dashboard, use its HTTPS address in `--server`:
+
+```bash
+npx --no-install visualguard dashboard --env-file .env.visualguard-runner runner --project storefront --server http://127.0.0.1:4400
+```
+
+You should see the project show **Runner connected**. Choose **Run test** as before. `--once` runs one queued test and exits, and `--work-dir` sets where evidence is kept. Keep Gemini keys or the Ollama service on the runner machine. See [private runners](../apps/docs/src/content/docs/dashboard/private-runners.md) and [execution progress](../apps/docs/src/content/docs/dashboard/execution-progress.md).
+
+## 10. Store the dashboard in PostgreSQL
+
+Use PostgreSQL when you want dashboard data in a database you manage. Use a dedicated database and a real database user. A new database starts an empty workspace and does not move SQLite history. Stop any dashboard already on port 4400 first.
+
+### Get a database
+
+Use a hosted database and copy its URL, including TLS options such as `?sslmode=require`. Or, for local development with Docker, start a throwaway instance:
+
+```bash
+docker run --detach --name visualguard-postgres-local --publish 127.0.0.1:5433:5432 --env POSTGRES_USER=visualguard --env POSTGRES_PASSWORD=visualguard_local_only --env POSTGRES_DB=visualguard --volume visualguard_pg_local:/var/lib/postgresql/data postgres:17
+```
+
+Wait until `docker exec visualguard-postgres-local pg_isready -U visualguard -d visualguard` says "accepting connections". These passwords are for this local example only. Use strong, different credentials anywhere shared.
+
+### Point the dashboard at it
+
+Edit `.env.visualguard`:
 
 ```dotenv
 VISUALGUARD_AUTH_MODE=local
@@ -387,49 +496,49 @@ VISUALGUARD_PUBLIC_URL=
 VISUALGUARD_DATABASE_URL=postgresql://visualguard:visualguard_local_only@127.0.0.1:5433/visualguard
 ```
 
-Start the dashboard and create its first project in a second terminal:
+Start the dashboard in terminal A:
 
-```sh
+```bash
 npx --no-install visualguard dashboard --env-file .env.visualguard
 ```
 
-```sh
-npx --no-install visualguard dashboard project create storefront \
-  --name "Storefront Web" --server http://127.0.0.1:4400
+In terminal B, create a project and run a test as in section 8:
+
+```bash
+npx --no-install visualguard dashboard project create storefront --name "Storefront Web" --server http://127.0.0.1:4400
 ```
 
-In the test terminal, run the full PostgreSQL-backed workflow:
-
-```sh
-npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
+```bash
+npx --no-install visualguard test storefront --dashboard http://127.0.0.1:4400 --no-ai
 ```
 
-Open the stored run and its screenshots, restart the dashboard with the same `.env.visualguard`, and confirm its history remains. For AI plus PostgreSQL, replace `--no-ai` with `--provider gemini` after section 3's key setup, or use its Ollama provider/model flags. This local-owner configuration needs no upload token; login mode does. The app role must be able to create/update `vg_*` tables/indexes; an existing restricted role may need schema grants from its database administrator. Do not copy a literal `USER` placeholder or rely on your laptop's username being a database role.
+You should see the run and its screenshots. Stop the dashboard, start it again with the same env file and confirm the history remains. Listing the tables (`\dt` in `psql`) should show names starting with `vg_`.
 
-## 7. Run npx visual regression with MongoDB
+The database user must be allowed to create and update tables and indexes, because the dashboard creates its `vg_*` tables itself. A restricted user needs schema permissions from your database administrator. Replace every placeholder in the URL with real values. For hosting, see [PostgreSQL](../apps/docs/src/content/docs/deployment/postgresql.md) and [Cloud SQL](../apps/docs/src/content/docs/deployment/cloud-sql.md).
 
-**Use this section when:** VisualGuard is installed in your application and you want its dashboard stored in MongoDB. Complete section 2 first and work from your application's root. Use MongoDB Atlas for this setup; no Docker, local database installation or replica-set initialization is needed.
+## 11. Store the dashboard in MongoDB
 
-### Get your MongoDB URL
+Use MongoDB Atlas or another MongoDB with transactions. Atlas needs no Docker, local install or replica-set setup.
 
-1. Open your MongoDB Atlas project and create or select a cluster.
-2. Under **Database Access**, create a database user with read/write access to a dedicated database named `visualguard`. This is a database user, separate from your Atlas website login.
-3. Under **Network Access**, add the current public IP of the computer running the dashboard. When hosting later, configure access for the dashboard host instead.
-4. Select the cluster's **Connect → Drivers** option and copy its connection string.
-5. Replace its username/password placeholders and include `/visualguard` before any `?` options. Keep any connection options provided by Atlas.
+### Get the URL
 
-For example, this URL includes the required database name:
+1. In MongoDB Atlas, create or choose a cluster.
+2. Under **Database Access**, create a database user with read and write access to a dedicated database named `visualguard`. This is not your Atlas website login.
+3. Under **Network Access**, add the public IP of the computer that runs the dashboard. When you host the dashboard later, allow its host instead.
+4. Choose **Connect**, then **Drivers**, and copy the connection string.
+5. Fill in the user and password, and put the database name `/visualguard` before any `?` options.
+
+It should look like this:
 
 ```text
 mongodb+srv://YOUR_DB_USER:YOUR_ENCODED_PASSWORD@YOUR_CLUSTER.mongodb.net/visualguard?retryWrites=true&w=majority
 ```
 
-A URL ending in `.mongodb.net/` or `.mongodb.net/?...` has no database name and fails with `MongoDB URL must include a database name`. URL-encode special characters in credentials, for example `@` as `%40`; do not encode the whole URI. VisualGuard initializes its collections, so you do not need to create them manually. See [Atlas connection setup](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/) and [MongoDB connection-string rules](https://www.mongodb.com/docs/manual/reference/connection-string/).
+A URL that ends at `.mongodb.net/` with no database name fails with `MongoDB URL must include a database name`. Encode special characters in the password (`@` becomes `%40`), but not the whole URL. VisualGuard creates its collections for you.
 
-### Save the connection settings
+### Point the dashboard at it
 
-Create `.env.visualguard` in your application root:
+Create `.env.visualguard`:
 
 ```dotenv
 VISUALGUARD_DATABASE_URL="mongodb+srv://YOUR_DB_USER:YOUR_ENCODED_PASSWORD@YOUR_CLUSTER.mongodb.net/visualguard?retryWrites=true&w=majority"
@@ -437,48 +546,37 @@ VISUALGUARD_AUTH_MODE=local
 VISUALGUARD_PUBLIC_URL=
 ```
 
-Replace the example with your actual Atlas URI. Add `.env.visualguard` to `.gitignore` and keep the credentials private. Keep VisualGuard's optional npm dependencies enabled so its MongoDB driver is installed. The application being tested needs no MongoDB code changes.
+Start the dashboard in terminal A:
 
-### Start the dashboard — terminal A
-
-Stop any dashboard already listening on port 4400, then run:
-
-```sh
+```bash
 npx --no-install visualguard dashboard --env-file .env.visualguard --host 127.0.0.1 --port 4400
 ```
 
-Open `http://127.0.0.1:4400` and leave the command running. Use `--env-file` explicitly; dashboard commands do not automatically load this file. Previously exported process settings win over file values, so remove a stale exported `VISUALGUARD_DATABASE_URL` if it points elsewhere. Local mode needs no dashboard password or upload token and must remain on loopback. For shared login, follow section 8.
+In terminal B, create a project and run a test. The test needs the dashboard address, never the MongoDB password:
 
-### Create a project and run tests — terminal B
-
-With the application environments from section 2 still running:
-
-```sh
-npx --no-install visualguard dashboard project create storefront \
-  --name "Storefront Web" --server http://127.0.0.1:4400
-npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
+```bash
+npx --no-install visualguard dashboard project create storefront --name "Storefront Web" --server http://127.0.0.1:4400
 ```
 
-The first command creates the dashboard project. The second binds this test execution to `storefront`, captures the comparison and uploads its evidence to the running dashboard. The runner needs the dashboard URL, not the MongoDB password. See the [command reference](#13-command-reference) for each argument.
+```bash
+npx --no-install visualguard test storefront --dashboard http://127.0.0.1:4400 --no-ai
+```
 
-### Confirm your data is saved
+### Check that it is saved
 
-Open the run and its screenshots in the dashboard. In Atlas's collection browser or MongoDB Compass, inspect the `visualguard` database: VisualGuard uses collections such as `vg_projects`, `vg_runs`, `vg_state`, `vg_objects` and `vg_object_chunks`. Metadata and uploaded screenshot/DOM artifacts are stored there. Stop and restart the dashboard with the same environment file and confirm its history remains. Switching the database URL selects a different workspace; it does not migrate existing SQLite/PostgreSQL history.
+Open the run in the dashboard. In Atlas or MongoDB Compass, open the `visualguard` database. You should see collections such as `vg_projects`, `vg_runs`, `vg_state`, `vg_objects` and `vg_object_chunks`. Restart the dashboard with the same env file and confirm the history remains.
 
-For AI plus MongoDB, replace `--no-ai` with the configured `--provider gemini` or Ollama flags from section 3. No upload token is needed in local mode; login mode requires one.
+### Your own MongoDB server
 
-### Already have MongoDB?
+A replica set or sharded deployment works the same way: use its URL with an explicit database name and keep its authentication and TLS options. A single standalone server (for example `mongodb://127.0.0.1:27017/visualguard`) needs `VISUALGUARD_USER_ADMISSION=legacy`. It handles evidence, reviews and publishing, but invitations, Google linking, baseline changes and administrator recovery need transactions. See [MongoDB](../apps/docs/src/content/docs/deployment/mongodb.md).
 
-Use your existing replica-set or sharded deployment's URI with an explicit database name; keep its authentication, TLS and replica-set options. The rest of the workflow is identical. Atlas or another transaction-capable deployment supports the full team workflow.
+## 12. Turn on login, tokens and teammates
 
-A standalone local server can use a URI such as `mongodb://127.0.0.1:27017/visualguard` and explicit `VISUALGUARD_USER_ADMISSION=legacy`. It supports ordinary evidence/review/publishing, but invitations, Google account linking, managed lifecycle operations, baseline mutations and administrator recovery require transactions. Use Atlas for a new full-feature installation.
+Local mode trusts the person at the computer and must stay on `127.0.0.1`. Anything shared needs login mode.
 
-## 8. Enable login and connect other projects
+### Password administrator
 
-### Turn a local dashboard into a login trial
-
-Stop the dashboard and edit its ignored `.env.visualguard`. Keep your chosen database URI, or an explicit empty value for local SQLite, and add:
+Stop the dashboard. Keep your database URL (or the empty SQLite value) in `.env.visualguard` and add or change these lines. For a fresh team installation, also add `VISUALGUARD_USER_ADMISSION=invite`. On a real host, the public URL is the exact HTTPS address people open, with no path:
 
 ```dotenv
 VISUALGUARD_AUTH_MODE=login
@@ -487,120 +585,126 @@ VISUALGUARD_ADMIN_EMAIL=owner@example.com
 VISUALGUARD_ADMIN_PASSWORD='YOUR_UNIQUE_12_TO_256_CHARACTER_PASSWORD'
 ```
 
-On a release containing admission controls, set `VISUALGUARD_USER_ADMISSION=invite` for a fresh team installation on SQLite/PostgreSQL/transactional MongoDB. Older `3.1.0` does not gain invitation behavior by setting this variable. Use a fresh separate data directory/database for an isolated trial rather than repurposing live data casually.
+```bash
+npx --no-install visualguard dashboard --env-file .env.visualguard
+```
 
-Restart with `dashboard --env-file .env.visualguard`, open the exact configured origin and sign in. Bootstrap creates the initial admin once; later environment changes do not overwrite an existing password. Profile/account pages expose the signed-in identity on releases containing those controls.
+You should see a sign-in page at the exact public address. Sign in with the email and password above. They create the first administrator once, and changing them later does not change an existing account.
 
-### Publish to a login-enabled dashboard
+### Project upload tokens
 
-1. In **People & integrations**, create/select the cloud/login workspace's project and create a named project upload token. Store it when shown; it is not the admin password.
-2. In the application being tested, add to its ignored `.env.local` (or CI secrets):
+A login dashboard only accepts uploads that carry a project token. A token is not a password, and it cannot create projects or read history.
+
+1. In the dashboard, open **People & integrations**, select or create the project, and create a named project upload token. Copy it when shown.
+2. In your application's `.env.local` or CI secrets, add the following. Use your real HTTPS address for a hosted dashboard:
 
 ```dotenv
-VISUALGUARD_DASHBOARD_URL=https://YOUR_DASHBOARD_HOST
+VISUALGUARD_DASHBOARD_URL=http://127.0.0.1:4400
 VISUALGUARD_UPLOAD_TOKEN=YOUR_PROJECT_UPLOAD_TOKEN
 ```
 
-For the login-enabled loopback trial, use `http://127.0.0.1:4400` instead. Remote hosts require HTTPS.
-
-3. Run from that application's root:
-
-```sh
-npx --no-install visualguard test storefront --config visualguard.config.ts --no-ai
+```bash
+npx --no-install visualguard test storefront --no-ai
 ```
 
-The command loads `.env`/`.env.local`; existing process values win. HTTP publishing requires a project token even when the dashboard is on localhost if it runs in login mode. The runner needs neither the database URI nor dashboard admin credentials. Browsers stay on the developer's computer/CI, with network access to both tested applications and the dashboard.
+You should see the run appear in the project. `dashboard publish` does not read `.env.local`. Put the token in a private file such as `.env.visualguard-upload` and pass it before the subcommand:
 
-A token cannot create projects, browse general history or grant access. To create a project remotely, use the dashboard UI or `dashboard project create` with a password administrator's current credentials in an ignored operator environment file. Set `VISUALGUARD_DASHBOARD_URL`, admin email and current admin password, then run:
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.dashboard-admin \
-  project create storefront --name "Storefront Web"
+```bash
+npx --no-install visualguard dashboard --env-file .env.visualguard-upload publish .visualguard/runs/RUN_ID --project storefront --server https://YOUR_DASHBOARD_HOST
 ```
 
-This performs authorized administrator login; an OIDC-only administrator can use the browser instead. Keep these credentials separate from CI upload secrets.
+To create a project from the command line on a login dashboard, put `VISUALGUARD_DASHBOARD_URL`, the admin email and the current admin password in a private `.env.dashboard-admin`, then run the following. You can also create it in the dashboard. Keep these values out of CI:
 
-### Publish a saved run or retry an interrupted upload
-
-Create an ignored `.env.visualguard-upload` containing just the real `VISUALGUARD_UPLOAD_TOKEN` and add that file to `.gitignore`. Replace the run path/project/server:
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard-upload \
-  publish .visualguard/runs/RUN_ID \
-  --project storefront --server https://YOUR_DASHBOARD_HOST
+```bash
+npx --no-install visualguard dashboard --env-file .env.dashboard-admin project create storefront --name "Storefront Web"
 ```
 
-Explicit `--env-file` is useful here: do not assume every dashboard subcommand reads application `.env.local` automatically. The same immutable evidence can resume an upload for up to 24 hours; changed bytes/metadata cannot overwrite existing evidence under a reused identity. Transfers use 1 MiB chunks, checksums and bounded retries. A failed publication keeps the local run for inspection/retry. Current upload limits are 4096 referenced artifacts, 32 MiB per artifact, a 16 MiB raw manifest and 512 MiB of referenced bytes; MongoDB additionally bounds the complete metadata envelope to 12 MiB. Split exceptionally large executions into appropriately scoped complete runs.
+See [login](../apps/docs/src/content/docs/dashboard/login.md) and [publishing](../apps/docs/src/content/docs/dashboard/publishing.md).
 
-## 9. Deploy to Vercel or Google Cloud Run
+### Google sign-in
 
-Both hosts require an **external persistent database**; SQLite under their ephemeral filesystem is not supported. A managed PostgreSQL service is the simplest shared example here. A transaction-capable MongoDB URI can be used instead with provider-appropriate network access. Each new database starts as a separate empty workspace; deployment does not migrate your local history.
+Add Google after password login works.
 
-Use the four settings `VISUALGUARD_DATABASE_URL`, `VISUALGUARD_PUBLIC_URL`, `VISUALGUARD_ADMIN_EMAIL`, `VISUALGUARD_ADMIN_PASSWORD`, plus explicit `VISUALGUARD_AUTH_MODE=login`. Keep them server-side, never `NEXT_PUBLIC_`/`VITE_`. Use an exact canonical HTTPS origin without a path/query. A generated provider domain is sufficient initially; custom domains are optional.
+1. In your Google Cloud project, create an OAuth client of type **Web application**. Register the redirect address `https://YOUR_DASHBOARD_HOST/api/auth/callback`. If the app is in testing, add the Google accounts that may sign in.
+2. Add all three settings to the dashboard env file and restart. Supply all or none:
+
+```dotenv
+VISUALGUARD_OIDC_ISSUER=https://accounts.google.com
+VISUALGUARD_OIDC_CLIENT_ID=YOUR_GOOGLE_WEB_CLIENT_ID
+VISUALGUARD_OIDC_CLIENT_SECRET='YOUR_GOOGLE_CLIENT_SECRET'
+```
+
+3. Sign in as the password administrator. Under **Your sign-in methods**, choose **Link Google account** and finish the Google steps.
+4. Sign out and choose **Sign in with Google**. You should land in the same account with the same history.
+
+Matching email addresses alone never merge accounts. Keep one password administrator as a backup. See [Google sign-in](../apps/docs/src/content/docs/dashboard/google-sign-in.md).
+
+### Users, roles and invitation links
+
+As an administrator, open **People & integrations**. Create members and assign project roles, or create an expiring invitation link for an email, project and role. The dashboard sends no email, so share the link privately. The person signs in as the invited identity and accepts. Opening the link alone grants nothing.
+
+| Role                    | Can do                                                       |
+| ----------------------- | ------------------------------------------------------------ |
+| Viewer                  | Read evidence in assigned projects                           |
+| Reviewer                | Comment and record visual decisions                          |
+| Maintainer              | Manage project access, upload tokens, baselines and policies |
+| Workspace administrator | Manage all accounts and projects                             |
+
+Administrators can also disable or restore accounts, reset passwords and revoke sessions and tokens. The last active administrator is protected. See [people and permissions](../apps/docs/src/content/docs/dashboard/people-and-permissions.md).
+
+## 13. Deploy to Vercel or Cloud Run
+
+Both hosts need an external database (PostgreSQL, or MongoDB with transactions), because their disks do not last. A new database starts empty. Set these on the host, never in `NEXT_PUBLIC_` or `VITE_` names:
+
+```dotenv
+VISUALGUARD_AUTH_MODE=login
+VISUALGUARD_DATABASE_URL=YOUR_DATABASE_URL
+VISUALGUARD_PUBLIC_URL=https://YOUR_DASHBOARD_HOST
+VISUALGUARD_ADMIN_EMAIL=owner@example.com
+VISUALGUARD_ADMIN_PASSWORD='YOUR_UNIQUE_INITIAL_PASSWORD'
+```
+
+Generate a deployment folder into a new, empty directory. This creates files only. It does not deploy anything. Use `--target cloud-run --out deploy/visualguard-cloud-run` for Cloud Run:
+
+```bash
+npx --no-install visualguard dashboard init --target vercel --out deploy/visualguard-vercel
+```
+
+Open the generated `package.json` and check that `visualguard` matches your installed version. If not, set it with `npm pkg set dependencies.visualguard=YOUR_VERSION`. Commit the folder's lockfile. A newer package never updates a folder you generated earlier, so regenerate after upgrading. The generated Vercel build copies the dashboard pages with `dashboard assets --out public`, so you rarely run that yourself.
 
 ### Vercel
 
-From the application root:
+Vercel cannot keep a browser running, so use a private runner (section 9) for **Run test**. Create a separate Vercel project for the dashboard, not your app's project. Use the **Other** framework and Node 22.x, and create a PostgreSQL database such as one from the Vercel Marketplace:
 
-```sh
-npx --no-install visualguard dashboard init --target vercel --out deploy/visualguard-vercel
-cd deploy/visualguard-vercel
-npm install
-npm install --global vercel
-vercel login
-vercel link
+```bash
+cd deploy/visualguard-vercel && npm install && npm install --global vercel && vercel login && vercel link
 ```
 
-Create a **separate dashboard project**, not your application's existing Vercel project. The generated folder pins the installed CLI version from npm; no tarball/source checkout is needed. Use **Other** framework, Node **22.x**, build `npm run build`, output `public` and the generated API/static rewrites.
+Add each of the five settings privately at the prompts, scoped to Production. Run this once per variable name, using `login` for `VISUALGUARD_AUTH_MODE`:
 
-Check `vercel.json` before deployment:
-
-- The `3.1.0` source's scaffold omits `/reviews`; add `{ "source": "/reviews", "destination": "/index.html" }` to `rewrites` if absent.
-- The published `3.2.0` scaffold omits `/policies`; this source includes the correction for the next release. Preserve routes for `/settings`, `/operations`, `/reviews`, `/baselines`, `/policies`, `/invite`, `/runs/:path*` and `/`. Updating the installed package does not update an existing deployment folder; regenerate into an empty directory and review the configuration, or add `{ "source": "/policies", "destination": "/index.html" }` if absent, then redeploy.
-- Keep `/api/:path*` routed to the API function, not `index.html`. Invitation pages in newer releases also need the scaffold's no-referrer/no-store headers.
-
-Create/connect a dedicated PostgreSQL resource through the [Vercel Marketplace](https://vercel.com/docs/marketplace-storage), or use your existing managed database. Set its actual URI as `VISUALGUARD_DATABASE_URL`; provider integration variable names can differ. Select nearby database/function regions and an appropriate pooled endpoint with provider-required TLS.
-
-Enter each value privately at the CLI prompts, scoped to Production:
-
-```sh
+```bash
 vercel env add VISUALGUARD_DATABASE_URL production
-vercel env add VISUALGUARD_PUBLIC_URL production
-vercel env add VISUALGUARD_ADMIN_EMAIL production
-vercel env add VISUALGUARD_ADMIN_PASSWORD production
-vercel env add VISUALGUARD_AUTH_MODE production
+```
+
+```bash
 vercel --prod
 ```
 
-Use the actual stable project origin, for example `https://my-app-visualguard.vercel.app`; enter `login` for auth mode. If the hostname is assigned only after deployment, update the public URL and redeploy before login. A local `.env` does not set production variables. [Vercel environments](https://vercel.com/docs/environment-variables), [deployment CLI](https://vercel.com/docs/cli/deploy).
+You should see the dashboard at your Vercel address. If the address is only known after the first deploy, set `VISUALGUARD_PUBLIC_URL` to it and deploy again. Open `/api/health`, then sign in. Reloading `/reviews`, `/baselines`, `/policies` and `/settings` must not return 404. If one does, check the rewrites in the generated `vercel.json` and keep `/api/:path*` pointed at the API. Keep preview deployments off or give them their own database. See [Vercel](../apps/docs/src/content/docs/deployment/vercel.md).
 
-Open the canonical URL, sign in, create a project/token and configure your application as in section 8. Keep previews disabled or isolated with their own database/URL. To use a custom domain, add it in Vercel, follow its DNS instructions, then update the canonical URL and redeploy.
+### Google Cloud Run
 
-Vercel documents a 4.5 MB function request/response limit. VisualGuard chunks uploads/downloads; test a real large screenshot, manifest and baseline pull with the exact release. Direct unchunked large-artifact requests can be rejected. Test database connection capacity during cold starts/concurrency too: current PostgreSQL pools allow up to five connections per runtime instance. [Vercel limits](https://vercel.com/docs/functions/limitations).
+Cloud Run can run tests itself, because the generated image includes Chromium. You need a Google Cloud project with billing and the `gcloud` CLI:
 
-### Google Cloud Run with managed PostgreSQL or MongoDB
-
-From the application root:
-
-```sh
-npx --no-install visualguard dashboard init --target cloud-run --out deploy/visualguard-cloud-run
-cd deploy/visualguard-cloud-run
-npm install
+```bash
+cd deploy/visualguard-cloud-run && npm install && gcloud auth login
 ```
 
-Use a Google Cloud project with billing and the Google Cloud CLI. Replace project/region:
-
-```sh
-gcloud auth login
-export VG_PROJECT_ID="your-google-cloud-project"
-export VG_REGION="us-central1"
-gcloud config set project "$VG_PROJECT_ID"
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+```bash
+export VG_PROJECT_ID="your-google-cloud-project" VG_REGION="us-central1" && gcloud config set project "$VG_PROJECT_ID" && gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
 ```
 
-Configure the documented source deployer/build IAM prerequisites once with the project administrator. Cloud Build uses the generated Dockerfile; no local Docker, browser binaries or separately published image is required. The database must permit the service's connections with its prescribed TLS/network settings. [Cloud Run source deployment and IAM](https://docs.cloud.google.com/run/docs/deploying-source-code).
-
-Create private `.env.cloud-run.yaml` in this generated folder, replacing the URI/credentials:
+Create a private `.env.cloud-run.yaml` in the generated folder and run `chmod 600` on it. The public URL is temporary until the service has an address:
 
 ```yaml
 VISUALGUARD_AUTH_MODE: "login"
@@ -610,7 +714,7 @@ VISUALGUARD_ADMIN_EMAIL: "owner@example.com"
 VISUALGUARD_ADMIN_PASSWORD: "YOUR_UNIQUE_INITIAL_PASSWORD"
 ```
 
-Use your provider's exact URI/TLS options instead of copying the illustrative URL. Set admission to `invite` as well when running a compatible new team release. The initial origin is temporary while obtaining the assigned service URL. Protect the file with `chmod 600 .env.cloud-run.yaml` and keep it ignored by Git. Add `.gcloudignore`:
+Create `.gcloudignore` so secrets and local data are not uploaded, and keep the YAML out of Git:
 
 ```text
 .gcloudignore
@@ -621,418 +725,175 @@ node_modules
 .visualguard
 ```
 
-Keep `package.json`, its lockfile and `Dockerfile` in the build context. Deploy a **new private service**, then apply its real origin:
+Deploy. `--no-cpu-throttling`, `--min-instances 1` and `--memory 2Gi` let the dashboard capture tests after the request returns. Without them, a test started from the dashboard fails as disconnected:
 
-```sh
-gcloud run deploy visualguard-dashboard \
-  --source . --region "$VG_REGION" --env-vars-file .env.cloud-run.yaml \
-  --port 8080 --max-instances 3 --no-allow-unauthenticated
+```bash
+gcloud run deploy visualguard-dashboard --source . --region "$VG_REGION" --env-vars-file .env.cloud-run.yaml --port 8080 --max-instances 3 --no-allow-unauthenticated --no-cpu-throttling --min-instances 1 --memory 2Gi
+```
 
-export VG_DASHBOARD_URL="$(gcloud run services describe visualguard-dashboard \
-  --region "$VG_REGION" --format='value(status.url)')"
+Read the service address and apply it. Also write it into the YAML file, so the next deploy does not bring back `setup.invalid`:
 
-gcloud run services update visualguard-dashboard \
-  --region "$VG_REGION" --update-env-vars "VISUALGUARD_PUBLIC_URL=${VG_DASHBOARD_URL}"
+```bash
+export VG_DASHBOARD_URL="$(gcloud run services describe visualguard-dashboard --region "$VG_REGION" --format='value(status.url)')" && gcloud run services update visualguard-dashboard --region "$VG_REGION" --update-env-vars "VISUALGUARD_PUBLIC_URL=${VG_DASHBOARD_URL}"
+```
 
-gcloud run services add-iam-policy-binding visualguard-dashboard \
-  --region "$VG_REGION" --member="allUsers" --role="roles/run.invoker"
+Let people reach the sign-in page. The dashboard's own login and tokens still protect your data:
 
+```bash
+gcloud run services add-iam-policy-binding visualguard-dashboard --region "$VG_REGION" --member="allUsers" --role="roles/run.invoker"
+```
+
+```bash
 curl --fail "$VG_DASHBOARD_URL/api/health"
 ```
 
-Update the URL inside the private YAML file too, so the next deploy does not restore `setup.invalid`. These are starting deployment settings, not measured capacity guarantees. Public invocation permits access to the product's own login/token authentication; it does not make private project data public. An organization forbidding public invocation needs a separately designed authenticated ingress path; the current CLI does not obtain Google IAM invocation tokens automatically.
+You should see `{"status":"ok"}`. Open the address and sign in. For ongoing use, move the database URL and admin password into Secret Manager. For Cloud SQL, follow [Cloud SQL](../apps/docs/src/content/docs/deployment/cloud-sql.md). See also [Cloud Run](../apps/docs/src/content/docs/deployment/cloud-run.md) and the [deployment overview](../apps/docs/src/content/docs/deployment/overview.md).
 
-Environment files configure service variables, not Secret Manager references. For ongoing operations, put the DB/admin secrets in Secret Manager, grant the runtime identity access to just those secrets, and map pinned enabled versions to their environment names. [Cloud Run secret configuration](https://docs.cloud.google.com/run/docs/configuring/services/secrets).
+To publish from your app or CI, create a project and its upload token and use them as in section 12. Test one real, large run before relying on it.
 
-Open the assigned HTTPS URL and follow section 8. A custom production domain can use a supported ingress option such as an external Application Load Balancer/serverless NEG; update the canonical origin afterward. Google's direct domain mapping is currently documented as preview and not recommended for production. [Cloud Run domain options](https://docs.cloud.google.com/run/docs/mapping-custom-domains).
+## 14. Storage, backups and recovery
 
-### Cloud Run with Cloud SQL specifically
+Run files stay on the machine that ran the test, normally in `.visualguard/runs/`. Published screenshots and page snapshots are also stored in the dashboard database (the SQLite file, PostgreSQL or MongoDB), so plan database size for them. A storage bucket setting does not move images, and nothing deletes old history automatically.
 
-Cloud SQL also works, but requires its connection path, not just a generic public URI:
+### Portable export and restore
 
-1. Create a PostgreSQL instance in the same region, a dedicated `visualguard` database/user, and schema permissions. Enable backups/PITR/deletion protection as appropriate.
-2. Create/select the Cloud Run runtime service account, grant `roles/cloudsql.client`, and attach the instance to the service using its `PROJECT:REGION:INSTANCE` connection name. Use the second-generation execution environment for the documented supported proxy/CA combinations.
-3. For the public-IP built-in proxy/socket path, do not add `0.0.0.0/0` to database authorized networks. Private-IP-only SQL needs appropriate VPC egress/connector networking.
-4. Store a PostgreSQL URL in Secret Manager with its URI-encoded socket host, for example:
+Export projects and run evidence to one file. It excludes accounts and sign-in state, so it is not a full backup. Use a new file name:
 
-```text
-postgresql://visualguard:HEX_PASSWORD@localhost:5432/visualguard?host=%2Fcloudsql%2FPROJECT%3AREGION%3AINSTANCE
+```bash
+npx --no-install visualguard dashboard --env-file .env.visualguard export /absolute/path/team-evidence.vgbackup.gz
 ```
 
-5. Grant that runtime identity secret access and deploy with the real service account, SQL attachment and secret versions. For example, adapt the earlier `gcloud run deploy` with `--service-account YOUR_RUNTIME_SA`, `--execution-environment gen2`, `--add-cloudsql-instances PROJECT:REGION:INSTANCE` and `--set-secrets VISUALGUARD_DATABASE_URL=visualguard-db-url:1,VISUALGUARD_ADMIN_PASSWORD=visualguard-admin-password:1`. Remove those two values from an env-vars file when using the secret mapping; an environment variable cannot simultaneously be a literal and a secret reference.
-6. Verify startup, `/api/health`, login, publishing and restoration against the actual Cloud SQL instance.
+Restore it into a fresh local dashboard. First create `.env.visualguard-sqlite` with the three local SQLite lines from section 8:
 
-Follow [Google's Cloud SQL connection instructions](https://docs.cloud.google.com/sql/docs/postgres/connect-run) and [Secret Manager configuration](https://docs.cloud.google.com/run/docs/configuring/services/secrets) for the chosen network/IAM setup. The app uses the existing `pg` driver/socket support; it does not install a separate Cloud SQL connector automatically.
-
-## 10. Understand storage, backups and upgrades
-
-### Where are images saved?
-
-- The execution machine retains run files under the configured output directory, normally `.visualguard/runs/`.
-- A successful dashboard import/publish stores new screenshots and DOM evidence in the **selected dashboard database**.
-- SQLite uses `metadata.sqlite`; PostgreSQL uses `vg_objects`/`vg_object_chunks`; MongoDB uses corresponding collections. Chunks are 1 MiB with base64-encoded data, indexed by content digest.
-- Therefore Vercel + PostgreSQL stores images in that PostgreSQL service, and Cloud Run + Cloud SQL stores them in Cloud SQL. The compute host's local filesystem is not the persistent cloud image store.
-- Vercel Blob, S3 and Google Cloud Storage are not required/configurable artifact backends today. Merely setting a bucket environment variable does not move images.
-
-Accounts, sessions, run metadata, review state, baseline history and policies also persist in the database when supported by the installed release. Database cost/capacity must include evidence: base64 uses about four bytes per three original bytes before compression/index/backup overhead; deduplication can reduce additional writes for identical objects. There is no assumed automatic time-based history retention.
-
-### Portable evidence backup
-
-From a machine with access to the selected DB/data directory:
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard \
-  export /absolute/path/team-evidence.vgbackup.gz
+```bash
+npx --no-install visualguard dashboard --env-file .env.visualguard-sqlite --data-dir ./review-workspace restore /absolute/path/team-evidence.vgbackup.gz
 ```
 
-Use a new output filename. Portable export contains projects/run evidence/required artifact objects and excludes authentication state; it is not a full operational backup. Restore into a fresh local workspace with an environment file selecting SQLite:
+You should see your projects and runs when you start that dashboard with the same `--env-file` and `--data-dir`. Restore only adds evidence and never overwrites, so use an empty destination.
 
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard-sqlite \
-  --data-dir ./review-workspace restore /absolute/path/team-evidence.vgbackup.gz
-npx --no-install visualguard dashboard --env-file .env.visualguard-sqlite \
-  --data-dir ./review-workspace
-```
+### Full backups
 
-Create that ignored `.env.visualguard-sqlite` first with the three local-mode/empty URL settings from section 5, and add it to `.gitignore`. Restoration is append-only/deduplicating and can reject conflicting evidence; prefer a fresh destination rather than expecting overwrite semantics. Legacy file-backed workspaces may require their original `objects/` directory or a portable export collecting it.
+For complete recovery, use your database's own backup, plus your settings and secrets.
 
-### Native operational backups
+- **SQLite:** stop the dashboard, then copy the whole data directory.
+- **PostgreSQL:** use managed backups, or `pg_dump`. With the Docker example from section 10, run `docker exec visualguard-postgres-local pg_dump -U visualguard -d visualguard -Fc > visualguard-native.dump`.
+- **MongoDB:** use Atlas backups or your deployment's own procedure.
 
-For complete recovery, include the actual database, configuration/secrets and provider settings:
+Restore into a separate database and check old screenshots, accounts, roles and baselines before you trust the backup. A restore also brings back old tokens and sessions, so revoke any that were exposed. Keep backups private and out of Git.
 
-- **SQLite:** stop all writers and back up the configured data directory, the exact SQLite file and any legacy artifact directory. Include WAL state through a proper backup procedure; do not copy only a live main file blindly.
-- **PostgreSQL:** use managed backups/PITR or `pg_dump`/`pg_restore` for your actual deployment, including all VisualGuard tables. For the local Docker example:
+### Audit page, recovery and upgrades
 
-```sh
-umask 077
-docker exec visualguard-postgres-local pg_dump -U visualguard -d visualguard -Fc \
-  > visualguard-native.dump
-```
+Administrators open **Audit & recovery** to see filtered history and sign-in readiness. If you lose password administrator access, recovery is a host-side tool that ships with the source repository, not the npm package. Follow [operations and recovery](../apps/docs/src/content/docs/deployment/operations-and-recovery.md), and never edit user rows by hand.
 
-[PostgreSQL native dump documentation](https://www.postgresql.org/docs/17/app-pgdump.html).
+To upgrade, back up first, then move the dashboard and every runner to the same package version and regenerate any hosting folder. A code rollback does not undo a database migration. See [upgrades](../apps/docs/src/content/docs/deployment/upgrades.md) and [storage and backups](../apps/docs/src/content/docs/deployment/storage-and-backups.md).
 
-- **MongoDB:** use the Atlas/deployment backup and restore procedure supported by your cluster. Confirm backup availability and retention for your chosen deployment. If your operator uses MongoDB Database Tools, follow the [MongoDB dump options](https://www.mongodb.com/docs/database-tools/mongodump/) for a consistent backup of the actual deployment; the connection-only setup in section 7 does not configure backups.
+## 15. Team workflow: reviews, baselines and policies
 
-Restore into a **separate isolated database** and verify old screenshot bytes, accounts, permissions, reviews and current baselines. A restore also restores historical credential state, so revoke compromised sessions/tokens/invitations before reconnecting an incident recovery. Keep backups private and outside Git/CI artifacts.
+These need login mode and a database that supports them (SQLite, PostgreSQL, or MongoDB with transactions).
 
-### Updates
+### Reviews
 
-Pin the next supported package version in both runner and deployment. Rebuild/regenerate hosting assets as required, back up and validate against a restored test database before upgrading production. A previous hosting deployment does not roll back a migrated schema. Stop old writers and upgrade consistently for identity, administration and reference changes.
-
-## 11. Team reviews, approved baselines and GitHub checks
-
-The following describes the feature implementation included in the 3.2.0 release preparation. **Use published version 3.2.0 or newer once available**; installing 3.1.0 does not provide these later controls. For a current-source trial, the [source guide](LOCAL-SETUP.md) provides a complete local color-change/review/baseline/policy exercise.
-
-### Google, invitations, roles and profile
-
-On a compatible release, set `VISUALGUARD_USER_ADMISSION=invite` and use SQLite/PostgreSQL/transactional MongoDB. Create a customer-owned Google OAuth web client and register exactly `PUBLIC_URL/api/auth/callback`; add issuer `https://accounts.google.com`, client ID and client secret under `VISUALGUARD_OIDC_ISSUER`, `VISUALGUARD_OIDC_CLIENT_ID`, `VISUALGUARD_OIDC_CLIENT_SECRET`. Use all three or leave them unset.
-
-Sign in as the existing password administrator and explicitly link Google under **Your sign-in methods**. Matching email alone never merges identities. Configure Google's audience/test users, complete both-account proof and verify the same user/history after relogin. [Google OIDC setup](https://developers.google.com/identity/openid-connect/openid-connect).
-
-Use **Profile** to see your name/email/workspace role. In **People & integrations**, create members, assign project roles and create expiring invitation links. Share links privately; the dashboard sends no invitation emails. Recipients verify the matching identity and explicitly accept. Viewer reads, Reviewer discusses/decides, Maintainer manages project access/tokens/references/policies; Workspace Admin manages all accounts/projects. Administrator promotion is separate from member creation. Disable removes access while retaining attributable history; restore does not resurrect old sessions/tokens. Last-admin protection, current proof and record-version checks guard administrative changes.
-
-Each installation is one workspace; this does not implement a vendor-wide multi-tenant super-admin console. Existing deployments migrating admission must back up and deploy a consistent explicit mode/version across writers.
-
-### Reviews and names
-
-Open a run's **Team review / Check reviews** to comment/reply, assign a reviewer/deadline and record **Approve visual change**, **Request changes** or **Withdraw decision**, with a reason. **Review inbox** filters assigned/overdue/decision state. Decisions refer to exact run/check evidence. Comments and local acceptance files do not provide shared approval.
-
-Use `--run-name "Release smoke"` with project-bound tests. Maintainers can edit run/project names and public IDs; old project IDs remain aliases. Deletion is permission-checked and confirmed, protects referenced/shared evidence, and leaves original runner files/backups alone. Deleted project IDs stay reserved. No automatic retention scheduler is established by hosting the app.
+Publish a run, open it and select a check under **Team review**. Comment, assign a reviewer and a deadline, then record **Approve visual change**, **Request changes** or **Withdraw decision** with a reason. The **Review inbox** lists your assigned and overdue items. A decision applies to that exact evidence, and a local `accept` file is not a team approval. See [reviews](../apps/docs/src/content/docs/dashboard/reviews.md).
 
 ### Approved baselines
 
-1. Capture/publish complete evidence with its actual full source SHA and compatible rendering identities.
-2. Review the exact checks. In **Approved baselines**, select the project/set `main`, candidate run, actual landed revision and promotion reason. Confirm the source change landed before promoting.
-3. Pull the immutable approved version with the project's upload token in `.env.local`:
+An approved baseline is the team's agreed look. A maintainer promotes reviewed evidence to a named set such as `main` under **Approved baselines**, and each promotion becomes an immutable numbered version. Download one version into a new folder with your project upload token in the environment:
 
-```sh
-npx --no-install visualguard dashboard baseline pull main \
-  --project storefront --version 1 --out .visualguard/approved-v1 \
-  --server https://YOUR_DASHBOARD_HOST
+```bash
+npx --no-install visualguard dashboard baseline pull main --project storefront --version 1 --out .visualguard/approved-v1 --server https://YOUR_DASHBOARD_HOST
 ```
 
-4. Set the baseline config's `baseline.dir` to `.visualguard/approved-v1` and keep rendering settings consistent. A plain baseline test then works offline. Project-bound tests can publish the resulting comparison.
+Set `baseline.dir` in your baseline config (section 3) to `.visualguard/approved-v1`, and keep rendering settings the same. You should then be able to run `test --config visualguard.baseline.ts --no-ai` offline. `--update-baselines` cannot overwrite an approved version. See [approved baselines](../apps/docs/src/content/docs/dashboard/approved-baselines.md).
 
-Promotion records the maintainer's landed-revision attestation, not automatic Git ancestry verification. Versions are immutable; restore creates another version. Tampering, incompatible rendering, stale references, incomplete coverage or missing exact approval block the relevant operation. `--update-baselines` cannot overwrite an approved snapshot. For Playwright fixture snapshots, use the downloaded parent directory; its fixture references are under `playwright/`.
+### Visual policies
 
-### Visual policy and GitHub delivery
+A policy says whether the evidence for one exact commit meets the project's rules. Open **Visual regression policy**, start in **Informative** mode, choose the target branch, baseline and required approvals, and save with a reason. Capture a run with the real commit SHA, then assess it. Add `--enforce` to exit with failure unless the policy is satisfied:
 
-Start in **Informative** mode on **Visual regression policy**. Select target branch/environment, current baseline, freshness, required checks and visual approval requirements; save with a reason. Empty required IDs inherit the baseline coverage. Assess a fresh exact-revision comparison. Missing/partial evidence, stale baseline, capture failures, wrong revisions and withdrawn/rejected approval cannot be bypassed by comments. Temporary exact-check/exact-revision approval exceptions require a reason/expiry and do not waive structural/capture errors.
+```bash
+npx --no-install visualguard dashboard policy assess --project storefront --revision FULL_COMMIT_SHA --server https://YOUR_DASHBOARD_HOST
+```
 
-Optional server-side GitHub settings:
+Refresh the check for one pull request, or add `--all` for every tracked pull request:
+
+```bash
+npx --no-install visualguard dashboard policy reconcile --project storefront --pr 123 --server https://YOUR_DASHBOARD_HOST
+```
+
+Both need the project's upload token in the environment. Capture the pull request's head commit, not the temporary merge commit. See [visual policies](../apps/docs/src/content/docs/dashboard/visual-policies.md).
+
+### GitHub checks
+
+To publish the policy result as a GitHub check, add these to the dashboard environment and set up the webhook described in [GitHub checks](../apps/docs/src/content/docs/ci/github-checks.md):
 
 ```dotenv
-VISUALGUARD_GITHUB_TOKEN=SUPPORTED_CHECKS_WRITE_AND_PULL_REQUESTS_READ_CREDENTIAL
+VISUALGUARD_GITHUB_TOKEN=YOUR_CHECKS_WRITE_AND_PULL_REQUESTS_READ_CREDENTIAL
 VISUALGUARD_GITHUB_REPOSITORIES=storefront=customer-org/customer-repo
-VISUALGUARD_GITHUB_WEBHOOK_SECRET=UNIQUE_RANDOM_SECRET
+VISUALGUARD_GITHUB_WEBHOOK_SECRET=YOUR_UNIQUE_RANDOM_SECRET
 ```
 
-Repository mappings use immutable internal project IDs. Configure `/api/github/webhook`, JSON content, the matching secret and Pull requests events. The host must preserve raw signed request bytes; an already parsed object is rejected. Validate this on Vercel/Cloud Run; use scheduled reconciliation when raw-body forwarding is unavailable. Supported Check Runs credentials differ from a normal GitHub CLI OAuth login; token refresh/expiry handling remains the deployment's responsibility. [GitHub Check Runs authentication](https://docs.github.com/en/rest/checks/runs#create-a-check-run).
-
-Trusted CI must capture the actual PR **head SHA**, not the temporary merge SHA. Publish with that SHA, real PR number and environment, using the existing project-bound test flags or saved-run publishing. Do not expose server/admin credentials to the runner.
-
-```sh
-npx --no-install visualguard dashboard policy assess \
-  --project storefront --revision CAPTURED_FULL_SHA --server https://YOUR_DASHBOARD_HOST
-npx --no-install visualguard dashboard policy reconcile \
-  --project storefront --pr 123 --server https://YOUR_DASHBOARD_HOST
-```
-
-Configure a trusted scheduler to run `policy reconcile --project storefront --all --server ...` at least every five minutes and after review/policy/baseline/access changes. Supply the project's upload token to these CLI commands through private environment/CI secrets. Hosting does not configure a scheduler; Cloud Scheduler/Vercel Cron needs an appropriate handler/job rather than an arbitrary CLI name.
-
-Checks are point-in-time observations; GitHub may retain an old conclusion during an outage. Test failure/retry/expiry monitoring before making a check required. Informative uses neutral conclusions; Required distinguishes satisfied/blocked/pending. This feature does not change branch protection or merge PRs. Named journeys remain deferred.
-
-### Audit and recovery
-
-Administrators use **Audit & recovery** for bounded, filtered history and sign-in readiness. Readiness is an inventory, not live-production certification. Host-side administrator recovery is source/operator tooling, not an installed npm recovery endpoint. The [source guide](LOCAL-SETUP.md#10-audit-recovery-and-backups) explains its proof/version/backup/password-file requirements. Never edit identity rows or overwrite password hashes to simulate recovery.
-
-### Separate test configuration for each dashboard project
-
-Select a project in the sidebar, or select it in the Run history project filter and apply the filter. Its project section has **Configure tests** and **Run test** for workspace administrators and project maintainers.
-
-Choose **Configure tests**, then enter that project's production/reference URL, staging/candidate URL, routes (one per line), viewports and AI provider/model. Save the configuration. Each project stores its own values in the dashboard database; configuring one app does not change another app. A request runs an exact snapshot of the saved version. Save pending edits before starting a test; refresh before editing again if another maintainer changed the version.
-
-For example, project `storefront` can compare `https://shop.example.com` with `https://preview-shop.example.com`, while project `docs` compares `https://docs.example.com` with `http://127.0.0.1:3001`. The URLs must be reachable from the runner. `localhost` refers to the runner's computer, including when the dashboard is hosted elsewhere.
-
-The dashboard config is a bounded comparison profile: explicit routes (up to 100), one to eight viewports, and an optional AI provider/model. It stores no passwords, API keys, application cookies, arbitrary file paths, executable TypeScript or capture hooks. Keep full-feature local configuration in `visualguard.config.ts` when using ordinary CLI tests, including application login state, custom hooks and baseline mode. Saving a dashboard profile does not rewrite that file or change existing `visualguard test --config ...` behavior.
-
-### Run a test from the dashboard
-
-Browser capture runs on a connected private runner on your computer or CI worker. The same flow works with a local dashboard, Vercel or Cloud Run. The dashboard stores requests/status/results; its web request does not start Playwright or rely on a serverless background process.
-
-1. Save the project's configuration as above. Choose AI **None** for the first test.
-2. Expand **Connect a runner for this project** and choose **Create 30-day runner credential**. Save the credential when shown; it is different from an upload-only token. Existing upload-only tokens cannot claim tests.
-3. In the application/runner directory, install the package version containing this feature and its browser prerequisites:
-
-```sh
-npm install --save-dev --save-exact visualguard
-npm install --save-dev playwright
-npx playwright install chromium
-```
-
-4. Create an ignored `.env.visualguard-runner` file on that computer, using the actual credential:
-
-```dotenv
-VISUALGUARD_RUNNER_TOKEN=YOUR_PROJECT_RUNNER_CREDENTIAL
-```
-
-Add `.env.visualguard-runner` to `.gitignore`. The runner needs network access to both application URLs and the dashboard. It needs no dashboard database URL or administrator password. If using Gemini, supply `GEMINI_API_KEY` in that private file/environment; for Ollama, start its service and provide the selected model on the runner. Capture can fall back to deterministic analysis on provider failure, as in section 3.
-
-5. Start the foreground runner using the exact command shown by your dashboard. For a local dashboard:
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard-runner \
-  runner --project storefront --server http://127.0.0.1:4400
-```
-
-For a hosted dashboard, replace `--server` with its canonical HTTPS origin. Keep the terminal/process running. Connect separate project-scoped runners/credentials for different projects. Use `--work-dir /absolute/private/runner-evidence` if you need a dedicated evidence directory; the default is `.visualguard/runner`. Install the browser dependencies required by your operating system, as for ordinary CLI captures.
-
-6. When the project shows **Runner connected**, choose **Run test**. The UI shows queued/running/finished status and a **View result** link after upload. A finished execution can contain visual regressions; inspect the result rather than treating completion as approval. The run appears in that project's history.
-
-Only one test is active per project. Captures use Chromium, bounded concurrency and a 15-minute worker timeout. Workers renew a 60-second lease; a lost lease or revoked credential stops the connected worker. A disconnected execution expires with a visible failure instead of silently recapturing. Queued requests expire after five minutes without a claim. The UI's connection indicator reflects a recent heartbeat, so it can briefly remain connected after a worker exits.
-
-Captured evidence remains on the runner if capture/upload/completion is interrupted; use the normal saved-run publish workflow when appropriate. Revoking a runner credential does not revoke an unrelated project's credentials. Use **Revoke this runner credential** while the new credential is shown, or revoke it later under **People & integrations → Upload credentials**. Hosted login mode also stops accepting credentials whose owner is disabled, loses maintainer access, or has credentials invalidated. Runner credentials can upload evidence only for their project; they cannot edit configuration, trigger tests, approve reviews or manage accounts.
-
-While a dashboard test runs, its project section shows the current stage, route/viewport and a **comparisons completed** bar (for example, 2 of 4 comparisons, 50%). Counts come from completed engine jobs, not a timer or an estimated completion time. Each comparison is one planned route/viewport. Upload and finalization have separate waiting indicators because their duration is not represented by comparison counts. A finished execution links to its actual result; it is not an automatic passing verdict.
-
-Progress is saved in dashboard storage and survives page refreshes. Failed or disconnected executions retain their last reported counts. Upgrade both the dashboard and private runner to a version containing progress reporting; older runners can still execute work but show a generic indeterminate running state. Offline CLI tests are unchanged.
-
-For a one-shot worker, `dashboard runner --once --project storefront --server URL` polls once, executes an already queued request if present and exits. It does not keep the dashboard connected; the default foreground loop is the normal UI workflow. `--poll 3000` controls polling in milliseconds (1000–30000). Use `dashboard runner --help` for the installed version's options.
-
-Project configuration and execution/credential state belong in native operational database backups. Portable evidence exports do not replace that backup. Deleting the project removes its saved configuration, active request and runner credentials. New UI/runner commands require a published feature release; upgrading docs or a source checkout alone does not update an older installed npm package.
-
-## 12. Troubleshooting and final checks
-
-| Symptom                                                | What to check                                                                                                                                                                                    |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `role "USER" does not exist`                           | Actual PostgreSQL URI/user and schema grants; replace all placeholders                                                                                                                           |
-| Dashboard unexpectedly uses another app's DB           | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings                                                                                                 |
-| Empty history after a restart                          | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data                                                                                             |
-| `Cannot bind dashboard project: fetch failed`          | Keep the dashboard server running in another terminal; check `/api/health` and the printed host/port from the test terminal; see [AI with dashboard startup](#add-ai-to-a-dashboard-backed-test) |
-| `test "My Application"` ran but the dashboard is empty | Start the dashboard with its actual `--env-file`, then run `test PROJECT --dashboard http://127.0.0.1:4400`; see [missing project/run recovery](#project-or-run-missing-from-the-dashboard)      |
-| Project-bound test fails before capture                | Project already exists, unique name/ID, dashboard version and correct project token                                                                                                              |
-| Upload fails after successful capture                  | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits                                                                                              |
-| Missing package/command/UI                             | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main`                                                                                        |
-| Google callback rejected                               | Exact origin/callback, configured test users/audience, complete OIDC settings and login mode                                                                                                     |
-| `MongoDB URL must include a database name`             | Include `/visualguard` before URI query options; do not end the URL at the cluster hostname                                                                                                      |
-| MongoDB connection timeout/authentication failure      | Atlas IP access list, database-user credentials/permissions and URL-encoded password; restart after updating the loaded environment file                                                         |
-| MongoDB transaction/admission error                    | Replica set primary/network access, correct URI and appropriate `invite`/limited `legacy` choice                                                                                                 |
-| Vercel page reload returns 404                         | Generated SPA rewrite for that supported page, without breaking API routing                                                                                                                      |
-| Cloud Run starts then loses data                       | A real external DB is required; never rely on a container-local SQLite file                                                                                                                      |
-
-Before sharing a hosted instance, verify health, login, role isolation, a small/large run, image retrieval after redeploy and an isolated native restore. Test signed webhooks/scheduled reconciliation if advertised. Keep unsupported preview hosts and databases separate.
-
-The two final guides replace the earlier phase/setup walkthroughs. Examples, local links and configuration syntax are checked during documentation work; no live cloud/database deployment, application build, formatter, lint, type check or behavioral suite was run for this consolidation. The [historical release record](RELEASE-3.1.0-VALIDATION.md) describes its own tested release only.
-
-## 13. Command reference
-
-Run these commands from the application root after installing VisualGuard. `npx --no-install` uses that project's installed version. Examples assume `visualguard.config.ts` from section 2, a running dashboard at `http://127.0.0.1:4400`, and the local-owner mode from section 5 or 7. Replace the project ID, paths and URLs with your actual values.
-
-### Run a visual test or open its report
-
-```sh
-npx --no-install visualguard test --config visualguard.config.ts --no-ai
-npx --no-install visualguard report --config visualguard.config.ts
-```
-
-`test` compares the configured production/reference and staging/candidate pages and saves evidence locally. Without a project argument, it does not publish to the dashboard. `report` opens/serves the latest saved report for that configuration; add `--run RUN_ID` to select another saved run. Stop the report server with Ctrl+C.
-
-For AI, configure a provider as in section 3, then replace `--no-ai` with `--provider gemini`, or `--provider ollama --model qwen2.5vl`. The runner loads its `.env`/`.env.local`; the dashboard's MongoDB environment file does not configure AI.
-
-### Start a dashboard
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard --host 127.0.0.1 --port 4400
-```
-
-`dashboard` starts the server and serves its UI until Ctrl+C. Its loaded database URL selects SQLite, PostgreSQL or MongoDB storage. Open the printed URL in your browser. Start the server before commands that connect through `--server` or `--dashboard`.
-
-### Create a dashboard project
-
-```sh
-npx --no-install visualguard dashboard project create storefront \
-  --name "Storefront Web" --server http://127.0.0.1:4400
-```
-
-`dashboard project create` creates a project in the running dashboard. `storefront` is the project ID used by tests; `Storefront Web` is its display name. Repeating creation for an existing ID preserves that project's name and history. This command does not start a dashboard or capture screenshots. Login-enabled servers require current administrator authority; see section 8.
-
-### Bind a test execution to a dashboard project
-
-```sh
-npx --no-install visualguard test storefront \
-  --dashboard http://127.0.0.1:4400 \
-  --config visualguard.config.ts --no-ai \
-  --run-name "Homepage color change"
-```
-
-`test storefront` selects the project, resolves it before capture, runs the comparison and publishes the saved evidence. An exact unique display name also works: `test "Storefront Web"`. Use the same project argument for future executions. There is no separate persistent `bind` command. Omitting the project returns to offline tests; `--dashboard` alone requires a project argument.
-
-Use the explicit dashboard URL for the workflows in this guide. Without a dashboard URL or `VISUALGUARD_DASHBOARD_URL`, `test PROJECT` uses storage configured in the runner process, which might be a different local SQLite workspace. The HTTP workflow keeps database credentials on the dashboard server.
-
-To save the server setting for subsequent test commands, add this to the runner's ignored `.env.local`:
-
-```dotenv
-VISUALGUARD_DASHBOARD_URL=http://127.0.0.1:4400
-```
-
-Then `npx --no-install visualguard test storefront --config visualguard.config.ts --no-ai` uses that server. Local-owner mode needs no upload token. Login mode requires `VISUALGUARD_UPLOAD_TOKEN` for this project in the runner's private environment, even for localhost. An upload token publishes to an existing permitted project; it does not create projects. See section 8 for token setup.
-
-### Project or run missing from the dashboard
-
-If `npx visualguard test "My Application"` runs but `npx visualguard dashboard` shows another workspace, first check which storage each process selected:
-
-| Process                                 | Settings it reads                                                                                                                             |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `test PROJECT`                          | Runner process settings and `.env`/`.env.local`; with no dashboard URL, it writes to the runner's configured database or local SQLite storage |
-| `test PROJECT --dashboard URL`          | Publishes through that running dashboard, which selects the database; the runner needs no database URL                                        |
-| `dashboard --env-file .env.visualguard` | Explicitly loads that file, then starts the dashboard; existing process settings take precedence                                              |
-| `dashboard` without `--env-file`        | Uses process settings or defaults; it does not automatically read `.env.visualguard` or the runner's `.env.local`                             |
-
-Relative local SQLite storage also depends on the calling directory. Use the same application root and a single running dashboard for this workflow. To select the MongoDB workspace from section 7, stop the old dashboard and run in terminal A:
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard --host 127.0.0.1 --port 4400
-```
-
-In terminal B, run against that exact server:
-
-```sh
-npx --no-install visualguard test "My Application" \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
-```
-
-The display name must already identify exactly one project in that dashboard. If it does not exist there yet, create it first with a valid ID, then use that ID for tests:
-
-```sh
-npx --no-install visualguard dashboard project create my-app \
-  --name "My Application" --server http://127.0.0.1:4400
-npx --no-install visualguard test my-app \
-  --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --no-ai
-```
-
-To recover the previous execution without recapturing, find its saved run directory in the earlier test output (by default `.visualguard/runs/RUN_ID`) and upload it after creating/selecting the project:
-
-```sh
-npx --no-install visualguard dashboard publish .visualguard/runs/RUN_ID \
-  --project my-app --server http://127.0.0.1:4400
-```
-
-Replace `RUN_ID` with the actual saved directory containing `manifest.json`. Pointing a new dashboard at MongoDB does not migrate runs from an earlier SQLite workspace. Login mode requires this project's upload token for both testing and publishing; these examples assume local-owner mode.
-
-### Import or publish an already saved run
-
-```sh
-npx --no-install visualguard dashboard --env-file .env.visualguard \
-  import .visualguard/runs/RUN_ID --project storefront
-```
-
-`dashboard import` reads a local run directory and writes directly to the storage selected by the environment file. No running dashboard is required for the import itself. Use the same file/database as your dashboard and replace `RUN_ID` with a real saved run containing `manifest.json`.
-
-```sh
-npx --no-install visualguard dashboard publish .visualguard/runs/RUN_ID \
-  --project storefront --server http://127.0.0.1:4400
-```
-
-`dashboard publish` uploads saved evidence through the running server. It does not rerun browser capture. Use this to retry an upload while retaining the original run. Login mode needs a token; supply it through the process environment or `dashboard --env-file .env.visualguard-upload publish ...` with a private token file, as shown in section 8. This subcommand does not automatically load `.env.local`.
-
-### Generate hosting files
-
-```sh
-npx --no-install visualguard dashboard init --target vercel --out deploy/visualguard-vercel
-npx --no-install visualguard dashboard init --target cloud-run --out deploy/visualguard-cloud-run
-```
-
-Choose the command for your host. `dashboard init` generates a deployment project in a new/empty directory; it does not create a cloud resource, deploy the app or start a server. Follow section 9 to install/deploy that output and configure its environment. This is different from `dashboard project create`, which creates a project inside the dashboard.
-
-### Common options
-
-| Option or argument                             | Meaning                                                                                                                |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `--config FILE`                                | Comparison configuration: tested application URLs, routes and viewports                                                |
-| `test PROJECT`                                 | Dashboard project ID or exact unique display name for this execution                                                   |
-| `test --dashboard URL`                         | Dashboard receiving the run; this is not an application-under-test URL                                                 |
-| `dashboard ... --server URL`                   | Running dashboard used by project creation, publishing, baseline or policy commands that support this option           |
-| `dashboard --env-file FILE`                    | Load dashboard settings explicitly; put it before the subcommand                                                       |
-| `dashboard --port NUMBER` / `--host ADDRESS`   | Dashboard listener; use loopback for local-owner mode                                                                  |
-| `dashboard --data-dir DIRECTORY`               | Local storage directory; does not replace an external database URL                                                     |
-| `--no-ai` / `--provider NAME`                  | Disable AI or select a configured AI provider for a test                                                               |
-| `test --run-name NAME`                         | Human-readable dashboard run label; requires a project                                                                 |
-| `test --branch NAME --commit SHA --pr NUMBER`  | Attach real source revision/PR metadata to a dashboard run                                                             |
-| `test --fail-on regression` / `review` / `any` | Choose which result levels make the command exit nonzero; regressions/errors can indicate a correctly detected failure |
-| `test --only GLOB` / `--viewport NAME`         | Limit captured routes or viewports; policy coverage can still require a complete run                                   |
-| `--help`                                       | Display options supported by the installed command                                                                     |
-
-### Other commands
-
-Use `npx --no-install visualguard` before each command below. These are alternatives for specific tasks, not a sequence to execute together. The generated `visualguard.config.ts` is discovered automatically from the application root. The explicit `--config visualguard.config.ts` in these examples makes the selected file clear; keep explicit paths for a custom filename or JSON.
-
-| Command                                                                               | Use and prerequisites                                                                                                                  |
-| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `https://example.com` or `https://production.example.com https://staging.example.com` | Run URL mode for a quick single-site scan or a two-site comparison                                                                     |
-| `init`                                                                                | Run the setup wizard and generate `visualguard.config.ts`; see [npx initialization](#initialize-the-project-with-npx)                  |
-| `init --yes --production URL --staging URL --ai none`                                 | Generate the TypeScript config without prompts; review discovered routes and default desktop/mobile viewports                          |
-| `doctor --config visualguard.config.ts`                                               | Diagnose comparison configuration and application reachability                                                                         |
-| `test --config visualguard.config.ts --list`                                          | List planned URL pairs without capturing screenshots                                                                                   |
-| `auth staging --config visualguard.config.ts`                                         | Save application-under-test login state; configure the resulting storage-state path for captures                                       |
-| `analyze`                                                                             | Re-analyze saved evidence with configured analysis settings                                                                            |
-| `accept`                                                                              | Record an intentional local visual change; distinct from a dashboard review decision                                                   |
-| `fix`                                                                                 | Propose/apply/verify an AI repair with the configured source/verification setup                                                        |
-| `watch` / `monitor`                                                                   | Repeat tests on edits or over time using their respective configuration                                                                |
-| `merge`                                                                               | Combine compatible run shards and validate coverage                                                                                    |
-| `comment`                                                                             | Publish/update a PR summary when explicitly configured and authorized                                                                  |
-| `dashboard export FILE` / `dashboard restore FILE`                                    | Export/restore portable evidence using the selected storage; these exclude account/security state and are not full operational backups |
-| `dashboard baseline pull SET --project storefront --out NEW_DIRECTORY --server URL`   | Download an existing approved baseline set; requires project access and a configured reference destination                             |
-| `dashboard policy assess --project storefront --revision SHA --server URL`            | Assess an exact revision against the project's configured visual policy                                                                |
-| `dashboard policy reconcile --project storefront --all --server URL`                  | Refresh tracked PR assessments/GitHub delivery; requires configured policy integration and project authorization                       |
-| `dashboard assets --out public`                                                       | Copy packaged dashboard assets; generated hosting builds use this                                                                      |
-| `--version`                                                                           | Print the installed CLI version                                                                                                        |
-
-Check the exact required arguments before using an advanced command:
-
-```sh
-npx --no-install visualguard --help
-npx --no-install visualguard test --help
-npx --no-install visualguard dashboard --help
-npx --no-install visualguard dashboard project create --help
-npx --no-install visualguard dashboard baseline pull --help
-```
+Run `policy reconcile --all` on a schedule, at least every five minutes, and start in Informative mode. VisualGuard does not change branch protection or merge pull requests.
+
+## 16. Troubleshooting
+
+| Problem                                         | Fix                                                                                                         |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Browser or Chromium not found                   | Run `npx playwright install chromium` on the machine that captures. On Linux or CI, add `--with-deps`       |
+| `test` exits nonzero                            | A change was found. Run `report`, then `accept` the intended ones                                           |
+| Pages fail to load or time out                  | Start both servers, then run `doctor`. `localhost` means the machine doing the capture                      |
+| AI ran but the report has no AI notes           | Check the key or model. A failed AI call falls back to the normal comparison                                |
+| `Cannot bind dashboard project: fetch failed`   | The dashboard is not running or the port differs. Use the same URL in `--server` and `--dashboard`          |
+| Run missing, or history empty after a restart   | Start the dashboard from the same folder with the same `--env-file`. A new database starts empty            |
+| Login dashboard rejects uploads                 | Set `VISUALGUARD_DASHBOARD_URL` and a project `VISUALGUARD_UPLOAD_TOKEN` (section 12)                       |
+| Run test fails because Chromium is missing      | Run `npx playwright install chromium` on the dashboard machine, or connect a private runner                 |
+| Run test cannot reach your staging site         | Connect a private runner, or set `VISUALGUARD_BUILT_IN_RUNNER=off` to require one                           |
+| Cloud Run test stops as "disconnected"          | Redeploy with `--no-cpu-throttling --min-instances 1 --memory 2Gi`. Vercel needs a private runner           |
+| `role "USER" does not exist` (PostgreSQL)       | Use a real user in the URL, replace every placeholder, and grant that user schema permissions               |
+| Dashboard uses another app's database           | Set `VISUALGUARD_DATABASE_URL` (empty means SQLite) and check for an exported `DATABASE_URL`                |
+| `MongoDB URL must include a database name`      | Add `/visualguard` before the `?` options                                                                   |
+| MongoDB timeout, authentication or transactions | Check the Atlas IP list, user and encoded password. Full features need Atlas or a replica set               |
+| Hosted page reload returns 404, or data vanishes | Check the generated Vercel rewrites. Hosted dashboards need an external database, never a local SQLite file |
+
+More help: [installation](../apps/docs/src/content/docs/troubleshooting/installation.md), [capture](../apps/docs/src/content/docs/troubleshooting/capture.md), [dashboard](../apps/docs/src/content/docs/troubleshooting/dashboard.md) and [CI](../apps/docs/src/content/docs/troubleshooting/ci.md).
+
+## 17. Command cheat sheet
+
+Put `npx --no-install visualguard` before each command, and add `--help` to any command for its options. Dashboard options such as `--env-file`, `--port`, `--host`, `--data-dir` and `--file` go before a subcommand.
+
+| Command                                                                        | What it does                                                   |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| `URL` or `PROD_URL STAGING_URL`                                                | Scan one site or compare two, with no config                   |
+| `init` / `init --yes --production URL --staging URL --ai none`                 | Create `visualguard.config.ts` (`--workflow` adds a CI file)   |
+| `doctor`                                                                       | Check browser, config and URLs                                 |
+| `test`                                                                         | Compare using the config                                       |
+| `test --no-ai` / `--provider gemini` / `--provider ollama --model ID`          | Turn AI off or choose a provider                               |
+| `test --list`                                                                  | Show the pages to test, without capturing                      |
+| `test --only GLOB --viewport NAME --route PATH`                                | Limit routes and viewports                                     |
+| `test --fail-on regression\|review\|any`                                       | Choose what makes the exit code nonzero                        |
+| `test --a11y --perf`                                                           | Add accessibility and performance checks                       |
+| `test --update-baselines`                                                      | Save screenshots as baselines (baseline mode)                  |
+| `test --ci --junit FILE`                                                       | Plain output and a JUnit report for CI                         |
+| `test --shard 1/2 --run-group ID`                                              | Run one part of the work                                       |
+| `test PROJECT --dashboard URL`                                                 | Run and publish to a dashboard project                         |
+| `test PROJECT --dashboard URL --run-name NAME --branch B --commit SHA --pr N`  | Label the dashboard run                                        |
+| `report`                                                                       | Open the latest report (`--run ID` for another)                |
+| `analyze`                                                                      | Re-run AI on a saved run (`--no-cache` skips the cache)        |
+| `accept --all` / `accept ROUTE --note TEXT`                                    | Accept intended changes                                        |
+| `auth ENV`                                                                     | Save a browser login for `production` or `staging`             |
+| `fix` / `fix --auto` / `fix --auto --pr`                                       | Propose and verify repairs, commit them, or open a pull request |
+| `watch`                                                                        | Re-test changed pages as you save                              |
+| `monitor URL` / `monitor --workflow CRON`                                      | Compare a live site with its last capture, or write a schedule |
+| `merge PATHS...`                                                               | Combine shard results into one report                          |
+| `comment`                                                                      | Post or update the pull request comment                        |
+| `dashboard --env-file FILE`                                                    | Start the dashboard                                            |
+| `dashboard project create ID --name NAME --server URL`                         | Create a dashboard project                                     |
+| `dashboard publish RUN_DIR --project ID --server URL`                          | Upload a saved run                                             |
+| `dashboard import RUN_DIR --project ID`                                        | Add a saved run straight into local dashboard storage          |
+| `dashboard runner --project ID --server URL`                                   | Connect an optional private runner                             |
+| `dashboard baseline pull SET --project ID --out DIR --server URL`              | Download an approved baseline                                  |
+| `dashboard policy assess --project ID --revision SHA --server URL`             | Check a commit against the visual policy                       |
+| `dashboard policy reconcile --project ID --pr N --server URL`                  | Refresh a pull request's policy check (`--all` for every one)  |
+| `dashboard export FILE` / `dashboard restore FILE`                             | Back up or restore evidence                                    |
+| `dashboard init --target vercel\|cloud-run --out DIR`                          | Generate hosting files                                         |
+| `dashboard assets --out DIR`                                                   | Copy the prebuilt dashboard pages for static hosting           |
+
+Every option of every command is in the [command reference](COMMAND-REFERENCE.md).

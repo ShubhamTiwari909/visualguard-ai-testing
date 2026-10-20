@@ -1,6 +1,6 @@
 # Reliability changes: F01–F12
 
-Implemented from the [project analysis](PROJECT-ANALYSIS-AND-ROADMAP.md), 9 October 2026. The findings in that report describe the original checkout; this document records the new behavior and migration requirements.
+Implemented following a project analysis on 9 October 2026. The findings describe the original checkout; this document records the new behavior and migration requirements.
 
 | Finding | Change                                                                                                                                                                                     | User-visible result                                                                                                                         |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |

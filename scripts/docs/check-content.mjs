@@ -24,9 +24,6 @@ for (const page of pages) {
     if (!/troubleshoot/i.test(titles)) errors.push(`${name}: tutorial needs troubleshooting`);
   }
 }
-const plan = await readFile(join(root, 'docs/DOCUMENTATION-WEBSITE-PLAN.md'), 'utf8');
-const backlog = [...plan.matchAll(/`((?:start|concepts|guides|dashboard|ci|deployment|reference|troubleshooting|releases|contributing)\/[a-z0-9/-]+\/)`/g)].map(x => `/${x[1]}`.replace(/\/index\/$/, '/'));
-for (const route of new Set(backlog)) if (!routes.has(route)) errors.push(`Planned route missing: ${route}`);
 const coverage = JSON.parse(await readFile(join(docsRoot, 'src/data/coverage.json')));
 for (const source of coverage.sources) {
   const titles = headings(await readFile(join(root, source), 'utf8'));

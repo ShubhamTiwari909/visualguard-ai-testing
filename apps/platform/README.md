@@ -7,4 +7,4 @@ See the [product feature guide](../../docs/PRODUCT-FEATURES.md) for a readable o
 
 This app is the shared dashboard/API. Browser captures execute on developer machines or CI runners. Its development adapter is separate from the installed package runtime.
 
-For architecture and future scope, see the [package architecture](../../docs/PACKAGE-ARCHITECTURE.md) and [organization growth plan](../../docs/ORGANIZATION-GROWTH-PLAN.md). Planning and validation records describe their own historical revisions; the setup guides describe the current supported workflows and release boundaries.
+For architecture, see the [package architecture](../../docs/PACKAGE-ARCHITECTURE.md). Validation records describe their own historical revisions; the setup guides describe the current supported workflows and release boundaries.

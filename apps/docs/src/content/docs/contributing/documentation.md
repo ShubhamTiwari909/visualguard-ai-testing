@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
 verifiedAgainst: "visualguard 3.2.3 / source 69ccdf1"
-sourcePaths: ["docs/DOCUMENTATION-WEBSITE-PLAN.md"]
+sourcePaths: ["scripts/docs/check-content.mjs"]
 sidebar: {"order": 5}
 ---
 
