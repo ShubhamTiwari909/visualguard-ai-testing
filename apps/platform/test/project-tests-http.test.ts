@@ -180,11 +180,24 @@ for (const mode of ["local", "login"] as const)
           await request(
             "/api/projects/storefront/test-runner/heartbeat",
             "POST",
-            { id, lease: job.lease },
+            {
+              id,
+              lease: job.lease,
+              progress: {
+                stage: "comparing",
+                completedJobs: 0,
+                totalJobs: 1,
+                route: "/",
+                viewport: "desktop",
+              },
+            },
             key.token,
           )
         ).response.status,
       ).toBe(200);
+      expect(
+        (await request("/api/projects/storefront/test-execution")).value.execution.progress,
+      ).toMatchObject({ stage: "comparing", completedJobs: 0, totalJobs: 1 });
       expect(
         (
           await request(

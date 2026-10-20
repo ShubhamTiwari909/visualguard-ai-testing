@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { mutation } from "./auth";
+import { ExecutionProgress } from "./execution-progress";
 import type { Project } from "../shared/contracts";
 import type {
   ProjectTestConfig,
@@ -173,26 +174,7 @@ export function ProjectTestControls({
         </p>
       )}
       {dirty && <p className="vg-muted">Save the configuration before running a test.</p>}
-      {execution && (
-        <div role="status" className="vg-test-status">
-          <strong>
-            {execution.status === "completed"
-              ? "Test finished"
-              : execution.status === "failed"
-                ? "Test could not finish"
-                : execution.status === "queued"
-                  ? "Test queued"
-                  : "Running visual comparison…"}
-          </strong>
-          <span> · config v{execution.configVersion}</span>
-          {execution.error && <p>{execution.error}</p>}
-          {execution.runId && (
-            <a className="vg-button" href={`/runs/${execution.runId}`}>
-              View result
-            </a>
-          )}
-        </div>
-      )}
+      {execution && <ExecutionProgress execution={execution} />}
       {settings && <ProjectTestConfiguration config={settings.config} />}
       {loaded && canManage && (editing || !settings) && (
         <form

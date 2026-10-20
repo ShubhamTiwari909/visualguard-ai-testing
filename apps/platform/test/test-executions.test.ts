@@ -91,6 +91,11 @@ describe("dashboard test execution lifecycle", () => {
     await jobs.claim("storefront", runnerId);
     await request();
     const claimed = (await jobs.claim("storefront", runnerId))!;
+    await jobs.heartbeat("storefront", runnerId, {
+      id: claimed.id,
+      lease: claimed.lease,
+      progress: { stage: "comparing", completedJobs: 1, totalJobs: 2 },
+    });
     const row = (await p.state.get<Record<string, unknown>>(
       "project-test-executions",
       "storefront",
@@ -99,7 +104,10 @@ describe("dashboard test execution lifecycle", () => {
       ...row,
       value: { ...row.value, leaseExpiresAt: "2000-01-01T00:00:00.000Z" },
     });
-    expect((await jobs.status(owner, "storefront")).execution?.status).toBe("failed");
+    expect((await jobs.status(owner, "storefront")).execution).toMatchObject({
+      status: "failed",
+      progress: { completedJobs: 1, totalJobs: 2 },
+    });
     await expect(
       jobs.complete("storefront", runnerId, { id: claimed.id, lease: claimed.lease, failed: true }),
     ).rejects.toMatchObject({ status: 409 });
@@ -179,5 +187,79 @@ describe("dashboard test execution lifecycle", () => {
     expect(await p.state.get("project-test-executions", "storefront")).toBeUndefined();
     expect(await p.state.get("project-runner-heartbeats", "storefront")).toBeUndefined();
     expect(await p.state.get("tokens", token.id)).toBeUndefined();
+  });
+  it("persists bounded, monotonic progress for project readers and preserves it without newer reports", async () => {
+    await jobs.claim("storefront", runnerId);
+    await request();
+    const claimed = (await jobs.claim("storefront", runnerId))!;
+    const lease = { id: claimed.id, lease: claimed.lease };
+    await jobs.heartbeat("storefront", runnerId, {
+      ...lease,
+      progress: {
+        stage: "comparing",
+        completedJobs: 1,
+        totalJobs: 2,
+        route: "/pricing",
+        viewport: "desktop",
+      },
+    });
+    await jobs.heartbeat("storefront", runnerId, lease);
+    const other = await openPlatform({ VISUALGUARD_PLATFORM_DATA_DIR: p.root });
+    try {
+      const restarted = new TestExecutions(new ProjectTests(other.repository, other.state, p.auth));
+      const result = await restarted.status(owner, "storefront");
+      expect(result.execution?.progress).toMatchObject({
+        stage: "comparing",
+        completedJobs: 1,
+        totalJobs: 2,
+        route: "/pricing",
+        viewport: "desktop",
+        updatedAt: expect.any(String),
+      });
+      expect(JSON.stringify(result)).not.toContain(claimed.lease);
+    } finally {
+      await other.close();
+    }
+    for (const progress of [
+      { stage: "comparing", completedJobs: 0, totalJobs: 2 },
+      { stage: "comparing", completedJobs: 1, totalJobs: 3 },
+    ])
+      await expect(
+        jobs.heartbeat("storefront", runnerId, { ...lease, progress }),
+      ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      jobs.heartbeat("storefront", "another-runner", {
+        ...lease,
+        progress: { stage: "comparing", completedJobs: 2, totalJobs: 2 },
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    for (const progress of [
+      { stage: "comparing", completedJobs: 3, totalJobs: 2 },
+      { stage: "capturing", completedJobs: -1, totalJobs: 2 },
+      { stage: "capturing", completedJobs: 0, totalJobs: 801 },
+      { stage: "arbitrary-stage", completedJobs: 0, totalJobs: 2 },
+      { stage: "capturing", completedJobs: 0, totalJobs: 2, secret: "not allowed" },
+    ])
+      await expect(
+        jobs.heartbeat("storefront", runnerId, { ...lease, progress }),
+      ).rejects.toThrow();
+    await jobs.heartbeat("storefront", runnerId, {
+      ...lease,
+      progress: { stage: "uploading", completedJobs: 2, totalJobs: 2 },
+    });
+    await expect(
+      jobs.heartbeat("storefront", runnerId, {
+        ...lease,
+        progress: { stage: "capturing", completedJobs: 2, totalJobs: 2 },
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    await jobs.complete("storefront", runnerId, { ...lease, failed: true });
+    expect((await jobs.status(owner, "storefront")).execution?.progress?.completedJobs).toBe(2);
+    await expect(
+      jobs.heartbeat("storefront", runnerId, {
+        ...lease,
+        progress: { stage: "finalizing", completedJobs: 2, totalJobs: 2 },
+      }),
+    ).rejects.toMatchObject({ status: 409 });
   });
 });

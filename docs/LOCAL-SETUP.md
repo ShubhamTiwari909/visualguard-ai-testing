@@ -514,6 +514,8 @@ Set the UI config to `http://127.0.0.1:4100` and `http://127.0.0.1:4101` with ro
 
 For implementation validation after the JavaScript/assets build, `pnpm platform:test:runner` runs an isolated dashboard-to-CLI workflow with real Chromium capture and temporary local HTTP sites. It does not connect to a production dashboard or external database.
 
+Dashboard-triggered runs show live stages and the number of completed route/viewport comparisons in the selected project section. The percentage measures completed comparisons, with separate indeterminate upload/finalization states; it is not a time estimate. Refreshing the page reloads stored progress. Use matching dashboard/runner builds for detailed counts; older workers keep the generic running indicator. Completion links to the result without changing its regression/review status.
+
 ## 12. Troubleshooting and checks
 
 | Symptom                                           | Check                                                                                                                                                                                                                                                                                            |

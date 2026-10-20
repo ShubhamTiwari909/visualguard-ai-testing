@@ -55,7 +55,7 @@ try {
     await request("/api/projects", "POST", { id: project, name: project });
   const config = {
     baseURL: { production: urls[0], staging: urls[1] },
-    routes: ["/"],
+    routes: ["/", "/pricing"],
     viewports: { desktop: { width: 400, height: 300 } },
     ai: { provider: "none" },
   };
@@ -90,21 +90,56 @@ try {
   await exec(process.execPath, args, { cwd: repo, env, timeout: 30000 });
   const id = randomUUID();
   await request("/api/projects/runner-demo/test-execution", "POST", { id, configVersion: 1 });
-  const result = await exec(process.execPath, args, {
+  let finished = false;
+  const observed = [];
+  const worker = exec(process.execPath, args, {
     cwd: repo,
     env,
     timeout: 120000,
     maxBuffer: 2 * 1024 * 1024,
-  });
+  })
+    .then(
+      (result) => ({ result }),
+      (error) => ({ error }),
+    )
+    .finally(() => {
+      finished = true;
+    });
+  while (!finished) {
+    const current = await request("/api/projects/runner-demo/test-execution");
+    if (current.execution.progress) observed.push(current.execution.progress);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  const output = await worker;
+  if (output.error) throw output.error;
+  const result = output.result;
+  assert.ok(
+    observed.some(
+      (progress) => progress.totalJobs === 2 && ["capturing", "comparing"].includes(progress.stage),
+    ),
+    "No live comparison progress received",
+  );
+  assert.ok(
+    observed.some((progress) => progress.completedJobs === 1),
+    "Intermediate comparison count was not observable",
+  );
   assert.ok(result.stdout.includes(`${dashboard.url}/runs/`));
   assert.ok(!result.stdout.includes(`${dashboard.url}${dashboard.url}`));
   const status = await request("/api/projects/runner-demo/test-execution");
   assert.equal(status.execution.status, "completed", result.stdout + result.stderr);
   assert.equal(status.execution.id, id);
+  assert.deepEqual(
+    {
+      stage: status.execution.progress.stage,
+      completedJobs: status.execution.progress.completedJobs,
+      totalJobs: status.execution.progress.totalJobs,
+    },
+    { stage: "finalizing", completedJobs: 2, totalJobs: 2 },
+  );
   const run = await request(`/api/runs/${status.execution.runId}`);
   assert.equal(run.projectId, "runner-demo");
   assert.equal(run.metadata.deployment, id);
-  assert.equal(run.manifest.jobs.length, 1);
+  assert.equal(run.manifest.jobs.length, 2);
   assert.equal(new URL(run.manifest.config.baseURL.production).origin, urls[0]);
   assert.equal(new URL(run.manifest.config.baseURL.staging).origin, urls[1]);
   assert.equal(run.manifest.config.ai.provider, "none");
@@ -117,7 +152,7 @@ try {
   await request(`/api/projects/runner-demo/tokens/${key.id}`, "DELETE", {});
   await assert.rejects(exec(process.execPath, args, { cwd: repo, env, timeout: 30000 }));
   console.log(
-    "Dashboard runner smoke passed: isolated project configs, credential-scoped queue/claim, real Chromium capture, evidence upload/result link, saved config overrides runner URL/provider settings, and revocation.",
+    "Dashboard runner smoke passed: isolated project configs, credential-scoped queue/claim, real Chromium capture, persisted live comparison progress, evidence upload/result link, saved config overrides runner URL/provider settings, and revocation.",
   );
 } finally {
   await dashboard?.close();
