@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openPlatform } from "../server/config.js";
+import { startDashboard } from "../server/runtime.js";
 import { prepareTestBinding } from "../server/test-binding.js";
 
 describe("test project binding", () => {
@@ -125,6 +126,102 @@ describe("test project binding", () => {
           env: { VISUALGUARD_UPLOAD_TOKEN: "test-upload-token" },
         }),
       ).rejects.toThrow("invalid project");
+    }
+  });
+  it("explains an unreachable local dashboard without silently opening local storage", async () => {
+    const failure = new TypeError("fetch failed", {
+      cause: Object.assign(new Error("refused"), { code: "ECONNREFUSED" }),
+    });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(failure));
+    await expect(
+      prepareTestBinding({
+        project: "storefront",
+        server: "http://127.0.0.1:4500",
+        metadata: { environment: "ci" },
+        env,
+      }),
+    ).rejects.toMatchObject({
+      cause: failure,
+      message: expect.stringContaining(
+        "Cannot reach dashboard at http://127.0.0.1:4500 (ECONNREFUSED)",
+      ),
+    });
+    await expect(
+      prepareTestBinding({
+        project: "storefront",
+        server: "http://127.0.0.1:4500",
+        metadata: { environment: "ci" },
+        env,
+      }),
+    ).rejects.toThrow("The test command does not start a dashboard");
+    const platform = await openPlatform(env);
+    try {
+      expect(await platform.repository.projects()).toEqual([]);
+    } finally {
+      await platform.close();
+    }
+  });
+  it("distinguishes remote connection failures from rejected project access", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+    await expect(
+      prepareTestBinding({
+        project: "storefront",
+        server: "https://dashboard.example.test",
+        metadata: { environment: "ci" },
+        env: { ...env, VISUALGUARD_UPLOAD_TOKEN: "private-token" },
+      }),
+    ).rejects.toThrow(
+      "Check that the dashboard is running and that its URL, network access and HTTPS certificate are valid",
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ error: "Project access denied" }, { status: 403 })),
+    );
+    await expect(
+      prepareTestBinding({
+        project: "storefront",
+        server: "http://127.0.0.1:4400",
+        metadata: { environment: "ci" },
+        env,
+      }),
+    ).rejects.toMatchObject({
+      status: 403,
+      message: expect.stringContaining("VISUALGUARD_UPLOAD_TOKEN"),
+    });
+  });
+  it("supports the guide's running-server, health, project-create and binding sequence", async () => {
+    const assets = join(root, "assets");
+    await mkdir(assets);
+    await writeFile(join(assets, "index.html"), "<html>Dashboard</html>");
+    const dashboard = await startDashboard({
+      host: "127.0.0.1",
+      port: 0,
+      dataDir: join(root, "dashboard"),
+      assetDir: assets,
+      env: { VISUALGUARD_AUTH_MODE: "local", VISUALGUARD_DATABASE_URL: "" },
+    });
+    try {
+      expect(await (await fetch(`${dashboard.url}/api/health`)).json()).toEqual({ status: "ok" });
+      const session = await (await fetch(`${dashboard.url}/api/session`)).json();
+      const created = await fetch(`${dashboard.url}/api/projects`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-visualguard-platform-token": session.token,
+        },
+        body: JSON.stringify({ id: "storefront", name: "Storefront Web" }),
+      });
+      expect(created.ok).toBe(true);
+      const binding = await prepareTestBinding({
+        project: "storefront",
+        server: dashboard.url,
+        metadata: { environment: "ci" },
+        env,
+      });
+      expect(binding.name).toBe("Storefront Web");
+      expect(binding.destination).toBe(dashboard.url);
+    } finally {
+      await dashboard.close();
     }
   });
   it("uses scoped remote lookup and rejects unsafe URLs or missing remote credentials", async () => {

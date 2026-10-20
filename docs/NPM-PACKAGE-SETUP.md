@@ -209,14 +209,49 @@ The downloaded local model requires sufficient machine resources but no Gemini A
 
 ### Add AI to a dashboard-backed test
 
-First complete one dashboard setup below and create its project. Then use the same application-root AI credentials/provider service:
+The dashboard is a separate server. **`test --dashboard URL` connects to an already running dashboard; it does not start one.** Keep your production/reference and staging/candidate applications running too. The dashboard URL is different from both application URLs in `visualguard.config.ts`.
+
+Use this complete local SQLite sequence from your application's root. It requires no separate database service or upload token. Complete section 2's installation/configuration and the Gemini key setup above first.
+
+1. Create an ignored **`.env.visualguard-local`** file (leave any existing PostgreSQL/MongoDB environment file unchanged):
+
+```dotenv
+VISUALGUARD_AUTH_MODE=local
+VISUALGUARD_PUBLIC_URL=
+VISUALGUARD_DATABASE_URL=
+```
+
+Run in a fresh terminal without stale exported dashboard settings; process values take precedence over this file. Add `.env.visualguard-local` to `.gitignore`.
+
+2. **Terminal A — start the dashboard and leave it running:**
 
 ```sh
+npx --no-install visualguard dashboard --env-file .env.visualguard-local \
+  --host 127.0.0.1 --port 4400
+```
+
+Open `http://127.0.0.1:4400`. Wait for the startup URL. If startup fails, fix the error in terminal A before continuing; do not close that terminal or stop the server with Ctrl+C.
+
+3. **Terminal B — verify the dashboard, create the project, then run Gemini:**
+
+```sh
+curl --fail --show-error http://127.0.0.1:4400/api/health
+```
+
+Continue only when this returns `{"status":"ok"}`. Then run:
+
+```sh
+npx --no-install visualguard dashboard project create storefront \
+  --name "Storefront Web" --server http://127.0.0.1:4400
 npx --no-install visualguard test storefront \
   --dashboard http://127.0.0.1:4400 --config visualguard.config.ts --provider gemini
 ```
 
-This captures, analyzes and publishes in one run. Replace `storefront`/the server with your actual values. For Ollama, replace the provider with `--provider ollama --model qwen2.5vl`. Login-enabled local/hosted dashboards also need the project upload token from section 8. The same command applies to SQLite, PostgreSQL and MongoDB: database choice changes dashboard storage, not the AI integration.
+This captures, analyzes and publishes in one run. Keep the Gemini key in terminal B's application-root `.env.local`. For Ollama, use its running service and replace the provider with `--provider ollama --model qwen2.5vl`.
+
+**Already using PostgreSQL or MongoDB?** Start terminal A with your existing `.env.visualguard` from [PostgreSQL setup](#6-run-npx-visual-regression-with-postgresql) or [MongoDB setup](#7-run-npx-visual-regression-with-mongodb) instead of the SQLite file. Keep the health check, project creation and test pointed at that same dashboard URL. Login-enabled dashboards also require the project upload token from section 8. For an already hosted dashboard, use its actual HTTPS origin in `--server` and `--dashboard`; do not start a second local workspace just for this test.
+
+**`Cannot bind dashboard project: fetch failed`?** The project lookup could not contact the dashboard; Gemini analysis has not started. Check terminal A for startup errors, verify `/api/health` from terminal B, and use the same host/port printed by the server. A custom port such as 4500 must appear in the health URL, `--server` and `--dashboard`. Inside Docker/WSL, `127.0.0.1` may refer to a different environment: run the two commands together in the same environment or use a correctly reachable, authenticated dashboard address. Do not remove `--dashboard` to hide a connection error; that can select a different workspace.
 
 ## 4. Use local reports and baselines
 
@@ -804,21 +839,22 @@ Project configuration and execution/credential state belong in native operationa
 
 ## 12. Troubleshooting and final checks
 
-| Symptom                                                | What to check                                                                                                                                                                               |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `role "USER" does not exist`                           | Actual PostgreSQL URI/user and schema grants; replace all placeholders                                                                                                                      |
-| Dashboard unexpectedly uses another app's DB           | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings                                                                                            |
-| Empty history after a restart                          | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data                                                                                        |
-| `test "My Application"` ran but the dashboard is empty | Start the dashboard with its actual `--env-file`, then run `test PROJECT --dashboard http://127.0.0.1:4400`; see [missing project/run recovery](#project-or-run-missing-from-the-dashboard) |
-| Project-bound test fails before capture                | Project already exists, unique name/ID, dashboard version and correct project token                                                                                                         |
-| Upload fails after successful capture                  | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits                                                                                         |
-| Missing package/command/UI                             | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main`                                                                                   |
-| Google callback rejected                               | Exact origin/callback, configured test users/audience, complete OIDC settings and login mode                                                                                                |
-| `MongoDB URL must include a database name`             | Include `/visualguard` before URI query options; do not end the URL at the cluster hostname                                                                                                 |
-| MongoDB connection timeout/authentication failure      | Atlas IP access list, database-user credentials/permissions and URL-encoded password; restart after updating the loaded environment file                                                    |
-| MongoDB transaction/admission error                    | Replica set primary/network access, correct URI and appropriate `invite`/limited `legacy` choice                                                                                            |
-| Vercel page reload returns 404                         | Generated SPA rewrite for that supported page, without breaking API routing                                                                                                                 |
-| Cloud Run starts then loses data                       | A real external DB is required; never rely on a container-local SQLite file                                                                                                                 |
+| Symptom                                                | What to check                                                                                                                                                                                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `role "USER" does not exist`                           | Actual PostgreSQL URI/user and schema grants; replace all placeholders                                                                                                                           |
+| Dashboard unexpectedly uses another app's DB           | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings                                                                                                 |
+| Empty history after a restart                          | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data                                                                                             |
+| `Cannot bind dashboard project: fetch failed`          | Keep the dashboard server running in another terminal; check `/api/health` and the printed host/port from the test terminal; see [AI with dashboard startup](#add-ai-to-a-dashboard-backed-test) |
+| `test "My Application"` ran but the dashboard is empty | Start the dashboard with its actual `--env-file`, then run `test PROJECT --dashboard http://127.0.0.1:4400`; see [missing project/run recovery](#project-or-run-missing-from-the-dashboard)      |
+| Project-bound test fails before capture                | Project already exists, unique name/ID, dashboard version and correct project token                                                                                                              |
+| Upload fails after successful capture                  | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits                                                                                              |
+| Missing package/command/UI                             | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main`                                                                                        |
+| Google callback rejected                               | Exact origin/callback, configured test users/audience, complete OIDC settings and login mode                                                                                                     |
+| `MongoDB URL must include a database name`             | Include `/visualguard` before URI query options; do not end the URL at the cluster hostname                                                                                                      |
+| MongoDB connection timeout/authentication failure      | Atlas IP access list, database-user credentials/permissions and URL-encoded password; restart after updating the loaded environment file                                                         |
+| MongoDB transaction/admission error                    | Replica set primary/network access, correct URI and appropriate `invite`/limited `legacy` choice                                                                                                 |
+| Vercel page reload returns 404                         | Generated SPA rewrite for that supported page, without breaking API routing                                                                                                                      |
+| Cloud Run starts then loses data                       | A real external DB is required; never rely on a container-local SQLite file                                                                                                                      |
 
 Before sharing a hosted instance, verify health, login, role isolation, a small/large run, image retrieval after redeploy and an isolated native restore. Test signed webhooks/scheduled reconciliation if advertised. Keep unsupported preview hosts and databases separate.
 

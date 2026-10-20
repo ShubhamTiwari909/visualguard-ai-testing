@@ -198,8 +198,50 @@ try {
   }
   await dashboard.copyDashboardAssets(join(consumer, "public"));
   await stat(join(consumer, "public/index.html"));
+  // Exercise the documented Gemini command from a fresh consumer, before capture.
+  // Closing the isolated listener reproduces the missing-dashboard failure without
+  // browser binaries, network access to application pages, or a Gemini API request.
+  const stoppedDashboard = server.url;
+  await server.close();
+  server = undefined;
+  await writeFile(
+    join(consumer, "visualguard.config.ts"),
+    `
+    import { defineConfig } from "visualguard";
+    export default defineConfig({
+      baseURL: { production: "https://reference.example.test", staging: "https://candidate.example.test" },
+      routes: ["/"], viewports: { desktop: { width: 1280, height: 800 } }, ai: { provider: "none" },
+    });
+  `,
+  );
+  await assert.rejects(
+    exec(
+      process.execPath,
+      [
+        join(installed, "cli.js"),
+        "test",
+        "storefront",
+        "--dashboard",
+        stoppedDashboard,
+        "--config",
+        "visualguard.config.ts",
+        "--provider",
+        "gemini",
+      ],
+      {
+        cwd: consumer,
+        env: { ...process.env, ...env, VISUALGUARD_UPLOAD_TOKEN: "" },
+      },
+    ),
+    (error) => {
+      assert.equal(error.code, 3);
+      assert.ok(error.stderr.includes(`Cannot reach dashboard at ${stoppedDashboard}`));
+      assert.match(error.stderr, /The test command does not start a dashboard/);
+      return true;
+    },
+  );
   console.log(
-    "Standalone package smoke passed: fresh install, core API, UI/assets, local start, import, publish, backup/restore, CLI/private runner polling, and both deployment scaffolds.",
+    "Standalone package smoke passed: fresh install, core API, UI/assets, local start, import, publish, backup/restore, CLI/private runner polling, missing-dashboard guidance, and both deployment scaffolds.",
   );
 } finally {
   await server?.close();

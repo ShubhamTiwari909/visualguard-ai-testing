@@ -112,6 +112,24 @@ describe("test command project publishing", () => {
       runTestCommand({ dashboard: "https://example.test", failOn: "regression" }),
     ).rejects.toMatchObject({ exitCode: 2 });
   });
+  it("preserves connection guidance and the original cause before capture", async () => {
+    const failure = new Error(
+      "Cannot reach dashboard at http://127.0.0.1:4400. Start the dashboard in another terminal.",
+    );
+    mocks.prepare.mockRejectedValue(failure);
+    await expect(
+      runTestCommand({
+        project: "storefront",
+        dashboard: "http://127.0.0.1:4400",
+        failOn: "regression",
+      }),
+    ).rejects.toMatchObject({
+      exitCode: 3,
+      cause: failure,
+      message: expect.stringContaining("Start the dashboard in another terminal"),
+    });
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
   it("keeps --list free of capture, project creation and upload side effects", async () => {
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     expect(await runTestCommand({ project: "storefront", list: true, failOn: "regression" })).toBe(
