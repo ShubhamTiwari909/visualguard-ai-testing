@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["README.md", "docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/provenance.ts", "packages/visualguard/src/ai/analyze-job.ts", "packages/visualguard/src/ai/budget.ts", "packages/visualguard/src/ai/factory.ts", "packages/visualguard/src/fixer/fix.ts", "packages/visualguard/src/fixer/auto.ts", "packages/visualguard/src/fixer/verify.ts"]
 sidebar: {"order": 3}
 ---

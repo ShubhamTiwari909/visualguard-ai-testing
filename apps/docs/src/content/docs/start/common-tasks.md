@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/cli/program.ts", "packages/visualguard/src/cli/commands/dashboard.ts", "packages/visualguard/src/cli/shared.ts", "apps/platform/client/main.tsx"]
 sidebar: {"order": 5}
 ---
@@ -161,7 +160,7 @@ Use this page when you know what you want to do but not where it lives. Find you
 | Fix an error | — | [Troubleshooting](/troubleshooting/) |
 
 :::note
-The **Run test** button captures on the dashboard host itself only in the source checkout and the next release after 3.2.3. With 3.2.3 it needs a connected private runner. See [release availability](/releases/).
+The **Run test** button uses dashboard-host capture when the installed dashboard supports it and the host can run Chromium. Otherwise connect a private runner. See [release availability](/releases/).
 :::
 
 ## Troubleshooting

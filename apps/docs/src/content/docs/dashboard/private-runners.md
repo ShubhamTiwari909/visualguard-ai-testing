@@ -5,21 +5,20 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/client/project-tests.tsx", "packages/visualguard/src/cli/commands/dashboard.ts"]
 sidebar: {"order": 8}
 ---
 
 A private runner is a small VisualGuard process you keep running on your own computer or CI worker. It picks up tests that people request with **Run test** in the dashboard, captures them there and uploads the result. This tutorial connects one to a project.
 
-New to **Run test**? Start with [Run tests from the dashboard](/dashboard/run-tests/). On a dashboard that includes the built-in runner (the source checkout and the next release after 3.2.3), you only need a private runner in the cases below. With the published 3.2.3 package, **Run test** always needs one.
+New to **Run test**? Start with [Run tests from the dashboard](/dashboard/run-tests/). On a dashboard that offers built-in capture, you only need a private runner in the cases below. Check the project's execution status; dashboards without host-capture support always need a private runner.
 
 ## When you need a private runner
 
 - The dashboard cannot reach your app. Examples: a staging site behind a VPN, or an app on your laptop's `127.0.0.1` while the dashboard is hosted.
 - The dashboard host cannot run a browser, as on Vercel and other serverless hosts.
 - Your app's login state or AI keys must stay on your own machine.
-- You use the published 3.2.3 package.
+- Your installed dashboard does not offer host capture.
 
 A connected private runner always takes priority over the built-in runner.
 

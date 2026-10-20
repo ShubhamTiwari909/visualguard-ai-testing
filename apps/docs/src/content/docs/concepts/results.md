@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["README.md", "packages/visualguard/src/core/status.ts", "packages/visualguard/src/core/types.ts", "packages/visualguard/report-app/src/App.tsx", "packages/visualguard/report-app/src/Compare.tsx"]
 sidebar: {"order": 3}
 ---

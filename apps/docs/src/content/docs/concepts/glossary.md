@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/core/types.ts", "apps/platform/server/auth.ts", "apps/platform/server/built-in-runner.ts"]
 sidebar: {"order": 4}
 ---
@@ -92,7 +91,7 @@ This page defines the words used across these docs. Terms are grouped by topic, 
 | Execution request | A request, usually from **Run test**, to run one version of a project's saved test configuration. |
 | Private runner | A machine you connect with `visualguard dashboard runner` to run dashboard-requested tests. |
 | Runner credential | A separate project credential that lets a private runner take requested tests. Not needed when the dashboard host runs the test itself. |
-| Built-in runner | The dashboard host capturing a requested test itself, authorised by the signed-in user. Controlled by `VISUALGUARD_BUILT_IN_RUNNER`; on by default except on Vercel. Available in the source checkout and releases after 3.2.3 only. |
+| Built-in runner | The dashboard host capturing a requested test itself, authorised by the signed-in user. Controlled by `VISUALGUARD_BUILT_IN_RUNNER`; on by default except on Vercel. Check the project's status for **Runs on this dashboard** to confirm availability. |
 
 ## Next steps
 

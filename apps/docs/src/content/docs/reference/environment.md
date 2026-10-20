@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/config/load.ts", "packages/visualguard/src/config/resolve.ts", "packages/visualguard/src/ai/factory.ts", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/runs.ts", "packages/visualguard/src/cli/shared.ts", "packages/visualguard/src/reporters/github-comment.ts", "apps/platform/server/config.ts", "apps/platform/server/runtime.ts", "apps/platform/server/auth.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/.env.example"]
 sidebar: {"order": 3}
 ---
@@ -72,7 +71,7 @@ Read by `visualguard dashboard`, the hosted dashboard, and dashboard subcommands
 ### Run test on the dashboard host
 
 :::note[Availability]
-These two variables exist in the source checkout and the next release after 3.2.3 only. In published 3.2.3, **Run test** always needs a connected private runner.
+These variables configure dashboards that support built-in capture. If your installed dashboard does not offer it, upgrade or connect a private runner. Confirm availability in the project's execution status.
 :::
 
 | Variable | Read by | Default | Secret | Purpose |

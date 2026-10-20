@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/cli/commands/zero-config.ts", "packages/visualguard/src/cli/commands/monitor.ts"]
 sidebar: {"order": 2}
 ---

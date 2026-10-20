@@ -5,7 +5,6 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["apps/platform/server/scaffold.ts", "apps/platform/server/runtime.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/database.ts"]
 sidebar: {"order": 4}
 ---
@@ -43,14 +42,13 @@ You should see the full path of the new folder. It must be empty or not exist ye
 
 ## 2. Pin the package version
 
-The 3.2.3 package reports its own version as 3.2.2, so the generated `package.json` may pin `3.2.2`. Set the version you tested before installing:
+Inspect the generated dependency before installing. Resolve the current release and save its exact version in this deployment folder:
 
 ```bash
-npm pkg set dependencies.visualguard=3.2.3
-npm install
+npm install --save-exact visualguard@latest
 ```
 
-Open `package.json` and confirm `"visualguard": "3.2.3"`. Commit this folder with its `package-lock.json`. See [release availability](/releases/) for this caveat.
+Run `npm ls visualguard --depth=0` and confirm `package.json` records the intended resolved release. Commit this folder with its `package-lock.json`. See [release availability](/releases/).
 
 ## 3. Check the page rewrites
 
@@ -149,7 +147,7 @@ Open the public URL and sign in with the admin email and password. Then follow [
 
 A Vercel function stops when its response ends, so it cannot keep a browser running. The built-in runner is therefore off on Vercel. To use **Run test** from the dashboard, connect a [private runner](/dashboard/private-runners/) on a machine that can reach your app. Only set `VISUALGUARD_BUILT_IN_RUNNER=on` on a host that can keep a browser alive; Vercel is not one.
 
-With the published 3.2.3 package, **Run test** needs a private runner on every host anyway. CI runs that publish with `visualguard test <project> --dashboard <url>` work without any runner.
+A private runner is also the fallback for dashboards that do not offer host capture. CI runs that publish with `visualguard test <project> --dashboard <url>` work without any runner.
 
 ## Limits to test
 

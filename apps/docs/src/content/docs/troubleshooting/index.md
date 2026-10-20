@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["CONTRIBUTING.md", "packages/visualguard/src/core/errors.ts", "packages/visualguard/src/cli/commands/doctor.ts", "apps/platform/server/test-executions.ts"]
 sidebar: {"order": 1}
 ---
@@ -24,7 +23,7 @@ Use this section when VisualGuard does not do what you expect. Find the symptom 
 | --- | --- |
 | Node is too old, `npx` downloads another package, or the config file is not found | [Installation and version](/troubleshooting/installation/) |
 | `Playwright's chromium browser is not installed.` on your computer or CI worker | [Installation and version](/troubleshooting/installation/) |
-| The package says 3.2.3 but the CLI prints 3.2.2 | [Installation and version](/troubleshooting/installation/) |
+| The installed package and CLI label differ | [Installation and version](/troubleshooting/installation/) |
 | Connection refused, timeouts, login pages or blank screenshots | [Capture and reports](/troubleshooting/capture/) |
 | Random pixel changes every run, or a real change is not detected | [Capture and reports](/troubleshooting/capture/) |
 | Missing or incompatible baselines | [Capture and reports](/troubleshooting/capture/) |
@@ -52,7 +51,7 @@ npx --no-install visualguard doctor --config visualguard.config.ts
 You should see Node 22.12 or newer, one installed `visualguard` version, and a `doctor` list where every line is marked as OK. `doctor` checks Node, Playwright, the browser, your config, both URLs, the AI provider, the output folder and `.gitignore`.
 
 :::note
-The published npm package 3.2.3 prints `3.2.2` from `visualguard --version`. This is a known label problem in that build. Trust `npm ls visualguard --depth=0` and include both numbers in any report.
+Use `npm ls visualguard --depth=0` to verify the installed package and `npx --no-install visualguard --version` to check its CLI label. If they differ, inspect which binary ran and include both values in any report.
 :::
 
 ## Read the exit code

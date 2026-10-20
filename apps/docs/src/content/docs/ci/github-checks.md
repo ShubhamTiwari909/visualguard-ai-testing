@@ -5,7 +5,6 @@ audience: "operator"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["apps/platform/server/policy-github.ts", "apps/platform/server/policy-command.ts", "apps/platform/server/policies.ts", "apps/platform/.env.example", "packages/visualguard/src/cli/commands/dashboard.ts"]
 sidebar: {"order": 5}
 ---

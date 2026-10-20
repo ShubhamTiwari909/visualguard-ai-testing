@@ -5,7 +5,6 @@ audience: "operator"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["apps/platform/server/config.ts", "apps/platform/server/runtime.ts", "apps/platform/server/scaffold.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/auth.ts"]
 sidebar: {"order": 1}
 ---
@@ -60,7 +59,7 @@ The **Run test** button in the dashboard needs a machine with a browser that can
 | [Private runner](/dashboard/private-runners/) | A machine you connect with `visualguard dashboard runner`. Takes priority when connected. | Any host. Required on Vercel, and when the dashboard cannot reach your app (for example a VPN-only staging site). |
 
 :::caution
-The built-in runner is in the source checkout and the next release after 3.2.3 only. With the published 3.2.3 package, **Run test** needs a connected private runner on every host, and the 3.2.3 Cloud Run image does not include Chromium.
+Check the installed dashboard and generated image before relying on host capture. The project should show **Runs on this dashboard**, and the host must include Chromium. If that capability is absent, upgrade or use a connected private runner.
 :::
 
 `VISUALGUARD_BUILT_IN_RUNNER=off` turns the built-in runner off; `on` turns it on, including on Vercel (only do that on a host that can keep a browser running). `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` limits how many built-in tests run at once (default `1`).
@@ -84,7 +83,7 @@ A team of eight already uses Google Cloud and wants **Run test** to work without
 
 - **Database:** Cloud SQL for PostgreSQL, with automatic backups.
 - **Host:** Cloud Run, one always-on instance with 2 GiB of memory.
-- **Browsers:** the built-in runner (after upgrading past 3.2.3), plus a private runner for their VPN-only admin app.
+- **Browsers:** the built-in runner where supported, plus a private runner for their VPN-only admin app.
 
 They follow [Cloud Run](/deployment/cloud-run/), then [Cloud SQL](/deployment/cloud-sql/), then [backups](/deployment/storage-and-backups/).
 

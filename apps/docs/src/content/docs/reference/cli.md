@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["README.md", "packages/visualguard/src/cli/program.ts", "packages/visualguard/src/cli/main.ts", "packages/visualguard/src/cli/commands/dashboard.ts", "packages/visualguard/src/core/errors.ts"]
 sidebar: {"order": 1}
 ---
@@ -34,7 +33,7 @@ You should see the command's arguments, options and defaults. The top-level help
 
 | Flag | What it does |
 | --- | --- |
-| `-v, --version` | Prints the CLI version label. On npm 3.2.3 this prints `3.2.2`; see [release availability](/releases/). |
+| `-v, --version` | Prints the CLI build label. Compare with package-manager metadata if the values differ; see [release availability](/releases/). |
 | `-h, --help` | Prints help for the command it follows. |
 
 Options belong to the command they follow. `visualguard test --viewport mobile` passes `--viewport` to `test`, not to the top-level command.
@@ -127,7 +126,7 @@ See [exit codes](/reference/exit-codes/) for each command's rules.
 | `npx` downloads a package | Run from the app root and use `npx --no-install`. |
 | `error: unknown option` | The option belongs to another command, or your installed release does not have it. Check `COMMAND --help`. |
 | Dashboard subcommand ignores `--env-file` | Put startup options before the subcommand, as shown above. |
-| CLI prints 3.2.2 after installing 3.2.3 | Known label issue. Check `npm ls visualguard --depth=0`. |
+| CLI label differs from the installed version | Check the local binary and `npm ls visualguard --depth=0`; include both values in a bug report. |
 
 More help: [installation problems](/troubleshooting/installation/).
 

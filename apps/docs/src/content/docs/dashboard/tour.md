@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["apps/platform/client/main.tsx", "apps/platform/client/project-tests.tsx", "apps/platform/client/execution-progress.tsx", "apps/platform/client/reviews.tsx", "apps/platform/client/baselines.tsx", "apps/platform/client/policies.tsx", "apps/platform/client/settings.tsx", "apps/platform/client/users.tsx", "apps/platform/client/invitations.tsx", "apps/platform/client/operations.tsx", "apps/platform/client/profile.tsx", "apps/platform/client/auth.tsx"]
 sidebar: {"order": 2}
 ---

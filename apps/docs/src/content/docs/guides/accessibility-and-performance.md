@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/capture/checks.ts", "packages/visualguard/src/core/findings.ts", "packages/visualguard/src/capture/capture.ts", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/cli/shared.ts"]
 sidebar: {"order": 13}
 ---

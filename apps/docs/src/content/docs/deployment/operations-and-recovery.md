@@ -5,7 +5,6 @@ audience: "operator"
 docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/LOCAL-SETUP.md", "apps/platform/server/operations.ts"]
 sidebar: {"order": 9}
 ---

@@ -5,7 +5,6 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["apps/platform/server/built-in-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/server/test-runner.ts", "apps/platform/server/http.ts", "apps/platform/client/project-tests.tsx", "apps/platform/client/execution-progress.tsx", "apps/platform/server/scaffold.ts"]
 sidebar: {"order": 7}
 ---
@@ -13,7 +12,7 @@ sidebar: {"order": 7}
 This tutorial runs a visual test from the browser. You save a test profile for a project, choose **Run test**, watch it progress and open the result. By default the dashboard captures the screenshots itself, using only your sign-in. Use this when you want a quick check without opening a terminal or CI.
 
 :::note
-**Availability:** the dashboard capturing tests itself (the built-in runner) is in the source checkout and the next release after 3.2.3. With the published 3.2.3 package, **Run test** needs a [connected private runner](/dashboard/private-runners/).
+**Check your dashboard:** **Runs on this dashboard** means host capture is available. If that option or the built-in runner setting is absent in your installed package, upgrade or use a [connected private runner](/dashboard/private-runners/). See [release availability](/releases/).
 :::
 
 ## How Run test decides who captures
@@ -127,7 +126,7 @@ Use a [private runner](/dashboard/private-runners/) when:
 - The dashboard host cannot reach your app, for example a staging site behind a VPN, or an app on your laptop's `127.0.0.1` while the dashboard is hosted.
 - The dashboard host cannot run a browser, as on Vercel.
 - Your app's login state or AI keys must stay on your own computer or CI worker.
-- You are on the published 3.2.3 package.
+- Your installed dashboard does not offer built-in capture.
 
 A connected private runner always wins over the built-in runner.
 
@@ -143,7 +142,7 @@ These messages appear under **Run test** or in the progress box.
 
 | Message | What it means and what to do |
 | --- | --- |
-| `Connect a runner for this project before running a test` | No private runner is connected and the built-in runner is off or unavailable (for example on 3.2.3 or Vercel). [Connect a private runner](/dashboard/private-runners/), or set `VISUALGUARD_BUILT_IN_RUNNER=on` on a host that can run a browser |
+| `Connect a runner for this project before running a test` | No private runner is connected and the built-in runner is off or unavailable (for example on a dashboard without host-capture support, or on Vercel). [Connect a private runner](/dashboard/private-runners/), or set `VISUALGUARD_BUILT_IN_RUNNER=on` on a host that can run a browser |
 | `The dashboard is running another test; try again shortly` | The built-in runner is at its concurrency limit. Wait, or raise `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` if the host has room |
 | `This project already has an active test` | Wait for the current test to finish or fail |
 | `Save or refresh this project's configuration before running` | The profile changed or was never saved. Save it, or refresh the page to load the latest version |

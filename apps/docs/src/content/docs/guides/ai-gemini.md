@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/ai/factory.ts", "packages/visualguard/src/ai/providers/gemini.ts", "packages/visualguard/src/ai/tasks/analyze-diff.ts", "packages/visualguard/src/cli/commands/analyze.ts", "packages/visualguard/src/cli/commands/doctor.ts", "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md"]
 sidebar: {"order": 9}
 ---

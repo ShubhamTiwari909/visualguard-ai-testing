@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["action/README.md", "action/action.yml", "docs/RELIABILITY-CHANGES.md", "packages/visualguard/src/core/merge.ts", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/reporters/github-comment.ts"]
 sidebar: {"order": 5}
 ---

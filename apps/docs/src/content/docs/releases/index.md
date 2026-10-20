@@ -1,36 +1,62 @@
 ---
 title: "Release availability"
-description: "Check the published package, source-only boundaries and known release-label and scaffold differences."
+description: "Check the current published package, confirm installed features and upgrade without relying on a hard-coded release number."
 audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/CHANGELOG.md", "docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 1}
 ---
 
-## Published package checked on 20 October 2026
+These guides describe the current VisualGuard workflows. Source changes can reach the repository before they are published to npm, and older installed packages can lack newer features. Check your installed package and its capabilities when following a guide.
 
-The npm registry reports **visualguard 3.2.3**. Its tarball was downloaded and used for the fresh quickstart/SQLite smoke. The published CLI reports **3.2.2** because its embedded build version differs from package metadata. Verify installation with `npm ls visualguard --depth=0` or `pnpm list visualguard --depth=0` and include both versions when reporting problems.
+## Check the current and installed versions
 
-## Feature boundaries
+From your application's root:
 
-| Release / channel | Availability and upgrade context |
+```sh
+npm view visualguard dist-tags.latest
+npm ls visualguard --depth=0
+npx --no-install visualguard --version
+```
+
+The first command queries npm's current stable release. The second identifies the package installed in this application. The third reports its CLI build label. With pnpm, use `pnpm list visualguard --depth=0` and `pnpm exec visualguard --version` for the installed copy.
+
+If the CLI label differs from package metadata, check which binary ran and include both values in a bug report. Do not assume a remembered version number is still the latest release.
+
+## Install once, reproduce it later
+
+```sh
+npm install --save-dev --save-exact visualguard@latest
+```
+
+`@latest` selects the current stable release at install time. `--save-exact` saves the concrete resolved version. Commit `package.json` and the lockfile; teammates and CI should use that lockfile instead of automatically upgrading on every run. Choose when to upgrade, then validate the new version before using it for a release decision.
+
+Historical version-specific changes belong in the [package changelog](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/packages/visualguard/CHANGELOG.md) and [migration guide](/releases/migration/). Ordinary task guides use current-release installation commands rather than repeating release numbers.
+
+## Confirm feature availability
+
+| What you need | What to check |
 | --- | --- |
-| 3.1.0 | Standalone dashboard, evidence publishing, projects/names and job-level collaborative review. |
-| 3.2.0 | Google linking/admission, administration, approved baseline sets, visual policy and operational readiness; read the migration before upgrading existing users. |
-| 3.2.3 artifact | Contains per-project saved test profiles, private-runner execution and progress assets. Fresh CLI/report/SQLite commands were smoke-tested; artifact source was inspected for runner/progress. Its embedded CLI version label is stale. |
-| Source at `e2c69cc` (manifest 3.2.4) | Reviewed source baseline for these guides. The manifest bump is not proof that 3.2.4 is published; check the registry before installing. |
-| Source after 3.2.3 (unreleased) | **Run test** captures on the dashboard host with the signed-in user's authorization, no runner credential; Cloud Run scaffolds install Chromium. 3.2.3 still requires a connected private runner. Validated with seven focused built-in runner tests and 30 tests across the affected execution suites and a real local Chromium/SQLite run: saved profile, no private runner token, live progress, stored screenshot evidence and history after restart. Cloud deployment still needs its own validation. |
-| Engineering plans | Future scope only. Named journeys/managed capture are not implied by a roadmap entry. |
+| A CLI command or option | Run `npx --no-install visualguard COMMAND --help` for the installed package. |
+| Dashboard-host capture | The project should show **Runs on this dashboard**. The host needs Chromium and network access to the app. If unsupported or unavailable, upgrade or use a [private runner](/dashboard/private-runners/). |
+| Private-runner capture | The project should show **Runner connected** after a compatible worker checks in. |
+| Shared review, baselines or policies | Confirm the relevant dashboard controls, your project role and the [migration requirements](/releases/migration/). |
+| A feature seen only in source | Follow [source setup](/contributing/local-setup/) or wait for a package release that contains it. A manifest version bump alone is not proof of npm publication. |
 
-## Generated hosting scaffold caveat
+## Inspect generated deployment folders
 
-The dashboard scaffold pins its package dependency from the embedded CLI version. With the 3.2.3 artifact, inspect the generated `package.json` before installing: it may pin 3.2.2. Set `dependencies.visualguard` to the intended tested **3.2.3** release, install in that deployment folder and commit its lockfile. This docs change does not repair the published engine artifact.
+Check the generated `package.json` before installation. A scaffold derives its dependency from the CLI build label, so a stale label can select an unintended package. In a deployment folder, `npm install --save-exact visualguard@latest` selects and records the current package as a runtime dependency; verify it with `npm ls visualguard --depth=0` and test the deployment before adopting it.
 
-Older deployment folders also need review of generated rewrites, including `/reviews` and `/policies`. Updating a package does not update a folder generated by an older release. Regenerate into a new directory and compare customized settings.
+Updating a dependency does not update a folder generated by an older scaffold. Regenerate into a separate directory and compare customized settings, route rewrites and browser installation. A Cloud Run host that captures tests must include Chromium; use a private runner when the host cannot run a browser.
+
+## Understand the validation scope
+
+The documentation checks validate metadata, navigation, examples, generated reference and built-page links. The optional `pnpm docs:smoke` resolves the current npm release, prints the installed version and CLI label, and exercises the quickstart, API/reporter examples and local SQLite workflow. `pnpm docs:smoke:host` checks dashboard-host capture from source.
+
+Local Chromium/SQLite checks do not certify a live Google authorization flow or every external cloud/database deployment. The dated validation record in `apps/docs/src/data/releases.json` describes the scope exercised; it is not a claim that every future npm package has already been tested.
 
 ## Before upgrading
 
-Read [migration](/releases/migration/) and [operator upgrade steps](/deployment/upgrades/). Keep runner/server releases compatible, back up operational storage and verify a restored trial before changing a real team workspace. The latest registry version can change; query `npm view visualguard version` when choosing a new pinned release.
+Read [migration](/releases/migration/) and [operator upgrade steps](/deployment/upgrades/). Keep runner/server packages compatible, back up operational storage and validate a restored trial before changing a real team workspace.

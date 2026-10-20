@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/cli/commands/accept.ts", "packages/visualguard/src/core/accepted.ts", "packages/visualguard/src/cli/commands/report.ts", "packages/visualguard/report-app/src/actions.tsx", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/core/run.ts"]
 sidebar: {"order": 8}
 ---

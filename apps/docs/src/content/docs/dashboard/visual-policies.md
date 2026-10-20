@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "docs/LOCAL-SETUP.md", "apps/platform/server/policies.ts"]
 sidebar: {"order": 13}
 ---

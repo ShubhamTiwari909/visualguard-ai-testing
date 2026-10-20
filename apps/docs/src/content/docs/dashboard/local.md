@@ -5,7 +5,6 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/dashboard.ts", "apps/platform/server/runtime.ts", "apps/platform/server/config.ts"]
 sidebar: {"order": 3}
 ---
@@ -146,7 +145,7 @@ Import copies the evidence into the dashboard's storage. Deleting the original f
 You can also start a test from the browser. The dashboard keeps a saved test profile for each project.
 
 :::note
-On a local dashboard from the source checkout or the next release after 3.2.3, the dashboard captures the test itself with only your local access. With the published 3.2.3 package, **Run test** needs a [connected private runner](/dashboard/private-runners/) first.
+If the project says **Runs on this dashboard**, the local dashboard can capture the test itself using your local access. If host capture is unavailable, upgrade or connect a [private runner](/dashboard/private-runners/) first.
 :::
 
 1. Choose **Storefront Web** in the sidebar. The **PROJECT** panel shows **Runs on this dashboard**.
@@ -206,7 +205,7 @@ For a dashboard that already runs elsewhere, use its real HTTPS address in `--se
 | `Configure a public URL and login before listening on an external interface` | Local mode only listens on `127.0.0.1`, `localhost` or `::1`. Remove `--host 0.0.0.0`, or [enable login](/dashboard/login/) |
 | Project or run is missing after the test | The test and the dashboard used different storage. Use the same `--server` and `--dashboard` URL, and the same `--data-dir` for `import`. See [Projects, names and identities](/dashboard/projects/) |
 | Works in one terminal, not in Docker or WSL | `127.0.0.1` inside a container or WSL can be a different machine. Run both commands in the same environment |
-| **Run test** is disabled and the panel says **Runner offline** | You are on 3.2.3, or the built-in runner is off. [Connect a private runner](/dashboard/private-runners/) |
+| **Run test** is disabled and the panel says **Runner offline** | Host capture is unsupported, disabled or unavailable. [Connect a private runner](/dashboard/private-runners/) |
 | A dashboard test fails with a Chromium message | Run `npx playwright install chromium` on this computer, then choose **Run test** again |
 
 Do not remove `--dashboard` to hide a connection error. Without it, the test may write to a different local workspace. More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).

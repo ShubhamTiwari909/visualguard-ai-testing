@@ -5,7 +5,6 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/auth.ts", "apps/platform/server/runtime.ts", "apps/platform/client/auth.tsx", "apps/platform/client/settings.tsx"]
 sidebar: {"order": 10}
 ---

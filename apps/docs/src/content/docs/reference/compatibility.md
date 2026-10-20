@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 7}
 ---
@@ -54,6 +53,6 @@ test("open cart", async ({ page, visualguard }) => {
 
 ## Documentation verification scope
 
-The fresh npm 3.2.3 first-comparison guide is exercised with Chromium on macOS/Node 24.13.0, including local SQLite history/restart. The existing private-runner smoke exercises real capture/progress and scoped credentials. PostgreSQL/MongoDB/Google/cloud-provider articles are source-reviewed; they were not certified through live provider deployments in this documentation change. Historical validation records describe their own date/revision and must not be treated as current all-platform certification.
+The fresh npm first-comparison guide is exercised with Chromium on macOS/Node 24.13.0, including local SQLite history/restart. The existing private-runner smoke exercises real capture/progress and scoped credentials. PostgreSQL/MongoDB/Google/cloud-provider articles are source-reviewed; they were not certified through live provider deployments in this documentation change. Historical validation records describe their own date/revision and must not be treated as current all-platform certification.
 
 Docs development requires Node 22.22+; the published CLI declares 22.12+. Keep browser/platform/theme/viewport identity consistent across baseline creation and capture. [Release availability](/releases/) lists known artifact differences.

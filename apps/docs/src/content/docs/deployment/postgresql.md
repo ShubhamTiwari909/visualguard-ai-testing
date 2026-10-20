@@ -5,7 +5,6 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["apps/platform/server/config.ts", "apps/platform/server/database.ts", "apps/platform/.env.example", ".github/workflows/ci.yml"]
 sidebar: {"order": 2}
 ---

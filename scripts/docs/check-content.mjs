@@ -13,7 +13,7 @@ const publicSlugs = [...routes].filter(route => !['/', '/404/'].includes(route))
 errors.push(...navigationErrors(publicSlugs));
 for (const page of pages) {
   const name = relative(root, page.path);
-  for (const key of ['title', 'description', 'audience', 'docType', 'channel', 'lastReviewed', 'verifiedAgainst']) if (typeof page.data[key] !== 'string' || !page.data[key].trim()) errors.push(`${name}: missing ${key}`);
+  for (const key of ['title', 'description', 'audience', 'docType', 'channel', 'lastReviewed']) if (typeof page.data[key] !== 'string' || !page.data[key].trim()) errors.push(`${name}: missing ${key}`);
   if (!Array.isArray(page.data.sourcePaths)) errors.push(`${name}: sourcePaths must be an array`);
   for (const path of page.data.sourcePaths ?? []) {
     try { await stat(join(root, path)); } catch { errors.push(`${name}: missing source ${path}`); }

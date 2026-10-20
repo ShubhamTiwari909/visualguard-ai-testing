@@ -7,7 +7,6 @@ const data = entry.data;
 {data.template !== 'splash' && (
   <aside class="release-notice" aria-label="Guide applicability">
     <strong>{data.channel === 'source' ? 'Source checkout' : data.channel === 'published' ? 'npm package' : 'Package & source'}</strong>
-    <span>{data.verifiedAgainst}</span>
     <span>Reviewed {data.lastReviewed}</span>
   </aside>
 )}

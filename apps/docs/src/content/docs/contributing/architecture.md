@@ -5,7 +5,6 @@ audience: "contributor"
 docType: "explanation"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/PACKAGE-ARCHITECTURE.md", "pnpm-workspace.yaml", "packages/visualguard/src/dashboard.ts", "apps/platform/server/runtime.ts", "apps/platform/server/test-executions.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/test-runner.ts", "scripts/package-map.mjs"]
 sidebar: {"order": 2}
 ---
@@ -59,7 +58,7 @@ The browser capture can happen in three places. Evidence always ends up on disk 
 | A **private runner** | **Run test** in the dashboard, picked up by `visualguard dashboard runner` on another machine. | `apps/platform/server/test-executions.ts` queues the request. The runner polls, claims it and calls `executeClaimedTest` in `apps/platform/server/test-runner.ts`, which calls `createRun` and uploads the result. |
 | The dashboard host (**built-in runner**) | **Run test** in the dashboard when no private runner is connected. | `test-executions.ts` hands the request to `apps/platform/server/built-in-runner.ts`, which claims it and calls the same `executeClaimedTest`, then imports the run straight into storage. |
 
-A connected private runner always takes priority. The built-in runner is on by default except on Vercel, and is controlled by `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY`. It is in the source checkout and the next release after 3.2.3 only; with the published 3.2.3, **Run test** needs a private runner.
+A connected private runner always takes priority. The built-in runner is on by default except on Vercel, and is controlled by `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY`. If the installed package does not offer host capture, **Run test** needs a private runner; the project status shows which capturer is available.
 
 The Mermaid diagrams below show the detailed source relationships for contributors.
 

@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/config/routes.ts", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/config/urls.ts", "packages/visualguard/src/config/glob.ts", "packages/visualguard/src/config/discover/nextjs.ts", "packages/visualguard/src/config/discover/web.ts", "packages/visualguard/src/core/jobs.ts", "packages/visualguard/src/cli/commands/test.ts"]
 sidebar: {"order": 3}
 ---

@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/playwright/index.ts", "packages/visualguard/src/core/provenance.ts", "packages/visualguard/package.json"]
 sidebar: {"order": 8}
 ---

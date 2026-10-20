@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/README.md", "docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 5}
 ---
