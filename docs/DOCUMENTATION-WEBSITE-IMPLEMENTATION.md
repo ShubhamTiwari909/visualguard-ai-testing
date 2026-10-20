@@ -9,3 +9,9 @@ Added the private `apps/docs` Astro workspace, Starlight article layout/navigati
 Resolved stack: Astro 7.4.1, Starlight 0.42.6, React integration 6.0.0, React 19.3.0, Tailwind 4.3.3 and Starlight Tailwind 5.0.0. The React integration is pinned to the compatible stable 6.0.0 release because 7.1.0's React-transform peer ranges conflict with its current Vite plugin dependency. The root lockfile records the tested set. Docs require Node 22.22+; this run uses Node 24.13.0 and pnpm 9.0.0. Existing MongoDB peer warnings in the platform/engine remain outside this change.
 
 Validation: focused docs production build passed. Starlight generated the static homepage, contributor guide, 404 and Pagefind index. This early phase intentionally precedes the article migration; full link/content acceptance follows in D07. No formatting, lint or semantic type checks ran. Astro's build-time content declarations are not a semantic type check.
+
+## D02 — First comparisons and source setup
+
+Added setup selection/requirements, pinned npm installation, a complete two-server local quickstart, comparison concepts/results/glossary and the full source fixture walkthrough. Added a focused smoke script that executes the actual quickstart's config and demo code in a clean temporary npm project.
+
+Validation: documentation build passed (12 generated routes). The fresh npm 3.2.3 walkthrough passed doctor, comparison listing, a changed-page `review`, report generation and an unchanged-page `pass`. The test exposed a published artifact mismatch: npm package 3.2.3 prints CLI version 3.2.2. Installation/quickstart articles now explain verifying the installed version using package-manager metadata; no engine code was changed. Live AI, Google and cloud providers were not exercised. No formatting, lint or type checks ran.
