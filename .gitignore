@@ -26,3 +26,6 @@ evals/.output/
 # Local dashboard/browser verification
 .playwright-cli/
 output/playwright/
+
+# Astro documentation cache
+.astro/

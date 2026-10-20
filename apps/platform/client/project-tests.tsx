@@ -61,7 +61,8 @@ export function ProjectTestControls({
   const [routes, setRoutes] = useState("/");
   const [viewports, setViewports] = useState(JSON.stringify(defaults.viewports, null, 2));
   const [execution, setExecution] = useState<ProjectTestExecution | null>(null);
-  const [online, setOnline] = useState(false),
+  const [builtIn, setBuiltIn] = useState(false),
+    [online, setOnline] = useState(false),
     [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(false),
     [dirty, setDirty] = useState(false);
@@ -90,6 +91,7 @@ export function ProjectTestControls({
         const status = await read<{
           execution: ProjectTestExecution | null;
           runnerOnline: boolean;
+          builtInRunner?: boolean;
         }>(`${path}/test-execution`, abort.signal);
         if (abort.signal.aborted) return;
         if (
@@ -101,6 +103,7 @@ export function ProjectTestControls({
         previous.current = status.execution;
         setExecution(status.execution);
         setOnline(status.runnerOnline);
+        setBuiltIn(Boolean(status.builtInRunner));
       } catch (problem) {
         if (!abort.signal.aborted)
           setError(problem instanceof Error ? problem.message : "Unable to read test status");
@@ -133,7 +136,12 @@ export function ProjectTestControls({
         <div>
           <h3>Visual test</h3>
           <p>
-            {online ? "Runner connected" : "Runner offline"} ·{" "}
+            {online
+              ? "Runner connected"
+              : builtIn
+                ? "Runs on this dashboard"
+                : "Runner offline"}{" "}
+            ·{" "}
             {settings
               ? `Configuration v${settings.version}`
               : "Configure this project's test settings"}
@@ -150,7 +158,7 @@ export function ProjectTestControls({
             </button>
             <button
               className="vg-button vg-button-primary"
-              disabled={!loaded || !settings || !online || active || dirty || Boolean(pending)}
+              disabled={!loaded || !settings || !(online || builtIn) || active || dirty || Boolean(pending)}
               onClick={() =>
                 void act("run", async () => {
                   const result = await mutation<ProjectTestExecution>(
@@ -304,10 +312,11 @@ export function ProjectTestControls({
       )}
       {canManage && (
         <details className="vg-runner-setup">
-          <summary>Connect a runner for this project</summary>
+          <summary>{builtIn ? "Use a private runner instead" : "Connect a runner for this project"}</summary>
           <p>
-            Keep a runner running on a computer or CI worker that can reach both application URLs
-            and this dashboard. Browser capture happens there, including for hosted dashboards.
+            {builtIn
+              ? "Tests run on this dashboard's server with your sign-in, so no credential is needed. Connect a private runner only when the application URLs are reachable from your own computer or CI worker but not from the dashboard; a connected runner takes priority. "
+              : "Keep a runner running on a computer or CI worker that can reach both application URLs and this dashboard. Browser capture happens there. "}
           </p>
           <button
             className="vg-button"

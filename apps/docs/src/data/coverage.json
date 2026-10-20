@@ -1,0 +1,3654 @@
+{
+  "reviewedOn": "2026-10-20",
+  "sourceRevision": "e2c69cc3daa88f8506dc1c079aaaef7b0bc0a6a5",
+  "sources": [
+    "README.md",
+    "docs/PRODUCT-FEATURES.md",
+    "docs/NPM-PACKAGE-SETUP.md",
+    "docs/LOCAL-SETUP.md",
+    "docs/COMMAND-REFERENCE.md",
+    "packages/visualguard/README.md",
+    "docs/RELIABILITY-CHANGES.md",
+    "docs/RELEASE-3.1.0-VALIDATION.md",
+    "docs/PACKAGE-ARCHITECTURE.md",
+    "docs/READING-THE-CODE.md",
+    "PUBLISHING-AND-USING.md",
+    "CONTRIBUTING.md",
+    "action/README.md",
+    "examples/nextjs/README.md",
+    "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+    "evals/README.md",
+    "fixtures/site/README.md",
+    "PLAN.md",
+    "packages/visualguard/CHANGELOG.md"
+  ],
+  "sections": [
+    {
+      "source": "README.md",
+      "heading": "VisualGuard",
+      "anchor": "visualguard",
+      "destination": "/start/choose-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Quick start",
+      "anchor": "quick-start",
+      "destination": "/start/quickstart/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Set up a project",
+      "anchor": "set-up-a-project",
+      "destination": "/guides/configuration/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Everyday tasks",
+      "anchor": "everyday-tasks",
+      "destination": "/reference/cli/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Use it in Playwright tests",
+      "anchor": "use-it-in-playwright-tests",
+      "destination": "/guides/playwright/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Share results with your team",
+      "anchor": "share-results-with-your-team",
+      "destination": "/dashboard/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Learn more",
+      "anchor": "learn-more",
+      "destination": "/start/choose-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Troubleshooting",
+      "anchor": "troubleshooting",
+      "destination": "/troubleshooting/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "Contributing",
+      "anchor": "contributing",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "README.md",
+      "heading": "License",
+      "anchor": "license",
+      "destination": "/start/choose-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "VisualGuard product features",
+      "anchor": "visualguard-product-features",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "The basic loop",
+      "anchor": "the-basic-loop",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "What you can do",
+      "anchor": "what-you-can-do",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Compare",
+      "anchor": "compare",
+      "destination": "/concepts/comparison-modes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Understand",
+      "anchor": "understand",
+      "destination": "/concepts/results/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Review and accept",
+      "anchor": "review-and-accept",
+      "destination": "/guides/accepting-changes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Automate",
+      "anchor": "automate",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Work as a team",
+      "anchor": "work-as-a-team",
+      "destination": "/dashboard/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Hosting and data",
+      "anchor": "hosting-and-data",
+      "destination": "/deployment/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Where to start",
+      "anchor": "where-to-start",
+      "destination": "/start/choose-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/PRODUCT-FEATURES.md",
+      "heading": "Limits",
+      "anchor": "limits",
+      "destination": "/concepts/how-it-works/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Use VisualGuard in your project",
+      "anchor": "use-visualguard-in-your-project",
+      "destination": "/start/install/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Contents",
+      "anchor": "contents",
+      "destination": "/start/install/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "1. Choose your setup",
+      "anchor": "1-choose-your-setup",
+      "destination": "/start/choose-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "2. Install and run your first test",
+      "anchor": "2-install-and-run-your-first-test",
+      "destination": "/start/install/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Try it with no config",
+      "anchor": "try-it-with-no-config",
+      "destination": "/start/quickstart/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Create a config file",
+      "anchor": "create-a-config-file",
+      "destination": "/guides/configuration/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Run, check and report",
+      "anchor": "run-check-and-report",
+      "destination": "/guides/reports/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "3. Accept changes and keep local baselines",
+      "anchor": "3-accept-changes-and-keep-local-baselines",
+      "destination": "/guides/accepting-changes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Compare with saved screenshots",
+      "anchor": "compare-with-saved-screenshots",
+      "destination": "/guides/local-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "4. Add AI explanations",
+      "anchor": "4-add-ai-explanations",
+      "destination": "/guides/ai-policy-and-budgets/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Gemini",
+      "anchor": "gemini",
+      "destination": "/guides/ai-gemini/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Ollama (local model)",
+      "anchor": "ollama-local-model",
+      "destination": "/guides/ai-ollama/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Re-analyze a saved run",
+      "anchor": "re-analyze-a-saved-run",
+      "destination": "/guides/ai-policy-and-budgets/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "5. Test pages behind a login",
+      "anchor": "5-test-pages-behind-a-login",
+      "destination": "/guides/application-auth/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "6. More checks and modes",
+      "anchor": "6-more-checks-and-modes",
+      "destination": "/guides/accessibility-and-performance/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Accessibility and performance",
+      "anchor": "accessibility-and-performance",
+      "destination": "/guides/accessibility-and-performance/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Playwright fixture",
+      "anchor": "playwright-fixture",
+      "destination": "/guides/playwright/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Watch mode",
+      "anchor": "watch-mode",
+      "destination": "/guides/watch/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Monitor mode",
+      "anchor": "monitor-mode",
+      "destination": "/guides/monitoring/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Fix regressions",
+      "anchor": "fix-regressions",
+      "destination": "/guides/fixes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "7. Run in CI",
+      "anchor": "7-run-in-ci",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Generated GitHub workflow",
+      "anchor": "generated-github-workflow",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "GitHub Action",
+      "anchor": "github-action",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Pull request comment",
+      "anchor": "pull-request-comment",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Shards and merge",
+      "anchor": "shards-and-merge",
+      "destination": "/ci/sharding/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "8. Start a dashboard with local SQLite",
+      "anchor": "8-start-a-dashboard-with-local-sqlite",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Save a run you already have",
+      "anchor": "save-a-run-you-already-have",
+      "destination": "/dashboard/publishing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "9. Run a test from the dashboard",
+      "anchor": "9-run-a-test-from-the-dashboard",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Optional: a private runner",
+      "anchor": "optional-a-private-runner",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "10. Store the dashboard in PostgreSQL",
+      "anchor": "10-store-the-dashboard-in-postgresql",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Get a database",
+      "anchor": "get-a-database",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Point the dashboard at it",
+      "anchor": "point-the-dashboard-at-it",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "11. Store the dashboard in MongoDB",
+      "anchor": "11-store-the-dashboard-in-mongodb",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Get the URL",
+      "anchor": "get-the-url",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Point the dashboard at it",
+      "anchor": "point-the-dashboard-at-it",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Check that it is saved",
+      "anchor": "check-that-it-is-saved",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Your own MongoDB server",
+      "anchor": "your-own-mongodb-server",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "12. Turn on login, tokens and teammates",
+      "anchor": "12-turn-on-login-tokens-and-teammates",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Password administrator",
+      "anchor": "password-administrator",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Project upload tokens",
+      "anchor": "project-upload-tokens",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Google sign-in",
+      "anchor": "google-sign-in",
+      "destination": "/dashboard/google-sign-in/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Users, roles and invitation links",
+      "anchor": "users-roles-and-invitation-links",
+      "destination": "/dashboard/people-and-permissions/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "13. Deploy to Vercel or Cloud Run",
+      "anchor": "13-deploy-to-vercel-or-cloud-run",
+      "destination": "/deployment/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Vercel",
+      "anchor": "vercel",
+      "destination": "/deployment/vercel/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Google Cloud Run",
+      "anchor": "google-cloud-run",
+      "destination": "/deployment/cloud-run/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "14. Storage, backups and recovery",
+      "anchor": "14-storage-backups-and-recovery",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Portable export and restore",
+      "anchor": "portable-export-and-restore",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Full backups",
+      "anchor": "full-backups",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Audit page, recovery and upgrades",
+      "anchor": "audit-page-recovery-and-upgrades",
+      "destination": "/deployment/operations-and-recovery/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "15. Team workflow: reviews, baselines and policies",
+      "anchor": "15-team-workflow-reviews-baselines-and-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Reviews",
+      "anchor": "reviews",
+      "destination": "/dashboard/reviews/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Approved baselines",
+      "anchor": "approved-baselines",
+      "destination": "/dashboard/approved-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Visual policies",
+      "anchor": "visual-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "GitHub checks",
+      "anchor": "github-checks",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "16. Troubleshooting",
+      "anchor": "16-troubleshooting",
+      "destination": "/troubleshooting/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "17. Command cheat sheet",
+      "anchor": "17-command-cheat-sheet",
+      "destination": "/reference/cli/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Run VisualGuard from source",
+      "anchor": "run-visualguard-from-source",
+      "destination": "/contributing/local-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Contents",
+      "anchor": "contents",
+      "destination": "/contributing/local-setup/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "1. What you need",
+      "anchor": "1-what-you-need",
+      "destination": "/start/install/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "2. Install and build",
+      "anchor": "2-install-and-build",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "3. Try the demo without a dashboard",
+      "anchor": "3-try-the-demo-without-a-dashboard",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Exit codes",
+      "anchor": "exit-codes",
+      "destination": "/reference/exit-codes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "4. Add AI (Gemini or Ollama)",
+      "anchor": "4-add-ai-gemini-or-ollama",
+      "destination": "/guides/ai-gemini/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Gemini",
+      "anchor": "gemini",
+      "destination": "/guides/ai-gemini/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Ollama (local, no key)",
+      "anchor": "ollama-local-no-key",
+      "destination": "/guides/ai-ollama/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Analyze an existing run, or turn AI off",
+      "anchor": "analyze-an-existing-run-or-turn-ai-off",
+      "destination": "/guides/ai-policy-and-budgets/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "AI together with a dashboard",
+      "anchor": "ai-together-with-a-dashboard",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "5. Run the local dashboard (SQLite)",
+      "anchor": "5-run-the-local-dashboard-sqlite",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Start it",
+      "anchor": "start-it",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Create a project and publish a run",
+      "anchor": "create-a-project-and-publish-a-run",
+      "destination": "/dashboard/publishing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Publish or import a run you already have",
+      "anchor": "publish-or-import-a-run-you-already-have",
+      "destination": "/dashboard/publishing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "What is saved",
+      "anchor": "what-is-saved",
+      "destination": "/dashboard/local/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "6. Run a test from the dashboard",
+      "anchor": "6-run-a-test-from-the-dashboard",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Settings for the built-in runner",
+      "anchor": "settings-for-the-built-in-runner",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Optional: a private runner",
+      "anchor": "optional-a-private-runner",
+      "destination": "/dashboard/private-runners/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "7. Use PostgreSQL",
+      "anchor": "7-use-postgresql",
+      "destination": "/deployment/postgresql/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "8. Use MongoDB",
+      "anchor": "8-use-mongodb",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Option 1: MongoDB Atlas",
+      "anchor": "option-1-mongodb-atlas",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Option 2: a local replica set with Docker",
+      "anchor": "option-2-a-local-replica-set-with-docker",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Save the settings and start",
+      "anchor": "save-the-settings-and-start",
+      "destination": "/deployment/mongodb/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "9. Login, Google sign-in and users",
+      "anchor": "9-login-google-sign-in-and-users",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Password administrator",
+      "anchor": "password-administrator",
+      "destination": "/dashboard/login/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Google sign-in and account linking",
+      "anchor": "google-sign-in-and-account-linking",
+      "destination": "/dashboard/google-sign-in/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Users, roles and invitations",
+      "anchor": "users-roles-and-invitations",
+      "destination": "/dashboard/people-and-permissions/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "10. Reviews, approved baselines and visual policies",
+      "anchor": "10-reviews-approved-baselines-and-visual-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Review a change",
+      "anchor": "review-a-change",
+      "destination": "/dashboard/reviews/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Approve a baseline and pull it",
+      "anchor": "approve-a-baseline-and-pull-it",
+      "destination": "/dashboard/approved-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Local baselines without a dashboard",
+      "anchor": "local-baselines-without-a-dashboard",
+      "destination": "/guides/local-baselines/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Visual policies",
+      "anchor": "visual-policies",
+      "destination": "/dashboard/visual-policies/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "11. Audit, recovery and backups",
+      "anchor": "11-audit-recovery-and-backups",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Back up and restore evidence",
+      "anchor": "back-up-and-restore-evidence",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Native backups",
+      "anchor": "native-backups",
+      "destination": "/deployment/storage-and-backups/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Host-side inspection",
+      "anchor": "host-side-inspection",
+      "destination": "/deployment/operations-and-recovery/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Recover a password administrator",
+      "anchor": "recover-a-password-administrator",
+      "destination": "/deployment/operations-and-recovery/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "12. Run a built dashboard or package candidate",
+      "anchor": "12-run-a-built-dashboard-or-package-candidate",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Built dashboard",
+      "anchor": "built-dashboard",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Hosting files",
+      "anchor": "hosting-files",
+      "destination": "/deployment/overview/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Package candidate",
+      "anchor": "package-candidate",
+      "destination": "/contributing/local-setup/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "13. Try the Next.js example",
+      "anchor": "13-try-the-nextjs-example",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "14. Develop and test this repository",
+      "anchor": "14-develop-and-test-this-repository",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "15. Troubleshooting",
+      "anchor": "15-troubleshooting",
+      "destination": "/troubleshooting/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "16. Command cheat sheet",
+      "anchor": "16-command-cheat-sheet",
+      "destination": "/reference/cli/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "VisualGuard command reference",
+      "anchor": "visualguard-command-reference",
+      "destination": "/reference/cli/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "Contents",
+      "anchor": "contents",
+      "destination": "/reference/cli/",
+      "disposition": "superseded",
+      "reason": "Repository Markdown entry point; its task content is maintained on the linked website page.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "1. Zero-config scan",
+      "anchor": "1-zero-config-scan",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "2. Testing commands",
+      "anchor": "2-testing-commands",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "init",
+      "anchor": "init",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "doctor",
+      "anchor": "doctor",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "test",
+      "anchor": "test",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "report",
+      "anchor": "report",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "analyze",
+      "anchor": "analyze",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "accept",
+      "anchor": "accept",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "fix",
+      "anchor": "fix",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "watch",
+      "anchor": "watch",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "monitor",
+      "anchor": "monitor",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "auth",
+      "anchor": "auth",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "merge",
+      "anchor": "merge",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "comment",
+      "anchor": "comment",
+      "destination": "/reference/cli/testing/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "3. Dashboard commands",
+      "anchor": "3-dashboard-commands",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard (start the dashboard)",
+      "anchor": "dashboard-start-the-dashboard",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard runner",
+      "anchor": "dashboard-runner",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard project create",
+      "anchor": "dashboard-project-create",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard import",
+      "anchor": "dashboard-import",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard publish",
+      "anchor": "dashboard-publish",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard export",
+      "anchor": "dashboard-export",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard restore",
+      "anchor": "dashboard-restore",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard assets",
+      "anchor": "dashboard-assets",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard init",
+      "anchor": "dashboard-init",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard baseline pull",
+      "anchor": "dashboard-baseline-pull",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard policy assess",
+      "anchor": "dashboard-policy-assess",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "dashboard policy reconcile",
+      "anchor": "dashboard-policy-reconcile",
+      "destination": "/reference/cli/dashboard/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "4. Exit codes",
+      "anchor": "4-exit-codes",
+      "destination": "/reference/exit-codes/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "docs/COMMAND-REFERENCE.md",
+      "heading": "5. Useful environment variables",
+      "anchor": "5-useful-environment-variables",
+      "destination": "/reference/environment/",
+      "disposition": "migrated",
+      "reason": "Condensed repository guide section; the website page holds the complete, maintained steps.",
+      "reviewedAgainst": "899ff21753f064e6118b686d13f7d093a5599b81"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "VisualGuard",
+      "anchor": "visualguard",
+      "destination": "/start/choose-setup/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Dashboard and setup guides",
+      "anchor": "dashboard-and-setup-guides",
+      "destination": "/dashboard/overview/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Try it without a config",
+      "anchor": "try-it-without-a-config",
+      "destination": "/start/choose-setup/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Commands",
+      "anchor": "commands",
+      "destination": "/reference/cli/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Configuration",
+      "anchor": "configuration",
+      "destination": "/guides/configuration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Explanations, with or without AI",
+      "anchor": "explanations-with-or-without-ai",
+      "destination": "/guides/ai-policy-and-budgets/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Fixing regressions",
+      "anchor": "fixing-regressions",
+      "destination": "/guides/fixes/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Watch mode",
+      "anchor": "watch-mode",
+      "destination": "/guides/watch/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Baseline mode",
+      "anchor": "baseline-mode",
+      "destination": "/guides/local-baselines/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Monitoring production",
+      "anchor": "monitoring-production",
+      "destination": "/guides/monitoring/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "CI and pull requests",
+      "anchor": "ci-and-pull-requests",
+      "destination": "/ci/overview/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Accessibility and performance",
+      "anchor": "accessibility-and-performance",
+      "destination": "/guides/accessibility-and-performance/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Inside Playwright tests",
+      "anchor": "inside-playwright-tests",
+      "destination": "/guides/playwright/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Logged-in pages",
+      "anchor": "logged-in-pages",
+      "destination": "/guides/application-auth/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Custom reporters",
+      "anchor": "custom-reporters",
+      "destination": "/guides/reporters/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "How captures stay stable",
+      "anchor": "how-captures-stay-stable",
+      "destination": "/guides/stable-captures/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Output",
+      "anchor": "output",
+      "destination": "/reference/artifacts/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Requirements",
+      "anchor": "requirements",
+      "destination": "/start/requirements/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "License",
+      "anchor": "license",
+      "destination": "/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Reliability changes: F01\u2013F12",
+      "anchor": "reliability-changes-f01f12",
+      "destination": "/releases/migration/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Migration",
+      "anchor": "migration",
+      "destination": "/releases/migration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Baselines",
+      "anchor": "baselines",
+      "destination": "/releases/migration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Automatic fixing and verification",
+      "anchor": "automatic-fixing-and-verification",
+      "destination": "/releases/migration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Sharding",
+      "anchor": "sharding",
+      "destination": "/releases/migration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "AI policy and budgets",
+      "anchor": "ai-policy-and-budgets",
+      "destination": "/releases/migration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Playwright fixture capability contract",
+      "anchor": "playwright-fixture-capability-contract",
+      "destination": "/releases/migration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Supported and validated environments",
+      "anchor": "supported-and-validated-environments",
+      "destination": "/releases/migration/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELIABILITY-CHANGES.md",
+      "heading": "Validation recorded on 9 October 2026",
+      "anchor": "validation-recorded-on-9-october-2026",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated execution evidence retained at its original revision; current website validation scope is stated separately.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELEASE-3.1.0-VALIDATION.md",
+      "heading": "VisualGuard 3.1.0 release validation",
+      "anchor": "visualguard-310-release-validation",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELEASE-3.1.0-VALIDATION.md",
+      "heading": "Result",
+      "anchor": "result",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELEASE-3.1.0-VALIDATION.md",
+      "heading": "Cleanup included",
+      "anchor": "cleanup-included",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELEASE-3.1.0-VALIDATION.md",
+      "heading": "Version preparation",
+      "anchor": "version-preparation",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELEASE-3.1.0-VALIDATION.md",
+      "heading": "Post-release host fixes",
+      "anchor": "post-release-host-fixes",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELEASE-3.1.0-VALIDATION.md",
+      "heading": "Integration review",
+      "anchor": "integration-review",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/RELEASE-3.1.0-VALIDATION.md",
+      "heading": "Release automation follow-up",
+      "anchor": "release-automation-follow-up",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "VisualGuard: entry points, execution flow and every package file",
+      "anchor": "visualguard-entry-points-execution-flow-and-every-package-file",
+      "destination": "/contributing/architecture/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "Where execution starts",
+      "anchor": "where-execution-starts",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "The main comparison flow",
+      "anchor": "the-main-comparison-flow",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "Capture, diff and explanation internals",
+      "anchor": "capture-diff-and-explanation-internals",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "AI and repair are separate paths",
+      "anchor": "ai-and-repair-are-separate-paths",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "How the report connects back to the package",
+      "anchor": "how-the-report-connects-back-to-the-package",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "A practical reading order",
+      "anchor": "a-practical-reading-order",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "Inventory regeneration",
+      "anchor": "inventory-regeneration",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "Complete file inventory",
+      "anchor": "complete-file-inventory",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "Build and documentation",
+      "anchor": "build-and-documentation",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "report-app/src",
+      "anchor": "report-appsrc",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/ai",
+      "anchor": "srcai",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/capture",
+      "anchor": "srccapture",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/cli",
+      "anchor": "srccli",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/config",
+      "anchor": "srcconfig",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/core",
+      "anchor": "srccore",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/diff",
+      "anchor": "srcdiff",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/fixer",
+      "anchor": "srcfixer",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src (public entry and declarations)",
+      "anchor": "src-public-entry-and-declarations",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/mapping",
+      "anchor": "srcmapping",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/playwright",
+      "anchor": "srcplaywright",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/reporters",
+      "anchor": "srcreporters",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/server",
+      "anchor": "srcserver",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "src/setup",
+      "anchor": "srcsetup",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "test suites",
+      "anchor": "test-suites",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "test/helpers",
+      "anchor": "testhelpers",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "test/pw",
+      "anchor": "testpw",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/PACKAGE-ARCHITECTURE.md",
+      "heading": "Exact file connections",
+      "anchor": "exact-file-connections",
+      "destination": "/contributing/architecture/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Reading VisualGuard's code as a new JavaScript developer",
+      "anchor": "reading-visualguards-code-as-a-new-javascript-developer",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Start with one path through the package",
+      "anchor": "start-with-one-path-through-the-package",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "JavaScript, TypeScript and JSX",
+      "anchor": "javascript-typescript-and-jsx",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Imports, exports and entry points",
+      "anchor": "imports-exports-and-entry-points",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Function declarations, arrow functions and callbacks",
+      "anchor": "function-declarations-arrow-functions-and-callbacks",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Promises, async and await",
+      "anchor": "promises-async-and-await",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Errors and cleanup",
+      "anchor": "errors-and-cleanup",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Common syntax in the package",
+      "anchor": "common-syntax-in-the-package",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Arrays, Sets and Maps",
+      "anchor": "arrays-sets-and-maps",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Browser code and Node code are separate",
+      "anchor": "browser-code-and-node-code-are-separate",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Images, geometry and compact DOM data",
+      "anchor": "images-geometry-and-compact-dom-data",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Following a repair safely through the code",
+      "anchor": "following-a-repair-safely-through-the-code",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "docs/READING-THE-CODE.md",
+      "heading": "Reading and maintaining tests",
+      "anchor": "reading-and-maintaining-tests",
+      "destination": "/contributing/reading-the-code/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "Publish and Use VisualGuard from npm",
+      "anchor": "publish-and-use-visualguard-from-npm",
+      "destination": "/contributing/releases/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "Before publishing",
+      "anchor": "before-publishing",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "1. Log in to npm",
+      "anchor": "1-log-in-to-npm",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "2. Choose a release version",
+      "anchor": "2-choose-a-release-version",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "3. Build and validate",
+      "anchor": "3-build-and-validate",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "4. Inspect the package tarball",
+      "anchor": "4-inspect-the-package-tarball",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "5. Publish",
+      "anchor": "5-publish",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "6. Install VisualGuard in another project",
+      "anchor": "6-install-visualguard-in-another-project",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "7. Add a VisualGuard configuration",
+      "anchor": "7-add-a-visualguard-configuration",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "8. Configure the Gemini key safely",
+      "anchor": "8-configure-the-gemini-key-safely",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "9. Run the comparison in the target project",
+      "anchor": "9-run-the-comparison-in-the-target-project",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "10. Use baseline snapshots instead of two live environments",
+      "anchor": "10-use-baseline-snapshots-instead-of-two-live-environments",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PUBLISHING-AND-USING.md",
+      "heading": "11. Run in CI",
+      "anchor": "11-run-in-ci",
+      "destination": "/contributing/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "heading": "Contributing to VisualGuard",
+      "anchor": "contributing-to-visualguard",
+      "destination": "/contributing/testing/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "heading": "Architecture",
+      "anchor": "architecture",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "heading": "Focused validation",
+      "anchor": "focused-validation",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "heading": "Adding a regression fixture",
+      "anchor": "adding-a-regression-fixture",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "heading": "Reports and issues",
+      "anchor": "reports-and-issues",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "heading": "Releases",
+      "anchor": "releases",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "action/README.md",
+      "heading": "VisualGuard GitHub Action",
+      "anchor": "visualguard-github-action",
+      "destination": "/ci/github-actions/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/README.md",
+      "heading": "VisualGuard example: Next.js + Tailwind",
+      "anchor": "visualguard-example-nextjs--tailwind",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "Run VisualGuard Screenshot Tests with Gemini",
+      "anchor": "run-visualguard-screenshot-tests-with-gemini",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "Requirements",
+      "anchor": "requirements",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "1. Configure Gemini",
+      "anchor": "1-configure-gemini",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "2. Install dependencies and build VisualGuard",
+      "anchor": "2-install-dependencies-and-build-visualguard",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "3. Start the production server",
+      "anchor": "3-start-the-production-server",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "4. Seed and start staging",
+      "anchor": "4-seed-and-start-staging",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "5. Check the planned routes",
+      "anchor": "5-check-the-planned-routes",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "6. Run the screenshot comparison with Gemini",
+      "anchor": "6-run-the-screenshot-comparison-with-gemini",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "7. Open the generated HTML report",
+      "anchor": "7-open-the-generated-html-report",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "8. Ask VisualGuard to propose and verify fixes",
+      "anchor": "8-ask-visualguard-to-propose-and-verify-fixes",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+      "heading": "One-command key alternative",
+      "anchor": "one-command-key-alternative",
+      "destination": "/guides/nextjs-example/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "evals/README.md",
+      "heading": "Evals",
+      "anchor": "evals",
+      "destination": "/contributing/testing/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "evals/README.md",
+      "heading": "Evaluation contract and gates",
+      "anchor": "evaluation-contract-and-gates",
+      "destination": "/contributing/testing/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "fixtures/site/README.md",
+      "heading": "Fixture site",
+      "anchor": "fixture-site",
+      "destination": "/contributing/testing/",
+      "disposition": "superseded",
+      "reason": "Reorganized into focused task/reference pages; original Markdown remains available until a verified public launch.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "VisualGuard: Project Plan",
+      "anchor": "visualguard-project-plan",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Current implementation status (2026-10-09)",
+      "anchor": "current-implementation-status-2026-10-09",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Historical implementation snapshot (2026-10-08)",
+      "anchor": "historical-implementation-snapshot-2026-10-08",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 10 (2026-10-09): after the first real-project run",
+      "anchor": "phase-10-2026-10-09-after-the-first-real-project-run",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Contents",
+      "anchor": "contents",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "1. Vision and scope",
+      "anchor": "1-vision-and-scope",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "The problem",
+      "anchor": "the-problem",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "The product",
+      "anchor": "the-product",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "v1.0 goals",
+      "anchor": "v10-goals",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Non-goals for v1",
+      "anchor": "non-goals-for-v1",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Success metrics for 1.0",
+      "anchor": "success-metrics-for-10",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "2. Principles",
+      "anchor": "2-principles",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3. User experience",
+      "anchor": "3-user-experience",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.1 Install and first run",
+      "anchor": "31-install-and-first-run",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.2 Commands",
+      "anchor": "32-commands",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.3 Common flags",
+      "anchor": "33-common-flags",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.4 Statuses",
+      "anchor": "34-statuses",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.5 Exit codes",
+      "anchor": "35-exit-codes",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.6 `visualguard test` output (TTY)",
+      "anchor": "36-visualguard-test-output-tty",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.7 `visualguard init`",
+      "anchor": "37-visualguard-init",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "3.8 Zero-config modes",
+      "anchor": "38-zero-config-modes",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "4. Tech stack",
+      "anchor": "4-tech-stack",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "5.1 Pipeline",
+      "anchor": "51-pipeline",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "5.2 Event-driven core",
+      "anchor": "52-event-driven-core",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "5.3 Module boundaries (inside the single package)",
+      "anchor": "53-module-boundaries-inside-the-single-package",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "5.4 Run directory",
+      "anchor": "54-run-directory",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "5.5 Core types (sketch)",
+      "anchor": "55-core-types-sketch",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "5.6 Extension interfaces",
+      "anchor": "56-extension-interfaces",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "6. Configuration",
+      "anchor": "6-configuration",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "6.1 Full example",
+      "anchor": "61-full-example",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "6.2 Resolution order",
+      "anchor": "62-resolution-order",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "6.3 Validation",
+      "anchor": "63-validation",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "6.4 Route discovery",
+      "anchor": "64-route-discovery",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "6.5 How page URLs are resolved",
+      "anchor": "65-how-page-urls-are-resolved",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Where base URLs come from",
+      "anchor": "where-base-urls-come-from",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Where routes come from",
+      "anchor": "where-routes-come-from",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Joining rules",
+      "anchor": "joining-rules",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Different paths on the two sites",
+      "anchor": "different-paths-on-the-two-sites",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Positional URLs (zero-config)",
+      "anchor": "positional-urls-zero-config",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Checking the resolved URLs before a run",
+      "anchor": "checking-the-resolved-urls-before-a-run",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "CI with per-PR preview URLs",
+      "anchor": "ci-with-per-pr-preview-urls",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "7. Capture engine",
+      "anchor": "7-capture-engine",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "7.1 Sources of flakiness and how to handle them",
+      "anchor": "71-sources-of-flakiness-and-how-to-handle-them",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "7.2 Other details",
+      "anchor": "72-other-details",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "8. Diff engine",
+      "anchor": "8-diff-engine",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "8.1 Steps",
+      "anchor": "81-steps",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "8.2 Engines",
+      "anchor": "82-engines",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "8.3 Performance budget",
+      "anchor": "83-performance-budget",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "9. DOM mapping and style deltas",
+      "anchor": "9-dom-mapping-and-style-deltas",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "9.1 DOM snapshot (per capture)",
+      "anchor": "91-dom-snapshot-per-capture",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "9.2 Mapping regions to elements",
+      "anchor": "92-mapping-regions-to-elements",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "9.3 Known limits",
+      "anchor": "93-known-limits",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10. AI layer",
+      "anchor": "10-ai-layer",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.1 Two-level design",
+      "anchor": "101-two-level-design",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.2 Gemini provider",
+      "anchor": "102-gemini-provider",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.3 Ollama provider",
+      "anchor": "103-ollama-provider",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.4 The `none` provider",
+      "anchor": "104-the-none-provider",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.5 `analyzeVisualDiff`: inputs and output",
+      "anchor": "105-analyzevisualdiff-inputs-and-output",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.6 Guardrails against hallucination",
+      "anchor": "106-guardrails-against-hallucination",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.7 Caching and cost",
+      "anchor": "107-caching-and-cost",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "10.8 Evals",
+      "anchor": "108-evals",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "11. HTML report",
+      "anchor": "11-html-report",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "11.1 Why Vite + React instead of Next.js",
+      "anchor": "111-why-vite--react-instead-of-nextjs",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "11.2 Generation",
+      "anchor": "112-generation",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "11.3 Views",
+      "anchor": "113-views",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "11.4 `visualguard report`",
+      "anchor": "114-visualguard-report",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12. CI and GitHub",
+      "anchor": "12-ci-and-github",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12.1 Generic CI",
+      "anchor": "121-generic-ci",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12.2 GitHub job summary",
+      "anchor": "122-github-job-summary",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12.3 Sticky PR comment (`visualguard comment`)",
+      "anchor": "123-sticky-pr-comment-visualguard-comment",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12.4 Preview deployments",
+      "anchor": "124-preview-deployments",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12.5 Example workflow",
+      "anchor": "125-example-workflow",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12.6 Later",
+      "anchor": "126-later",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "12.7 Webhook reporter",
+      "anchor": "127-webhook-reporter",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "13. Fixer",
+      "anchor": "13-fixer",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "13.1 Safety model",
+      "anchor": "131-safety-model",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "13.2 Flow",
+      "anchor": "132-flow",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "13.3 Locating source",
+      "anchor": "133-locating-source",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "13.4 Why search/replace edits instead of unified diffs",
+      "anchor": "134-why-searchreplace-edits-instead-of-unified-diffs",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "13.5 Verification needs a local server",
+      "anchor": "135-verification-needs-a-local-server",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "13.6 Example session",
+      "anchor": "136-example-session",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "14. Watch mode and baselines",
+      "anchor": "14-watch-mode-and-baselines",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "14.1 Watch mode",
+      "anchor": "141-watch-mode",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "14.2 Baseline mode",
+      "anchor": "142-baseline-mode",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "15. Security and privacy",
+      "anchor": "15-security-and-privacy",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "16. Repository structure",
+      "anchor": "16-repository-structure",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "17. Testing strategy",
+      "anchor": "17-testing-strategy",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "18. Release and distribution",
+      "anchor": "18-release-and-distribution",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "19. Roadmap",
+      "anchor": "19-roadmap",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 0: Foundation (2\u20133 days)",
+      "anchor": "phase-0-foundation-23-days",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 1: Capture and diff MVP (6\u20138 days)",
+      "anchor": "phase-1-capture-and-diff-mvp-68-days",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 2: Setup and zero-config (4\u20135 days) \u2192 **release 0.1.0**",
+      "anchor": "phase-2-setup-and-zero-config-45-days--release-010",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 3: HTML report (6\u20138 days)",
+      "anchor": "phase-3-html-report-68-days",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 4: DOM mapping and heuristics (5\u20136 days) \u2192 **0.2.0**",
+      "anchor": "phase-4-dom-mapping-and-heuristics-56-days--020",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 5: AI analysis (6\u20138 days) \u2192 **0.3.0**",
+      "anchor": "phase-5-ai-analysis-68-days--030",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 6: CI and GitHub (4\u20135 days) \u2192 **0.4.0, the first \"CI-ready AI tool\" release**",
+      "anchor": "phase-6-ci-and-github-45-days--040-the-first-ci-ready-ai-tool-release",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 7: Interactive fix (8\u201310 days) \u2192 **0.5.0**",
+      "anchor": "phase-7-interactive-fix-810-days--050",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 8: Automatic fix and watch mode (6\u20138 days) \u2192 **0.6.0**",
+      "anchor": "phase-8-automatic-fix-and-watch-mode-68-days--060",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Phase 9: Hardening for 1.0 (ongoing)",
+      "anchor": "phase-9-hardening-for-10-ongoing",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Timeline summary",
+      "anchor": "timeline-summary",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "20. Risks",
+      "anchor": "20-risks",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "21. Open decisions",
+      "anchor": "21-open-decisions",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "22. Next steps",
+      "anchor": "22-next-steps",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "Appendices",
+      "anchor": "appendices",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "A. `manifest.json` (abbreviated)",
+      "anchor": "a-manifestjson-abbreviated",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "B. `analyzeVisualDiff` prompt sketch",
+      "anchor": "b-analyzevisualdiff-prompt-sketch",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "C. GitHub Actions workflow",
+      "anchor": "c-github-actions-workflow",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "PLAN.md",
+      "heading": "D. PR comment template",
+      "anchor": "d-pr-comment-template",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Dated engineering/release record retained in repository, not treated as a current product promise.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "visualguard",
+      "anchor": "visualguard",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.2.0",
+      "anchor": "320",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Upgrade from 3.1.0",
+      "anchor": "upgrade-from-310",
+      "destination": "/releases/",
+      "disposition": "migrated",
+      "reason": "Current behavior carried into the mapped task/reference page.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Patch Changes",
+      "anchor": "patch-changes",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.1.0",
+      "anchor": "310",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-1",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Patch Changes",
+      "anchor": "patch-changes-1",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "2.0.0",
+      "anchor": "200",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Major Changes",
+      "anchor": "major-changes",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Patch Changes",
+      "anchor": "patch-changes-2",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "1.1.0",
+      "anchor": "110",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-2",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "1.0.0",
+      "anchor": "100",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Major Changes",
+      "anchor": "major-changes-1",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "0.7.0",
+      "anchor": "070",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-3",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "0.6.0",
+      "anchor": "060",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-4",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "0.5.0",
+      "anchor": "050",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-5",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "0.4.0",
+      "anchor": "040",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-6",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "0.3.0",
+      "anchor": "030",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-7",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "0.2.0",
+      "anchor": "020",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-8",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "0.1.0",
+      "anchor": "010",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Minor Changes",
+      "anchor": "minor-changes-9",
+      "destination": null,
+      "disposition": "retained historical",
+      "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
+      "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+name: Documentation
+
+on:
+  pull_request:
+    paths:
+      - 'apps/docs/**'
+      - 'scripts/docs/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'PUBLISHING-AND-USING.md'
+      - 'packages/visualguard/README.md'
+      - 'packages/visualguard/CHANGELOG.md'
+      - 'packages/visualguard/src/**'
+      - 'apps/platform/server/**'
+      - 'action/**'
+      - 'examples/nextjs/*.md'
+      - 'evals/README.md'
+      - 'fixtures/site/README.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/docs-*.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/docs/**'
+      - 'scripts/docs/**'
+      - 'docs/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/docs-*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    env:
+      DOCS_BASE_PATH: /visualguard-ai-testing
+      DOCS_SITE_URL: https://shubhamtiwari909.github.io
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check documentation contracts and coverage
+        run: pnpm docs:test
+      - name: Build static documentation
+        run: pnpm docs:build
+      - name: Check generated pages, assets and anchors
+        run: pnpm docs:check-links
+      - uses: actions/upload-artifact@v4
+        with:
+          name: documentation-preview
+          path: apps/docs/dist
+          retention-days: 7

@@ -27,7 +27,14 @@
     "release": "pnpm build && changeset publish",
     "test:pack": "pnpm build && node scripts/pack-smoke.mjs",
     "eval": "pnpm build && node evals/run.mjs",
-    "demo:gif": "pnpm build && node scripts/demo-gif.mjs"
+    "demo:gif": "pnpm build && node scripts/demo-gif.mjs",
+    "docs:dev": "pnpm --filter @visualguard/docs dev",
+    "docs:build": "pnpm --filter @visualguard/docs build",
+    "docs:preview": "pnpm --filter @visualguard/docs preview",
+    "docs:test": "node --test scripts/docs/checks.test.mjs && node scripts/docs/check-content.mjs && node scripts/docs/check-examples.mjs && node scripts/docs/generate-reference.mjs --check",
+    "docs:check-links": "node scripts/docs/check-links.mjs",
+    "docs:smoke": "node scripts/docs/smoke-quickstart.mjs --dashboard",
+    "docs:smoke:host": "node scripts/docs/smoke-dashboard-host.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

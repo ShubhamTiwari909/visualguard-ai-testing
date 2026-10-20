@@ -25,7 +25,11 @@ export async function scaffoldDashboard(options: {
     type: "module",
     engines: { node: "22.x" },
     scripts: { start: "visualguard dashboard", build: "visualguard dashboard assets --out public" },
-    dependencies: { visualguard: options.packageFile ? "file:./visualguard.tgz" : options.version },
+    dependencies: {
+      visualguard: options.packageFile ? "file:./visualguard.tgz" : options.version,
+      // Cloud Run keeps a container alive, so the dashboard can run tests itself.
+      ...(options.target === "cloud-run" ? { playwright: "^1.45.0" } : {}),
+    },
   };
   await writeFile(resolve(out, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`);
   await writeFile(
@@ -79,7 +83,7 @@ export async function scaffoldDashboard(options: {
   } else {
     await writeFile(
       resolve(out, "Dockerfile"),
-      'FROM node:22-bookworm-slim\nWORKDIR /app\nCOPY --chown=node:node . .\nRUN npm install --omit=dev --ignore-scripts && chown -R node:node /app\nENV NODE_ENV=production\nENV PORT=8080\nENV VISUALGUARD_AUTH_MODE=login\nUSER node\nEXPOSE 8080\nCMD ["./node_modules/.bin/visualguard", "dashboard", "--host", "0.0.0.0"]\n',
+      'FROM node:22-bookworm-slim\nWORKDIR /app\nCOPY --chown=node:node . .\nENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright\nRUN npm install --omit=dev --ignore-scripts && npx playwright install --with-deps chromium && chown -R node:node /app /ms-playwright\nENV NODE_ENV=production\nENV PORT=8080\nENV VISUALGUARD_AUTH_MODE=login\nUSER node\nEXPOSE 8080\nCMD ["./node_modules/.bin/visualguard", "dashboard", "--host", "0.0.0.0"]\n',
     );
     await writeFile(
       resolve(out, ".dockerignore"),
@@ -88,7 +92,7 @@ export async function scaffoldDashboard(options: {
   }
   await writeFile(
     resolve(out, "README.md"),
-    `# VisualGuard dashboard (${options.target})\n\nRun npm install. Configure the settings in .env.example in your host's environment/secret settings. Do not commit real secrets. MongoDB and PostgreSQL are detected from the URL. Metadata and screenshots persist in the external database.\n\n${options.target === "vercel" ? "Deploy this folder as a Vercel project (Other framework). The build copies prebuilt assets; api/dashboard.mjs handles API requests. Configure the canonical production URL. Preview deployments need their own URL and isolated database." : "Deploy this folder with Cloud Run source deployment or its Dockerfile. Cloud Run sets PORT. Configure database network access and the canonical service URL."}\n\nThis project needs no React, Vite, Playwright browsers, or VisualGuard repository source files.\n`,
+    `# VisualGuard dashboard (${options.target})\n\nRun npm install. Configure the settings in .env.example in your host's environment/secret settings. Do not commit real secrets. MongoDB and PostgreSQL are detected from the URL. Metadata and screenshots persist in the external database.\n\n${options.target === "vercel" ? "Deploy this folder as a Vercel project (Other framework). The build copies prebuilt assets; api/dashboard.mjs handles API requests. Configure the canonical production URL. Preview deployments need their own URL and isolated database." : "Deploy this folder with Cloud Run source deployment or its Dockerfile. Cloud Run sets PORT. Configure database network access and the canonical service URL. The image includes Chromium so Run test works from the dashboard with just a signed-in account; deploy with CPU always allocated (--no-cpu-throttling), at least one instance and 2 GiB of memory, because captures continue after the request returns."}\n\nThis project needs no React, Vite or VisualGuard repository source files.${options.target === "vercel" ? " Vercel functions cannot keep a browser running, so connect a private runner for Run test, or set VISUALGUARD_BUILT_IN_RUNNER=on only on a host that can." : ""}\n`,
   );
   return out;
 }

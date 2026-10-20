@@ -1,0 +1,102 @@
+---
+title: Visual testing, with evidence.
+description: Find visual changes, understand the evidence and make confident release decisions with VisualGuard.
+audience: developer
+docType: explanation
+channel: both
+lastReviewed: '2026-10-20'
+verifiedAgainst: 'npm 3.2.3 / source e2c69cc'
+sourcePaths: ['README.md', 'apps/docs/astro.config.mjs']
+template: splash
+hero:
+  title: Visual testing,<br />with evidence.
+  tagline: Compare your application, understand what changed, and give your team a clear path from screenshots to a release decision.
+  actions:
+    - text: Run your first test
+      link: ./start/quickstart/
+      icon: right-arrow
+    - text: Explore on GitHub
+      link: https://github.com/ShubhamTiwari909/visualguard-ai-testing
+      variant: secondary
+---
+
+import SetupChooser from '../../components/SetupChooser';
+
+<SetupChooser base={import.meta.env.BASE_URL} client:idle />
+
+## What VisualGuard does
+
+VisualGuard opens your pages in a real browser and takes screenshots. It compares them with a reference and tells you what changed. The reference can be another running version of your site, saved screenshots, or an earlier step in a Playwright test.
+
+- **No AI needed.** The built-in analysis finds changed pixels and links them to the page elements that changed. Gemini or Ollama can add plain-language explanations and repair suggestions if you want them.
+- **No account or database needed** for local tests. Results are saved as files with an HTML report.
+- **An optional dashboard** adds run history, projects, team reviews and approved baselines. It can run on your computer with a built-in SQLite file, or on a shared host.
+
+Start with one page and one screen size. Read the report before you change tolerances or add optional services.
+
+:::note[Release availability]
+The newest npm release is **3.2.3**. In the source checkout, and in the next release after 3.2.3, the dashboard's **Run test** button can capture on the dashboard host using only your sign-in. With 3.2.3, **Run test** needs a connected private runner. See [release availability](/releases/).
+:::
+
+## How these docs are organised
+
+The sidebar has ten groups. Each one answers a different kind of question. If you are new, read **Start here** from top to bottom.
+
+### Start here
+
+Set up VisualGuard and run your first comparison.
+
+- [Choose your setup](/start/choose-setup/): pick the smallest setup for your goal.
+- [Find what you need](/start/common-tasks/): a task list that maps every goal to a command, dashboard screen and page.
+- [Requirements](/start/requirements/): Node.js, browsers and optional services.
+- [Install VisualGuard](/start/install/): add the package to your app and create a config file.
+- [Run your first visual test](/start/quickstart/): a complete local comparison using two small demo pages.
+
+### Understand VisualGuard
+
+Learn the ideas behind the tool before you rely on its results.
+
+- [How VisualGuard works](/concepts/how-it-works/): capture, compare, inspect, decide.
+- [Choose a comparison mode](/concepts/comparison-modes/): two sites, saved baselines, quick scans or Playwright tests.
+- [Read result statuses](/concepts/results/): what `pass`, `review`, `regression`, `accepted` and `error` mean.
+- [Glossary](/concepts/glossary/): short definitions of every term.
+- [Frequently asked questions](/concepts/faq/): quick answers to common first questions.
+
+### Testing guides
+
+Step-by-step guides for everyday testing work: [configuring a project](/guides/configuration/), [choosing routes](/guides/routes/), [making captures repeatable](/guides/stable-captures/), [reading reports](/guides/reports/), [accepting intentional changes](/guides/accepting-changes/), [local baselines](/guides/local-baselines/), [logged-in pages](/guides/application-auth/), [AI analysis](/guides/ai-gemini/), [fixes](/guides/fixes/), [Playwright tests](/guides/playwright/) and more.
+
+### Dashboard & teams
+
+Keep history and review results together. Start with the [dashboard overview](/dashboard/overview/) and [a local dashboard](/dashboard/local/). Then add [login](/dashboard/login/), [people and permissions](/dashboard/people-and-permissions/), [reviews](/dashboard/reviews/), [approved baselines](/dashboard/approved-baselines/) and [tests from the dashboard](/dashboard/run-tests/). Use [a private runner](/dashboard/private-runners/) when your app needs one.
+
+### CI & pull requests
+
+Run the same checks on every pull request. Start with [visual tests in CI](/ci/overview/), then the [GitHub Action](/ci/github-actions/), [preview deployments](/ci/preview-deployments/), [sharding](/ci/sharding/) and [GitHub checks](/ci/github-checks/).
+
+### Deployment & operations
+
+Host a shared dashboard for your team. Start with [choosing dashboard hosting](/deployment/overview/). It covers Cloud Run, Vercel, PostgreSQL, MongoDB, backups, upgrades and administrator recovery.
+
+### Reference
+
+Exact details to look up: the [command reference](/reference/cli/), [configuration fields](/reference/configuration/), [environment variables](/reference/environment/), [exit codes](/reference/exit-codes/), [run artifacts](/reference/artifacts/) and the [programmatic API](/reference/api/).
+
+### Troubleshooting
+
+Find a fix by symptom. Start at the [troubleshooting index](/troubleshooting/). It links to installation, capture, CI and dashboard problems.
+
+### Releases
+
+Check what each npm release contains and how to upgrade: [release availability](/releases/) and [migration notes](/releases/migration/). Guides say whether they describe the published npm package, the source checkout, or both.
+
+### Contributing
+
+Work on VisualGuard itself: [run from source](/contributing/local-setup/), [read the code](/contributing/reading-the-code/), [architecture](/contributing/architecture/) and [documentation](/contributing/documentation/).
+
+## Find answers fast
+
+- **Know what you want to do, but not where?** Use [Find what you need](/start/common-tasks/).
+- **Have a quick question?** Read the [frequently asked questions](/concepts/faq/).
+- **Met an unfamiliar word?** Check the [glossary](/concepts/glossary/).
+- **Something failed?** Open [troubleshooting](/troubleshooting/).
