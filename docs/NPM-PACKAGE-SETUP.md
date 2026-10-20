@@ -27,13 +27,13 @@ Every `npx --no-install visualguard` command below runs the npm package installe
 
 ## 1. Choose your setup
 
-| You want | Database requirement | Login / token |
-| --- | --- | --- |
-| Visual tests and HTML reports only | None | None |
-| Local dashboard/history on your computer | SQLite created automatically; no database service | None in default loopback local mode |
-| Local dashboard with PostgreSQL | Dedicated PostgreSQL database | Optional login; token needed when login is enabled |
-| Local dashboard with MongoDB | Dedicated MongoDB database; replica set for full team features | Same as PostgreSQL |
-| Shared dashboard on Vercel/Cloud Run | External PostgreSQL or transaction-capable MongoDB | Login and project upload tokens |
+| You want                                 | Database requirement                                           | Login / token                                      |
+| ---------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
+| Visual tests and HTML reports only       | None                                                           | None                                               |
+| Local dashboard/history on your computer | SQLite created automatically; no database service              | None in default loopback local mode                |
+| Local dashboard with PostgreSQL          | Dedicated PostgreSQL database                                  | Optional login; token needed when login is enabled |
+| Local dashboard with MongoDB             | Dedicated MongoDB database; replica set for full team features | Same as PostgreSQL                                 |
+| Shared dashboard on Vercel/Cloud Run     | External PostgreSQL or transaction-capable MongoDB             | Login and project upload tokens                    |
 
 “Without database” applies literally to standalone visual tests. The dashboard's zero-setup option is an embedded SQLite file. You do not have to install PostgreSQL or MongoDB to use the product locally.
 
@@ -519,7 +519,7 @@ Create a **separate dashboard project**, not your application's existing Vercel 
 Check `vercel.json` before deployment:
 
 - The `3.1.0` source's scaffold omits `/reviews`; add `{ "source": "/reviews", "destination": "/index.html" }` to `rewrites` if absent.
-- Current merged feature source also needs a `/policies` rewrite in its generated output until the pending scaffold correction is released. For a release containing the relevant pages, preserve routes for `/settings`, `/operations`, `/reviews`, `/baselines`, `/policies`, `/invite`, `/runs/:path*` and `/`.
+- The published `3.2.0` scaffold omits `/policies`; this source includes the correction for the next release. Preserve routes for `/settings`, `/operations`, `/reviews`, `/baselines`, `/policies`, `/invite`, `/runs/:path*` and `/`. Updating the installed package does not update an existing deployment folder; regenerate into an empty directory and review the configuration, or add `{ "source": "/policies", "destination": "/index.html" }` if absent, then redeploy.
 - Keep `/api/:path*` routed to the API function, not `index.html`. Invitation pages in newer releases also need the scaffold's no-referrer/no-store headers.
 
 Create/connect a dedicated PostgreSQL resource through the [Vercel Marketplace](https://vercel.com/docs/marketplace-storage), or use your existing managed database. Set its actual URI as `VISUALGUARD_DATABASE_URL`; provider integration variable names can differ. Select nearby database/function regions and an appropriate pooled endpoint with provider-required TLS.
@@ -672,7 +672,7 @@ docker exec visualguard-postgres-local pg_dump -U visualguard -d visualguard -Fc
   > visualguard-native.dump
 ```
 
-  [PostgreSQL native dump documentation](https://www.postgresql.org/docs/17/app-pgdump.html).
+[PostgreSQL native dump documentation](https://www.postgresql.org/docs/17/app-pgdump.html).
 
 - **MongoDB:** use the Atlas/deployment backup and restore procedure supported by your cluster. Confirm backup availability and retention for your chosen deployment. If your operator uses MongoDB Database Tools, follow the [MongoDB dump options](https://www.mongodb.com/docs/database-tools/mongodump/) for a consistent backup of the actual deployment; the connection-only setup in section 7 does not configure backups.
 
@@ -751,21 +751,21 @@ Administrators use **Audit & recovery** for bounded, filtered history and sign-i
 
 ## 12. Troubleshooting and final checks
 
-| Symptom | What to check |
-| --- | --- |
-| `role "USER" does not exist` | Actual PostgreSQL URI/user and schema grants; replace all placeholders |
-| Dashboard unexpectedly uses another app's DB | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings |
-| Empty history after a restart | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data |
+| Symptom                                                | What to check                                                                                                                                                                               |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `role "USER" does not exist`                           | Actual PostgreSQL URI/user and schema grants; replace all placeholders                                                                                                                      |
+| Dashboard unexpectedly uses another app's DB           | Dedicated `VISUALGUARD_DATABASE_URL`, loaded file, and inherited `DATABASE_URL`/process settings                                                                                            |
+| Empty history after a restart                          | Same calling directory/absolute data directory or database; selecting a new DB does not migrate data                                                                                        |
 | `test "My Application"` ran but the dashboard is empty | Start the dashboard with its actual `--env-file`, then run `test PROJECT --dashboard http://127.0.0.1:4400`; see [missing project/run recovery](#project-or-run-missing-from-the-dashboard) |
-| Project-bound test fails before capture | Project already exists, unique name/ID, dashboard version and correct project token |
-| Upload fails after successful capture | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits |
-| Missing package/command/UI | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main` |
-| Google callback rejected | Exact origin/callback, configured test users/audience, complete OIDC settings and login mode |
-| `MongoDB URL must include a database name` | Include `/visualguard` before URI query options; do not end the URL at the cluster hostname |
-| MongoDB connection timeout/authentication failure | Atlas IP access list, database-user credentials/permissions and URL-encoded password; restart after updating the loaded environment file |
-| MongoDB transaction/admission error | Replica set primary/network access, correct URI and appropriate `invite`/limited `legacy` choice |
-| Vercel page reload returns 404 | Generated SPA rewrite for that supported page, without breaking API routing |
-| Cloud Run starts then loses data | A real external DB is required; never rely on a container-local SQLite file |
+| Project-bound test fails before capture                | Project already exists, unique name/ID, dashboard version and correct project token                                                                                                         |
+| Upload fails after successful capture                  | Inspect retained local run and retry saved evidence; check token, canonical host, DB/network limits                                                                                         |
+| Missing package/command/UI                             | Installed version supports it; rebuild source candidates explicitly instead of assuming npm tracks `main`                                                                                   |
+| Google callback rejected                               | Exact origin/callback, configured test users/audience, complete OIDC settings and login mode                                                                                                |
+| `MongoDB URL must include a database name`             | Include `/visualguard` before URI query options; do not end the URL at the cluster hostname                                                                                                 |
+| MongoDB connection timeout/authentication failure      | Atlas IP access list, database-user credentials/permissions and URL-encoded password; restart after updating the loaded environment file                                                    |
+| MongoDB transaction/admission error                    | Replica set primary/network access, correct URI and appropriate `invite`/limited `legacy` choice                                                                                            |
+| Vercel page reload returns 404                         | Generated SPA rewrite for that supported page, without breaking API routing                                                                                                                 |
+| Cloud Run starts then loses data                       | A real external DB is required; never rely on a container-local SQLite file                                                                                                                 |
 
 Before sharing a hosted instance, verify health, login, role isolation, a small/large run, image retrieval after redeploy and an isolated native restore. Test signed webhooks/scheduled reconciliation if advertised. Keep unsupported preview hosts and databases separate.
 
@@ -828,12 +828,12 @@ Then `npx --no-install visualguard test storefront --config visualguard.config.t
 
 If `npx visualguard test "My Application"` runs but `npx visualguard dashboard` shows another workspace, first check which storage each process selected:
 
-| Process | Settings it reads |
-| --- | --- |
-| `test PROJECT` | Runner process settings and `.env`/`.env.local`; with no dashboard URL, it writes to the runner's configured database or local SQLite storage |
-| `test PROJECT --dashboard URL` | Publishes through that running dashboard, which selects the database; the runner needs no database URL |
-| `dashboard --env-file .env.visualguard` | Explicitly loads that file, then starts the dashboard; existing process settings take precedence |
-| `dashboard` without `--env-file` | Uses process settings or defaults; it does not automatically read `.env.visualguard` or the runner's `.env.local` |
+| Process                                 | Settings it reads                                                                                                                             |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test PROJECT`                          | Runner process settings and `.env`/`.env.local`; with no dashboard URL, it writes to the runner's configured database or local SQLite storage |
+| `test PROJECT --dashboard URL`          | Publishes through that running dashboard, which selects the database; the runner needs no database URL                                        |
+| `dashboard --env-file .env.visualguard` | Explicitly loads that file, then starts the dashboard; existing process settings take precedence                                              |
+| `dashboard` without `--env-file`        | Uses process settings or defaults; it does not automatically read `.env.visualguard` or the runner's `.env.local`                             |
 
 Relative local SQLite storage also depends on the calling directory. Use the same application root and a single running dashboard for this workflow. To select the MongoDB workspace from section 7, stop the old dashboard and run in terminal A:
 
@@ -893,46 +893,46 @@ Choose the command for your host. `dashboard init` generates a deployment projec
 
 ### Common options
 
-| Option or argument | Meaning |
-| --- | --- |
-| `--config FILE` | Comparison configuration: tested application URLs, routes and viewports |
-| `test PROJECT` | Dashboard project ID or exact unique display name for this execution |
-| `test --dashboard URL` | Dashboard receiving the run; this is not an application-under-test URL |
-| `dashboard ... --server URL` | Running dashboard used by project creation, publishing, baseline or policy commands that support this option |
-| `dashboard --env-file FILE` | Load dashboard settings explicitly; put it before the subcommand |
-| `dashboard --port NUMBER` / `--host ADDRESS` | Dashboard listener; use loopback for local-owner mode |
-| `dashboard --data-dir DIRECTORY` | Local storage directory; does not replace an external database URL |
-| `--no-ai` / `--provider NAME` | Disable AI or select a configured AI provider for a test |
-| `test --run-name NAME` | Human-readable dashboard run label; requires a project |
-| `test --branch NAME --commit SHA --pr NUMBER` | Attach real source revision/PR metadata to a dashboard run |
+| Option or argument                             | Meaning                                                                                                                |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `--config FILE`                                | Comparison configuration: tested application URLs, routes and viewports                                                |
+| `test PROJECT`                                 | Dashboard project ID or exact unique display name for this execution                                                   |
+| `test --dashboard URL`                         | Dashboard receiving the run; this is not an application-under-test URL                                                 |
+| `dashboard ... --server URL`                   | Running dashboard used by project creation, publishing, baseline or policy commands that support this option           |
+| `dashboard --env-file FILE`                    | Load dashboard settings explicitly; put it before the subcommand                                                       |
+| `dashboard --port NUMBER` / `--host ADDRESS`   | Dashboard listener; use loopback for local-owner mode                                                                  |
+| `dashboard --data-dir DIRECTORY`               | Local storage directory; does not replace an external database URL                                                     |
+| `--no-ai` / `--provider NAME`                  | Disable AI or select a configured AI provider for a test                                                               |
+| `test --run-name NAME`                         | Human-readable dashboard run label; requires a project                                                                 |
+| `test --branch NAME --commit SHA --pr NUMBER`  | Attach real source revision/PR metadata to a dashboard run                                                             |
 | `test --fail-on regression` / `review` / `any` | Choose which result levels make the command exit nonzero; regressions/errors can indicate a correctly detected failure |
-| `test --only GLOB` / `--viewport NAME` | Limit captured routes or viewports; policy coverage can still require a complete run |
-| `--help` | Display options supported by the installed command |
+| `test --only GLOB` / `--viewport NAME`         | Limit captured routes or viewports; policy coverage can still require a complete run                                   |
+| `--help`                                       | Display options supported by the installed command                                                                     |
 
 ### Other commands
 
 Use `npx --no-install visualguard` before each command below. These are alternatives for specific tasks, not a sequence to execute together. The generated `visualguard.config.ts` is discovered automatically from the application root. The explicit `--config visualguard.config.ts` in these examples makes the selected file clear; keep explicit paths for a custom filename or JSON.
 
-| Command | Use and prerequisites |
-| --- | --- |
-| `https://example.com` or `https://production.example.com https://staging.example.com` | Run URL mode for a quick single-site scan or a two-site comparison |
-| `init` | Run the setup wizard and generate `visualguard.config.ts`; see [npx initialization](#initialize-the-project-with-npx) |
-| `init --yes --production URL --staging URL --ai none` | Generate the TypeScript config without prompts; review discovered routes and default desktop/mobile viewports |
-| `doctor --config visualguard.config.ts` | Diagnose comparison configuration and application reachability |
-| `test --config visualguard.config.ts --list` | List planned URL pairs without capturing screenshots |
-| `auth staging --config visualguard.config.ts` | Save application-under-test login state; configure the resulting storage-state path for captures |
-| `analyze` | Re-analyze saved evidence with configured analysis settings |
-| `accept` | Record an intentional local visual change; distinct from a dashboard review decision |
-| `fix` | Propose/apply/verify an AI repair with the configured source/verification setup |
-| `watch` / `monitor` | Repeat tests on edits or over time using their respective configuration |
-| `merge` | Combine compatible run shards and validate coverage |
-| `comment` | Publish/update a PR summary when explicitly configured and authorized |
-| `dashboard export FILE` / `dashboard restore FILE` | Export/restore portable evidence using the selected storage; these exclude account/security state and are not full operational backups |
-| `dashboard baseline pull SET --project storefront --out NEW_DIRECTORY --server URL` | Download an existing approved baseline set; requires project access and a configured reference destination |
-| `dashboard policy assess --project storefront --revision SHA --server URL` | Assess an exact revision against the project's configured visual policy |
-| `dashboard policy reconcile --project storefront --all --server URL` | Refresh tracked PR assessments/GitHub delivery; requires configured policy integration and project authorization |
-| `dashboard assets --out public` | Copy packaged dashboard assets; generated hosting builds use this |
-| `--version` | Print the installed CLI version |
+| Command                                                                               | Use and prerequisites                                                                                                                  |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `https://example.com` or `https://production.example.com https://staging.example.com` | Run URL mode for a quick single-site scan or a two-site comparison                                                                     |
+| `init`                                                                                | Run the setup wizard and generate `visualguard.config.ts`; see [npx initialization](#initialize-the-project-with-npx)                  |
+| `init --yes --production URL --staging URL --ai none`                                 | Generate the TypeScript config without prompts; review discovered routes and default desktop/mobile viewports                          |
+| `doctor --config visualguard.config.ts`                                               | Diagnose comparison configuration and application reachability                                                                         |
+| `test --config visualguard.config.ts --list`                                          | List planned URL pairs without capturing screenshots                                                                                   |
+| `auth staging --config visualguard.config.ts`                                         | Save application-under-test login state; configure the resulting storage-state path for captures                                       |
+| `analyze`                                                                             | Re-analyze saved evidence with configured analysis settings                                                                            |
+| `accept`                                                                              | Record an intentional local visual change; distinct from a dashboard review decision                                                   |
+| `fix`                                                                                 | Propose/apply/verify an AI repair with the configured source/verification setup                                                        |
+| `watch` / `monitor`                                                                   | Repeat tests on edits or over time using their respective configuration                                                                |
+| `merge`                                                                               | Combine compatible run shards and validate coverage                                                                                    |
+| `comment`                                                                             | Publish/update a PR summary when explicitly configured and authorized                                                                  |
+| `dashboard export FILE` / `dashboard restore FILE`                                    | Export/restore portable evidence using the selected storage; these exclude account/security state and are not full operational backups |
+| `dashboard baseline pull SET --project storefront --out NEW_DIRECTORY --server URL`   | Download an existing approved baseline set; requires project access and a configured reference destination                             |
+| `dashboard policy assess --project storefront --revision SHA --server URL`            | Assess an exact revision against the project's configured visual policy                                                                |
+| `dashboard policy reconcile --project storefront --all --server URL`                  | Refresh tracked PR assessments/GitHub delivery; requires configured policy integration and project authorization                       |
+| `dashboard assets --out public`                                                       | Copy packaged dashboard assets; generated hosting builds use this                                                                      |
+| `--version`                                                                           | Print the installed CLI version                                                                                                        |
 
 Check the exact required arguments before using an advanced command:
 
