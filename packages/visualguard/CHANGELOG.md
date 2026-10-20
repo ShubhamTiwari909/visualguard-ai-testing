@@ -7,7 +7,7 @@
 - Take a native operational database backup and stop older dashboard writers before upgrading. Upgrade all dashboard instances consistently; keep the runner and server on compatible releases. A code rollback does not restore an older database schema.
 - Existing installations with users but no recorded admission policy must explicitly choose `VISUALGUARD_USER_ADMISSION=invite` or `legacy` before startup. Fresh hosted workspaces default to invite-only admission. Use SQLite, PostgreSQL or a transaction-capable MongoDB replica set/sharded deployment for the full team workflow; standalone MongoDB needs explicit legacy mode and does not support invitations, account linking, managed lifecycle changes, baseline mutations or administrator recovery.
 - Preserve existing account IDs and use explicit Google linking with current-account proof. Matching email addresses do not merge identities. Keep a tested password administrator; changing bootstrap environment credentials does not reset an existing account.
-- Rebuild/redeploy the dashboard package and generated hosting assets as well as updating the test runner. Verify direct navigation to all supported pages. The 3.2.0 Vercel scaffold includes `/policies`; regenerate existing deployment configuration into an empty directory or add its `/index.html` rewrite before redeploying. Updating the package alone does not update an old deployment folder.
+- Rebuild/redeploy the dashboard package and generated hosting assets as well as updating the test runner. Verify direct navigation to all supported pages. The published 3.2.0 Vercel scaffold omits `/policies`; add its `/index.html` rewrite before redeploying, or regenerate from a release containing the scaffold correction. Updating the package alone does not update an old deployment folder.
 - GitHub checks need server-side supported credentials, repository mappings, a webhook secret/raw-body forwarding and external scheduled reconciliation. Credential rotation and scheduler monitoring remain operator responsibilities. Start in Informative mode; checks are point-in-time observations, not continuous release authorization.
 - Native database backups include new screenshot/DOM chunks and operational state. Portable evidence exports exclude authentication state and cannot replace a full recovery backup. Test a restore in a separate environment before relying on the upgrade.
 
@@ -25,7 +25,6 @@ See the [npm setup guide](../../docs/NPM-PACKAGE-SETUP.md) for application/dashb
 
 ### Patch Changes
 
-- Include the `/policies` rewrite in newly generated Vercel deployments so direct navigation and refresh load the dashboard. Cover the route in source and installed-package scaffold checks.
 - 693ef06: Give Audit & recovery a dedicated administrator page with bounded Previous/Next pagination, direct deployment routes, and expandable event details. Refine dashboard spacing, form alignment, select-arrow padding, keyboard focus, and mobile workspace navigation.
 - 4caa762: Add a dashboard Profile link and a personal profile section showing the signed-in account's name, email, and workspace role, with an explicit local-access state.
 - 1d4bbec: Serve direct `/reviews` navigation in the development dashboard and generated Vercel deployments. Strengthen packaged route checks to reject redirects and verify the generated Vercel rewrite.
