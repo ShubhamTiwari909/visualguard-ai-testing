@@ -15,3 +15,9 @@ Validation: focused docs production build passed. Starlight generated the static
 Added setup selection/requirements, pinned npm installation, a complete two-server local quickstart, comparison concepts/results/glossary and the full source fixture walkthrough. Added a focused smoke script that executes the actual quickstart's config and demo code in a clean temporary npm project.
 
 Validation: documentation build passed (12 generated routes). The fresh npm 3.2.3 walkthrough passed doctor, comparison listing, a changed-page `review`, report generation and an unchanged-page `pass`. The test exposed a published artifact mismatch: npm package 3.2.3 prints CLI version 3.2.2. Installation/quickstart articles now explain verifying the installed version using package-manager metadata; no engine code was changed. Live AI, Google and cloud providers were not exercised. No formatting, lint or type checks ran.
+
+## D03 — Testing workflows
+
+Added focused guides for configuration, routing/discovery, browser/viewports, stability/noise, reports, local baselines/acceptance, Playwright checkpoints, application authentication/hooks, Gemini/Ollama, AI intent/budgets, repairs, independent checks, watch/monitoring and the public API/reporters. Complete examples and clearly labeled property fragments preserve existing behavior and its limits.
+
+Validation: production docs build passed with 31 generated routes. Examples were checked against current schema, CLI registration and existing fixture capability documentation. The npm first-run smoke from D02 remains the live deterministic capture evidence; live AI services and arbitrary consumer application interactions are not certified by this prose migration. No formatting, lint or type checks ran.
