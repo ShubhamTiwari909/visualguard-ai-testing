@@ -5,7 +5,6 @@ audience: "operator"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/CHANGELOG.md", "docs/NPM-PACKAGE-SETUP.md"]
 sidebar: {"order": 8}
 ---
@@ -16,7 +15,7 @@ Use an installed VisualGuard release containing the described features and admin
 
 ## 1. Inventory the current installation
 
-Record the installed npm package version, CLI-reported version, server/deployment version, database engine/version, current canonical URL and worker releases. Check the [release matrix](/releases/) and package changelog. npm 3.2.3 has a known CLI label mismatch: use package-manager metadata to verify the installed version.
+Record the installed npm package version, CLI-reported version, server/deployment version, database engine/version, current canonical URL and worker releases. Check the [release matrix](/releases/) and package changelog. Use package-manager metadata to verify the installed version if it differs from the embedded CLI label.
 
 ## 2. Back up and test a restored copy
 

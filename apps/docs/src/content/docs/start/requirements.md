@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["package.json", "packages/visualguard/package.json", "packages/visualguard/src/cli/commands/doctor.ts", "docs/RELIABILITY-CHANGES.md"]
 sidebar: {"order": 3}
 ---
@@ -82,7 +81,7 @@ You only need these for the features named in the left column.
 | Google sign-in | A Google web OAuth client with the right callback address. Password sign-in works without it. See [Google sign-in](/dashboard/google-sign-in/). |
 | AI analysis | A Gemini API key, or a reachable Ollama server with the chosen model installed. See [Gemini](/guides/ai-gemini/) or [Ollama](/guides/ai-ollama/). |
 | Publishing to a hosted dashboard | The dashboard URL, an existing project and a project upload token. See [publishing](/dashboard/publishing/). |
-| **Run test** from the dashboard | Source checkout or a release after 3.2.3: Chromium on the dashboard host and a signed-in maintainer. With 3.2.3, or on Vercel: a connected [private runner](/dashboard/private-runners/) with a project runner credential. |
+| **Run test** from the dashboard | A signed-in maintainer and either enabled dashboard-host capture with Chromium, or a connected [private runner](/dashboard/private-runners/) with a project runner credential. Use a private runner on Vercel or if the installed dashboard does not support host capture. |
 
 :::note
 A dashboard host that only stores and shows results does not need Playwright browsers. A host that runs **Run test** itself does, and so does every private runner.

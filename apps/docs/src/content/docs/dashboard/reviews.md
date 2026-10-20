@@ -5,7 +5,6 @@ audience: "reviewer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/LOCAL-SETUP.md", "docs/PRODUCT-FEATURES.md", "apps/platform/client/reviews.tsx"]
 sidebar: {"order": 11}
 ---

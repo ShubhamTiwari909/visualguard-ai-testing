@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["README.md", "packages/visualguard/src/setup/workflow-template.ts", "packages/visualguard/src/cli/commands/comment.ts", "packages/visualguard/src/cli/commands/monitor.ts", "action/action.yml"]
 sidebar: {"order": 1}
 ---

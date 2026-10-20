@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/client/execution-progress.tsx"]
 sidebar: {"order": 9}
 ---
@@ -15,7 +14,7 @@ After you choose **Run test**, the project panel shows a progress box. This page
 ## Before you start
 
 - Know how to start a test. See [Run tests from the dashboard](/dashboard/run-tests/).
-- The built-in runner is in the source checkout and the next release after 3.2.3. With the published 3.2.3 package, tests run on a [connected private runner](/dashboard/private-runners/).
+- Check the project's execution status. **Runs on this dashboard** uses host capture; **Runner connected** uses a [private runner](/dashboard/private-runners/). If neither is available, configure a capturer before requesting a test.
 
 ## The life of a test
 

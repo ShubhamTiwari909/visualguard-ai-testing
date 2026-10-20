@@ -5,7 +5,6 @@ audience: "contributor"
 docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["apps/docs/astro.config.mjs", "apps/docs/src/data/navigation.mjs", "scripts/docs/smoke-dashboard-host.mjs", "apps/docs/src/content.config.ts", "apps/docs/src/components/PageTitle.astro", "apps/docs/src/data/coverage.json", "apps/docs/src/data/releases.json", "scripts/docs/check-content.mjs", "scripts/docs/check-examples.mjs", "scripts/docs/check-links.mjs", "scripts/docs/generate-reference.mjs", "scripts/docs/smoke-quickstart.mjs", ".github/workflows/docs-check.yml", ".github/workflows/docs-deploy.yml"]
 sidebar: {"order": 5}
 ---
@@ -119,7 +118,6 @@ The schema in `content.config.ts` rejects a page with a missing or wrong field, 
 | `docType` | Yes | The kind of page. It decides the expected shape (see below). | `tutorial`, `how-to`, `explanation`, `reference`. |
 | `channel` | Yes | Which install the page describes. It sets the badge under the title. | `published` shows **npm package**, `source` shows **Source checkout**, `both` shows **Package & source**. |
 | `lastReviewed` | Yes | The date you last checked the page against the code. Shown as "Reviewed …". | A real date such as `2026-10-20`. |
-| `verifiedAgainst` | Yes | The release and source revision the facts were checked against. Shown in the notice. | Text such as `npm 3.2.3 / source e2c69cc`. |
 | `minimumVersion` | No | The oldest release the page applies to. | Text. |
 | `sourcePaths` | Yes for `docs:test` | Repository files the page describes. Reviewers use them to find what to re-check when code changes. | An array of paths that exist, relative to the repository root. |
 | `sidebar` | No | Optional Starlight sidebar presentation settings. Our explicit reading order comes from `navigation.mjs`. | For example `{"order": 4}`. |
@@ -155,7 +153,7 @@ Some pages are also test input. Edit them with care:
 
 | Page | What reads it | Keep this true |
 | --- | --- | --- |
-| `start/quickstart.md` | `check-examples.mjs` and `smoke-quickstart.mjs` | The first ` ```ts ` block is a valid config with `ai.provider: 'none'` and `routes: ['/']`. The first ` ```js ` block is the demo server on ports 4100 and 4101. The page mentions `visualguard@` plus the version in `releases.json`. |
+| `start/quickstart.md` | `check-examples.mjs` and `smoke-quickstart.mjs` | The first ` ```ts ` block is a valid config with `ai.provider: 'none'` and `routes: ['/']`. The first ` ```js ` block is the demo server on ports 4100 and 4101. The page uses the `visualguard@latest` installation target from `releases.json`. |
 | `guides/programmatic-api.md`, `guides/reporters.md` | `smoke-quickstart.mjs` | Their first JavaScript blocks are complete runnable API/reporter files; the smoke adds the documented reporter to the API caller. |
 | `dashboard/local.md` | `smoke-quickstart.mjs` | The first ` ```dotenv ` block is a working local dashboard settings file. |
 | `ci/github-actions.md` | `check-examples.mjs` | Every input in `action/action.yml` is mentioned in backticks. |
@@ -185,7 +183,7 @@ Adapt this shape to the `docType`. Reference pages are mostly tables.
 ### Rules
 
 - Facts must be correct. Check every command, flag, configuration key, environment variable, UI label and default against the source before you write it: `packages/visualguard/src/**` (especially `cli/commands/*.ts`, `cli/program.ts`, `cli/shared.ts` and `config/schema.ts`), `apps/platform/server/**`, `apps/platform/client/**` for UI labels, and `action/action.yml`. Never invent a flag or behavior. If you are not sure, leave it out.
-- Keep published and source behavior apart. When the source checkout can do something the npm release cannot, say so on the page. For example, the dashboard's built-in runner, which runs **Run test** with only the signed-in user's login, is in the source checkout and the next release after 3.2.3 only. With 3.2.3, **Run test** needs a connected private runner.
+- Keep source and installed-package behavior clear without stamping every page with a release number. Use `visualguard@latest` in installation commands, save the resolved version and lockfile, and explain how readers can check their installed commands or dashboard capabilities. Keep version-specific history in the package changelog and migration guide. Update a task guide when its behavior changes, not just because a new package version exists.
 - Keep cross-platform notes to one line: "Examples use macOS/Linux shells; on Windows use WSL."
 - Remove unfinished notes, sample review-date placeholders and unfilled release markers before publishing. The content check rejects these markers.
 - Keep credentials, real tokens and private screenshots out of pages. Use clearly fake example values.
@@ -206,7 +204,7 @@ You should see three success lines, similar to:
 
 ```text
 Content passed: … articles, … navigable guides, and … tracked source sections.
-Examples passed: quickstart config/constraints, release pin and every Action input.
+Examples passed: quickstart config/constraints, current-release install target and every Action input.
 Configuration and CLI references match the source contracts (… configuration entries).
 Links passed: … generated pages and … internal links/assets/anchors.
 ```
@@ -216,8 +214,8 @@ Links passed: … generated pages and … internal links/assets/anchors.
 | Script | What it enforces | How to fix a failure |
 | --- | --- | --- |
 | `scripts/docs/checks.test.mjs` | Navigation validation catches deleted destinations, duplicated entries and unlisted new articles. The link checker finds missing anchors and paths that escape the base path. The remark plugin adds the base only to root-relative links. The deploy workflow runs only by hand from `main`, sets `DOCS_PRODUCTION=true` and is the only workflow with Pages write access. The check workflow stays read-only and runs `docs:check-links`. | Undo the workflow or plugin change that broke the rule, or update the test together with a deliberate, reviewed change. |
-| `scripts/docs/check-content.mjs` | Every public guide appears exactly once in the shared navigation manifest, with no missing destinations. Every page has `title`, `description`, `audience`, `docType`, `channel`, `lastReviewed` and `verifiedAgainst`. `sourcePaths` is an array and every path exists. `lastReviewed` is a real date. No placeholder words. Tutorials have the three required headings. Every heading in each source file listed in `coverage.json` is tracked, and every tracked entry points to an existing page. | Add the missing field, fix the path or date, or add the missing heading. For "Unmapped source section", add an entry to `coverage.json` (see below). For "Missing migration destination", point the entry at a page that exists. |
-| `scripts/docs/check-examples.mjs` | The quickstart config passes the real configuration schema, a zero-width viewport fails it, AI is off and routes are `['/']`. The quickstart pins the version in `releases.json`. `ci/github-actions.md` mentions every Action input. | Fix the quickstart code block, the version pin or the Action page. |
+| `scripts/docs/check-content.mjs` | Every public guide appears exactly once in the shared navigation manifest, with no missing destinations. Every page has `title`, `description`, `audience`, `docType`, `channel` and `lastReviewed`. `sourcePaths` is an array and every path exists. `lastReviewed` is a real date. No placeholder words. Tutorials have the three required headings. Every heading in each source file listed in `coverage.json` is tracked, and every tracked entry points to an existing page. | Add the missing field, fix the path or date, or add the missing heading. For "Unmapped source section", add an entry to `coverage.json` (see below). For "Missing migration destination", point the entry at a page that exists. |
+| `scripts/docs/check-examples.mjs` | The quickstart config passes the real configuration schema, a zero-width viewport fails it, AI is off and routes are `['/']`. The quickstart uses the current-release installation target in `releases.json`. `ci/github-actions.md` mentions every Action input. | Fix the quickstart code block, the install target or the Action page. |
 | `scripts/docs/generate-reference.mjs --check` | The generated tables in the three reference pages match the current CLI and configuration schema. | Regenerate the reference (step 6). |
 
 `docs:check-links` checks every `href`, `src` and `poster` in the built HTML. It reports missing pages, missing files, missing heading anchors, invalid addresses and links that escape the base path. It does not check external websites. It reads `DOCS_BASE_PATH` and `DOCS_SITE_URL`, so use the same values for the build and the link check.
@@ -250,9 +248,9 @@ Every entry needs a non-empty `reason`.
 
 `pnpm docs:smoke` follows the quickstart exactly as a reader would. It is slower and needs network access, so run it when you change the quickstart, the local dashboard page or the published version.
 
-It creates a temporary project, installs the pinned npm release (`visualguard@3.2.3` and `playwright@1.64.0`), writes the quickstart config and demo server from the page, and starts the demo on ports **4100** and **4101**. It runs `doctor`, `test --list`, a comparison that must find the change, the HTML report, and a second comparison that must pass. With `--dashboard` (which the root script passes), it also starts a SQLite dashboard from the `dotenv` block in `dashboard/local.md`, creates a project, uploads a run and checks that the run survives a restart.
+It creates a temporary project, resolves `visualguard@latest` and `playwright@latest`, prints the installed package version and CLI label, installs matching Chromium, writes the quickstart config and demo server from the page, and starts the demo on ports **4100** and **4101**. It runs `doctor`, `test --list`, a comparison that must find the change, the HTML report, and a second comparison that must pass. With `--dashboard` (which the root script passes), it also starts a SQLite dashboard from the `dotenv` block in `dashboard/local.md`, creates a project, uploads a run and checks that the run survives a restart.
 
-It removes `VISUALGUARD_*`, `GEMINI_*`, `GOOGLE_API_KEY`, `OLLAMA_*` and `DATABASE_URL` from its environment, so your private settings are never used. It needs a matching Playwright Chromium already installed, and ports 4100 and 4101 free. It stops its processes and deletes the temporary project when it finishes, even after a failure. It does not test cloud hosting, external databases or Google sign-in.
+It removes `VISUALGUARD_*`, `GEMINI_*`, `GOOGLE_API_KEY`, `OLLAMA_*` and `DATABASE_URL` from its environment, so your private settings are never used. It needs network access for npm and the matching Chromium download, and ports 4100 and 4101 free. On Linux, install Playwright's required system libraries first. It stops its processes and deletes the temporary project when it finishes, even after a failure. It does not test cloud hosting, external databases or Google sign-in.
 
 :::note
 The repository's `AGENTS.md` defers formatting, lint and type-check commands during the current feature sequence. The documentation scripts do not run them. A passing docs build is not a passing type check, so do not report it as one.
@@ -328,7 +326,7 @@ You should see the site at the live address, and a green run for both jobs in th
 
 - `pnpm docs:test`, `pnpm docs:build` and `pnpm docs:check-links` all pass.
 - In `pnpm docs:preview`, the page appears in the right sidebar group and position, and the badge under the title matches its `channel`.
-- You read the page from top to bottom as a beginner, and followed each command against the version named in `verifiedAgainst`.
+- You read the page from top to bottom as a beginner, and followed each command with the intended installed package and checked the advertised capabilities.
 - In your pull request, record what you actually ran. Do not list a deferred check as passed.
 
 ## Troubleshooting

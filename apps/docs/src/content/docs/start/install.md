@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "published"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/init.ts", "packages/visualguard/src/cli/commands/doctor.ts"]
 sidebar: {"order": 4}
 ---
@@ -22,11 +21,11 @@ VisualGuard tests any page a browser can open: React, Next.js, Vue, static HTML 
 
 ## 1. Install the package and a browser
 
-Pin an exact version so every teammate and CI job runs the same release. Then install Playwright and its Chromium browser.
+Resolve the current npm release with `@latest` and save its exact version so every teammate and CI job runs the same release. Then install Playwright and its Chromium browser.
 
 ```bash
 cd /path/to/your-app
-npm install --save-dev --save-exact visualguard@3.2.3
+npm install --save-dev --save-exact visualguard@latest
 npm install --save-dev playwright
 npx playwright install chromium
 ```
@@ -45,7 +44,7 @@ If your app uses pnpm, keep pnpm and its lockfile. Do not create a second lockfi
 
 | Step | npm | pnpm |
 | --- | --- | --- |
-| Add VisualGuard | `npm install --save-dev --save-exact visualguard@3.2.3` | `pnpm add -D -E visualguard@3.2.3` |
+| Add VisualGuard | `npm install --save-dev --save-exact visualguard@latest` | `pnpm add -D -E visualguard@latest` |
 | Add Playwright | `npm install --save-dev playwright` | `pnpm add -D playwright` |
 | Install the browser | `npx playwright install chromium` | `pnpm exec playwright install chromium` |
 | Run any VisualGuard command | `npx --no-install visualguard ...` | `pnpm exec visualguard ...` |
@@ -172,10 +171,10 @@ npx --no-install visualguard --version
 npm ls visualguard --depth=0
 ```
 
-You should see `visualguard@3.2.3` from `npm ls`.
+You should see the concrete installed version from `npm ls`. The `latest` tag is resolved during installation; your saved version and lockfile keep later installs reproducible.
 
 :::caution[Known version label]
-The published **3.2.3** package prints **3.2.2** from `visualguard --version`. This is a wrong label inside the package, not a downgrade. Trust `npm ls visualguard --depth=0` (or `pnpm list visualguard --depth=0`). Include both numbers when you report a bug. See [release availability](/releases/).
+The CLI label and package metadata can differ in a misbuilt artifact. Confirm installation with `npm ls visualguard --depth=0` (or `pnpm list visualguard --depth=0`), and include both values when you report a mismatch. See [release availability](/releases/).
 :::
 
 ## Verify the setup
@@ -199,7 +198,7 @@ A team's Vue app runs in production at `https://shop.example.com`. A developer s
 
 | Problem | Fix |
 | --- | --- |
-| `--version` prints 3.2.2 | Expected for 3.2.3. Confirm with `npm ls visualguard --depth=0`. |
+| CLI and package versions differ | Confirm with `npm ls visualguard --depth=0`, check which local binary ran and report both values. |
 | `npx --no-install` says the command is not found | You are not in your app's root, or the install failed. `cd` to the folder with `package.json` and reinstall. |
 | Doctor says the browser is missing | Run `npx playwright install chromium` in the same folder. |
 | Doctor cannot reach a URL | Start the app, check the port and the host spelling (`127.0.0.1` vs `localhost`). |

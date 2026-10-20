@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-executions.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/test-runner.ts", "apps/platform/server/test-binding.ts", "apps/platform/server/config.ts", "apps/platform/server/auth.ts", "apps/platform/client/project-tests.tsx", "packages/visualguard/src/cli/commands/test.ts"]
 sidebar: {"order": 4}
 ---
@@ -136,14 +135,15 @@ The message continues with `Saved evidence is kept at: PATH` and the exact retry
 
 **Run test** on a project page asks for a capture with the project's saved test configuration. Who captures depends on your release:
 
-- **Published 3.2.3:** a connected [private runner](/dashboard/private-runners/) must do the capture.
-- **Source checkout and the next release after 3.2.3:** if no private runner is connected, the dashboard can capture on its own server, using the signed-in user's login. This is called the built-in runner. A connected private runner always takes priority.
+- **Runs on this dashboard:** host capture is supported and enabled. If no private runner is connected, the dashboard captures on its own server using the signed-in user's login.
+- **Runner connected:** a [private runner](/dashboard/private-runners/) does the capture and takes priority.
+- **Runner offline:** host capture is unsupported or disabled and no private runner is connected. Configure one before requesting a test.
 
 The status next to the button shows which applies: **Runner connected**, **Runs on this dashboard** or **Runner offline**.
 
 ### `Chromium is not installed on the dashboard host. Run npx playwright install chromium there, or connect a private runner.`
 
-This applies to the built-in runner only (source and the next release after 3.2.3).
+This applies only when the installed dashboard supports built-in capture.
 
 - **Likely cause:** the dashboard server has Playwright but no Chromium download.
 - **Fix:** install Chromium on the machine that runs the dashboard, then restart it. Or connect a private runner instead.
@@ -158,7 +158,7 @@ This applies to the built-in runner only (source and the next release after 3.2.
 ### `Connect a runner for this project before running a test`
 
 - **Likely cause:** no private runner is connected and the built-in runner is not available. That happens when:
-  - you use published 3.2.3, which has no built-in runner;
+  - the installed dashboard does not offer built-in capture;
   - the dashboard runs on Vercel, where the built-in runner is off by default because serverless functions cannot keep a browser running;
   - `VISUALGUARD_BUILT_IN_RUNNER=off` (or `0`, `false`, `no`) is set.
 - **Fix:** start a private runner for the project, or turn the built-in runner on with `VISUALGUARD_BUILT_IN_RUNNER=on`, but only on a host that can keep a browser running after a request returns.

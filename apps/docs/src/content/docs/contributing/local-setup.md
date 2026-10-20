@@ -5,7 +5,6 @@ audience: "contributor"
 docType: "tutorial"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/LOCAL-SETUP.md", "package.json", "apps/platform/package.json", "scripts/serve-fixtures.mjs", "apps/platform/server/dev.ts", "apps/platform/server/runtime.ts", "apps/platform/server/config.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/test-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/server/operations-command.ts", "apps/platform/client/project-tests.tsx"]
 sidebar: {"order": 1}
 ---
@@ -613,7 +612,7 @@ How it behaves:
 In the code, `apps/platform/server/built-in-runner.ts` claims the queued request, and `executeClaimedTest` in `apps/platform/server/test-runner.ts` captures and uploads. The private runner uses the same function.
 
 :::caution
-The built-in runner is in the source checkout and in the next release after 3.2.3 only. With the published 3.2.3 package, **Run test** needs a connected private runner.
+This source checkout includes the built-in runner. For an installed package, check the project for **Runs on this dashboard**; if host capture is unavailable, upgrade or connect a private runner.
 :::
 
 ### Run with a private runner instead

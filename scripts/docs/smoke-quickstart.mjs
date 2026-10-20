@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 
 const root = resolve(import.meta.dirname, '../..');
 const article = await readFile(join(root, 'apps/docs/src/content/docs/start/quickstart.md'), 'utf8');
+const releases = JSON.parse(await readFile(join(root, 'apps/docs/src/data/releases.json'), 'utf8'));
 const code = (language) => article.match(new RegExp('```' + language + '\\n([\\s\\S]*?)\\n```'))?.[1];
 const cwd = await mkdtemp(join(tmpdir(), 'visualguard-docs-quickstart-'));
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^(VISUALGUARD_|GEMINI_|GOOGLE_API_KEY|OLLAMA_|DATABASE_URL)/.test(key)));
@@ -15,14 +16,14 @@ let dashboard;
 async function command(executable, args, allowed = [0]) {
   return await new Promise((resolveCommand, reject) => {
     const child = spawn(executable, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
-    let output = '';
+    let output = '', stdout = '';
     const timer = setTimeout(() => { child.kill('SIGTERM'); reject(new Error(`Timed out: ${args.join(' ')}`)); }, 180_000);
-    child.stdout.on('data', chunk => { output += chunk; });
+    child.stdout.on('data', chunk => { output += chunk; stdout += chunk; });
     child.stderr.on('data', chunk => { output += chunk; });
     child.on('error', error => { clearTimeout(timer); reject(error); });
     child.on('exit', exit => {
       clearTimeout(timer);
-      if (allowed.includes(exit)) resolveCommand({ exit, output });
+      if (allowed.includes(exit)) resolveCommand({ exit, output, stdout });
       else reject(new Error(`${args.join(' ')} exited ${exit}\n${output.slice(-6000)}`));
     });
   });
@@ -66,13 +67,17 @@ async function stopDashboard() {
 }
 try {
   await writeFile(join(cwd, 'package.json'), JSON.stringify({ name: 'visualguard-docs-smoke', private: true }));
-  console.log('Installing the documented npm release in a fresh project…');
-  await command('npm', ['install', '--save-dev', '--save-exact', 'visualguard@3.2.3', 'playwright@1.64.0', '--ignore-scripts', '--no-audit', '--no-fund']);
+  console.log('Installing the current npm release in a fresh project…');
+  await command('npm', ['install', '--save-dev', '--save-exact', releases.installSpec, releases.browserInstallSpec, '--ignore-scripts', '--no-audit', '--no-fund']);
+  await command('npx', ['--no-install', 'playwright', 'install', 'chromium']);
   await writeFile(join(cwd, 'visualguard.config.ts'), code('ts'));
   await startDemo(code('js'));
   const cli = ['--no-install', 'visualguard'];
-  assert.match((await command('npm', ['ls', 'visualguard', '--depth=0'])).output, /visualguard@3\.2\.3/);
-  assert.match((await command('npx', [...cli, '--version'])).output, /3\.2\.2/); // Known published version-label mismatch.
+  const installed = JSON.parse(await readFile(join(cwd, 'node_modules/visualguard/package.json'), 'utf8'));
+  assert.ok((await command('npm', ['ls', 'visualguard', '--depth=0'])).output.includes(`visualguard@${installed.version}`));
+  const cliVersion = (await command('npx', [...cli, '--version'])).stdout.trim();
+  assert.match(cliVersion, /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/);
+  console.log(`Installed package: ${installed.version}; CLI label: ${cliVersion}.`);
   await command('npx', [...cli, 'doctor', '--config', 'visualguard.config.ts']);
   assert.match((await command('npx', [...cli, 'test', '--config', 'visualguard.config.ts', '--list'])).output, /desktop/);
   await command('npx', [...cli, 'test', '--config', 'visualguard.config.ts', '--no-ai'], [0, 1]);
@@ -91,7 +96,7 @@ try {
   assert.ok(secondDirectory, 'Second comparison must create a separate run');
   const second = JSON.parse(await readFile(join(runs, secondDirectory, 'manifest.json'), 'utf8'));
   assert.equal(second.jobs[0].status, 'pass');
-  console.log(`Quickstart passed: npm 3.2.3, doctor, comparison list, ${first.jobs[0].status} → pass, and HTML report.`);
+  console.log(`Quickstart passed: npm ${installed.version}, doctor, comparison list, ${first.jobs[0].status} → pass, and HTML report.`);
   const apiArticle = await readFile(join(root, 'apps/docs/src/content/docs/guides/programmatic-api.md'), 'utf8');
   const apiScript = apiArticle.match(/```js\n([\s\S]*?)\n```/)[1];
   await writeFile(join(cwd, 'visual-check.mjs'), apiScript);

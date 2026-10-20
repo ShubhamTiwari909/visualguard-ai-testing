@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/RELIABILITY-CHANGES.md", "packages/visualguard/CHANGELOG.md"]
 sidebar: {"order": 2}
 ---

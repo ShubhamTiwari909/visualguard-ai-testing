@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/cli/commands/report.ts", "packages/visualguard/src/core/runs.ts", "packages/visualguard/src/core/status.ts", "packages/visualguard/src/reporters/html.ts", "packages/visualguard/src/server/report-server.ts", "packages/visualguard/report-app/src/App.tsx", "packages/visualguard/report-app/src/Compare.tsx", "packages/visualguard/report-app/src/JobDetail.tsx", "packages/visualguard/report-app/src/actions.tsx", "packages/visualguard/report-app/src/data.ts"]
 sidebar: {"order": 7}
 ---

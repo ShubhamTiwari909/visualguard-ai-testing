@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/ai/analyze-job.ts", "packages/visualguard/src/ai/budget.ts", "packages/visualguard/src/ai/cache.ts", "packages/visualguard/src/ai/tasks/analyze-diff.ts", "packages/visualguard/src/config/resolve.ts"]
 sidebar: {"order": 11}
 ---

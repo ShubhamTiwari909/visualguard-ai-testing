@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/index.ts", "packages/visualguard/src/dashboard.ts", "packages/visualguard/src/playwright/index.ts"]
 sidebar: {"order": 6}
 ---
@@ -46,7 +45,7 @@ Calling `defineConfig` alone does not validate inputs or start anything. A custo
 | `readManifest(runDir)` | Read one run's manifest. |
 | `terminalReporter`, `jsonReporter` | Create public reporter implementations. |
 | `VisualGuardError`, `ConfigError`, `EnvironmentError`, `ExitCode` | Identify errors and process outcomes. |
-| `VERSION` | Embedded build version; inspect package metadata too when investigating the known 3.2.3 mismatch. |
+| `VERSION` | Embedded build version; inspect package metadata too when investigating a version-label mismatch. |
 
 The package also exports URL helpers (`joinURL`, `expandRoutes`, `routeSlug`) and TypeScript contracts for config, routes, capture hooks, jobs, manifests, reporters and events. Use the installed declarations for exact signatures. [Run from code](/guides/programmatic-api/) gives a runnable example; [custom reporters](/guides/reporters/) explains callbacks and awaited final output.
 

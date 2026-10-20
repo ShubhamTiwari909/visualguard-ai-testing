@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "apps/platform/server/runtime.ts", "apps/platform/server/config.ts", "apps/platform/server/auth.ts", "apps/platform/client/main.tsx"]
 sidebar: {"order": 1}
 ---
@@ -40,7 +39,7 @@ Evidence is the screenshots, page structure (DOM) snapshots and findings a run p
 | **Run test** button in the dashboard | The dashboard host or a private runner | Start a test from the browser using a saved project profile | [Run tests from the dashboard](/dashboard/run-tests/) |
 
 :::note
-The dashboard can capture **Run test** by itself, using only your sign-in, in the source checkout and the next release after 3.2.3. With the published 3.2.3 package, **Run test** needs a [connected private runner](/dashboard/private-runners/).
+When the project shows **Runs on this dashboard**, the dashboard can capture **Run test** itself using your sign-in. If host capture is unsupported or unavailable, connect a [private runner](/dashboard/private-runners/).
 :::
 
 ## Local mode and login mode

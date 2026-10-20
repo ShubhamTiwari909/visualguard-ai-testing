@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/project-command.ts", "apps/platform/server/project-directory.ts", "apps/platform/client/naming.tsx", "apps/platform/client/delete-action.tsx"]
 sidebar: {"order": 4}
 ---

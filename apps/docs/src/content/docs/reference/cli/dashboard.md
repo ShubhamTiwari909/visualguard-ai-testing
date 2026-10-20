@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/cli/commands/dashboard.ts", "apps/platform/server/runtime.ts", "apps/platform/server/test-runner.ts", "scripts/docs/generate-reference.mjs"]
 sidebar: {"order": 2}
 ---
@@ -48,7 +47,7 @@ Commands with a `--server` option talk to a running dashboard over HTTP. Without
 | `dashboard init` | Generate a Cloud Run or Vercel deployment folder. | `visualguard dashboard init --target cloud-run --out visualguard-dashboard` |
 
 :::note
-In the source checkout and the next release after 3.2.3, the dashboard can also run **Run test** itself, using the signed-in user's login, when no private runner is connected. `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` control this. Published 3.2.3 always needs a connected `dashboard runner`. See [environment variables](/reference/environment/).
+When the installed dashboard supports built-in capture, it can run **Run test** itself using the signed-in user's login if no private runner is connected. `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` control this. If host capture is unavailable, use a connected `dashboard runner`. See [environment variables](/reference/environment/).
 :::
 
 ## Related pages

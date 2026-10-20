@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/core/status.ts", "packages/visualguard/src/cli/commands/auth.ts", "packages/visualguard/src/cli/commands/zero-config.ts", "apps/platform/server/built-in-runner.ts", "action/action.yml"]
 sidebar: {"order": 5}
 ---
@@ -42,9 +41,9 @@ Yes. Chromium is part of the full test matrix on Windows, macOS and Linux. One-l
 
 Chromium (the default), Firefox and WebKit. Choose one with `browser.name` in the config or `--browser firefox` on the command line, and install it with `npx playwright install firefox`. Chromium has the widest test coverage. See [browsers and viewports](/guides/browsers-and-viewports/).
 
-### Why does `visualguard --version` print 3.2.2 after I installed 3.2.3?
+### Why do the CLI label and installed package version differ?
 
-The published 3.2.3 package has a wrong version label inside it. It is not a downgrade. Run `npm ls visualguard --depth=0` to see the real version. See [release availability](/releases/).
+First use the locally installed command with `npx --no-install visualguard --version`, then run `npm ls visualguard --depth=0` to see the installed package version. A different binary on your PATH or a stale embedded build label can explain a mismatch. Include both values when reporting it. See [release availability](/releases/).
 
 ## Results
 
@@ -116,7 +115,7 @@ Yes. Use the VisualGuard GitHub Action, or run `visualguard test --ci` in any CI
 
 ### What does Run test in the dashboard need?
 
-It depends on your release. In the source checkout and the next release after 3.2.3, the dashboard host can run the test itself with only your sign-in, if Chromium is installed there (not on Vercel). With 3.2.3, **Run test** needs a connected private runner. See [run tests from the dashboard](/dashboard/run-tests/) and [release availability](/releases/).
+It depends on the installed dashboard and its host. If the project says **Runs on this dashboard**, it can capture using your sign-in and the host's Chromium. Use a private runner on Vercel, when host capture is unavailable, or when only your worker can reach the app. See [run tests from the dashboard](/dashboard/run-tests/) and [release availability](/releases/).
 
 ### Does hosting the dashboard run tests on a schedule?
 

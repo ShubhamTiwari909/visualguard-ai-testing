@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/config/load.ts", "packages/visualguard/src/capture/browser.ts", "packages/visualguard/src/cli/commands/doctor.ts", "packages/visualguard/package.json"]
 sidebar: {"order": 2}
 ---
@@ -61,9 +60,9 @@ You see `Playwright's chromium browser is not installed.` with the hint `Run: np
 The dashboard has its own version of this problem when it runs tests itself. See [Run test fails with Chromium is not installed](/troubleshooting/dashboard/).
 :::
 
-## npm 3.2.3 prints CLI version 3.2.2
+## The CLI label differs from the installed package
 
-- **Likely cause:** the published 3.2.3 package carries an old version label inside its CLI build. The package itself is 3.2.3.
+- **Likely cause:** another binary is on your PATH, or the installed artifact carries a stale embedded build label.
 - **Fix:** nothing to reinstall. Check the real installed version with your package manager and quote both numbers in bug reports.
 
   ```bash
@@ -72,13 +71,13 @@ The dashboard has its own version of this problem when it runs tests itself. See
   pnpm list visualguard --depth=0
   ```
 
-- **Confirm:** the package manager shows `visualguard@3.2.3`. See [release availability](/releases/) for details.
+- **Confirm:** the package manager shows the concrete installed version. Include it and the CLI label in a mismatch report. See [release availability](/releases/) for details.
 
-## Generated dashboard folder installs 3.2.2
+## Generated dashboard folder uses an unexpected release
 
-- **Likely cause:** `visualguard dashboard init` writes the dependency version from the CLI label. With the 3.2.3 package that label is 3.2.2.
-- **Fix:** open the generated `package.json`, set `dependencies.visualguard` to `3.2.3` (or the release you tested), run `npm install` in that folder and commit its lockfile.
-- **Confirm:** `npm ls visualguard --depth=0` inside the deployment folder shows 3.2.3.
+- **Likely cause:** `visualguard dashboard init` writes the dependency version from its embedded CLI label, which can differ from package metadata in a misbuilt artifact.
+- **Fix:** inspect the generated `package.json`. To use the current release, run `npm install --save-exact visualguard@latest` in that deployment folder, validate it and commit the lockfile. If you require an earlier tested release, select it deliberately.
+- **Confirm:** `npm ls visualguard --depth=0` inside the deployment folder shows the release you intended.
 
 ## npx downloads a different package or version
 

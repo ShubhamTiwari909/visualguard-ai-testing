@@ -5,7 +5,6 @@ audience: "contributor"
 docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["PUBLISHING-AND-USING.md", ".changeset/config.json", ".github/workflows/release.yml", "packages/visualguard/package.json", "packages/visualguard/CHANGELOG.md", "scripts/pack-smoke.mjs", "scripts/standalone-dashboard-smoke.mjs", "apps/docs/src/data/releases.json"]
 sidebar: {"order": 6}
 ---
@@ -56,9 +55,9 @@ Choose the bump with [semantic versioning](https://semver.org/):
 
 | Bump | Use it for | Example |
 | --- | --- | --- |
-| `patch` | A fix that changes no public behavior people rely on. | 3.2.3 to 3.2.4 |
-| `minor` | A new feature or option that keeps old configs working. | 3.2.3 to 3.3.0 |
-| `major` | A change that breaks existing configs, commands, outputs or stored data. | 3.2.3 to 4.0.0 |
+| `patch` | A fix that changes no public behavior people rely on. | 1.2.0 to 1.2.1 |
+| `minor` | A new feature or option that keeps old configs working. | 1.2.0 to 1.3.0 |
+| `major` | A change that breaks existing configs, commands, outputs or stored data. | 1.2.0 to 2.0.0 |
 
 Write the summary for the person upgrading. Say what changed, and any action they must take, such as a new setting, a database backup or a migration. Rename the file to something readable if you like, such as `dashboard-built-in-runner.md`. Commit it with the code, tests and documentation of the change.
 
@@ -85,8 +84,8 @@ Check three things:
   npm view visualguard version
   ```
 
-  You should see the current `latest` version, which is `3.2.3` at the time of writing.
-- **The starting version is right.** Changesets bumps from whatever is in `packages/visualguard/package.json`. At the time of writing, that file already says `3.2.4` while npm is at `3.2.3`, so the waiting `minor` changesets would produce `3.3.0`. Do not hand-edit the version and also add changesets unless you mean both.
+  The command reports the current published version; compare that live result with the proposed version.
+- **The starting version is right.** Changesets bumps from whatever is in `packages/visualguard/package.json`. Compare that file with the registry result and the proposed changeset bump; do not assume they start at the same version. Do not hand-edit the version and also add changesets unless you mean both.
 - **The changelog explains upgrades.** Every breaking change and migration has clear steps.
 
 ## 3. Build and check the package
@@ -176,10 +175,10 @@ Do not call a release published until the registry and a fresh install prove it.
    npx --no-install visualguard --version
    ```
 
-   You should see the same version. The published 3.2.3 is a known exception: it reports `3.2.2`.
+   You should see the same concrete version in the package metadata and CLI output. Investigate a mismatch as a build-label problem before declaring release validation complete.
 3. Run the [quickstart](/start/quickstart/) against the new version, open the report, and start the [local dashboard](/dashboard/local/). Run `visualguard dashboard init --target cloud-run --out /tmp/vg-scaffold` and check that the generated project depends on the new version.
-4. Update the site's release record in `apps/docs/src/data/releases.json` (`publishedVersion`, `reportedCliVersion` and what was tested). Then update the version pin in `start/quickstart.md` and `scripts/docs/smoke-quickstart.mjs`, and run `pnpm docs:test` and `pnpm docs:smoke`. See [work on the documentation](/contributing/documentation/).
-5. Update pages that say a feature is "source only". For example, after the release that follows 3.2.3, the built-in runner (the dashboard running **Run test** itself) is in the npm package too.
+4. Run `pnpm docs:test` and `pnpm docs:smoke`. Installation examples and the smoke test resolve `@latest`, so a routine release does not require editing version numbers across pages. Record the actual tested package and CLI labels in release validation evidence, and refresh the dated validation scope when it changes. See [work on the documentation](/contributing/documentation/).
+5. Update guides when behavior, commands or prerequisites change. Explain availability through installed commands and dashboard status, and keep version-specific history in the package changelog and migration guide.
 
 People who install the package follow [installation](/start/install/) and the [baseline guides](/guides/local-baselines/). Keep the npm README short and its links correct for the release.
 

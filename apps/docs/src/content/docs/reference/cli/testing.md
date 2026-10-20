@@ -5,7 +5,6 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["packages/visualguard/src/cli/program.ts", "packages/visualguard/src/cli/commands/test.ts", "scripts/docs/generate-reference.mjs"]
 sidebar: {"order": 1}
 ---

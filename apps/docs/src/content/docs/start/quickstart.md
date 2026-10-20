@@ -5,7 +5,6 @@ audience: "developer"
 docType: "tutorial"
 channel: "published"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/test.ts", "packages/visualguard/src/cli/commands/report.ts", "scripts/docs/smoke-quickstart.mjs"]
 sidebar: {"order": 5}
 ---
@@ -30,10 +29,10 @@ Each command below is a single line, so it also works in Windows PowerShell. The
 
 ## 1. Install VisualGuard and a browser
 
-In terminal B, at your project's root, install the pinned package, Playwright and the Chromium browser:
+In terminal B, at your project's root, install the current package, Playwright and the Chromium browser:
 
 ```sh
-npm install --save-dev --save-exact visualguard@3.2.3
+npm install --save-dev --save-exact visualguard@latest
 npm install --save-dev playwright
 npx playwright install chromium
 npx --no-install visualguard --version
@@ -43,17 +42,17 @@ You should see npm finish without errors, Playwright download Chromium, and a ve
 
 - On Linux, run `npx playwright install --with-deps chromium` instead of the third line. It adds the system libraries Chromium needs.
 - If your app already has Playwright 1.45 or newer, keep it. Do not create a second lockfile.
-- With pnpm, run `pnpm add -D -E visualguard@3.2.3`, `pnpm add -D playwright` and `pnpm exec playwright install chromium`. Then use `pnpm exec visualguard` wherever this page says `npx --no-install visualguard`.
+- With pnpm, run `pnpm add -D -E visualguard@latest`, `pnpm add -D playwright` and `pnpm exec playwright install chromium`. Then use `pnpm exec visualguard` wherever this page says `npx --no-install visualguard`.
 
 ### Check the installed release
 
-The published **3.2.3** package prints **3.2.2** from `visualguard --version`. This is a wrong label inside the package, not a downgrade. Confirm the real version:
+Check the installed package version independently of the CLI label:
 
 ```sh
 npm ls visualguard --depth=0
 ```
 
-You should see `visualguard@3.2.3`. With pnpm, run `pnpm list visualguard --depth=0`. Include both numbers in bug reports. See [release availability](/releases/).
+You should see the concrete version npm resolved, rather than the word `latest`. `--save-exact` records that version in `package.json`; commit the lockfile so teammates and CI use the same build. With pnpm, run `pnpm list visualguard --depth=0`. If the CLI label differs, include both values in bug reports. See [release availability](/releases/).
 
 ## 2. Start two versions of a page
 

@@ -5,7 +5,6 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["README.md", "packages/visualguard/src/cli/commands/merge.ts", "packages/visualguard/src/core/merge.ts", "packages/visualguard/src/core/run.ts"]
 sidebar: {"order": 4}
 ---

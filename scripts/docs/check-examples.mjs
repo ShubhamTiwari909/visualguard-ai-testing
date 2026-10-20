@@ -17,8 +17,10 @@ assert.equal(configSchema.safeParse({ ...parsed, viewports: { desktop: { width: 
 assert.equal(parsed.ai.provider, 'none');
 assert.deepEqual(parsed.routes, ['/']);
 const releases = JSON.parse(await readFile(join(root, 'apps/docs/src/data/releases.json')));
-assert.match(article, new RegExp(`visualguard@${releases.publishedVersion.replaceAll('.', '\\.')}`));
+assert.match(releases.installSpec, /^visualguard@latest$/);
+assert.match(releases.browserInstallSpec, /^playwright@latest$/);
+assert.ok(article.includes(releases.installSpec), 'The quickstart must use the shared current-release install target');
 const action = await readFile(join(root, 'action/action.yml'), 'utf8');
 const actionDoc = await readFile(join(contentRoot, 'ci/github-actions.md'), 'utf8');
 for (const input of [...action.split('outputs:')[0].matchAll(/^ {2}([a-z-]+):$/gm)].map(x => x[1])) assert.ok(actionDoc.includes('`' + input + '`'), `Undocumented Action input ${input}`);
-console.log('Examples passed: quickstart config/constraints, release pin and every Action input.');
+console.log('Examples passed: quickstart config/constraints, current-release install target and every Action input.');

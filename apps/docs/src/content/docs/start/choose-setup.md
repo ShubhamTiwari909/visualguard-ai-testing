@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/dashboard.ts"]
 sidebar: {"order": 1}
 ---
@@ -47,8 +46,8 @@ Use one hosted dashboard per organisation or team. That one install can hold man
 The browser always runs somewhere you control:
 
 - **Your computer or CI worker** runs `visualguard test`. This works in every release.
-- **The dashboard host** runs a test when someone presses **Run test**. This needs the source checkout or a release after 3.2.3, and Chromium on the host. Vercel cannot do this.
-- **A private runner** that you connect to the dashboard. With 3.2.3, **Run test** needs one.
+- **The dashboard host** runs a test when someone presses **Run test**. This needs a dashboard with built-in capture enabled and Chromium on the host. Use a private runner on Vercel.
+- **A private runner** that you connect to the dashboard. Use this when host capture is unavailable or cannot reach your app.
 
 See [dashboard tests and private runners](/dashboard/private-runners/) for details.
 
@@ -72,7 +71,7 @@ Add [AI analysis](/guides/ai-gemini/) at any step. It is always optional.
 | --- | --- |
 | You are not sure whether you need a dashboard | Start without one. You can [import saved runs](/dashboard/local/) into a dashboard later. |
 | The dashboard picked up your app's `DATABASE_URL` | Set `VISUALGUARD_DATABASE_URL=` (empty) in the dashboard's env file to force SQLite. See [local dashboard](/dashboard/local/). |
-| **Run test** on 3.2.3 does not start a capture | 3.2.3 needs a connected private runner for every dashboard test. See [private runners](/dashboard/private-runners/). |
+| **Run test** does not start a capture | Check the project's execution status. If host capture is unavailable, connect a [private runner](/dashboard/private-runners/). |
 | Team members each started their own dashboard | Host one shared dashboard and [invite people](/dashboard/people-and-permissions/) instead. |
 
 More help: [troubleshooting](/troubleshooting/).

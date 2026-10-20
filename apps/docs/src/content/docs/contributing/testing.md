@@ -5,7 +5,6 @@ audience: "contributor"
 docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["CONTRIBUTING.md", "evals/README.md", "evals/run.mjs", "evals/labels.json", "fixtures/site/README.md", "packages/visualguard/vitest.config.ts", "apps/platform/vitest.config.ts", "scripts/pack-smoke.mjs", "scripts/standalone-dashboard-smoke.mjs", "scripts/dashboard-runner-smoke.mjs", ".github/workflows/ci.yml", ".github/workflows/evals.yml"]
 sidebar: {"order": 4}
 ---
@@ -139,7 +138,7 @@ These checks install what npm users would get, so they catch problems that sourc
 You should see a final `passed` line from each script. Each one deletes its temporary folders and stops its servers, even after a failure.
 
 :::note
-`platform:test:runner` tests the **private runner** path end to end. The **built-in runner** (the dashboard host running **Run test** itself, in `apps/platform/server/built-in-runner.ts`) is covered by the unit tests in `apps/platform/test/built-in-runner.test.ts`. It shares its execution code with the private runner through `executeClaimedTest` in `test-runner.ts`. The built-in runner is in the source checkout and the next release after 3.2.3 only.
+`platform:test:runner` tests the **private runner** path end to end. The **built-in runner** (the dashboard host running **Run test** itself, in `apps/platform/server/built-in-runner.ts`) is covered by the unit tests in `apps/platform/test/built-in-runner.test.ts`. It shares its execution code with the private runner through `executeClaimedTest` in `test-runner.ts`. Use `pnpm docs:smoke:host` to exercise source dashboard-host capture with real Chromium and SQLite. Installed-package availability is checked through the dashboard's execution status.
 :::
 
 ## 4. Run the documentation checks

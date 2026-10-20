@@ -5,7 +5,6 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-verifiedAgainst: "npm 3.2.3 / source e2c69cc"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "packages/visualguard/src/core/status.ts", "apps/platform/server/built-in-runner.ts"]
 sidebar: {"order": 1}
 ---
@@ -68,8 +67,8 @@ Local results are just files. You can open, copy or import them later. The dashb
 When someone presses **Run test** in the dashboard:
 
 - If a [private runner](/dashboard/private-runners/) is connected for that project, it takes the job first.
-- Otherwise, in the source checkout and releases after 3.2.3, the dashboard host captures the test itself, authorised by the signed-in user. The host needs Chromium. This built-in runner is off by default on Vercel, because serverless functions cannot keep a browser running. Other serverless hosts need a private runner for the same reason.
-- With 3.2.3, **Run test** always needs a connected private runner.
+- Otherwise, when built-in capture is supported and enabled, the dashboard host captures the test itself, authorised by the signed-in user. The host needs Chromium. This built-in runner is off by default on Vercel, because serverless functions cannot keep a browser running. Other serverless hosts need a private runner for the same reason.
+- If the installed dashboard does not offer built-in capture, **Run test** needs a connected private runner.
 
 See [release availability](/releases/).
 
@@ -104,7 +103,7 @@ See the full [glossary](/concepts/glossary/).
 | Every run shows small differences you did not make | Captures are not repeatable yet. See [make captures repeatable](/guides/stable-captures/). |
 | A run passed but you expected a change | Check that both URLs point to the versions you meant. Run `visualguard test --list`. |
 | The dashboard shows no runs | Tests run outside the dashboard. Publish with `visualguard test PROJECT --dashboard URL`, or import a run. See [publishing](/dashboard/publishing/). |
-| **Run test** never starts on 3.2.3 | Connect a [private runner](/dashboard/private-runners/). |
+| **Run test** has no available capturer | Enable supported dashboard-host capture or connect a [private runner](/dashboard/private-runners/). |
 
 More help: [troubleshooting](/troubleshooting/).
 
