@@ -78,7 +78,9 @@ The two final guides replace the earlier phase/setup walkthroughs. Examples, loc
 | UI uses SQLite but expected PostgreSQL | Inspect environment-loading and inherited `DATABASE_URL` without printing secrets. Start with the actual file/URI and confirm the intended project/history. |
 | Login loops / wrong callback | Compare exact canonical origin, hostname, HTTPS and `/api/auth/callback`. Fix deployment values/Google registration, restart and verify account identity. |
 | Bootstrap password edit has no effect | Administrator already persisted. Use authorized account controls or documented host recovery; verify revoked sessions/audit. |
-| Upload credential cannot claim work | Upload tokens and runner credentials have different scopes. Create the project runner credential, keep the worker open and verify connected state. |
+| Upload credential cannot claim work | Upload tokens and runner credentials have different scopes. Create the project runner credential, keep the worker open and verify connected state. Not needed when the dashboard runs tests itself. |
+| Run test fails with `Chromium is not installed on the dashboard host` | Run `npx playwright install chromium` on the dashboard host (the Cloud Run image includes it), or connect a private runner. |
+| Run test is refused: `Connect a runner` | The host disables built-in capture (Vercel, or `VISUALGUARD_BUILT_IN_RUNNER=off`). Connect a private runner or enable it on a host that can keep a browser running. |
 | Runner looks connected after exit | UI uses a recent-heartbeat indicator. Wait for its documented expiry, inspect the process/lease and request status. |
 | Capture finished but no passing check | Lifecycle completion is not a verdict. Open View result; inspect findings, exact revision and current policy. |
 | Progress stops during upload | Comparison counts do not measure upload/finalization. Inspect worker/network logs and saved evidence; do not invent an ETA or silently recapture. |

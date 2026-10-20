@@ -32,11 +32,16 @@ export const executionHeartbeat = executionLease
   .extend({ progress: executionProgress.optional() })
   .strict();
 export const executionCompletion = executionLease
-  .extend({ runId: z.string().uuid().optional(), failed: z.boolean().optional() })
+  .extend({
+    runId: z.string().uuid().optional(),
+    failed: z.boolean().optional(),
+    reason: z.literal("browser-unavailable").optional(),
+  })
   .strict();
 interface Execution extends ProjectTestExecution {
   config: ProjectTestConfig;
   runnerId?: string;
+  requestedBy?: string;
   leaseHash?: string;
   leaseExpiresAt?: string;
   acknowledged?: boolean;
@@ -57,7 +62,16 @@ const expired = (job: Execution) =>
     ? Date.now() - Date.parse(job.requestedAt) > 5 * 60_000
     : job.status === "running" && Date.parse(job.leaseExpiresAt ?? "") <= Date.now();
 
+/** Optional in-process capture used when no private runner is connected. */
+export interface BuiltInExecutor {
+  readonly enabled: boolean;
+  readonly hasCapacity: boolean;
+  start(project: string): void;
+}
+const BUILT_IN_ID = "built-in";
+
 export class TestExecutions {
+  builtIn?: BuiltInExecutor;
   constructor(readonly tests: ProjectTests) {}
   private async current(project: string) {
     const row = await this.tests.state.get<Execution>("project-test-executions", project);
@@ -90,7 +104,11 @@ export class TestExecutions {
       heartbeat &&
       Date.now() - Date.parse(heartbeat.value.seenAt) < 30_000,
     );
-    return { execution: row ? publicExecution(row.value) : null, runnerOnline: online };
+    return {
+      execution: row ? publicExecution(row.value) : null,
+      runnerOnline: online,
+      builtInRunner: Boolean(this.builtIn?.enabled),
+    };
   }
   async request(actor: Actor, project: string, raw: unknown) {
     const input = executionRequest.parse(raw);
@@ -102,9 +120,14 @@ export class TestExecutions {
     if (current?.value.id === input.id) return publicExecution(current.value);
     if (current && ["queued", "running"].includes(current.value.status))
       throw new PlatformError(409, "This project already has an active test");
-    if (!(await this.status(actor, project)).runnerOnline)
+    const privateRunner = (await this.status(actor, project)).runnerOnline;
+    const builtIn = !privateRunner && this.builtIn?.enabled ? this.builtIn : undefined;
+    if (!privateRunner && !builtIn)
       throw new PlatformError(409, "Connect a runner for this project before running a test");
+    if (builtIn && !builtIn.hasCapacity)
+      throw new PlatformError(409, "The dashboard is running another test; try again shortly");
     const job: Execution = {
+      requestedBy: actor.id,
       id: input.id,
       configVersion: settings.version,
       config: structuredClone(settings.config),
@@ -120,6 +143,7 @@ export class TestExecutions {
       requestId: job.id,
       configVersion: job.configVersion,
     });
+    builtIn?.start(project);
     return publicExecution(job);
   }
   async runner(actor: Actor, project: string, secret: string) {
@@ -142,6 +166,7 @@ export class TestExecutions {
     return id;
   }
   private async seen(project: string, runnerId: string) {
+    if (runnerId === BUILT_IN_ID) return;
     const heartbeat = await this.tests.state.get("project-runner-heartbeats", project);
     const value = { credentialId: runnerId, seenAt: new Date().toISOString() };
     if (heartbeat)
@@ -230,15 +255,22 @@ export class TestExecutions {
       ...(input.failed
         ? {
             error:
-              "Capture or upload failed. Check runner output; any captured evidence remains on the runner.",
+              input.reason === "browser-unavailable" && runnerId === BUILT_IN_ID
+                ? "Chromium is not installed on the dashboard host. Run `npx playwright install chromium` there, or connect a private runner."
+                : runnerId === BUILT_IN_ID
+                  ? "Capture or upload failed on the dashboard host. Check the dashboard server logs."
+                  : "Capture or upload failed. Check runner output; any captured evidence remains on the runner.",
           }
         : { runId: input.runId }),
     };
     if (!(await this.tests.state.replace("project-test-executions", { ...row, value })))
       throw new PlatformError(409, "Execution changed before completion");
-    const owner = await this.tests.state.get<UploadToken>("tokens", runnerId);
+    const owner =
+      runnerId === BUILT_IN_ID
+        ? undefined
+        : await this.tests.state.get<UploadToken>("tokens", runnerId);
     await this.tests.auth
-      .audit({ id: owner?.value.ownerId ?? "runner" }, "project-test.finished", {
+      .audit({ id: owner?.value.ownerId ?? row.value.requestedBy ?? "runner" }, "project-test.finished", {
         projectId: project,
         requestId: input.id,
         runId: input.runId ?? null,

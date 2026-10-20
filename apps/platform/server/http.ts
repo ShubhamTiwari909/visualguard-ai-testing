@@ -19,6 +19,7 @@ import { Policies, policyMutation, assessmentInput, pullRequestNumber } from "./
 import { PolicyGitHub } from "./policy-github.js";
 import { ProjectTests } from "./project-tests.js";
 import { TestExecutions } from "./test-executions.js";
+import { BuiltInRunner } from "./built-in-runner.js";
 
 function integer(value: string | null, fallback: number, min: number, max: number): number {
   if (value === null) return fallback;
@@ -68,6 +69,8 @@ const logOidcFailure = (stage: "start" | "callback", error: unknown) => {
 export interface ApiOptions {
   state?: StateStore;
   env?: NodeJS.ProcessEnv;
+  /** Capture dashboard-requested tests inside this process when no private runner is connected. */
+  builtInRunner?: boolean;
 }
 export function createApi(
   repository: PlatformRepository,
@@ -91,6 +94,10 @@ export function createApi(
   const policyGitHub = new PolicyGitHub(policies);
   const projectTests = new ProjectTests(repository, auth.state, auth);
   const testExecutions = new TestExecutions(projectTests);
+  testExecutions.builtIn = new BuiltInRunner(testExecutions, repository, store, {
+    enabled: Boolean(options.builtInRunner),
+    concurrency: Number(options.env?.VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY) || 1,
+  });
   const handler = async (request: IncomingMessage, response: ServerResponse): Promise<boolean> => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");

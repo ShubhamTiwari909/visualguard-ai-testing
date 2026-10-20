@@ -4,6 +4,7 @@ import { extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openPlatform } from "./config.js";
 import { createApi } from "./http.js";
+import { builtInRunnerEnabled } from "./built-in-runner.js";
 
 export interface RuntimeOptions {
   env?: NodeJS.ProcessEnv;
@@ -19,7 +20,11 @@ export async function createDashboardHandler(options: RuntimeOptions = {}) {
     throw new Error("Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data");
   const platform = await openPlatform(env);
   try {
-    const api = createApi(platform.repository, platform.store, { state: platform.state, env });
+    const api = createApi(platform.repository, platform.store, {
+      state: platform.state,
+      env,
+      builtInRunner: builtInRunnerEnabled(env),
+    });
     await api.ready;
     const handle = async (request: IncomingMessage, response: ServerResponse) => {
       const url = new URL(request.url ?? "/", "http://localhost"),

@@ -71,7 +71,8 @@ Keep `package.json`, its lockfile and `Dockerfile` in the build context. Deploy 
 ```sh
 gcloud run deploy visualguard-dashboard \
   --source . --region "$VG_REGION" --env-vars-file .env.cloud-run.yaml \
-  --port 8080 --max-instances 3 --no-allow-unauthenticated
+  --port 8080 --max-instances 3 --no-allow-unauthenticated \
+  --no-cpu-throttling --min-instances 1 --memory 2Gi
 
 export VG_DASHBOARD_URL="$(gcloud run services describe visualguard-dashboard \
   --region "$VG_REGION" --format='value(status.url)')"
@@ -85,7 +86,7 @@ gcloud run services add-iam-policy-binding visualguard-dashboard \
 curl --fail "$VG_DASHBOARD_URL/api/health"
 ```
 
-Update the URL inside the private YAML file too, so the next deploy does not restore `setup.invalid`. These are starting deployment settings, not measured capacity guarantees. Public invocation permits access to the product's own login/token authentication; it does not make private project data public. An organization forbidding public invocation needs a separately designed authenticated ingress path; the current CLI does not obtain Google IAM invocation tokens automatically.
+`--no-cpu-throttling`, a minimum instance and 2 GiB of memory let the service run dashboard tests itself: the generated image includes Chromium, and **Run test** works with just a signed-in account. Without them a capture started from the UI is paused when the request returns and fails as a disconnected execution. Update the URL inside the private YAML file too, so the next deploy does not restore `setup.invalid`. These are starting deployment settings, not measured capacity guarantees. Public invocation permits access to the product's own login/token authentication; it does not make private project data public. An organization forbidding public invocation needs a separately designed authenticated ingress path; the current CLI does not obtain Google IAM invocation tokens automatically.
 
 Environment files configure service variables, not Secret Manager references. For ongoing operations, put the DB/admin secrets in Secret Manager, grant the runtime identity access to just those secrets, and map pinned enabled versions to their environment names. [Cloud Run secret configuration](https://docs.cloud.google.com/run/docs/configuring/services/secrets).
 
