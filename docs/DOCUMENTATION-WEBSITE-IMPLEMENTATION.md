@@ -27,3 +27,9 @@ Validation: production docs build passed with 31 generated routes. Examples were
 Added local SQLite, PostgreSQL/MongoDB alternatives, projects/identities, publishing/retry, per-project profiles, private runners/progress, login, Google linking and people/permissions guides. Environment loading, foreground processes and distinct upload/runner/admin credentials are explicit. Extended the consumer smoke to execute the dashboard guide's actual SQLite environment and verify project creation, bound capture and history after restart.
 
 Validation: docs build passed with 43 routes. The clean npm 3.2.3 quickstart and local dashboard smoke passed, including restart persistence. Google and external PostgreSQL/MongoDB deployment instructions are source-reviewed, not live deployment certifications; the local Docker service is unavailable. No formatting, lint or type checks ran.
+
+## D05 — Review, baselines and CI
+
+Added reviewer/inbox, approved baseline promotion/pull, visual policy, GitHub Action, preview revision, sharding/merge and GitHub Check Runs guides. The guides distinguish original verdicts, local acceptance, exact-evidence human decisions and policy checks, including separate token scopes and stale PR-head behavior.
+
+Validation: docs production build passed with 51 routes. The existing real dashboard runner smoke also passed: isolated configs, scoped queue/claim, Chromium capture, persisted measured progress, uploaded result and revocation. Action inputs/outputs and command examples were reviewed against current source. A live GitHub App/check/webhook/cloud deployment was not configured by this change. No formatting, lint or type checks ran.
