@@ -9,28 +9,48 @@ import { projectTestConfig } from "./project-tests.js";
 import type { ClaimedProjectTest } from "../shared/project-tests.js";
 
 export async function runDashboardRunner(options: {
-  server: string; project: string; token: string; once?: boolean;
-  poll?: number; workDir?: string; signal?: AbortSignal;
+  server: string;
+  project: string;
+  token: string;
+  once?: boolean;
+  poll?: number;
+  workDir?: string;
+  signal?: AbortSignal;
 }) {
   const server = new URL(options.server);
-  if (!["http:", "https:"].includes(server.protocol) || server.username || server.password ||
-    server.pathname !== "/" || server.search || server.hash ||
-    (server.protocol !== "https:" && !["localhost", "127.0.0.1", "[::1]"].includes(server.hostname)))
+  if (
+    !["http:", "https:"].includes(server.protocol) ||
+    server.username ||
+    server.password ||
+    server.pathname !== "/" ||
+    server.search ||
+    server.hash ||
+    (server.protocol !== "https:" && !["localhost", "127.0.0.1", "[::1]"].includes(server.hostname))
+  )
     throw new Error("Use an HTTPS dashboard origin, or HTTP on loopback");
   if (!options.token.startsWith("vg_runner_") || options.token.length > 200)
     throw new Error("Set VISUALGUARD_RUNNER_TOKEN to this project's runner credential");
   if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(options.project)) throw new Error("Use the project's ID");
   const poll = options.poll ?? 3000;
-  if (!Number.isInteger(poll) || poll < 1000 || poll > 30000) throw new Error("Polling must be 1000–30000 milliseconds");
+  if (!Number.isInteger(poll) || poll < 1000 || poll > 30000)
+    throw new Error("Polling must be 1000–30000 milliseconds");
   const root = resolve(options.workDir ?? ".visualguard/runner");
   await mkdir(root, { recursive: true });
   const request = async <T>(action: string, data: unknown, signal?: AbortSignal): Promise<T> => {
-    const response = await fetch(new URL(`/api/projects/${options.project}/test-runner/${action}`, server), {
-      method: "POST", redirect: "error", signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
-      headers: { Authorization: `Bearer ${options.token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`Runner ${action} request rejected (${response.status}); check the runner credential, project and server`);
+    const response = await fetch(
+      new URL(`/api/projects/${options.project}/test-runner/${action}`, server),
+      {
+        method: "POST",
+        redirect: "error",
+        signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
+        headers: { Authorization: `Bearer ${options.token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      },
+    );
+    if (!response.ok)
+      throw new Error(
+        `Runner ${action} request rejected (${response.status}); check the runner credential, project and server`,
+      );
     return response.json() as Promise<T>;
   };
   console.log(`Connecting runner to ${server.origin}, project ${options.project}.`);
@@ -38,22 +58,39 @@ export async function runDashboardRunner(options: {
   do {
     options.signal?.throwIfAborted();
     const job = await request<ClaimedProjectTest | null>("claim", {}, options.signal);
-    if (!connected) { console.log("Runner connected. Waiting for dashboard tests."); connected = true; }
+    if (!connected) {
+      console.log("Runner connected. Waiting for dashboard tests.");
+      connected = true;
+    }
     if (job) {
-      if (!/^[a-f0-9-]{36}$/.test(job.id) || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(job.projectId) ||
-        !/^[a-f0-9]{64}$/.test(job.lease) || !Number.isSafeInteger(job.configVersion))
+      if (
+        !/^[a-f0-9-]{36}$/.test(job.id) ||
+        !/^[a-z0-9][a-z0-9-]{0,62}$/.test(job.projectId) ||
+        !/^[a-f0-9]{64}$/.test(job.lease) ||
+        !Number.isSafeInteger(job.configVersion)
+      )
         throw new Error("Dashboard returned an invalid test request");
       const lease = { id: job.id, lease: job.lease };
       const controller = new AbortController();
-      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15 * 60_000), ...(options.signal ? [options.signal] : [])]);
+      const signal = AbortSignal.any([
+        controller.signal,
+        AbortSignal.timeout(15 * 60_000),
+        ...(options.signal ? [options.signal] : []),
+      ]);
       let renewing: Promise<void> | undefined;
       const timer = setInterval(() => {
-        if (!renewing) renewing = request("heartbeat", lease, signal)
-          .then(() => {})
-          .catch((error) => controller.abort(error))
-          .finally(() => { renewing = undefined; });
+        if (!renewing)
+          renewing = request("heartbeat", lease, signal)
+            .then(() => {})
+            .catch((error) => controller.abort(error))
+            .finally(() => {
+              renewing = undefined;
+            });
       }, 15000);
-      const stopHeartbeat = async () => { clearInterval(timer); await renewing; };
+      const stopHeartbeat = async () => {
+        clearInterval(timer);
+        await renewing;
+      };
       let uploaded: Awaited<ReturnType<typeof uploadRun>> | undefined;
       try {
         const config = projectTestConfig.parse(job.config);
@@ -61,15 +98,30 @@ export async function runDashboardRunner(options: {
         const parsed = configSchema.parse({ ...config, concurrency: 1, output: { dir: "runs" } });
         const resolved = resolveConfig(parsed, {
           cwd: workDir,
-          overrides: { production: config.baseURL.production, staging: config.baseURL.staging, aiProvider: config.ai.provider, aiModel: config.ai.model, browser: "chromium", concurrency: 1, outputDir: "runs" },
+          overrides: {
+            production: config.baseURL.production,
+            staging: config.baseURL.staging,
+            aiProvider: config.ai.provider,
+            aiModel: config.ai.model,
+            browser: "chromium",
+            concurrency: 1,
+            outputDir: "runs",
+          },
         });
         console.log(`Starting dashboard test ${job.id} (configuration v${job.configVersion}).`);
         const outcome = await createRun(resolved, { signal }).start();
-        const result = uploaded = await uploadRun({
-          server: server.origin, project: job.projectId, token: options.token,
-          runDir: outcome.runDir, signal,
-          metadata: { environment: "dashboard", deployment: job.id, runName: `Dashboard test · config v${job.configVersion}` },
-        });
+        const result = (uploaded = await uploadRun({
+          server: server.origin,
+          project: job.projectId,
+          token: options.token,
+          runDir: outcome.runDir,
+          signal,
+          metadata: {
+            environment: "dashboard",
+            deployment: job.id,
+            runName: `Dashboard test · config v${job.configVersion}`,
+          },
+        }));
         await stopHeartbeat();
         signal.throwIfAborted();
         // Completion is idempotent: retry the same uploaded run if its acknowledgement
@@ -83,17 +135,27 @@ export async function runDashboardRunner(options: {
             await delay(500 * (attempt + 1), undefined, { signal });
           }
         }
-        console.log(`Dashboard test finished: ${new URL(result.url, server).href} [${result.status}]`);
+        console.log(
+          `Dashboard test finished: ${new URL(result.url, server).href} [${result.status}]`,
+        );
       } catch (error) {
         await stopHeartbeat();
         if (uploaded) {
-          console.error(`Run uploaded: ${new URL(uploaded.url, server).href}. Completion could not be acknowledged; retain this result instead of repeating the capture.`, error instanceof Error ? error.message : "Runner error");
+          console.error(
+            `Run uploaded: ${new URL(uploaded.url, server).href}. Completion could not be acknowledged; retain this result instead of repeating the capture.`,
+            error instanceof Error ? error.message : "Runner error",
+          );
         } else {
           await request("complete", { ...lease, failed: true }).catch(() => {});
-          console.error(`Dashboard test failed; evidence remains under ${root}.`, error instanceof Error ? error.message : "Runner error");
+          console.error(
+            `Dashboard test failed; evidence remains under ${root}.`,
+            error instanceof Error ? error.message : "Runner error",
+          );
         }
         if (options.once) throw error;
-      } finally { clearInterval(timer); }
+      } finally {
+        clearInterval(timer);
+      }
     }
     if (options.once) return;
     await delay(poll, undefined, { signal: options.signal });
