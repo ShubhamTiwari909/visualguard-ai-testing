@@ -22,6 +22,7 @@ The examples use a macOS/Linux POSIX shell. On Windows, use WSL for these shell/
 - [10. Audit, recovery and backups](#10-audit-recovery-and-backups)
 - [11. Run a built dashboard or package candidate](#11-run-a-built-dashboard-or-package-candidate)
 - [12. Troubleshooting and checks](#12-troubleshooting-and-checks)
+- [13. Command reference](#13-command-reference)
 
 ## 1. Install the repository
 
@@ -55,6 +56,8 @@ Leave it running. Open:
 - Staging: `http://127.0.0.1:4101/color-change`
 
 The button has a deliberate color difference. These are application pages under test; the dashboard will use port **4400**.
+
+The source fixture walkthrough deliberately uses a manual JSON config at `output/local-demo.json` to keep it separate from repository configs. It does not come from `init`. For a normal application setup, `npx visualguard init` generates `visualguard.config.ts`; follow the [npm initialization walkthrough](NPM-PACKAGE-SETUP.md#initialize-the-project-with-npx). The same config fields work in either format, but JSON needs an explicit `--config` path.
 
 In **terminal C**, also at the repository root, create `output/local-demo.json`:
 
@@ -243,46 +246,41 @@ Open the run, inspect both images, restart the dashboard with the same URL and c
 
 ## 7. Run source visual regression with MongoDB
 
-**Use this section when:** you run the repository locally and want dashboard storage in MongoDB. Complete sections 1–2 first. Use a replica set for the full team feature set, including invitations/linking/baseline mutations. A standalone server is a limited compatibility option.
+**Use this section when:** you run the repository locally and want dashboard storage in MongoDB. Complete sections 1–2 first. Use MongoDB Atlas; no Docker or local replica-set setup is needed. If you already have a transaction-capable MongoDB deployment, use its existing URI.
 
-If a transaction-capable MongoDB database already exists, use its real URI and skip the fixture below. Otherwise, with Docker installed:
+### Get the connection URL
 
-```sh
-docker run --detach --name visualguard-mongo-local \
-  --publish 127.0.0.1:27018:27018 \
-  --volume visualguard_mongo_local:/data/db \
-  mongo:7 --replSet visualguard_local --port 27018 --bind_ip_all
+1. Create/select an Atlas cluster.
+2. Create a database user with read/write access to a dedicated `visualguard` database.
+3. Allow your dashboard computer's current public IP under **Network Access**.
+4. Copy the URI from **Connect → Drivers**, replace its credentials and include `/visualguard` before the query string.
 
-docker exec visualguard-mongo-local mongosh --port 27018 --quiet \
-  --eval 'db.runCommand({ping: 1})'
+See the [Atlas connection instructions](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/) or the [npm guide's detailed connection steps](NPM-PACKAGE-SETUP.md#get-your-mongodb-url). The database user is separate from your Atlas website login. URL-encode special characters in credentials, such as `@` as `%40`.
+
+### Save settings and start the dashboard — terminal B
+
+Create an ignored `.env.visualguard` in the repository root:
+
+```dotenv
+VISUALGUARD_DATABASE_URL="mongodb+srv://YOUR_DB_USER:YOUR_ENCODED_PASSWORD@YOUR_CLUSTER.mongodb.net/visualguard?retryWrites=true&w=majority"
+VISUALGUARD_AUTH_MODE=local
+VISUALGUARD_PUBLIC_URL=
 ```
 
-Wait for the ping, then initialize once on a new volume:
+Replace the example URI with your real connection string. Keep the explicit database name: a URL ending at `.mongodb.net/` fails with `MongoDB URL must include a database name`. VisualGuard creates its collections automatically.
+
+Stop any dashboard on port 4400. Using the built CLI from section 1, run from the repository root:
 
 ```sh
-docker exec visualguard-mongo-local mongosh --port 27018 --quiet \
-  --eval 'rs.initiate({_id: "visualguard_local", members: [{_id: 0, host: "127.0.0.1:27018"}]})'
-docker exec visualguard-mongo-local mongosh --port 27018 --quiet \
-  --eval 'db.hello().isWritablePrimary'
+node packages/visualguard/dist/cli.js dashboard \
+  --env-file .env.visualguard --host 127.0.0.1 --port 4400
 ```
 
-Repeat the primary check until it returns `true`. Reuse an existing initialized fixture if you created it earlier. This unauthenticated loopback database is for local development; use the managed deployment's authentication/network settings in production.
-
-### Start the source dashboard with MongoDB — terminal B
-
-Stop any dashboard still listening on port 4400, then run from the repository root:
-
-```sh
-export VISUALGUARD_DATABASE_URL='mongodb://127.0.0.1:27018/visualguard?replicaSet=visualguard_local&directConnection=true'
-export DATABASE_URL="" VISUALGUARD_PUBLIC_URL=""
-export VISUALGUARD_AUTH_MODE=local
-export VISUALGUARD_PLATFORM_DATA_DIR="$PWD/.visualguard/platform-mongo-dev"
-pnpm platform:dev
-```
-
-For Atlas, use its supplied `mongodb+srv://.../visualguard` URI and appropriate access settings, not the local `directConnection` example. Metadata and new screenshot/DOM objects live in the selected MongoDB database.
+Open `http://127.0.0.1:4400` and leave the terminal running. This command loads the file explicitly. Existing exported process settings take precedence; remove stale database settings before starting. For development with UI hot reload, load the same file in the server terminal using `set -a; . ./.env.visualguard; set +a`, then run `pnpm platform:dev` instead. That development server does not load the file automatically.
 
 ### Create a project and run the test — terminal C
+
+Keep section 2's fixture websites running in terminal A:
 
 ```sh
 node packages/visualguard/dist/cli.js dashboard project create source-mongodb \
@@ -291,9 +289,11 @@ node packages/visualguard/dist/cli.js test source-mongodb \
   --dashboard http://127.0.0.1:4400 --config output/local-demo.json --no-ai
 ```
 
-Inspect the run and verify persistence after restarting with the same URI. To add AI, use the provider instructions in section 4 and replace `--no-ai` with `--provider gemini` or the Ollama provider/model flags.
+The project argument binds this test execution to that dashboard project and publishes the saved evidence. Only the dashboard needs MongoDB credentials. The [source command reference](#13-command-reference) explains the commands and their options.
 
-A URL change selects another workspace; it does not migrate PostgreSQL/SQLite history. Standalone MongoDB requires explicit `VISUALGUARD_USER_ADMISSION=legacy` on compatible releases and cannot support the full transactional team workflow. `docker stop`/`docker start` retain these fixture volumes; deleting a volume erases its database.
+Open the run and images, restart the dashboard with the same environment file and confirm its history remains. Metadata and uploaded screenshot/DOM artifacts persist in MongoDB. In Atlas or Compass, inspect `vg_projects`, `vg_runs`, `vg_state`, `vg_objects` and `vg_object_chunks` in the `visualguard` database. For AI, replace `--no-ai` with the provider flags from section 4.
+
+A different database URL selects another workspace; it does not migrate existing history. Local-owner mode needs no upload token; login mode does. Atlas or another transaction-capable replica-set/sharded deployment is needed for the full team workflow. An existing standalone MongoDB server requires explicit `VISUALGUARD_USER_ADMISSION=legacy` and cannot support invitations, account linking, managed lifecycle operations, baseline mutations or administrator recovery.
 
 ## 8. Test password login, Google and multiple users
 
@@ -501,19 +501,79 @@ Install that actual `.tgz` path in a separate consumer project. This is an expli
 
 ## 12. Troubleshooting and checks
 
-| Symptom                           | Check                                                                                                                                      |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Browser executable missing        | Install Chromium in the workspace package; on Linux include required browser system dependencies                                           |
-| Wrong/empty dashboard history     | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory                   |
-| `role "USER" does not exist`      | Replace placeholder credentials with the actual PostgreSQL username/password and ensure that role owns/can initialize the dedicated schema |
-| Google controls missing           | Use login mode and a complete OIDC configuration, load it in the actual server terminal, then restart                                      |
-| Google `redirect_uri_mismatch`    | Match scheme, hostname, port and `/api/auth/callback` exactly; keep `localhost` and `127.0.0.1` consistent                                 |
-| Token rejected                    | Correct project token, current owner access and correct canonical server; login-mode loopback needs a token too                            |
-| MongoDB invite startup fails      | Use a replica set/sharded deployment with transactions, or deliberately select limited `legacy` compatibility mode                         |
-| Development deep link returns 404 | Navigate from the dashboard sidebar; for complete direct-route behavior, build the source UI and use `platform:start`                      |
-| UI/CLI feature missing            | Correct checkout and a rebuilt package/UI; old `dist`/npm assets do not update themselves                                                  |
-| Baseline/policy blocked           | Read the exact evidence, revision, coverage, rendering, freshness and approval reasons rather than relabeling old evidence                 |
+| Symptom                                           | Check                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Browser executable missing                        | Install Chromium in the workspace package; on Linux include required browser system dependencies                                                                                                                                                                                                 |
+| Wrong/empty dashboard history                     | Same absolute data directory/database in every terminal; `.visualguard/` paths otherwise depend on the calling directory. Use `test PROJECT --dashboard URL` to select the running dashboard; see [missing project/run recovery](NPM-PACKAGE-SETUP.md#project-or-run-missing-from-the-dashboard) |
+| `role "USER" does not exist`                      | Replace placeholder credentials with the actual PostgreSQL username/password and ensure that role owns/can initialize the dedicated schema                                                                                                                                                       |
+| Google controls missing                           | Use login mode and a complete OIDC configuration, load it in the actual server terminal, then restart                                                                                                                                                                                            |
+| Google `redirect_uri_mismatch`                    | Match scheme, hostname, port and `/api/auth/callback` exactly; keep `localhost` and `127.0.0.1` consistent                                                                                                                                                                                       |
+| Token rejected                                    | Correct project token, current owner access and correct canonical server; login-mode loopback needs a token too                                                                                                                                                                                  |
+| `MongoDB URL must include a database name`        | Include `/visualguard` before the URI query string; use the MongoDB section's environment file                                                                                                                                                                                                   |
+| MongoDB connection timeout/authentication failure | Atlas IP access list, actual database user/permissions and URL-encoded credentials                                                                                                                                                                                                               |
+| MongoDB invite startup fails                      | Use a replica set/sharded deployment with transactions, or deliberately select limited `legacy` compatibility mode                                                                                                                                                                               |
+| Development deep link returns 404                 | Navigate from the dashboard sidebar; for complete direct-route behavior, build the source UI and use `platform:start`                                                                                                                                                                            |
+| UI/CLI feature missing                            | Correct checkout and a rebuilt package/UI; old `dist`/npm assets do not update themselves                                                                                                                                                                                                        |
+| Baseline/policy blocked                           | Read the exact evidence, revision, coverage, rendering, freshness and approval reasons rather than relabeling old evidence                                                                                                                                                                       |
 
 For implementation changes, use the focused test/build that exercises the change. The current repository instruction defers formatter/lint/type commands unless the user explicitly changes it; this guide does not claim those checks passed. No application build, behavior suite or live provider test was run while consolidating this documentation; examples were checked statically.
 
 Planning, architecture and historical validation documents remain reference material. These two setup guides replace the older phase-by-phase walkthroughs.
+
+## 13. Command reference
+
+Run source commands at the repository root after section 1's package/dashboard build. `node packages/visualguard/dist/cli.js` runs this checkout's built CLI. In another application's npm installation, use `npx --no-install visualguard` instead. The [full command explanations](NPM-PACKAGE-SETUP.md#13-command-reference) apply to both entry points; use `output/local-demo.json` for this guide's fixture configuration.
+
+### Common source commands
+
+| Command                                                                              | What it does                                                                                               |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `node scripts/serve-fixtures.mjs`                                                    | Start the production/reference and staging/candidate demo sites on 4100/4101; keep running during captures |
+| `pnpm platform:dev`                                                                  | Start the dashboard development UI/API; export its environment in that terminal first                      |
+| `pnpm platform:start`                                                                | Serve the built dashboard; build assets first and configure its process environment                        |
+| `node packages/visualguard/dist/cli.js dashboard --env-file .env.visualguard`        | Start the packaged dashboard using an explicit SQLite/PostgreSQL/MongoDB environment file                  |
+| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --no-ai` | Run an offline comparison and save evidence locally                                                        |
+| `node packages/visualguard/dist/cli.js report --config output/local-demo.json`       | Serve/open the latest local report; add `--run RUN_ID` to select another                                   |
+| `node packages/visualguard/dist/cli.js doctor --config output/local-demo.json`       | Diagnose config and application reachability                                                               |
+| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --list`  | Show planned URL pairs without capture                                                                     |
+| `node packages/visualguard/dist/cli.js --help`                                       | List CLI commands; each command/subcommand also supports `--help`                                          |
+
+The app fixture servers, dashboard and test runner are separate processes. Starting a dashboard does not start the application sites or capture screenshots. `dashboard init` generates hosting files; `dashboard project create` creates a project inside an existing dashboard.
+
+### Create a project and bind a test execution
+
+With the dashboard running at port 4400:
+
+```sh
+node packages/visualguard/dist/cli.js dashboard project create storefront \
+  --name "Storefront Web" --server http://127.0.0.1:4400
+node packages/visualguard/dist/cli.js test storefront \
+  --dashboard http://127.0.0.1:4400 --config output/local-demo.json --no-ai \
+  --run-name "Local color-change check"
+```
+
+The first command creates/reuses `storefront`; `--name` supplies its display label. The second selects that project for this execution, runs the comparison, and publishes its saved evidence. Repeat the project argument for future tests. An exact unique display name also works. There is no separate persistent `bind` command. Without a project, `test` remains offline.
+
+Use `--dashboard` to target the running dashboard even when the runner has different database settings. Otherwise, `test PROJECT` can select the runner's local storage instead. `--server` is the corresponding server selector for project creation/publishing commands. Local-owner loopback mode needs no upload token; login mode requires the project's token, including on localhost. Keep database/admin credentials on the dashboard/operator side.
+
+For AI, configure section 4's provider and replace `--no-ai` with `--provider gemini` or the Ollama flags. `--config` describes tested applications; `--dashboard` describes where to store the result.
+
+### Save an existing run or generate deployment files
+
+Choose the operation you need and replace `RUN_DIRECTORY` with a real directory containing `manifest.json`:
+
+```sh
+node packages/visualguard/dist/cli.js dashboard --env-file .env.visualguard \
+  import RUN_DIRECTORY --project storefront
+node packages/visualguard/dist/cli.js dashboard publish RUN_DIRECTORY \
+  --project storefront --server http://127.0.0.1:4400
+```
+
+`import` writes directly to the configured database; `publish` uploads through the running server and can retry a saved run without recapturing it. For login-enabled publishing, supply the project's upload token explicitly through the environment or an ignored `--env-file` before `publish`; this subcommand does not automatically load `.env.local`.
+
+```sh
+node packages/visualguard/dist/cli.js dashboard init --target vercel --out output/vercel-dashboard
+node packages/visualguard/dist/cli.js dashboard init --target cloud-run --out output/cloud-run-dashboard
+```
+
+Choose one host. `dashboard init` creates files in an empty output directory, not cloud resources or an automatically deployed dashboard. Follow the [hosting guide](NPM-PACKAGE-SETUP.md#9-deploy-to-vercel-or-google-cloud-run). For authentication, repair, baselines, policies, backups and other commands, use the [command reference](NPM-PACKAGE-SETUP.md#other-commands) and the installed command's help.

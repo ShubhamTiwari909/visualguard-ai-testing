@@ -8,7 +8,7 @@ It can compare two running versions of an application, compare an application wi
 
 This document explains the current source implementation in ordinary product terms. For installation, use [local source setup](LOCAL-SETUP.md) or [npm package setup](NPM-PACKAGE-SETUP.md).
 
-**Release note — 19 October 2026:** this release preparation targets `visualguard@3.2.0`. Registry metadata still reports `3.1.0`, from revision `b8f2cb04`. The Google onboarding/account linking, expanded administration, approved baselines and visual policies described here require version 3.2.0 or a current-source installation. Check npm availability before upgrading; this guide does not announce publication or live cloud certification. Existing operators should read the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310).
+**Release note — 19 October 2026:** registry metadata reports `visualguard@3.2.0`. The Google onboarding/account linking, expanded administration, approved baselines and visual policies described here require version 3.2.0 or a current-source installation. Check npm availability before upgrading; merged source changes after publication require a later package release. This guide does not certify a live cloud deployment. Existing operators should read the [3.2.0 upgrade notes](../packages/visualguard/CHANGELOG.md#upgrade-from-310).
 
 ## Contents
 
@@ -366,30 +366,31 @@ It is not an HTTP recovery endpoint or an npm account-creation command. It canno
 
 Developers can use the package API for configuration parsing, run creation, events/results, reporters and cancellation. Capture hooks prepare application state; custom reporters can integrate results into existing tools. CLI HTML/JUnit/webhook behavior is not automatically implied by every programmatic API call.
 
-| Command or API                               | Main use                                                                    |
-| -------------------------------------------- | --------------------------------------------------------------------------- |
-| URL mode                                     | Explore one site or compare two URLs quickly                                |
-| `init` / `doctor`                            | Create config and diagnose setup                                            |
-| `test`                                       | Compare configured application pages or stored references                   |
-| `test PROJECT`                               | Compare and save new evidence to a dashboard project                        |
-| `report` / `analyze`                         | Inspect or re-analyze saved evidence                                        |
-| `accept`                                     | Record an intentional local change                                          |
-| `fix`                                        | Propose/apply/verify a configured repair                                    |
-| `auth`                                       | Save application login state for browser captures                           |
-| `watch` / `monitor`                          | Re-test on edits or compare a live site over time                           |
-| `merge`                                      | Combine compatible shards and validate coverage                             |
-| `comment`                                    | Publish/update a PR summary comment                                         |
-| `dashboard`                                  | Run the dashboard                                                           |
-| `dashboard project create`                   | Create/reuse a project with appropriate authority                           |
-| `dashboard import` / `publish`               | Store local evidence or upload to a running server                          |
-| `dashboard export` / `restore`               | Move portable evidence                                                      |
-| `dashboard baseline pull`                    | Download immutable approved references in a compatible feature release      |
-| `dashboard policy assess` / `reconcile`      | Assess evidence and refresh GitHub delivery in a compatible feature release |
-| `dashboard init`                             | Generate Vercel/Cloud Run hosting files                                     |
-| `visualguard/playwright`                     | Check an interactive state inside an existing Playwright test               |
-| `visualguard` / `visualguard/dashboard` APIs | Build supported run/reporting/dashboard integrations                        |
+| Command or API                               | Main use                                                                                                                                                                  |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| URL mode                                     | Explore one site or compare two URLs quickly                                                                                                                              |
+| `init` / `doctor`                            | Generate `visualguard.config.ts` with the setup wizard and diagnose setup; see the [npx initialization walkthrough](NPM-PACKAGE-SETUP.md#initialize-the-project-with-npx) |
+| `test`                                       | Compare configured application pages or stored references                                                                                                                 |
+| `test PROJECT`                               | Compare and save new evidence to a dashboard project                                                                                                                      |
+| `report` / `analyze`                         | Inspect or re-analyze saved evidence                                                                                                                                      |
+| `accept`                                     | Record an intentional local change                                                                                                                                        |
+| `fix`                                        | Propose/apply/verify a configured repair                                                                                                                                  |
+| `auth`                                       | Save application login state for browser captures                                                                                                                         |
+| `watch` / `monitor`                          | Re-test on edits or compare a live site over time                                                                                                                         |
+| `merge`                                      | Combine compatible shards and validate coverage                                                                                                                           |
+| `comment`                                    | Publish/update a PR summary comment                                                                                                                                       |
+| `dashboard`                                  | Run the dashboard                                                                                                                                                         |
+| `test PROJECT --dashboard URL`               | Bind this execution to a project and publish evidence to the selected dashboard                                                                                           |
+| `dashboard project create`                   | Create/reuse a project with appropriate authority                                                                                                                         |
+| `dashboard import` / `publish`               | Store local evidence or upload to a running server                                                                                                                        |
+| `dashboard export` / `restore`               | Move portable evidence                                                                                                                                                    |
+| `dashboard baseline pull`                    | Download immutable approved references in a compatible feature release                                                                                                    |
+| `dashboard policy assess` / `reconcile`      | Assess evidence and refresh GitHub delivery in a compatible feature release                                                                                               |
+| `dashboard init`                             | Generate Vercel/Cloud Run hosting files                                                                                                                                   |
+| `visualguard/playwright`                     | Check an interactive state inside an existing Playwright test                                                                                                             |
+| `visualguard` / `visualguard/dashboard` APIs | Build supported run/reporting/dashboard integrations                                                                                                                      |
 
-This is a capability map, not a command sequence to run all at once. Use the setup guides and installed command help for version-specific options.
+This is a capability map, not a command sequence to run all at once. For copyable commands and explanations of tests, starting a dashboard, creating projects, project binding, import/publish and deployment generation, use the [npm command reference](NPM-PACKAGE-SETUP.md#13-command-reference) or [source command reference](LOCAL-SETUP.md#13-command-reference). Each installed command also supports `--help`.
 
 ## 20. Current scope and choosing a starting point
 
