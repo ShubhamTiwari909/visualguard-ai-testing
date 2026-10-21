@@ -200,8 +200,7 @@ and CI; incompatible references need deliberate regeneration.
 Use `monitor` for a live site compared with its previous capture, such as a daily
 production check. This requires a release whose `RunVisualGuardOptions` includes
 `monitor`; the initial SDK's compare/baseline-only API cannot substitute for the
-monitor command. Build the source package when evaluating this addition before
-its next npm release.
+monitor command. Install the current package release before using this flow.
 
 ```js
 import { runVisualGuard } from "visualguard";
