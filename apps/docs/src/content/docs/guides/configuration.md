@@ -5,8 +5,16 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/config/load.ts", "packages/visualguard/src/config/resolve.ts", "packages/visualguard/src/config/urls.ts", "packages/visualguard/src/cli/shared.ts", "packages/visualguard/src/cli/commands/init.ts"]
-sidebar: {"order": 2}
+sourcePaths:
+  [
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/config/load.ts",
+    "packages/visualguard/src/config/resolve.ts",
+    "packages/visualguard/src/config/urls.ts",
+    "packages/visualguard/src/cli/shared.ts",
+    "packages/visualguard/src/cli/commands/init.ts",
+  ]
+sidebar: { "order": 2 }
 ---
 
 A config file tells VisualGuard which sites to compare, which pages and screen sizes to capture, and how strict the comparison should be. This page shows you how to create one, what each group of settings is for, and which value wins when the same setting comes from several places.
@@ -31,13 +39,13 @@ You should see a summary like `Created visualguard.config.ts`. The wizard also a
 
 You can also create the file by hand. VisualGuard looks for these names in the root folder, in this order, and uses the first one it finds:
 
-| File name | Notes |
-| --- | --- |
-| `visualguard.config.ts` | Recommended. `init` writes this one. |
-| `visualguard.config.mts` | TypeScript as an ES module. |
-| `visualguard.config.js` | JavaScript. |
-| `visualguard.config.mjs` | JavaScript as an ES module. |
-| `visualguard.config.cjs` | JavaScript as a CommonJS module. |
+| File name                | Notes                                |
+| ------------------------ | ------------------------------------ |
+| `visualguard.config.ts`  | Recommended. `init` writes this one. |
+| `visualguard.config.mts` | TypeScript as an ES module.          |
+| `visualguard.config.js`  | JavaScript.                          |
+| `visualguard.config.mjs` | JavaScript as an ES module.          |
+| `visualguard.config.cjs` | JavaScript as a CommonJS module.     |
 
 TypeScript files load directly. You do not need a build step. The file can import other modules, like any other source file.
 
@@ -83,27 +91,27 @@ Never put API keys in the config file. If a value looks like a Google API key, l
 
 The config has one level of top-level groups. This table says what each group is for and where to learn more. For every field, its type and its default, see the [configuration reference](/reference/configuration/).
 
-| Group | What it is for | Learn more |
-| --- | --- | --- |
-| `mode` | `"compare"` (default) compares two live sites. `"baseline"` compares one site with saved screenshots. | [Local baselines](/guides/local-baselines/) |
-| `baseURL` | The `production` and `staging` addresses. | [Step 4](#4-set-the-base-urls) |
-| `routes` | The pages to capture: a list of paths, or rules that discover pages for you. | [Routes](/guides/routes/) |
-| `viewports` | Named screen sizes. The default is one `desktop` size of 1440 × 900. | [Browsers and viewports](/guides/browsers-and-viewports/) |
-| `browser` | Browser engine, locale, time zone, colour scheme, pixel density and timeouts. | [Browsers and viewports](/guides/browsers-and-viewports/) |
-| `environments` | Extra request headers and a saved login state for each site. | [Application auth](/guides/application-auth/) |
-| `hooks` | Your own code that runs before navigation and before each screenshot. | [Step 6](#6-start-from-a-complete-example) |
-| `stabilize` | How VisualGuard makes pages hold still: animations, clock, fonts, network, hidden and masked elements. | [Stable captures](/guides/stable-captures/) |
-| `screenshot` | Capture a page or one selected section, with a maximum height. | [Section capture](/guides/section-capture/) and [stable captures](/guides/stable-captures/) |
-| `diff` | How much change is allowed, how changed areas are grouped, and the noise map. | [Differences and noise](/guides/diff-and-noise/) |
-| `checks` | Optional accessibility and performance checks. Both are off by default. | [Accessibility and performance](/guides/accessibility-and-performance/) |
-| `ai` | AI provider, model and spending limits. The default provider is `"none"`. | [Gemini](/guides/ai-gemini/), [AI policy](/guides/ai-policy-and-budgets/) |
-| `fix` | The `visualguard fix` command. It is off until you set `fix.enabled: true`. | [Fixes](/guides/fixes/) |
-| `report` | HTML report, JUnit file, GitHub step summary, webhook and public report link. | [Reports](/guides/reports/), [Reporters](/guides/reporters/) |
-| `reporters` | Your own reporter objects that receive run events. | [Reporters](/guides/reporters/) |
-| `output` | Where runs are saved, how many to keep, and how accepted changes are stored. | [Reports](/guides/reports/), [Accepting changes](/guides/accepting-changes/) |
-| `baseline` | The saved-screenshot folder and the rules for missing or old screenshots. | [Local baselines](/guides/local-baselines/) |
-| `monitor` | Where `visualguard monitor` keeps its previous captures. | [Monitoring](/guides/monitoring/) |
-| `concurrency` | How many pages are captured at the same time (1 to 32). | [Step 5](#5-know-which-value-wins) |
+| Group          | What it is for                                                                                         | Learn more                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `mode`         | `"compare"` (default) compares two live sites. `"baseline"` compares one site with saved screenshots.  | [Local baselines](/guides/local-baselines/)                                                 |
+| `baseURL`      | The `production` and `staging` addresses.                                                              | [Step 4](#4-set-the-base-urls)                                                              |
+| `routes`       | The pages to capture: a list of paths, or rules that discover pages for you.                           | [Routes](/guides/routes/)                                                                   |
+| `viewports`    | Named screen sizes. The default is one `desktop` size of 1440 × 900.                                   | [Browsers and viewports](/guides/browsers-and-viewports/)                                   |
+| `browser`      | Browser engine, locale, time zone, colour scheme, pixel density and timeouts.                          | [Browsers and viewports](/guides/browsers-and-viewports/)                                   |
+| `environments` | Extra request headers and a saved login state for each site.                                           | [Application auth](/guides/application-auth/)                                               |
+| `hooks`        | Your own code that runs before navigation and before each screenshot.                                  | [Step 6](#6-start-from-a-complete-example)                                                  |
+| `stabilize`    | How VisualGuard makes pages hold still: animations, clock, fonts, network, hidden and masked elements. | [Stable captures](/guides/stable-captures/)                                                 |
+| `screenshot`   | Capture a page or one selected section, with a maximum height.                                         | [Section capture](/guides/section-capture/) and [stable captures](/guides/stable-captures/) |
+| `diff`         | How much change is allowed, how changed areas are grouped, and the noise map.                          | [Differences and noise](/guides/diff-and-noise/)                                            |
+| `checks`       | Optional accessibility and performance checks. Both are off by default.                                | [Accessibility and performance](/guides/accessibility-and-performance/)                     |
+| `ai`           | AI provider, model and spending limits. The default provider is `"none"`.                              | [Gemini](/guides/ai-gemini/), [AI policy](/guides/ai-policy-and-budgets/)                   |
+| `fix`          | The `visualguard fix` command. It is off until you set `fix.enabled: true`.                            | [Fixes](/guides/fixes/)                                                                     |
+| `report`       | HTML report, JUnit file, GitHub step summary, webhook and public report link.                          | [Reports](/guides/reports/), [Reporters](/guides/reporters/)                                |
+| `reporters`    | Your own reporter objects that receive run events.                                                     | [Reporters](/guides/reporters/)                                                             |
+| `output`       | Where runs are saved, how many to keep, and how accepted changes are stored.                           | [Reports](/guides/reports/), [Accepting changes](/guides/accepting-changes/)                |
+| `baseline`     | The saved-screenshot folder and the rules for missing or old screenshots.                              | [Local baselines](/guides/local-baselines/)                                                 |
+| `monitor`      | Where `visualguard monitor` keeps its previous captures.                                               | [Monitoring](/guides/monitoring/)                                                           |
+| `concurrency`  | How many pages are captured at the same time (1 to 32).                                                | [Step 5](#5-know-which-value-wins)                                                          |
 
 ## 4. Set the base URLs
 
@@ -111,13 +119,13 @@ A base URL is the start of every page address on one site. It must start with `h
 
 VisualGuard joins them with these rules:
 
-| Base URL | Route | Page that is captured |
-| --- | --- | --- |
-| `https://example.com` | `/pricing` | `https://example.com/pricing` |
-| `https://example.com/app` | `/pricing` | `https://example.com/app/pricing` (the base path is kept) |
-| `https://example.com/?lang=en` | `/pricing` | `https://example.com/pricing?lang=en` (base query is added to every page) |
-| `https://example.com/?lang=en` | `/pricing?lang=de` | `https://example.com/pricing?lang=de` (the route's own value wins for the same key) |
-| `https://example.com/#top` | `/faq#billing` | `https://example.com/faq#billing` (a `#` part on the base is dropped; the route's is kept) |
+| Base URL                       | Route              | Page that is captured                                                                      |
+| ------------------------------ | ------------------ | ------------------------------------------------------------------------------------------ |
+| `https://example.com`          | `/pricing`         | `https://example.com/pricing`                                                              |
+| `https://example.com/app`      | `/pricing`         | `https://example.com/app/pricing` (the base path is kept)                                  |
+| `https://example.com/?lang=en` | `/pricing`         | `https://example.com/pricing?lang=en` (base query is added to every page)                  |
+| `https://example.com/?lang=en` | `/pricing?lang=de` | `https://example.com/pricing?lang=de` (the route's own value wins for the same key)        |
+| `https://example.com/#top`     | `/faq#billing`     | `https://example.com/faq#billing` (a `#` part on the base is dropped; the route's is kept) |
 
 The base path rule is useful when your app lives under a prefix, such as a preview deployment at `/pr-42/`.
 
@@ -132,20 +140,20 @@ Most settings can come from four places. When two places set the same thing, the
 
 This table shows each setting that you can override, and where the override comes from:
 
-| Setting | CLI flag | Environment variable | Config field | Default |
-| --- | --- | --- | --- | --- |
-| Production URL | `--production <url>` | `VISUALGUARD_PRODUCTION_URL` | `baseURL.production` | none |
-| Staging URL | `--staging <url>` | `VISUALGUARD_STAGING_URL` | `baseURL.staging` | none |
-| Browser engine | `--browser <name>` | `VISUALGUARD_BROWSER` | `browser.name` | `chromium` |
-| Output folder | `--output-dir <path>` | `VISUALGUARD_OUTPUT_DIR` | `output.dir` | `.visualguard` |
-| AI provider | `--provider <name>` | `VISUALGUARD_AI_PROVIDER` | `ai.provider` | `none` |
-| AI model | `--model <id>` | none | `ai.model` | depends on the provider |
-| Parallel captures | `--concurrency <n>` | none | `concurrency` | number of CPU cores, at most 4 |
-| Pages | `--route <path>` replaces the list | none | `routes` | discovery |
-| Screen sizes | `--viewport <name>` keeps only the named ones | none | `viewports` | `desktop` |
-| Accessibility and performance checks | `--a11y`, `--perf` turn them on | none | `checks` | off |
-| JUnit file | `--junit <path>` | none | `report.junit` | none |
-| Webhook | none | `VISUALGUARD_WEBHOOK_URL` | `report.webhook` | none |
+| Setting                              | CLI flag                                      | Environment variable         | Config field         | Default                        |
+| ------------------------------------ | --------------------------------------------- | ---------------------------- | -------------------- | ------------------------------ |
+| Production URL                       | `--production <url>`                          | `VISUALGUARD_PRODUCTION_URL` | `baseURL.production` | none                           |
+| Staging URL                          | `--staging <url>`                             | `VISUALGUARD_STAGING_URL`    | `baseURL.staging`    | none                           |
+| Browser engine                       | `--browser <name>`                            | `VISUALGUARD_BROWSER`        | `browser.name`       | `chromium`                     |
+| Output folder                        | `--output-dir <path>`                         | `VISUALGUARD_OUTPUT_DIR`     | `output.dir`         | `.visualguard`                 |
+| AI provider                          | `--provider <name>`                           | `VISUALGUARD_AI_PROVIDER`    | `ai.provider`        | `none`                         |
+| AI model                             | `--model <id>`                                | none                         | `ai.model`           | depends on the provider        |
+| Parallel captures                    | `--concurrency <n>`                           | none                         | `concurrency`        | number of CPU cores, at most 4 |
+| Pages                                | `--route <path>` replaces the list            | none                         | `routes`             | discovery                      |
+| Screen sizes                         | `--viewport <name>` keeps only the named ones | none                         | `viewports`          | `desktop`                      |
+| Accessibility and performance checks | `--a11y`, `--perf` turn them on               | none                         | `checks`             | off                            |
+| JUnit file                           | `--junit <path>`                              | none                         | `report.junit`       | none                           |
+| Webhook                              | none                                          | `VISUALGUARD_WEBHOOK_URL`    | `report.webhook`     | none                           |
 
 :::note
 A model name belongs to one provider. If you switch the provider with `--provider` or `VISUALGUARD_AI_PROVIDER`, VisualGuard ignores `ai.model` from the file and uses the new provider's default, unless you also pass `--model`.
@@ -162,16 +170,16 @@ Variables that are already set in your shell or CI always win over both files. T
 
 These are the variables you are most likely to use with the CLI:
 
-| Variable | What it does |
-| --- | --- |
-| `VISUALGUARD_PRODUCTION_URL`, `VISUALGUARD_STAGING_URL` | Replace the base URLs, for example with a pull request preview address. |
-| `VISUALGUARD_BROWSER` | `chromium`, `firefox` or `webkit`. |
-| `VISUALGUARD_OUTPUT_DIR` | Where runs are saved. Use the same value for later `report` and `accept` commands. |
-| `VISUALGUARD_AI_PROVIDER` | `gemini`, `ollama` or `none`. |
-| `GEMINI_API_KEY`, `GOOGLE_API_KEY` | Gemini key. If both are set, `GEMINI_API_KEY` is used. |
-| `OLLAMA_HOST` | Address of your Ollama server. |
-| `VISUALGUARD_RUN_GROUP` | A shared name for all shards of one sharded run. |
-| `VISUALGUARD_WEBHOOK_URL` | Where to send a JSON summary after each run. |
+| Variable                                                | What it does                                                                       |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `VISUALGUARD_PRODUCTION_URL`, `VISUALGUARD_STAGING_URL` | Replace the base URLs, for example with a pull request preview address.            |
+| `VISUALGUARD_BROWSER`                                   | `chromium`, `firefox` or `webkit`.                                                 |
+| `VISUALGUARD_OUTPUT_DIR`                                | Where runs are saved. Use the same value for later `report` and `accept` commands. |
+| `VISUALGUARD_AI_PROVIDER`                               | `gemini`, `ollama` or `none`.                                                      |
+| `GEMINI_API_KEY`, `GOOGLE_API_KEY`                      | Gemini key. If both are set, `GEMINI_API_KEY` is used.                             |
+| `OLLAMA_HOST`                                           | Address of your Ollama server.                                                     |
+| `VISUALGUARD_RUN_GROUP`                                 | A shared name for all shards of one sharded run.                                   |
+| `VISUALGUARD_WEBHOOK_URL`                               | Where to send a JSON summary after each run.                                       |
 
 The [environment variable reference](/reference/environment/) lists every variable, including dashboard ones.
 
@@ -263,9 +271,9 @@ export default defineConfig({
   hooks: {
     // Runs before the page is opened.
     beforeNavigate: async ({ page }) => {
-      await page.context().addCookies([
-        { name: "consent", value: "yes", domain: "shop.example.com", path: "/" },
-      ]);
+      await page
+        .context()
+        .addCookies([{ name: "consent", value: "yes", domain: "shop.example.com", path: "/" }]);
     },
     // Runs after the page has settled, just before the screenshot.
     beforeCapture: async ({ page }) => {
@@ -348,16 +356,16 @@ If you use a `--config` path, pass the same path to both commands.
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Config file not found: …` | The `--config` path is resolved from the current folder. Run the command from the app root, or pass an absolute path. |
-| `Invalid config (…)` followed by a field path | Fix the named field. The [configuration reference](/reference/configuration/) lists allowed values and limits. |
-| `… looks like an API key` | Remove the key from the config. Set `GEMINI_API_KEY` in `.env.local` or in your CI secrets. |
-| `No visualguard.config.ts found and no URLs given.` | You are not in the folder with the config, or the file has another name. Use `--config`, or run `npx visualguard init`. |
-| `Missing base URL for production` (or staging) | Set `baseURL`, pass `--production` and `--staging`, or set `VISUALGUARD_PRODUCTION_URL` and `VISUALGUARD_STAGING_URL`. |
-| `Unknown viewport: …` | `--viewport` only accepts names defined in `viewports`. The error lists the configured names. |
-| A value in `.env` has no effect | A variable with the same name is already set in your shell or CI, and that one wins. Also check that `.env` is in the folder you run the command from. |
-| `VISUALGUARD_AI_PROVIDER must be gemini, ollama or none` | Fix the variable's value, or unset it. |
+| Problem                                                  | Fix                                                                                                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Config file not found: …`                               | The `--config` path is resolved from the current folder. Run the command from the app root, or pass an absolute path.                                  |
+| `Invalid config (…)` followed by a field path            | Fix the named field. The [configuration reference](/reference/configuration/) lists allowed values and limits.                                         |
+| `… looks like an API key`                                | Remove the key from the config. Set `GEMINI_API_KEY` in `.env.local` or in your CI secrets.                                                            |
+| `No visualguard.config.ts found and no URLs given.`      | You are not in the folder with the config, or the file has another name. Use `--config`, or run `npx visualguard init`.                                |
+| `Missing base URL for production` (or staging)           | Set `baseURL`, pass `--production` and `--staging`, or set `VISUALGUARD_PRODUCTION_URL` and `VISUALGUARD_STAGING_URL`.                                 |
+| `Unknown viewport: …`                                    | `--viewport` only accepts names defined in `viewports`. The error lists the configured names.                                                          |
+| A value in `.env` has no effect                          | A variable with the same name is already set in your shell or CI, and that one wins. Also check that `.env` is in the folder you run the command from. |
+| `VISUALGUARD_AI_PROVIDER must be gemini, ollama or none` | Fix the variable's value, or unset it.                                                                                                                 |
 
 For other problems, see [Troubleshooting](/troubleshooting/).
 

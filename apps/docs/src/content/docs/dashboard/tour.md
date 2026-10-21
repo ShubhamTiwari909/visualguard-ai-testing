@@ -5,8 +5,22 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/client/main.tsx", "apps/platform/client/project-tests.tsx", "apps/platform/client/execution-progress.tsx", "apps/platform/client/reviews.tsx", "apps/platform/client/baselines.tsx", "apps/platform/client/policies.tsx", "apps/platform/client/settings.tsx", "apps/platform/client/users.tsx", "apps/platform/client/invitations.tsx", "apps/platform/client/operations.tsx", "apps/platform/client/profile.tsx", "apps/platform/client/auth.tsx"]
-sidebar: {"order": 2}
+sourcePaths:
+  [
+    "apps/platform/client/main.tsx",
+    "apps/platform/client/project-tests.tsx",
+    "apps/platform/client/execution-progress.tsx",
+    "apps/platform/client/reviews.tsx",
+    "apps/platform/client/baselines.tsx",
+    "apps/platform/client/policies.tsx",
+    "apps/platform/client/settings.tsx",
+    "apps/platform/client/users.tsx",
+    "apps/platform/client/invitations.tsx",
+    "apps/platform/client/operations.tsx",
+    "apps/platform/client/profile.tsx",
+    "apps/platform/client/auth.tsx",
+  ]
+sidebar: { "order": 2 }
 ---
 
 This page walks through every screen in the dashboard, using the exact labels you see on it. For each area it explains what it shows, what you can do there and who can do it. Use it to find your way around, then follow the links for step-by-step guides.
@@ -73,13 +87,13 @@ Choose a project in the sidebar, or filter Run history by one project. A **PROJE
 
 The panel's **Visual test** area shows how tests run for this project and which saved configuration is current:
 
-| Status text | Meaning |
-| --- | --- |
-| **Runs on this dashboard** | The dashboard host captures tests itself (built-in runner) |
-| **Runner connected** | A private runner checked in during the last 30 seconds and will capture |
-| **Runner offline** | No private runner is connected and the built-in runner is off. **Run test** is disabled |
-| **Configuration v3** | The saved test profile is at version 3 |
-| **Configure this project's test settings** | No profile has been saved yet |
+| Status text                                | Meaning                                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| **Runs on this dashboard**                 | The dashboard host captures tests itself (built-in runner)                              |
+| **Runner connected**                       | A private runner checked in during the last 30 seconds and will capture                 |
+| **Runner offline**                         | No private runner is connected and the built-in runner is off. **Run test** is disabled |
+| **Configuration v3**                       | The saved test profile is at version 3                                                  |
+| **Configure this project's test settings** | No profile has been saved yet                                                           |
 
 **What everyone with access sees**
 
@@ -155,15 +169,15 @@ Viewers can read the policy and run assessments. Details: [Evaluate a visual pol
 
 **People & integrations** (sidebar, or **Profile** in the top bar) collects your account settings and project access. The sections you see depend on the mode and your role.
 
-| Section | What it does | Who sees it |
-| --- | --- | --- |
-| **Your profile** | Shows your **Name**, **Email** and **Workspace role** (**Local owner**, **Workspace administrator** or **Workspace member**) | Everyone |
-| **Your sign-in methods** | Shows whether Google is linked, with **Link Google account** | Login mode |
-| **Invitations** | Create a one-time link for one person, one project and one role; **Cancel** or **Replace link** | Login mode, administrators |
-| **Your password** | **Change password** for password accounts | Login mode |
-| **Workspace accounts** | Search accounts, **Manage** a person, disable, restore, promote, demote, revoke sessions and reset passwords; **Create a password member account** | Login mode, administrators |
-| **Project access** | Pick a project, **Edit project name & ID**, **Grant access** with a **Project role**, and **Remove** members | Maintainers of that project and administrators |
-| **Upload credentials** | Create a named upload token (**Expires in days**, 1 to 90) and **Revoke** tokens. Runner credentials appear here too | Maintainers of that project and administrators |
+| Section                  | What it does                                                                                                                                       | Who sees it                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **Your profile**         | Shows your **Name**, **Email** and **Workspace role** (**Local owner**, **Workspace administrator** or **Workspace member**)                       | Everyone                                       |
+| **Your sign-in methods** | Shows whether Google is linked, with **Link Google account**                                                                                       | Login mode                                     |
+| **Invitations**          | Create a one-time link for one person, one project and one role; **Cancel** or **Replace link**                                                    | Login mode, administrators                     |
+| **Your password**        | **Change password** for password accounts                                                                                                          | Login mode                                     |
+| **Workspace accounts**   | Search accounts, **Manage** a person, disable, restore, promote, demote, revoke sessions and reset passwords; **Create a password member account** | Login mode, administrators                     |
+| **Project access**       | Pick a project, **Edit project name & ID**, **Grant access** with a **Project role**, and **Remove** members                                       | Maintainers of that project and administrators |
+| **Upload credentials**   | Create a named upload token (**Expires in days**, 1 to 90) and **Revoke** tokens. Runner credentials appear here too                               | Maintainers of that project and administrators |
 
 A new upload token appears once under **Copy your upload token now**. Copy it before you choose **Dismiss**.
 
@@ -185,26 +199,26 @@ Choose **Refresh operations** to reload. See [Operations and recovery](/deployme
 
 ## Local mode and login mode at a glance
 
-| Area | Local mode | Login mode |
-| --- | --- | --- |
-| Sign-in screen | None | Email and password, plus Google if configured |
-| Your role | Local owner (an administrator) | Your account's workspace and project roles |
-| Invitations, Workspace accounts, Your password, Your sign-in methods | Hidden | Shown to the right people |
-| Audit & recovery | Hidden | Administrators only |
-| Projects you see | All | Administrators see all; others see assigned projects |
+| Area                                                                 | Local mode                     | Login mode                                           |
+| -------------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------- |
+| Sign-in screen                                                       | None                           | Email and password, plus Google if configured        |
+| Your role                                                            | Local owner (an administrator) | Your account's workspace and project roles           |
+| Invitations, Workspace accounts, Your password, Your sign-in methods | Hidden                         | Shown to the right people                            |
+| Audit & recovery                                                     | Hidden                         | Administrators only                                  |
+| Projects you see                                                     | All                            | Administrators see all; others see assigned projects |
 
 ## Which role sees what
 
-| Area | Viewer | Reviewer | Maintainer | Administrator |
-| --- | --- | --- | --- | --- |
-| Run history, run detail, comparison viewer | Read | Read | Read, rename and delete runs | Same as Maintainer, in every project |
-| **+ New project** | No | No | No | Yes |
-| **Configure tests**, **Run test**, runner credential, **Delete project** | No | No | Yes | Yes |
-| **Team review** and **Review inbox** | Read | Comment, assign and decide | Same as Reviewer | Same as Reviewer |
-| **Approved baselines** | Read | Read | Promote and restore | Promote and restore |
-| **Visual regression policy** | Read and assess | Read and assess | Edit and reconcile | Edit and reconcile |
-| **Project access** and **Upload credentials** | No | No | Yes, for their projects | Yes |
-| **Invitations**, **Workspace accounts**, **Audit & recovery** | No | No | No | Yes |
+| Area                                                                     | Viewer          | Reviewer                   | Maintainer                   | Administrator                        |
+| ------------------------------------------------------------------------ | --------------- | -------------------------- | ---------------------------- | ------------------------------------ |
+| Run history, run detail, comparison viewer                               | Read            | Read                       | Read, rename and delete runs | Same as Maintainer, in every project |
+| **+ New project**                                                        | No              | No                         | No                           | Yes                                  |
+| **Configure tests**, **Run test**, runner credential, **Delete project** | No              | No                         | Yes                          | Yes                                  |
+| **Team review** and **Review inbox**                                     | Read            | Comment, assign and decide | Same as Reviewer             | Same as Reviewer                     |
+| **Approved baselines**                                                   | Read            | Read                       | Promote and restore          | Promote and restore                  |
+| **Visual regression policy**                                             | Read and assess | Read and assess            | Edit and reconcile           | Edit and reconcile                   |
+| **Project access** and **Upload credentials**                            | No              | No                         | Yes, for their projects      | Yes                                  |
+| **Invitations**, **Workspace accounts**, **Audit & recovery**            | No              | No                         | No                           | Yes                                  |
 
 ## Next steps
 

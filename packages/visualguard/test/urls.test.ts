@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyParams,
+  isDynamicRoute,
   expandRoutes,
   joinURL,
   normalizeBaseURL,
@@ -70,6 +71,15 @@ describe("joinURL (PLAN.md §6.5 joining rules)", () => {
 });
 
 describe("applyParams", () => {
+  it("handles long malformed bracket inputs and internal slash runs without rescanning", () => {
+    const brackets = `/blog/${"[".repeat(50_000)}unfinished`;
+    expect(isDynamicRoute(brackets)).toBe(false);
+    expect(applyParams(brackets, {})).toBe(brackets);
+    const slashes = `/blog/${"/".repeat(50_000)}entry`;
+    expect(applyParams(slashes, {})).toBe(slashes);
+    expect(routeSlug(slashes)).toHaveLength(80);
+    expect(routeSlug(slashes)).toMatch(/^blog_+$/);
+  });
   it("fills single, catch-all and optional catch-all segments", () => {
     expect(applyParams("/blog/[slug]", { slug: "hello-world" })).toBe("/blog/hello-world");
     expect(applyParams("/docs/[...slug]", { slug: ["a", "b"] })).toBe("/docs/a/b");

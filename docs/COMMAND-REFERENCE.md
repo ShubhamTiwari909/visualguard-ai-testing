@@ -419,12 +419,12 @@ npx visualguard dashboard policy reconcile --project storefront --pr 42
 
 ## 4. Exit codes
 
-| Code | Meaning | What to do |
-| --- | --- | --- |
-| `0` | The run meets your `--fail-on` policy. | Done; review any "review" items yourself. |
-| `1` | A visual check failed, or merged results are incomplete. | Open the report; look for regressions, errors or missing shards. |
-| `2` | Invalid config or command usage. `policy assess --enforce` and `policy reconcile` also use it for an unsatisfied policy or reported errors. | Fix the flag, path or value and retry. |
-| `3` | Environment problem: browser, URL or AI provider unavailable. | Run `visualguard doctor`. |
+| Code | Meaning                                                                                                                                     | What to do                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `0`  | The run meets your `--fail-on` policy.                                                                                                      | Done; review any "review" items yourself.                        |
+| `1`  | A visual check failed, or merged results are incomplete.                                                                                    | Open the report; look for regressions, errors or missing shards. |
+| `2`  | Invalid config or command usage. `policy assess --enforce` and `policy reconcile` also use it for an unsatisfied policy or reported errors. | Fix the flag, path or value and retry.                           |
+| `3`  | Environment problem: browser, URL or AI provider unavailable.                                                                               | Run `visualguard doctor`.                                        |
 
 `--fail-on regression` (default) fails on regressions and errors; `review` also fails items marked review; `any` currently behaves like `review`. More: [exit codes](../apps/docs/src/content/docs/reference/exit-codes.md).
 
@@ -432,24 +432,24 @@ npx visualguard dashboard policy reconcile --project storefront --pr 42
 
 CLI flags win over environment variables. Capture commands read `.env`, then `.env.local`, from your app root without overwriting values already set. Full list: [environment reference](../apps/docs/src/content/docs/reference/environment.md).
 
-| Variable | Used by | Purpose |
-| --- | --- | --- |
-| `GEMINI_API_KEY` (fallback `GOOGLE_API_KEY`) | capture, analyze, fix | Gemini AI provider key. |
-| `OLLAMA_HOST` | capture, analyze, fix | Local Ollama address (default `http://127.0.0.1:11434`). |
-| `VISUALGUARD_AI_PROVIDER` | capture | `gemini`, `ollama` or `none`; `--provider` wins. |
-| `VISUALGUARD_PRODUCTION_URL`, `VISUALGUARD_STAGING_URL` | capture | Override the config's base URLs. |
-| `VISUALGUARD_BROWSER` | capture | `chromium`, `firefox` or `webkit`. |
-| `VISUALGUARD_OUTPUT_DIR` | capture, report | Where run evidence is written. |
-| `VISUALGUARD_RUN_GROUP` | `test --shard` | Shared id for all shards of one execution. |
-| `VISUALGUARD_DASHBOARD_URL` | `test PROJECT`, `project create` | Dashboard origin when `--dashboard`/`--server` is not given. |
-| `VISUALGUARD_UPLOAD_TOKEN` | `dashboard publish` | Project-scoped upload credential. |
-| `VISUALGUARD_RUNNER_TOKEN` | `dashboard runner` | Project-scoped runner credential. |
-| `VISUALGUARD_BUILT_IN_RUNNER` | dashboard | `on`/`off`; lets the dashboard run tests itself (default on, except on Vercel). |
-| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | dashboard | Maximum simultaneous built-in tests (default 1). |
-| `VISUALGUARD_DATABASE_URL` (fallback `DATABASE_URL`) | dashboard | PostgreSQL or MongoDB connection; unset means local SQLite. |
-| `VISUALGUARD_PLATFORM_DATA_DIR` | dashboard | Local data directory (same as `--data-dir`). |
-| `VISUALGUARD_PLATFORM_PORT` (fallback `PORT`) | dashboard | Listener port when `--port` is not given. |
-| `VISUALGUARD_HOST` | dashboard | Listener address; public binding needs login. |
-| `VISUALGUARD_AUTH_MODE` | dashboard | `local` for a trusted loopback trial, `login` for shared use. |
-| `VISUALGUARD_PUBLIC_URL` | dashboard | Exact public HTTPS origin of a shared dashboard. |
-| `GITHUB_TOKEN` | `comment` | Authorizes the pull request comment. |
+| Variable                                                | Used by                          | Purpose                                                                         |
+| ------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY` (fallback `GOOGLE_API_KEY`)            | capture, analyze, fix            | Gemini AI provider key.                                                         |
+| `OLLAMA_HOST`                                           | capture, analyze, fix            | Local Ollama address (default `http://127.0.0.1:11434`).                        |
+| `VISUALGUARD_AI_PROVIDER`                               | capture                          | `gemini`, `ollama` or `none`; `--provider` wins.                                |
+| `VISUALGUARD_PRODUCTION_URL`, `VISUALGUARD_STAGING_URL` | capture                          | Override the config's base URLs.                                                |
+| `VISUALGUARD_BROWSER`                                   | capture                          | `chromium`, `firefox` or `webkit`.                                              |
+| `VISUALGUARD_OUTPUT_DIR`                                | capture, report                  | Where run evidence is written.                                                  |
+| `VISUALGUARD_RUN_GROUP`                                 | `test --shard`                   | Shared id for all shards of one execution.                                      |
+| `VISUALGUARD_DASHBOARD_URL`                             | `test PROJECT`, `project create` | Dashboard origin when `--dashboard`/`--server` is not given.                    |
+| `VISUALGUARD_UPLOAD_TOKEN`                              | `dashboard publish`              | Project-scoped upload credential.                                               |
+| `VISUALGUARD_RUNNER_TOKEN`                              | `dashboard runner`               | Project-scoped runner credential.                                               |
+| `VISUALGUARD_BUILT_IN_RUNNER`                           | dashboard                        | `on`/`off`; lets the dashboard run tests itself (default on, except on Vercel). |
+| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY`               | dashboard                        | Maximum simultaneous built-in tests (default 1).                                |
+| `VISUALGUARD_DATABASE_URL` (fallback `DATABASE_URL`)    | dashboard                        | PostgreSQL or MongoDB connection; unset means local SQLite.                     |
+| `VISUALGUARD_PLATFORM_DATA_DIR`                         | dashboard                        | Local data directory (same as `--data-dir`).                                    |
+| `VISUALGUARD_PLATFORM_PORT` (fallback `PORT`)           | dashboard                        | Listener port when `--port` is not given.                                       |
+| `VISUALGUARD_HOST`                                      | dashboard                        | Listener address; public binding needs login.                                   |
+| `VISUALGUARD_AUTH_MODE`                                 | dashboard                        | `local` for a trusted loopback trial, `login` for shared use.                   |
+| `VISUALGUARD_PUBLIC_URL`                                | dashboard                        | Exact public HTTPS origin of a shared dashboard.                                |
+| `GITHUB_TOKEN`                                          | `comment`                        | Authorizes the pull request comment.                                            |

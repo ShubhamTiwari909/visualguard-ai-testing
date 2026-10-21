@@ -34,17 +34,27 @@ test("an unchanged page passes", async ({ page, visualguard }) => {
 });
 
 test.describe("section screenshots", () => {
-  test.use({ visualguardOptions: { config: {
-    baseURL: { production: "http://127.0.0.1:4210", staging: STAGING },
-    screenshot: { selector: '[data-visualguard="checkout"]' },
-    stabilize: { networkQuietMs: 0 },
-  } } });
+  test.use({
+    visualguardOptions: {
+      config: {
+        baseURL: { production: "http://127.0.0.1:4210", staging: STAGING },
+        screenshot: { selector: '[data-visualguard="checkout"]' },
+        stabilize: { networkQuietMs: 0 },
+      },
+    },
+  });
 
-  test("inherits the selector and allows a per-check page override", async ({ page, visualguard }) => {
-    const content = '<section data-visualguard="checkout" style="width:240px;height:140px;background:blue">Checkout</section>';
+  test("inherits the selector and allows a per-check page override", async ({
+    page,
+    visualguard,
+  }) => {
+    const content =
+      '<section data-visualguard="checkout" style="width:240px;height:140px;background:blue">Checkout</section>';
     await page.goto(`${STAGING}/identical`);
     await page.setContent(content);
-    const referenceSetup = async (reference: typeof page) => { await reference.setContent(content); };
+    const referenceSetup = async (reference: typeof page) => {
+      await reference.setContent(content);
+    };
     const result = await visualguard.check(page, { name: "checkout", referenceSetup });
     expect(result.captures.production?.size).toEqual({ width: 240, height: 140 });
     expect(result.captures.staging?.size).toEqual({ width: 240, height: 140 });

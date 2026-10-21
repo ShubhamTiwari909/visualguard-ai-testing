@@ -6,7 +6,7 @@ docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/LOCAL-SETUP.md", "apps/platform/.env.example"]
-sidebar: {"order": 9}
+sidebar: { "order": 9 }
 ---
 
 ## Before you start

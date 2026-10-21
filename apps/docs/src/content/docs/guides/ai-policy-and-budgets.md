@@ -5,8 +5,16 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/ai/analyze-job.ts", "packages/visualguard/src/ai/budget.ts", "packages/visualguard/src/ai/cache.ts", "packages/visualguard/src/ai/tasks/analyze-diff.ts", "packages/visualguard/src/config/resolve.ts"]
-sidebar: {"order": 11}
+sourcePaths:
+  [
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/ai/analyze-job.ts",
+    "packages/visualguard/src/ai/budget.ts",
+    "packages/visualguard/src/ai/cache.ts",
+    "packages/visualguard/src/ai/tasks/analyze-diff.ts",
+    "packages/visualguard/src/config/resolve.ts",
+  ]
+sidebar: { "order": 11 }
 ---
 
 This page explains every `ai` setting in `visualguard.config.ts`. Use it to decide three things: what the AI is allowed to change, how much it may spend, and what context it gets. Set these before you turn AI on in CI, so a busy pull request cannot run up an unexpected bill.
@@ -25,38 +33,38 @@ Then, for each changed page that qualifies, VisualGuard sends one request to the
 
 The model's answer is then combined with the base status:
 
-| Base status or finding | Model says | Final status |
-| --- | --- | --- |
-| **regression**, or any finding with severity regression | anything | **regression** (never downgraded) |
-| **review** | `regression` | **regression** |
-| **review** | `intentional` or `content` | **review** |
-| **review** | `noise`, confidence at or above `noiseConfidence` | **pass** |
-| **review** | `noise`, but a health check also asked for review | **review** |
-| **review** | `noise`, confidence below `noiseConfidence` | **review** |
-| any | anything, with `advisory: true` | base status unchanged |
+| Base status or finding                                  | Model says                                        | Final status                      |
+| ------------------------------------------------------- | ------------------------------------------------- | --------------------------------- |
+| **regression**, or any finding with severity regression | anything                                          | **regression** (never downgraded) |
+| **review**                                              | `regression`                                      | **regression**                    |
+| **review**                                              | `intentional` or `content`                        | **review**                        |
+| **review**                                              | `noise`, confidence at or above `noiseConfidence` | **pass**                          |
+| **review**                                              | `noise`, but a health check also asked for review | **review**                        |
+| **review**                                              | `noise`, confidence below `noiseConfidence`       | **review**                        |
+| any                                                     | anything, with `advisory: true`                   | base status unchanged             |
 
 AI failures never fail a run. When a request fails or a limit is reached, the page keeps its base status and gets an info finding that explains why.
 
 ## All AI options
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `provider` | `"gemini"`, `"ollama"` or `"none"`. The `--provider` flag and `VISUALGUARD_AI_PROVIDER` override it. | `"none"` |
-| `model` | Model ID. Dropped when the provider is switched by flag or environment variable. | `gemini-flash-latest` (Gemini), `qwen2.5vl` (Ollama) |
-| `analyze` | `"uncertain"` skips pages that are already regressions. `"all"` also sends them, to get an explanation and suggested fix. | `"uncertain"` |
-| `advisory` | `true` attaches the analysis but never changes a status. | `false` |
-| `noiseConfidence` | Minimum model confidence (0 to 1) for a `noise` answer to become **pass**. | `0.8` |
-| `maxRegionsPerJob` | Changed regions shown to the model per page (1 to 10). A layout-shift region goes first, then the largest. | `3` |
-| `thinking` | Gemini only. `"off"`, `"low"` or `"default"`. More thinking costs more output tokens and time. | `"low"` |
-| `imageDetail` | Gemini only. `"low"`, `"medium"` or `"high"`. `"high"` uses about four times the tokens of `"medium"`. | `"medium"` |
-| `concurrency` | Pages analysed at the same time (1 to 8). Captures keep running while the model works. | `4` |
-| `maxCallsPerRun` | Pages sent to the model in one command. Cached answers do not count. | `30` |
-| `maxGenerationAttempts` | Model answers requested, including the one repair attempt when an answer has the wrong format. | `60` |
-| `maxNetworkAttempts` | Outgoing requests, including automatic retries after rate limits or network errors. | `120` |
-| `maxTokens` | Input plus output tokens. Gemini thinking tokens count as output. | `200000` |
-| `timeoutMs` | Time limit in milliseconds for each request, and for all AI work in one command. | `120000` |
-| `cacheTTLHours` | How long a cached answer stays valid. | `24` |
-| `intent` | Optional description of the change you meant to make. See [Describe the intended change](#4-describe-the-intended-change). | none |
+| Option                  | What it does                                                                                                               | Default                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `provider`              | `"gemini"`, `"ollama"` or `"none"`. The `--provider` flag and `VISUALGUARD_AI_PROVIDER` override it.                       | `"none"`                                             |
+| `model`                 | Model ID. Dropped when the provider is switched by flag or environment variable.                                           | `gemini-flash-latest` (Gemini), `qwen2.5vl` (Ollama) |
+| `analyze`               | `"uncertain"` skips pages that are already regressions. `"all"` also sends them, to get an explanation and suggested fix.  | `"uncertain"`                                        |
+| `advisory`              | `true` attaches the analysis but never changes a status.                                                                   | `false`                                              |
+| `noiseConfidence`       | Minimum model confidence (0 to 1) for a `noise` answer to become **pass**.                                                 | `0.8`                                                |
+| `maxRegionsPerJob`      | Changed regions shown to the model per page (1 to 10). A layout-shift region goes first, then the largest.                 | `3`                                                  |
+| `thinking`              | Gemini only. `"off"`, `"low"` or `"default"`. More thinking costs more output tokens and time.                             | `"low"`                                              |
+| `imageDetail`           | Gemini only. `"low"`, `"medium"` or `"high"`. `"high"` uses about four times the tokens of `"medium"`.                     | `"medium"`                                           |
+| `concurrency`           | Pages analysed at the same time (1 to 8). Captures keep running while the model works.                                     | `4`                                                  |
+| `maxCallsPerRun`        | Pages sent to the model in one command. Cached answers do not count.                                                       | `30`                                                 |
+| `maxGenerationAttempts` | Model answers requested, including the one repair attempt when an answer has the wrong format.                             | `60`                                                 |
+| `maxNetworkAttempts`    | Outgoing requests, including automatic retries after rate limits or network errors.                                        | `120`                                                |
+| `maxTokens`             | Input plus output tokens. Gemini thinking tokens count as output.                                                          | `200000`                                             |
+| `timeoutMs`             | Time limit in milliseconds for each request, and for all AI work in one command.                                           | `120000`                                             |
+| `cacheTTLHours`         | How long a cached answer stays valid.                                                                                      | `24`                                                 |
+| `intent`                | Optional description of the change you meant to make. See [Describe the intended change](#4-describe-the-intended-change). | none                                                 |
 
 ## 1. Choose who decides the status
 
@@ -118,13 +126,13 @@ ai: {
 
 What each limit stops:
 
-| Limit reached | Message on the page | Effect |
-| --- | --- | --- |
-| `maxCallsPerRun` | `AI budget reached (ai.maxCallsPerRun); explained by heuristics only` | Later pages skip AI. |
-| `maxGenerationAttempts` | `AI generation-attempt budget reached` | AI stops for the rest of the command. Later pages show `AI skipped: …`. |
-| `maxNetworkAttempts` | `AI network-attempt budget reached` | AI stops for the rest of the command. |
-| `maxTokens` | `AI token budget reached` | AI stops for the rest of the command. |
-| `timeoutMs` | `AI analysis failed: …` (aborted) | Requests still waiting are cancelled. |
+| Limit reached           | Message on the page                                                   | Effect                                                                  |
+| ----------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `maxCallsPerRun`        | `AI budget reached (ai.maxCallsPerRun); explained by heuristics only` | Later pages skip AI.                                                    |
+| `maxGenerationAttempts` | `AI generation-attempt budget reached`                                | AI stops for the rest of the command. Later pages show `AI skipped: …`. |
+| `maxNetworkAttempts`    | `AI network-attempt budget reached`                                   | AI stops for the rest of the command.                                   |
+| `maxTokens`             | `AI token budget reached`                                             | AI stops for the rest of the command.                                   |
+| `timeoutMs`             | `AI analysis failed: …` (aborted)                                     | Requests still waiting are cancelled.                                   |
 
 Things to know about budgets:
 
@@ -150,11 +158,11 @@ ai: {
 },
 ```
 
-| Field | Limit | Required |
-| --- | --- | --- |
-| `title` | Up to 200 characters. | Yes, when `intent` is set. |
-| `description` | Up to 2000 characters. | No |
-| `changedFiles` | Up to 50 paths, each up to 300 characters. | No (default `[]`) |
+| Field          | Limit                                      | Required                   |
+| -------------- | ------------------------------------------ | -------------------------- |
+| `title`        | Up to 200 characters.                      | Yes, when `intent` is set. |
+| `description`  | Up to 2000 characters.                     | No                         |
+| `changedFiles` | Up to 50 paths, each up to 300 characters. | No (default `[]`)          |
 
 The model is told to treat this text as evidence, never as instructions. A claimed intent does not excuse a visible defect: a broken layout is still a regression, and VisualGuard's own regressions are never downgraded. The intent is saved with each analysis in the run, so reviewers can see what the model was told.
 
@@ -211,14 +219,14 @@ Restore your normal values afterwards.
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `analyze` stops almost at once with a token or attempt budget message | The run's earlier commands already used the budget. Raise the limit, or analyze a new run. |
-| Real changes pass as noise | Raise `noiseConfidence`, or set `advisory: true`. |
-| Later pages show `AI analysis failed: … aborted` | `timeoutMs` covers all AI work in one command. Raise it, or lower `concurrency` for slow local models. |
-| Changing `intent` or the model did not change the answer | It should create a new cache key. Run `analyze --no-cache` to be sure. |
-| Bill is higher than the saved totals | Some failed requests return no usage data. Use your provider's dashboard as the source of truth. |
-| Config error about `intent` when a command starts | `title` is required and limited to 200 characters; `changedFiles` holds at most 50 paths. |
+| Problem                                                               | Fix                                                                                                    |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `analyze` stops almost at once with a token or attempt budget message | The run's earlier commands already used the budget. Raise the limit, or analyze a new run.             |
+| Real changes pass as noise                                            | Raise `noiseConfidence`, or set `advisory: true`.                                                      |
+| Later pages show `AI analysis failed: … aborted`                      | `timeoutMs` covers all AI work in one command. Raise it, or lower `concurrency` for slow local models. |
+| Changing `intent` or the model did not change the answer              | It should create a new cache key. Run `analyze --no-cache` to be sure.                                 |
+| Bill is higher than the saved totals                                  | Some failed requests return no usage data. Use your provider's dashboard as the source of truth.       |
+| Config error about `intent` when a command starts                     | `title` is required and limited to 200 characters; `changedFiles` holds at most 50 paths.              |
 
 See [Troubleshooting](/troubleshooting/) for other problems.
 

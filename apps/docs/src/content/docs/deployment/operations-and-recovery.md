@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/LOCAL-SETUP.md", "apps/platform/server/operations.ts"]
-sidebar: {"order": 9}
+sidebar: { "order": 9 }
 ---
 
 ## Before you start

@@ -6,6 +6,11 @@
 
 - 65a9ea0: Add the typed `runVisualGuard` SDK for scripts and CI. Support inline or discovered configuration, isolated environment resolution, section capture, explicit baseline updates, cancellation and progress, HTML/JUnit reports, optional GitHub summaries, and structured policy verdicts without changing the caller's process exit status. Include repository and Astro guides plus a runnable CI script and workflow example.
 
+### Patch Changes
+
+- Avoid repeated regular-expression rescanning of malformed dynamic route parameters and long slash sequences. Preserve supported route expansion and artifact naming behavior.
+- Keep the release workflow's npm publishing behind an explicit manual request so merging a prepared version does not publish it automatically.
+
 ## 3.3.0
 
 ### Minor Changes

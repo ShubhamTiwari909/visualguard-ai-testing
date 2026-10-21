@@ -5,8 +5,17 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-21"
-sourcePaths: ["docs/SECTION-SCREENSHOT-TESTING.md", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/config/urls.ts", "packages/visualguard/src/core/jobs.ts", "packages/visualguard/src/capture/capture.ts", "packages/visualguard/src/capture/dom-snapshot.ts", "packages/visualguard/src/playwright/index.ts"]
-sidebar: {"order": 6}
+sourcePaths:
+  [
+    "docs/SECTION-SCREENSHOT-TESTING.md",
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/config/urls.ts",
+    "packages/visualguard/src/core/jobs.ts",
+    "packages/visualguard/src/capture/capture.ts",
+    "packages/visualguard/src/capture/dom-snapshot.ts",
+    "packages/visualguard/src/playwright/index.ts",
+  ]
+sidebar: { "order": 6 }
 ---
 
 Use section capture when you want to compare a checkout panel, header, pricing table, or another part of a page. VisualGuard still opens the page in a real browser, but saves and visually compares only the selected element's rectangle.
@@ -153,15 +162,15 @@ Open the checkout on the test page before calling this check. `referenceSetup` o
 
 ## Troubleshooting
 
-| Symptom | Check and fix |
-| --- | --- |
-| Target is missing | Inspect both URLs, authentication state, route, and viewport. Add the attribute to both environments and ensure the UI state is open. |
-| More than one element matches | Give the container a unique attribute value, or narrow the CSS selector. Hidden duplicates also make a selector ambiguous. |
-| Target is invisible or empty | Check conditional rendering, `display`, `visibility`, `opacity`, dimensions, and whether a parent hides it. |
-| The target appears too late | Use `waitFor`, a capture hook, or increase `browser.actionTimeoutMs` to wait for expected content. |
-| A full page was captured | Check your installed version supports the feature, the config file was loaded, and a route did not set `selector: null`. |
-| A baseline is missing or incompatible | Explicitly generate the intended section references; do not reuse page references. |
-| An unrelated failure remains | Inspect page-wide health/accessibility/performance findings separately from the section's visual diff. |
+| Symptom                               | Check and fix                                                                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Target is missing                     | Inspect both URLs, authentication state, route, and viewport. Add the attribute to both environments and ensure the UI state is open. |
+| More than one element matches         | Give the container a unique attribute value, or narrow the CSS selector. Hidden duplicates also make a selector ambiguous.            |
+| Target is invisible or empty          | Check conditional rendering, `display`, `visibility`, `opacity`, dimensions, and whether a parent hides it.                           |
+| The target appears too late           | Use `waitFor`, a capture hook, or increase `browser.actionTimeoutMs` to wait for expected content.                                    |
+| A full page was captured              | Check your installed version supports the feature, the config file was loaded, and a route did not set `selector: null`.              |
+| A baseline is missing or incompatible | Explicitly generate the intended section references; do not reuse page references.                                                    |
+| An unrelated failure remains          | Inspect page-wide health/accessibility/performance findings separately from the section's visual diff.                                |
 
 ## Where results are saved
 

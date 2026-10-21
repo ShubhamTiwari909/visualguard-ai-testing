@@ -5,8 +5,15 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/auth.ts", "packages/visualguard/src/capture/browser.ts", "packages/visualguard/src/capture/capture.ts", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/cli/commands/doctor.ts"]
-sidebar: {"order": 8}
+sourcePaths:
+  [
+    "packages/visualguard/src/cli/commands/auth.ts",
+    "packages/visualguard/src/capture/browser.ts",
+    "packages/visualguard/src/capture/capture.ts",
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/cli/commands/doctor.ts",
+  ]
+sidebar: { "order": 8 }
 ---
 
 This page shows how to capture pages that sit behind a login, a password-protected preview or a feature flag. You log in once in a real browser window, VisualGuard saves that session to a file, and every later capture starts already logged in. You can also send extra request headers and run your own code before each page loads or before each screenshot.
@@ -24,11 +31,11 @@ These settings are for your application's own login. They are separate from sign
 
 ## Three tools
 
-| Tool | Use it for |
-| --- | --- |
-| `environments.<env>.storageState` | Start every capture with saved cookies and local storage, so pages load logged in. Create the file with `visualguard auth`. |
-| `environments.<env>.headers` | Send extra HTTP headers, such as a preview-protection bypass token or a basic-auth header. |
-| `hooks.beforeNavigate` and `hooks.beforeCapture` | Run your own Playwright code before the page loads, or just before the screenshot. |
+| Tool                                             | Use it for                                                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `environments.<env>.storageState`                | Start every capture with saved cookies and local storage, so pages load logged in. Create the file with `visualguard auth`. |
+| `environments.<env>.headers`                     | Send extra HTTP headers, such as a preview-protection bypass token or a basic-auth header.                                  |
+| `hooks.beforeNavigate` and `hooks.beforeCapture` | Run your own Playwright code before the page loads, or just before the screenshot.                                          |
 
 Each environment (`production` and `staging`) has its own settings, so the two sides can use different accounts and tokens.
 
@@ -66,13 +73,13 @@ npx --no-install visualguard auth production
 
 ### auth flags
 
-| Flag | What it does | Default |
-| --- | --- | --- |
-| `<env>` | `production` or `staging`. | Required |
-| `--url <url>` | Page to open first, such as your login page. | The environment's base URL |
-| `--out <path>` | Where to save the session file. | `.visualguard/auth/<env>.json` |
-| `--until-url <glob>` | Save automatically when the page URL matches this glob, instead of waiting for Enter. Waits up to 10 minutes. | Off |
-| `-c, --config <path>` | Config file path. | `visualguard.config.ts` |
+| Flag                  | What it does                                                                                                  | Default                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `<env>`               | `production` or `staging`.                                                                                    | Required                       |
+| `--url <url>`         | Page to open first, such as your login page.                                                                  | The environment's base URL     |
+| `--out <path>`        | Where to save the session file.                                                                               | `.visualguard/auth/<env>.json` |
+| `--until-url <glob>`  | Save automatically when the page URL matches this glob, instead of waiting for Enter. Waits up to 10 minutes. | Off                            |
+| `-c, --config <path>` | Config file path.                                                                                             | `visualguard.config.ts`        |
 
 For example, to start on the login page and save as soon as you reach the dashboard:
 
@@ -138,20 +145,20 @@ The browser sends these headers with **every** request the page makes, including
 
 Hooks are async functions in your config. VisualGuard calls them for every page, on both environments, with one argument:
 
-| Field | What it is |
-| --- | --- |
-| `page` | The Playwright [`Page`](https://playwright.dev/docs/api/class-page). |
-| `env` | `"production"` or `"staging"`. |
-| `route` | The route being captured, such as `/account`. |
-| `url` | The full URL that will be (or was) opened. |
-| `viewport` | The viewport name, such as `desktop`. |
+| Field      | What it is                                                           |
+| ---------- | -------------------------------------------------------------------- |
+| `page`     | The Playwright [`Page`](https://playwright.dev/docs/api/class-page). |
+| `env`      | `"production"` or `"staging"`.                                       |
+| `route`    | The route being captured, such as `/account`.                        |
+| `url`      | The full URL that will be (or was) opened.                           |
+| `viewport` | The viewport name, such as `desktop`.                                |
 
 When each hook runs:
 
-| Hook | Runs | Good for |
-| --- | --- | --- |
-| `beforeNavigate` | After the browser context is ready, before the page opens. | Adding cookies, routing or blocking requests, `addInitScript` (feature flags, test mode). |
-| `beforeCapture` | After the page loaded, fonts and images are ready and the network is quiet. Before media is paused and the screenshot is taken. | Closing a dialog, expanding a section, scrolling to the top, waiting for your own condition. |
+| Hook             | Runs                                                                                                                            | Good for                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `beforeNavigate` | After the browser context is ready, before the page opens.                                                                      | Adding cookies, routing or blocking requests, `addInitScript` (feature flags, test mode).    |
+| `beforeCapture`  | After the page loaded, fonts and images are ready and the network is quiet. Before media is paused and the screenshot is taken. | Closing a dialog, expanding a section, scrolling to the top, waiting for your own condition. |
 
 Example: turn on a feature flag, send a token only to your own host, and close a welcome dialog:
 
@@ -168,7 +175,10 @@ export default defineConfig({
       if (env === "staging") {
         await page.route("https://staging.example.com/**", (route) =>
           route.continue({
-            headers: { ...route.request().headers(), "x-preview-token": process.env.PREVIEW_TOKEN ?? "" },
+            headers: {
+              ...route.request().headers(),
+              "x-preview-token": process.env.PREVIEW_TOKEN ?? "",
+            },
           }),
         );
       }
@@ -215,15 +225,15 @@ Your `/account` page needs a login on both production and staging, and staging i
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| Screenshots show the login page | The session expired or belongs to another host. Run `auth` again for that environment. |
-| `storageState file for staging not found` | Check the path in `environments.staging.storageState`. It is relative to your app's root folder. |
-| `No URL for staging: set baseURL.staging or pass --url.` | Set `baseURL.staging`, or pass `--url` to `auth`. |
-| `auth` waits forever | Press Enter in the terminal after logging in, or check the `--until-url` glob matches the final URL. |
-| Production and staging show different users | Each side uses its own session. Log in with matching test accounts. |
-| HTTP 401 or 403 on a preview deployment | The bypass header is missing or empty. Check the environment variable is set where the test runs. |
-| A dialog appears in some screenshots only | Close it in `beforeCapture`, or hide it with `stabilize.hide`. See [Stable captures](/guides/stable-captures/). |
+| Problem                                                  | Fix                                                                                                             |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Screenshots show the login page                          | The session expired or belongs to another host. Run `auth` again for that environment.                          |
+| `storageState file for staging not found`                | Check the path in `environments.staging.storageState`. It is relative to your app's root folder.                |
+| `No URL for staging: set baseURL.staging or pass --url.` | Set `baseURL.staging`, or pass `--url` to `auth`.                                                               |
+| `auth` waits forever                                     | Press Enter in the terminal after logging in, or check the `--until-url` glob matches the final URL.            |
+| Production and staging show different users              | Each side uses its own session. Log in with matching test accounts.                                             |
+| HTTP 401 or 403 on a preview deployment                  | The bypass header is missing or empty. Check the environment variable is set where the test runs.               |
+| A dialog appears in some screenshots only                | Close it in `beforeCapture`, or hide it with `stabilize.hide`. See [Stable captures](/guides/stable-captures/). |
 
 See [Capture problems](/troubleshooting/capture/) for more.
 

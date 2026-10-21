@@ -162,8 +162,10 @@ export function selectFixableJobs(
 
 /** Viewports of the same section share a repair goal; other sections retain their own evidence. */
 function sameRepairScope(a: JobResult, b: JobResult): boolean {
-  return a.route === b.route &&
-    a.capturePolicy?.screenshot.selector === b.capturePolicy?.screenshot.selector;
+  return (
+    a.route === b.route &&
+    a.capturePolicy?.screenshot.selector === b.capturePolicy?.screenshot.selector
+  );
 }
 
 /**
@@ -514,7 +516,8 @@ export async function fixRegressions(
         options.signal?.throwIfAborted();
         const target =
           fixed.has(original.id) ||
-          (original.status !== "accepted" && fixedJobs.some((job) => sameRepairScope(original, job)));
+          (original.status !== "accepted" &&
+            fixedJobs.some((job) => sameRepairScope(original, job)));
         const reference = target ? original.captures.production : original.captures.staging;
         if (!reference) throw new Error(`Missing reference for final verification: ${original.id}`);
         const check = await verifyAgainstProduction(

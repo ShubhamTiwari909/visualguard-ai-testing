@@ -5,8 +5,15 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/auth.ts", "apps/platform/server/runtime.ts", "apps/platform/client/auth.tsx", "apps/platform/client/settings.tsx"]
-sidebar: {"order": 10}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "apps/platform/server/auth.ts",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/client/auth.tsx",
+    "apps/platform/client/settings.tsx",
+  ]
+sidebar: { "order": 10 }
 ---
 
 Login mode turns a personal dashboard into a team workspace. People sign in with their own accounts, and every action is tied to a person. This tutorial switches a local dashboard to login mode on your computer and creates the first administrator. The same settings apply to a hosted dashboard.
@@ -32,13 +39,13 @@ VISUALGUARD_ADMIN_PASSWORD='YOUR_UNIQUE_12_TO_256_CHARACTER_PASSWORD'
 VISUALGUARD_USER_ADMISSION=invite
 ```
 
-| Setting | What it does | Default |
-| --- | --- | --- |
-| `VISUALGUARD_AUTH_MODE` | `local` or `login` | `login` when a public URL is set or on Cloud Run or Vercel; otherwise `local` |
-| `VISUALGUARD_PUBLIC_URL` | The exact address people open, with no path. Must be `https://` unless it is `localhost`, `127.0.0.1` or `[::1]` | Not set. Required in login mode |
-| `VISUALGUARD_ADMIN_EMAIL` | Email of the first administrator | Not set |
-| `VISUALGUARD_ADMIN_PASSWORD` | Password of the first administrator, 12 to 256 characters | Not set |
-| `VISUALGUARD_USER_ADMISSION` | `invite`: new people join only with an invitation. `legacy`: a company login can create accounts automatically | `invite` on a new installation |
+| Setting                      | What it does                                                                                                     | Default                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `VISUALGUARD_AUTH_MODE`      | `local` or `login`                                                                                               | `login` when a public URL is set or on Cloud Run or Vercel; otherwise `local` |
+| `VISUALGUARD_PUBLIC_URL`     | The exact address people open, with no path. Must be `https://` unless it is `localhost`, `127.0.0.1` or `[::1]` | Not set. Required in login mode                                               |
+| `VISUALGUARD_ADMIN_EMAIL`    | Email of the first administrator                                                                                 | Not set                                                                       |
+| `VISUALGUARD_ADMIN_PASSWORD` | Password of the first administrator, 12 to 256 characters                                                        | Not set                                                                       |
+| `VISUALGUARD_USER_ADMISSION` | `invite`: new people join only with an invitation. `legacy`: a company login can create accounts automatically   | `invite` on a new installation                                                |
 
 The dashboard accepts requests only at the exact public address. Opening it by another name, such as `localhost` instead of `127.0.0.1`, returns `Use the configured dashboard URL`.
 
@@ -82,11 +89,11 @@ Create one under **People & integrations** → **Project access** → **Upload c
 
 ## Dashboard login and app login are different
 
-| Kind of login | What it protects | Where it is set up |
-| --- | --- | --- |
-| Dashboard account | Who can see and change stored evidence | This page, and [People & permissions](/dashboard/people-and-permissions/) |
-| Upload token | Which project a CLI or CI job can send runs to | [Publishing](/dashboard/publishing/) |
-| App login state | Lets the capturer open private pages in your app | [Test pages behind a login](/guides/application-auth/) |
+| Kind of login     | What it protects                                 | Where it is set up                                                        |
+| ----------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| Dashboard account | Who can see and change stored evidence           | This page, and [People & permissions](/dashboard/people-and-permissions/) |
+| Upload token      | Which project a CLI or CI job can send runs to   | [Publishing](/dashboard/publishing/)                                      |
+| App login state   | Lets the capturer open private pages in your app | [Test pages behind a login](/guides/application-auth/)                    |
 
 An upload token is neither a dashboard password nor an app session.
 
@@ -105,15 +112,15 @@ An upload token is neither a dashboard password nor an app session.
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Hosted login requires VISUALGUARD_PUBLIC_URL` | Set the public URL in the same file you pass with `--env-file` |
-| `Hosted login requires HTTPS` | Use an `https://` public URL. Plain HTTP works only on `localhost`, `127.0.0.1` or `[::1]` |
-| `VISUALGUARD_PUBLIC_URL must be an HTTP(S) origin without a path` | Remove any path, query or trailing segment, such as `/dashboard` |
-| `Configure VISUALGUARD_ADMIN_EMAIL and VISUALGUARD_ADMIN_PASSWORD (12+ characters), or an OIDC administrator` | No administrator exists yet. Set both values and restart |
-| `Use the configured dashboard URL` | Open the dashboard at exactly the public URL |
-| `Email or password is incorrect` | Check the account. Remember the bootstrap password is used only on first start |
-| `Existing installation: set VISUALGUARD_USER_ADMISSION=invite or legacy explicitly before upgrading` | Choose `invite` or `legacy`, back up and restart |
+| Problem                                                                                                       | Fix                                                                                        |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `Hosted login requires VISUALGUARD_PUBLIC_URL`                                                                | Set the public URL in the same file you pass with `--env-file`                             |
+| `Hosted login requires HTTPS`                                                                                 | Use an `https://` public URL. Plain HTTP works only on `localhost`, `127.0.0.1` or `[::1]` |
+| `VISUALGUARD_PUBLIC_URL must be an HTTP(S) origin without a path`                                             | Remove any path, query or trailing segment, such as `/dashboard`                           |
+| `Configure VISUALGUARD_ADMIN_EMAIL and VISUALGUARD_ADMIN_PASSWORD (12+ characters), or an OIDC administrator` | No administrator exists yet. Set both values and restart                                   |
+| `Use the configured dashboard URL`                                                                            | Open the dashboard at exactly the public URL                                               |
+| `Email or password is incorrect`                                                                              | Check the account. Remember the bootstrap password is used only on first start             |
+| `Existing installation: set VISUALGUARD_USER_ADMISSION=invite or legacy explicitly before upgrading`          | Choose `invite` or `legacy`, back up and restart                                           |
 
 More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
 

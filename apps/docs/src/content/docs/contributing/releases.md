@@ -5,8 +5,18 @@ audience: "contributor"
 docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
-sourcePaths: ["PUBLISHING-AND-USING.md", ".changeset/config.json", ".github/workflows/release.yml", "packages/visualguard/package.json", "packages/visualguard/CHANGELOG.md", "scripts/pack-smoke.mjs", "scripts/standalone-dashboard-smoke.mjs", "apps/docs/src/data/releases.json"]
-sidebar: {"order": 6}
+sourcePaths:
+  [
+    "PUBLISHING-AND-USING.md",
+    ".changeset/config.json",
+    ".github/workflows/release.yml",
+    "packages/visualguard/package.json",
+    "packages/visualguard/CHANGELOG.md",
+    "scripts/pack-smoke.mjs",
+    "scripts/standalone-dashboard-smoke.mjs",
+    "apps/docs/src/data/releases.json",
+  ]
+sidebar: { "order": 6 }
 ---
 
 This page explains how a change in this repository becomes a new version of the `visualguard` npm package. Read it when you add a user-visible change (you will write a changeset), and when you are the maintainer who versions and publishes a release.
@@ -29,7 +39,7 @@ Examples use macOS/Linux shells; on Windows use WSL.
 2. The pull request merges to `main`.
 3. The **Release** workflow (`.github/workflows/release.yml`) runs on every push to `main`. While changesets are waiting, it opens or updates a pull request named "Version Packages". That pull request runs `pnpm version-packages`, which bumps the version in `packages/visualguard/package.json`, writes `packages/visualguard/CHANGELOG.md` and deletes the used changeset files.
 4. A maintainer reviews and merges the "Version Packages" pull request.
-5. The workflow runs again. With no changesets left, it runs `pnpm release` (`pnpm build && changeset publish`). Changesets publishes any package version that is not on npm yet.
+5. The workflow runs again without publishing. When the maintainer is ready, manually run **Release** on `main` with **publish** enabled, or publish the verified package archive locally. Only the explicit manual workflow trigger supplies `pnpm release` (`pnpm build && changeset publish`). Changesets publishes any package version that is not on npm yet.
 
 The workflow publishes with npm **trusted publishing**: GitHub's OpenID Connect token (`id-token: write`) proves the run's identity, so no npm token is stored in the repository. `NPM_CONFIG_PROVENANCE=true` adds a provenance statement that links the package to the workflow run. The `visualguard` package on npm must list this repository and workflow as a trusted publisher for this to work.
 
@@ -53,10 +63,10 @@ Let the dashboard run **Run test** itself with just the signed-in user's authori
 
 Choose the bump with [semantic versioning](https://semver.org/):
 
-| Bump | Use it for | Example |
-| --- | --- | --- |
-| `patch` | A fix that changes no public behavior people rely on. | 1.2.0 to 1.2.1 |
-| `minor` | A new feature or option that keeps old configs working. | 1.2.0 to 1.3.0 |
+| Bump    | Use it for                                                               | Example        |
+| ------- | ------------------------------------------------------------------------ | -------------- |
+| `patch` | A fix that changes no public behavior people rely on.                    | 1.2.0 to 1.2.1 |
+| `minor` | A new feature or option that keeps old configs working.                  | 1.2.0 to 1.3.0 |
 | `major` | A change that breaks existing configs, commands, outputs or stored data. | 1.2.0 to 2.0.0 |
 
 Write the summary for the person upgrading. Say what changed, and any action they must take, such as a new setting, a database backup or a migration. Rename the file to something readable if you like, such as `dashboard-built-in-runner.md`. Commit it with the code, tests and documentation of the change.
@@ -85,6 +95,7 @@ Check three things:
   ```
 
   The command reports the current published version; compare that live result with the proposed version.
+
 - **The starting version is right.** Changesets bumps from whatever is in `packages/visualguard/package.json`. Compare that file with the registry result and the proposed changeset bump; do not assume they start at the same version. Do not hand-edit the version and also add changesets unless you mean both.
 - **The changelog explains upgrades.** Every breaking change and migration has clear steps.
 
@@ -114,7 +125,7 @@ CI also runs `pnpm lint`, `pnpm format:check` and `pnpm typecheck` on every pull
 
 ## 4. Inspect the tarball
 
-Look at exactly what npm will receive. The package publishes only the `dist` folder (`"files": ["dist"]`), plus `package.json`, the README and the license that npm always includes.
+Look at exactly what npm will receive. The package includes `dist` and `CHANGELOG.md`, plus `package.json`, the README and the license that npm always includes.
 
 ```bash
 pnpm --filter visualguard pack --pack-destination /tmp/visualguard-pack
@@ -123,22 +134,22 @@ tar -tzf /tmp/visualguard-pack/visualguard-*.tgz | sort
 
 You should see:
 
-| Path in the tarball | What it is |
-| --- | --- |
-| `package/dist/cli.js` | The `visualguard` command. |
-| `package/dist/index.js`, `index.d.ts` | The programmatic API. |
-| `package/dist/playwright.js`, `playwright.d.ts` | The `visualguard/playwright` fixture. |
-| `package/dist/dashboard.js`, `dashboard.d.ts` | The `visualguard/dashboard` entry point and its server. |
-| `package/dist/dashboard-app/` | The built dashboard web client. |
-| `package/dist/report-app/` | The bundled HTML report app. |
-| `package/dist/diff-worker.js` | The image-diff worker. |
-| `package/dist/chunk-*.js` and `*.js.map` | Shared code chunks and their source maps. |
+| Path in the tarball                             | What it is                                              |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| `package/dist/cli.js`                           | The `visualguard` command.                              |
+| `package/dist/index.js`, `index.d.ts`           | The programmatic API.                                   |
+| `package/dist/playwright.js`, `playwright.d.ts` | The `visualguard/playwright` fixture.                   |
+| `package/dist/dashboard.js`, `dashboard.d.ts`   | The `visualguard/dashboard` entry point and its server. |
+| `package/dist/dashboard-app/`                   | The built dashboard web client.                         |
+| `package/dist/report-app/`                      | The bundled HTML report app.                            |
+| `package/dist/diff-worker.js`                   | The image-diff worker.                                  |
+| `package/dist/chunk-*.js` and `*.js.map`        | Shared code chunks and their source maps.               |
 
 The tarball must **not** contain `.env` files, API keys, tokens, test fixtures, run artifacts or workspace-only files. If something unexpected appears, fix the build before going further.
 
 ## 5. Publish
 
-Publish through the Release workflow by merging the "Version Packages" pull request. That path builds in a clean runner, uses trusted publishing and adds provenance.
+After merging the prepared version and verifying CI, open **Actions › Release › Run workflow**, select `main` and enable **publish**. Merging alone does not publish. The manual workflow builds in a clean runner, uses trusted publishing and adds provenance. Leave **publish** off when you only want version preparation.
 
 If the workflow cannot be used and a maintainer must publish by hand:
 
@@ -168,6 +179,7 @@ Do not call a release published until the registry and a fresh install prove it.
    ```
 
    You should see the new version as `latest`.
+
 2. Install that exact version in a new, empty project and confirm the CLI version:
 
    ```bash
@@ -176,6 +188,7 @@ Do not call a release published until the registry and a fresh install prove it.
    ```
 
    You should see the same concrete version in the package metadata and CLI output. Investigate a mismatch as a build-label problem before declaring release validation complete.
+
 3. Run the [quickstart](/start/quickstart/) against the new version, open the report, and start the [local dashboard](/dashboard/local/). Run `visualguard dashboard init --target cloud-run --out /tmp/vg-scaffold` and check that the generated project depends on the new version.
 4. Run `pnpm docs:test` and `pnpm docs:smoke`. Installation examples and the smoke test resolve `@latest`, so a routine release does not require editing version numbers across pages. Record the actual tested package and CLI labels in release validation evidence, and refresh the dated validation scope when it changes. See [work on the documentation](/contributing/documentation/).
 5. Update guides when behavior, commands or prerequisites change. Explain availability through installed commands and dashboard status, and keep version-specific history in the package changelog and migration guide.
@@ -184,14 +197,14 @@ People who install the package follow [installation](/start/install/) and the [b
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| No "Version Packages" pull request appears | Check that a changeset file exists in `.changeset/` on `main` and that the Release workflow ran. |
+| Problem                                                      | Fix                                                                                                                    |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| No "Version Packages" pull request appears                   | Check that a changeset file exists in `.changeset/` on `main` and that the Release workflow ran.                       |
 | The workflow fails with an npm authentication or `403` error | Check the trusted publisher settings for `visualguard` on npmjs.com. They must name this repository and `release.yml`. |
-| `npm publish` says the version already exists | That version is taken forever. Add a changeset or bump the version again. |
-| `test:pack` fails with `Expected version …` | The built CLI reports a different version from `package.json`. Rebuild with `pnpm build` after the version change. |
-| The tarball is missing the dashboard or report | Run `pnpm build` from the root; it builds the report app and copies the dashboard client into `dist/dashboard-app`. |
-| The version jumped further than expected | Changesets bumps from the version already in `package.json`. Check for a manual edit. |
+| `npm publish` says the version already exists                | That version is taken forever. Add a changeset or bump the version again.                                              |
+| `test:pack` fails with `Expected version …`                  | The built CLI reports a different version from `package.json`. Rebuild with `pnpm build` after the version change.     |
+| The tarball is missing the dashboard or report               | Run `pnpm build` from the root; it builds the report app and copies the dashboard client into `dist/dashboard-app`.    |
+| The version jumped further than expected                     | Changesets bumps from the version already in `package.json`. Check for a manual edit.                                  |
 
 For install problems that users report after a release, see [installation troubleshooting](/troubleshooting/installation/).
 

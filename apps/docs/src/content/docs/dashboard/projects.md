@@ -5,8 +5,15 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/project-command.ts", "apps/platform/server/project-directory.ts", "apps/platform/client/naming.tsx", "apps/platform/client/delete-action.tsx"]
-sidebar: {"order": 4}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "apps/platform/server/project-command.ts",
+    "apps/platform/server/project-directory.ts",
+    "apps/platform/client/naming.tsx",
+    "apps/platform/client/delete-action.tsx",
+  ]
+sidebar: { "order": 4 }
 ---
 
 A project is the home for one application's test history, settings and access. This page shows how to create a project, choose it, rename it, and delete runs or whole projects safely. It also explains what to check when a project or run seems to be missing.
@@ -22,11 +29,11 @@ A project is the home for one application's test history, settings and access. T
 
 A project has three names. Each has a different job.
 
-| Identifier | Example | Who uses it | Can it change? |
-| --- | --- | --- | --- |
-| Project ID | `storefront` | The CLI, CI, URLs and runner commands | Yes. Old IDs keep working as aliases |
-| Display name | `Storefront Web` | People, in the sidebar and lists | Yes, at any time |
-| Internal key | Hidden | The database | Never |
+| Identifier   | Example          | Who uses it                           | Can it change?                       |
+| ------------ | ---------------- | ------------------------------------- | ------------------------------------ |
+| Project ID   | `storefront`     | The CLI, CI, URLs and runner commands | Yes. Old IDs keep working as aliases |
+| Display name | `Storefront Web` | People, in the sidebar and lists      | Yes, at any time                     |
+| Internal key | Hidden           | The database                          | Never                                |
 
 Project ID rules: 1 to 63 characters, lowercase letters, numbers and hyphens, starting with a letter or number. Display names have 1 to 120 characters.
 
@@ -62,10 +69,10 @@ npx --no-install visualguard dashboard --env-file .env.dashboard-admin \
 
 Remote dashboards must use HTTPS. An administrator who only signs in with Google creates projects in the browser instead.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `<id>` | The project ID to create | Required |
-| `--name <name>` | Display name | The ID |
+| Option           | What it does                       | Default                                                                            |
+| ---------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
+| `<id>`           | The project ID to create           | Required                                                                           |
+| `--name <name>`  | Display name                       | The ID                                                                             |
 | `--server <url>` | Dashboard to create the project in | `VISUALGUARD_DASHBOARD_URL`; if unset, the local storage selected by your settings |
 
 :::caution
@@ -128,12 +135,12 @@ Deletion does not remove copies on runner machines or in your own backups.
 
 Most "missing" data was written to a different workspace. Each process picks its storage from its own settings:
 
-| Command | Where it reads settings | Where the data goes |
-| --- | --- | --- |
-| `test PROJECT` (no dashboard URL) | Your shell, plus `.env` and `.env.local` | The local storage those settings select |
-| `test PROJECT --dashboard URL` | Your shell, plus `.env` and `.env.local` | The dashboard at that URL, whatever database it uses |
-| `dashboard --env-file .env.visualguard` | That file, after your shell | The database the file selects |
-| `dashboard` without `--env-file` | Only your shell | Defaults. It does not read `.env.visualguard` or `.env.local` |
+| Command                                 | Where it reads settings                  | Where the data goes                                           |
+| --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| `test PROJECT` (no dashboard URL)       | Your shell, plus `.env` and `.env.local` | The local storage those settings select                       |
+| `test PROJECT --dashboard URL`          | Your shell, plus `.env` and `.env.local` | The dashboard at that URL, whatever database it uses          |
+| `dashboard --env-file .env.visualguard` | That file, after your shell              | The database the file selects                                 |
+| `dashboard` without `--env-file`        | Only your shell                          | Defaults. It does not read `.env.visualguard` or `.env.local` |
 
 Local SQLite storage also depends on the folder you start from. Use the same app root folder and one running dashboard.
 
@@ -176,15 +183,15 @@ Replace `RUN_ID` with the real folder that holds `manifest.json`. Pointing a new
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Administrator access required to create projects` | Sign in as a workspace administrator, or ask one to create the project |
-| `Project creation requires an administrator login` | Set `VISUALGUARD_ADMIN_EMAIL` and `VISUALGUARD_ADMIN_PASSWORD` in the `--env-file` you pass to `project create` |
-| `This project ID was deleted and cannot be reused` | Deleted IDs stay reserved. Pick a new ID |
-| `This project ID belongs to another project` | That ID is in use or is an alias of another project. Pick a different ID |
-| `More than one project has that name; use the project ID instead` | Use the project ID in the CLI instead of the display name |
-| `Project run count changed; refresh and confirm deletion again` | A run arrived or was removed while you confirmed. Cancel, refresh and confirm the new count |
-| `This run is retained by approved baseline history` | A baseline was promoted from this run. Keep it, or delete the whole project |
+| Problem                                                           | Fix                                                                                                             |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `Administrator access required to create projects`                | Sign in as a workspace administrator, or ask one to create the project                                          |
+| `Project creation requires an administrator login`                | Set `VISUALGUARD_ADMIN_EMAIL` and `VISUALGUARD_ADMIN_PASSWORD` in the `--env-file` you pass to `project create` |
+| `This project ID was deleted and cannot be reused`                | Deleted IDs stay reserved. Pick a new ID                                                                        |
+| `This project ID belongs to another project`                      | That ID is in use or is an alias of another project. Pick a different ID                                        |
+| `More than one project has that name; use the project ID instead` | Use the project ID in the CLI instead of the display name                                                       |
+| `Project run count changed; refresh and confirm deletion again`   | A run arrived or was removed while you confirmed. Cancel, refresh and confirm the new count                     |
+| `This run is retained by approved baseline history`               | A baseline was promoted from this run. Keep it, or delete the whole project                                     |
 
 More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
 

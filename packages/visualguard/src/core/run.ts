@@ -669,9 +669,12 @@ export class Run extends RunEmitter {
       baselinePath,
       renderingIdentity(this.config, {
         viewport: job.viewport,
-        screenshotSelector: job.screenshotSelector !== undefined
-          ? job.screenshotSelector
-          : job.capturePolicy ? job.capturePolicy.screenshot.selector ?? null : undefined,
+        screenshotSelector:
+          job.screenshotSelector !== undefined
+            ? job.screenshotSelector
+            : job.capturePolicy
+              ? (job.capturePolicy.screenshot.selector ?? null)
+              : undefined,
         waitFor: job.waitFor ?? job.capturePolicy?.waitFor,
         mask: job.mask ?? job.capturePolicy?.mask ?? [],
         hide: job.hide ?? job.capturePolicy?.hide ?? [],

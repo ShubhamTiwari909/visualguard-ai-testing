@@ -5,8 +5,15 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/PRODUCT-FEATURES.md", "apps/platform/server/runtime.ts", "apps/platform/server/config.ts", "apps/platform/server/auth.ts", "apps/platform/client/main.tsx"]
-sidebar: {"order": 1}
+sourcePaths:
+  [
+    "docs/PRODUCT-FEATURES.md",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/server/config.ts",
+    "apps/platform/server/auth.ts",
+    "apps/platform/client/main.tsx",
+  ]
+sidebar: { "order": 1 }
 ---
 
 The VisualGuard dashboard is a web app that keeps your visual test results in one place. It stores every run by project, so your team can look back at history, discuss changes and approve them together. Read this page first to build a mental model, then follow the links to set it up.
@@ -19,11 +26,11 @@ The dashboard is a separate server that receives those runs and keeps them. You 
 
 Think of it in three layers:
 
-| Layer | What it holds | Example |
-| --- | --- | --- |
+| Layer     | What it holds                                                       | Example                                               |
+| --------- | ------------------------------------------------------------------- | ----------------------------------------------------- |
 | Workspace | One installation of the dashboard, with its own database and people | Your team's dashboard at `https://visual.example.com` |
-| Project | One application you test, with its own history, access and settings | `storefront`, `docs-site` |
-| Run | One stored test execution inside a project | "Run #12" comparing production and staging |
+| Project   | One application you test, with its own history, access and settings | `storefront`, `docs-site`                             |
+| Run       | One stored test execution inside a project                          | "Run #12" comparing production and staging            |
 
 There is one workspace per installation. There is no vendor-wide console across installations.
 
@@ -31,12 +38,12 @@ There is one workspace per installation. There is no vendor-wide console across 
 
 Evidence is the screenshots, page structure (DOM) snapshots and findings a run produced. There are four ways to add it:
 
-| Way | Who captures | Typical use | Guide |
-| --- | --- | --- | --- |
-| `visualguard test PROJECT --dashboard URL` | Your computer or CI | Capture and publish in one command | [Publish and retry saved evidence](/dashboard/publishing/) |
-| `visualguard dashboard publish RUN_DIR` | Already captured | Upload a saved run again after a failure | [Publish and retry saved evidence](/dashboard/publishing/) |
-| `visualguard dashboard import RUN_DIR` | Already captured | Copy a saved run into a dashboard on the same machine | [Start a local dashboard](/dashboard/local/) |
-| **Run test** button in the dashboard | The dashboard host or a private runner | Start a test from the browser using a saved project profile | [Run tests from the dashboard](/dashboard/run-tests/) |
+| Way                                        | Who captures                           | Typical use                                                 | Guide                                                      |
+| ------------------------------------------ | -------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------- |
+| `visualguard test PROJECT --dashboard URL` | Your computer or CI                    | Capture and publish in one command                          | [Publish and retry saved evidence](/dashboard/publishing/) |
+| `visualguard dashboard publish RUN_DIR`    | Already captured                       | Upload a saved run again after a failure                    | [Publish and retry saved evidence](/dashboard/publishing/) |
+| `visualguard dashboard import RUN_DIR`     | Already captured                       | Copy a saved run into a dashboard on the same machine       | [Start a local dashboard](/dashboard/local/)               |
+| **Run test** button in the dashboard       | The dashboard host or a private runner | Start a test from the browser using a saved project profile | [Run tests from the dashboard](/dashboard/run-tests/)      |
 
 :::note
 When the project shows **Runs on this dashboard**, the dashboard can capture **Run test** itself using your sign-in. If host capture is unsupported or unavailable, connect a [private runner](/dashboard/private-runners/).
@@ -46,14 +53,14 @@ When the project shows **Runs on this dashboard**, the dashboard can capture **R
 
 The dashboard runs in one of two access modes. The mode decides who can open it and how people identify themselves.
 
-| | Local mode | Login mode |
-| --- | --- | --- |
-| Who it is for | One developer on their own computer | A team, on a shared or hosted server |
-| How you get in | Open the page. You are the **Local owner** | Sign in with email and password, or Google |
-| Where it listens | Only on this computer (`127.0.0.1`, `localhost` or `::1`) | Any address, with an exact public URL |
-| Uploading from the CLI | No token needed | Needs a project upload token |
-| Accounts, invitations, Audit & recovery | Not available | Available |
-| How it is chosen | Default when `VISUALGUARD_PUBLIC_URL` is not set | `VISUALGUARD_AUTH_MODE=login` plus `VISUALGUARD_PUBLIC_URL`. Cloud Run and Vercel default to login |
+|                                         | Local mode                                                | Login mode                                                                                         |
+| --------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Who it is for                           | One developer on their own computer                       | A team, on a shared or hosted server                                                               |
+| How you get in                          | Open the page. You are the **Local owner**                | Sign in with email and password, or Google                                                         |
+| Where it listens                        | Only on this computer (`127.0.0.1`, `localhost` or `::1`) | Any address, with an exact public URL                                                              |
+| Uploading from the CLI                  | No token needed                                           | Needs a project upload token                                                                       |
+| Accounts, invitations, Audit & recovery | Not available                                             | Available                                                                                          |
+| How it is chosen                        | Default when `VISUALGUARD_PUBLIC_URL` is not set          | `VISUALGUARD_AUTH_MODE=login` plus `VISUALGUARD_PUBLIC_URL`. Cloud Run and Vercel default to login |
 
 Hosted login on a non-loopback address requires HTTPS. See [Enable dashboard login](/dashboard/login/).
 
@@ -61,11 +68,11 @@ Hosted login on a non-loopback address requires HTTPS. See [Enable dashboard log
 
 The dashboard stores run metadata and screenshots in a database you choose. You select it with `VISUALGUARD_DATABASE_URL`. If that is not set, the dashboard also reads `DATABASE_URL`, so set `VISUALGUARD_DATABASE_URL=` (empty) to force SQLite when your app already has a `DATABASE_URL`.
 
-| Storage | When to use it | How to select it |
-| --- | --- | --- |
+| Storage          | When to use it                         | How to select it                                                                                                                            |
+| ---------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | SQLite (default) | Local trials and single-machine setups | Leave the database URL empty. Data goes to `.visualguard/platform/metadata.sqlite` under the folder you started from, or under `--data-dir` |
-| PostgreSQL | Hosted teams, Cloud SQL | `VISUALGUARD_DATABASE_URL=postgresql://...` |
-| MongoDB | Hosted teams that already run MongoDB | `VISUALGUARD_DATABASE_URL=mongodb://...` or `mongodb+srv://...` |
+| PostgreSQL       | Hosted teams, Cloud SQL                | `VISUALGUARD_DATABASE_URL=postgresql://...`                                                                                                 |
+| MongoDB          | Hosted teams that already run MongoDB  | `VISUALGUARD_DATABASE_URL=mongodb://...` or `mongodb+srv://...`                                                                             |
 
 Cloud Run and Vercel refuse to start without a database URL, because their local disk does not persist. Some team features, such as invitations, account changes and approved baselines, need transactional storage: SQLite, PostgreSQL or a MongoDB replica set. See [Storage and backups](/deployment/storage-and-backups/).
 
@@ -75,12 +82,12 @@ The dashboard needs Node.js 22.12 or newer.
 
 In login mode, each person has a role per project. Workspace administrators can do everything in every project. In local mode, the Local owner is an administrator.
 
-| Role | Can do |
-| --- | --- |
-| Viewer | Open runs, reports, saved test settings, baselines and policies in assigned projects |
-| Reviewer | Everything a Viewer can, plus comment, assign reviewers and approve or reject visual changes |
-| Maintainer | Everything a Reviewer can, plus configure and run tests, rename or delete runs and the project, manage project access and credentials, promote baselines and edit policies |
-| Workspace administrator | Every project as a Maintainer, plus create projects, manage accounts and invitations, and open **Audit & recovery** |
+| Role                    | Can do                                                                                                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Viewer                  | Open runs, reports, saved test settings, baselines and policies in assigned projects                                                                                       |
+| Reviewer                | Everything a Viewer can, plus comment, assign reviewers and approve or reject visual changes                                                                               |
+| Maintainer              | Everything a Reviewer can, plus configure and run tests, rename or delete runs and the project, manage project access and credentials, promote baselines and edit policies |
+| Workspace administrator | Every project as a Maintainer, plus create projects, manage accounts and invitations, and open **Audit & recovery**                                                        |
 
 Upload tokens and runner credentials are not people. They can only send evidence to their one project. See [Invite people and manage permissions](/dashboard/people-and-permissions/).
 

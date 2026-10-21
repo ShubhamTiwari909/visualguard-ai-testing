@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "docs/LOCAL-SETUP.md", "docs/PRODUCT-FEATURES.md"]
-sidebar: {"order": 12}
+sidebar: { "order": 12 }
 ---
 
 ## Before you start

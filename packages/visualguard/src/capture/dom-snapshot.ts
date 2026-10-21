@@ -288,8 +288,11 @@ function collect({ maxNodes, props, selector }: CollectArgs): Omit<DomSnapshot, 
         computed.opacity !== "0" &&
         rect.width > 0 &&
         rect.height > 0 &&
-        (!rootBox || (rect.right > rootBox.left && rect.left < rootBox.right &&
-          rect.bottom > rootBox.top && rect.top < rootBox.bottom)));
+        (!rootBox ||
+          (rect.right > rootBox.left &&
+            rect.left < rootBox.right &&
+            rect.bottom > rootBox.top &&
+            rect.top < rootBox.bottom)));
 
     let index = parentIndex;
     if (visible) {
@@ -374,7 +377,11 @@ function collect({ maxNodes, props, selector }: CollectArgs): Omit<DomSnapshot, 
  * Pass the self-contained collector and allowed style names into page.evaluate. Wrap the
  * browser result with a version so saved snapshots can be read consistently.
  */
-export async function captureDomSnapshot(page: Page, maxNodes = 4_000, selector?: string): Promise<DomSnapshot> {
+export async function captureDomSnapshot(
+  page: Page,
+  maxNodes = 4_000,
+  selector?: string,
+): Promise<DomSnapshot> {
   const result = await page.evaluate(collect, { maxNodes, props: STYLE_PROPERTIES, selector });
   return { version: 1, ...result };
 }

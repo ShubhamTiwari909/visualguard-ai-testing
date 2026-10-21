@@ -5,8 +5,18 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/fix.ts", "packages/visualguard/src/fixer/fix.ts", "packages/visualguard/src/fixer/auto.ts", "packages/visualguard/src/fixer/verify.ts", "packages/visualguard/src/fixer/files.ts", "packages/visualguard/src/fixer/edits.ts", "packages/visualguard/src/cli/commands/report.ts", "packages/visualguard/src/config/schema.ts"]
-sidebar: {"order": 12}
+sourcePaths:
+  [
+    "packages/visualguard/src/cli/commands/fix.ts",
+    "packages/visualguard/src/fixer/fix.ts",
+    "packages/visualguard/src/fixer/auto.ts",
+    "packages/visualguard/src/fixer/verify.ts",
+    "packages/visualguard/src/fixer/files.ts",
+    "packages/visualguard/src/fixer/edits.ts",
+    "packages/visualguard/src/cli/commands/report.ts",
+    "packages/visualguard/src/config/schema.ts",
+  ]
+sidebar: { "order": 12 }
 ---
 
 This page shows how to use `visualguard fix`. It reads a finished run, finds the source files most likely behind each regression, proposes a small edit and shows you the diff. After you say yes, it applies the edit, runs your checks and captures the page again on your local dev server. It keeps the edit only if the page now matches the reference screenshot.
@@ -64,19 +74,19 @@ You should see no error when you run `npx --no-install visualguard fix` next. Wi
 
 ### Fix options
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `fix.enabled` | Allows `fix` and the report's **Generate fix** button. | `false` |
-| `fix.requireConfirmation` | Ask before applying each proposal. | `true` |
-| `fix.include` | Globs, relative to the project, for files the fixer may read and edit. | `["src/**", "app/**", "pages/**", "components/**", "styles/**", "lib/**"]` |
-| `fix.compareRef` | Git ref, such as `"origin/main"`. Files changed since it rank first as likely causes. | none |
-| `fix.verify.server.url` | Local server used to check each edit. Without a server, edits are applied but marked **unverified**. | none |
-| `fix.verify.server.command` | Command that starts that server. Omit it to use a server you start yourself. | none |
-| `fix.verify.server.readyTimeoutMs` | How long to wait for the server to respond. | `60000` |
-| `fix.verify.commands` | Shell commands run after each edit. Any failure reverts the edit. | `[]` |
-| `fix.verify.commandTimeoutMs` | Time limit for each command. | `300000` |
-| `fix.maxAttempts` | Attempts per page (1 to 5). Only the first attempt tries the deterministic fix. | `2` |
-| `fix.allowSourceUpload` | Consent in advance to send source excerpts to the AI provider. Needed for `--auto` with AI. | `false` |
+| Option                             | What it does                                                                                         | Default                                                                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `fix.enabled`                      | Allows `fix` and the report's **Generate fix** button.                                               | `false`                                                                    |
+| `fix.requireConfirmation`          | Ask before applying each proposal.                                                                   | `true`                                                                     |
+| `fix.include`                      | Globs, relative to the project, for files the fixer may read and edit.                               | `["src/**", "app/**", "pages/**", "components/**", "styles/**", "lib/**"]` |
+| `fix.compareRef`                   | Git ref, such as `"origin/main"`. Files changed since it rank first as likely causes.                | none                                                                       |
+| `fix.verify.server.url`            | Local server used to check each edit. Without a server, edits are applied but marked **unverified**. | none                                                                       |
+| `fix.verify.server.command`        | Command that starts that server. Omit it to use a server you start yourself.                         | none                                                                       |
+| `fix.verify.server.readyTimeoutMs` | How long to wait for the server to respond.                                                          | `60000`                                                                    |
+| `fix.verify.commands`              | Shell commands run after each edit. Any failure reverts the edit.                                    | `[]`                                                                       |
+| `fix.verify.commandTimeoutMs`      | Time limit for each command.                                                                         | `300000`                                                                   |
+| `fix.maxAttempts`                  | Attempts per page (1 to 5). Only the first attempt tries the deterministic fix.                      | `2`                                                                        |
+| `fix.allowSourceUpload`            | Consent in advance to send source excerpts to the AI provider. Needed for `--auto` with AI.          | `false`                                                                    |
 
 ### Files the fixer never edits
 
@@ -108,13 +118,13 @@ After you answer **Yes**:
 
 At the end, a **Summary** lists each page with a result, and the last line tells you to `Review the changes with git diff, then commit them.`
 
-| Result | Meaning |
-| --- | --- |
-| `FIXED` | The edit is applied and the page now passes against the reference. |
-| `UNVERIFIED` | The edit is applied, but there is no `fix.verify.server`, so it was not checked. |
-| `REJECTED` | You answered No. Nothing was changed. |
-| `SKIPPED` | No source file matched, no fix was found and no AI is configured, or you declined to send source code. |
-| `FAILED` | Every attempt failed verification, or the batch check found a side effect. All edits for it were reverted. |
+| Result       | Meaning                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------------------------- |
+| `FIXED`      | The edit is applied and the page now passes against the reference.                                         |
+| `UNVERIFIED` | The edit is applied, but there is no `fix.verify.server`, so it was not checked.                           |
+| `REJECTED`   | You answered No. Nothing was changed.                                                                      |
+| `SKIPPED`    | No source file matched, no fix was found and no AI is configured, or you declined to send source code.     |
+| `FAILED`     | Every attempt failed verification, or the batch check found a side effect. All edits for it were reverted. |
 
 The command exits with code 0 only when every page is `FIXED`. Press Ctrl+C at a prompt to stop; changes already verified stay in place.
 
@@ -131,24 +141,24 @@ npx --no-install visualguard fix "/blog/**" --include-review
 npx --no-install visualguard fix --run 12 --allow-dirty
 ```
 
-| Flag | What it does | Default |
-| --- | --- | --- |
-| `[routes...]` | Routes or globs to fix. | Every regression in the run |
-| `--run <id>` | Run ID, ID prefix or run number. | Latest run |
-| `--viewport <name>` | Only this viewport. Repeat for more. | All viewports |
-| `--include-review` | Also try pages marked **review**. | Regressions only |
-| `--allow-dirty` | Allow uncommitted changes in the working tree. | Off |
-| `-y, --yes` | Apply without asking. | Off |
-| `--provider <name>` | `gemini`, `ollama` or `none`. | From config |
-| `--model <id>` | AI model ID. | Provider default |
-| `--no-ai` | Deterministic fixes only. | AI on if configured |
-| `-c, --config <path>` | Config file path. | `visualguard.config.ts` |
-| `--auto` | No prompts. Fix on a new branch and commit verified fixes. See [step 4](#4-fix-automatically-on-a-branch). | Off |
-| `--pr` | With `--auto`: push the branch and open a pull request. | Off |
-| `--base <branch>` | With `--pr`: base branch for the pull request. | Current branch |
-| `--branch <name>` | With `--auto`: branch name. | `visualguard/fix-<run>-<id>` |
-| `--in-place` | With `--auto`: use the current checkout instead of a separate worktree (for CI). | Off |
-| `--keep-worktree` | With `--auto`: keep the worktree for inspection. | Off |
+| Flag                  | What it does                                                                                               | Default                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `[routes...]`         | Routes or globs to fix.                                                                                    | Every regression in the run  |
+| `--run <id>`          | Run ID, ID prefix or run number.                                                                           | Latest run                   |
+| `--viewport <name>`   | Only this viewport. Repeat for more.                                                                       | All viewports                |
+| `--include-review`    | Also try pages marked **review**.                                                                          | Regressions only             |
+| `--allow-dirty`       | Allow uncommitted changes in the working tree.                                                             | Off                          |
+| `-y, --yes`           | Apply without asking.                                                                                      | Off                          |
+| `--provider <name>`   | `gemini`, `ollama` or `none`.                                                                              | From config                  |
+| `--model <id>`        | AI model ID.                                                                                               | Provider default             |
+| `--no-ai`             | Deterministic fixes only.                                                                                  | AI on if configured          |
+| `-c, --config <path>` | Config file path.                                                                                          | `visualguard.config.ts`      |
+| `--auto`              | No prompts. Fix on a new branch and commit verified fixes. See [step 4](#4-fix-automatically-on-a-branch). | Off                          |
+| `--pr`                | With `--auto`: push the branch and open a pull request.                                                    | Off                          |
+| `--base <branch>`     | With `--pr`: base branch for the pull request.                                                             | Current branch               |
+| `--branch <name>`     | With `--auto`: branch name.                                                                                | `visualguard/fix-<run>-<id>` |
+| `--in-place`          | With `--auto`: use the current checkout instead of a separate worktree (for CI).                           | Off                          |
+| `--keep-worktree`     | With `--auto`: keep the worktree for inspection.                                                           | Off                          |
 
 `--pr`, `--branch`, `--in-place` and `--keep-worktree` only work together with `--auto`.
 
@@ -219,13 +229,13 @@ In CI, where a separate worktree is not useful, add `--in-place`. It creates the
 
 Everything is saved inside the run folder, `.visualguard/runs/<run-id>/`:
 
-| Path | What it holds |
-| --- | --- |
-| `fixes/<job>-<attempt>.json` | Each proposal: edits, diff, source (deterministic or AI), candidate files and the source revision. |
-| `fixes/<job>-<attempt>.verification.json` | The result of checking that proposal, including command output. |
-| `fix-checks/` | The verification captures, saved as small runs you can open. |
-| `fix-results.json` | Final outcome for every page, AI usage, the source revision and the list of verification runs. |
-| `ai-usage.json` | Running AI token and attempt totals for the run. |
+| Path                                      | What it holds                                                                                      |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `fixes/<job>-<attempt>.json`              | Each proposal: edits, diff, source (deterministic or AI), candidate files and the source revision. |
+| `fixes/<job>-<attempt>.verification.json` | The result of checking that proposal, including command output.                                    |
+| `fix-checks/`                             | The verification captures, saved as small runs you can open.                                       |
+| `fix-results.json`                        | Final outcome for every page, AI usage, the source revision and the list of verification runs.     |
+| `ai-usage.json`                           | Running AI token and attempt totals for the run.                                                   |
 
 ## Example: undo three seeded regressions
 
@@ -241,17 +251,17 @@ The [Next.js example](/guides/nextjs-example/) seeds three Tailwind class change
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Fixing is turned off.` | Set `fix: { enabled: true }` in `visualguard.config.ts`. |
-| `The working tree has uncommitted changes` | Commit or stash, or pass `--allow-dirty`. |
-| `No source files matched this change (check fix.include).` | Add the folders that hold your components and styles to `fix.include`. |
-| `No deterministic fix found, and no AI provider is configured` | Set up [Gemini](/guides/ai-gemini/) or [Ollama](/guides/ai-ollama/), or fix it by hand. |
-| `Nothing is answering at http://…` | Start your dev server, or set `fix.verify.server.command`. |
-| `The dev server didn't respond at …` | Raise `readyTimeoutMs`, or check the command output shown under the error. |
-| `A server is already running at …` with `--auto` | Stop that server so VisualGuard can start one from the worktree, or use `--in-place`. |
-| Every proposal ends as `REJECTED` in CI | The terminal is not interactive. Use `--auto`, or `--yes` if you accept unchecked edits. |
-| `GITHUB_TOKEN is not set` with `--pr` | Sign in with `gh auth login`, or set `GITHUB_TOKEN` with `pull-requests: write`. |
+| Problem                                                        | Fix                                                                                      |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `Fixing is turned off.`                                        | Set `fix: { enabled: true }` in `visualguard.config.ts`.                                 |
+| `The working tree has uncommitted changes`                     | Commit or stash, or pass `--allow-dirty`.                                                |
+| `No source files matched this change (check fix.include).`     | Add the folders that hold your components and styles to `fix.include`.                   |
+| `No deterministic fix found, and no AI provider is configured` | Set up [Gemini](/guides/ai-gemini/) or [Ollama](/guides/ai-ollama/), or fix it by hand.  |
+| `Nothing is answering at http://…`                             | Start your dev server, or set `fix.verify.server.command`.                               |
+| `The dev server didn't respond at …`                           | Raise `readyTimeoutMs`, or check the command output shown under the error.               |
+| `A server is already running at …` with `--auto`               | Stop that server so VisualGuard can start one from the worktree, or use `--in-place`.    |
+| Every proposal ends as `REJECTED` in CI                        | The terminal is not interactive. Use `--auto`, or `--yes` if you accept unchecked edits. |
+| `GITHUB_TOKEN is not set` with `--pr`                          | Sign in with `gh auth login`, or set `GITHUB_TOKEN` with `pull-requests: write`.         |
 
 Pages that need sign-in or custom hooks are re-captured with your current config, so keep [authentication](/guides/application-auth/) working. See [Troubleshooting](/troubleshooting/) for more.
 

@@ -5,8 +5,14 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/dashboard.ts", "apps/platform/server/runtime.ts", "apps/platform/server/config.ts"]
-sidebar: {"order": 3}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "packages/visualguard/src/cli/commands/dashboard.ts",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/server/config.ts",
+  ]
+sidebar: { "order": 3 }
 ---
 
 This tutorial starts a dashboard on your own computer, stored in a local SQLite file. You will create a project, publish a test run into it, start a test from the browser and check that everything is still there after a restart. It needs no database server, no account and no token.
@@ -38,10 +44,10 @@ Add it to `.gitignore`:
 echo ".env.visualguard" >> .gitignore
 ```
 
-| Setting | What it does |
-| --- | --- |
-| `VISUALGUARD_AUTH_MODE=local` | Trusts whoever uses this computer. No sign-in |
-| `VISUALGUARD_PUBLIC_URL=` (empty) | Keeps the dashboard private to this computer |
+| Setting                             | What it does                                          |
+| ----------------------------------- | ----------------------------------------------------- |
+| `VISUALGUARD_AUTH_MODE=local`       | Trusts whoever uses this computer. No sign-in         |
+| `VISUALGUARD_PUBLIC_URL=` (empty)   | Keeps the dashboard private to this computer          |
 | `VISUALGUARD_DATABASE_URL=` (empty) | Selects SQLite, even if your app has a `DATABASE_URL` |
 
 :::note
@@ -71,13 +77,13 @@ npx --no-install visualguard dashboard --env-file .env.visualguard \
   --data-dir /absolute/path/to/dashboard-data --port 4500
 ```
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `--port <number>` | Port to listen on | `PORT`, or `4400` |
-| `--host <host>` | Address to listen on. Local mode only allows `127.0.0.1`, `localhost` or `::1` | `127.0.0.1` |
-| `--data-dir <directory>` | Folder for the SQLite file and stored screenshots | `.visualguard/platform` in the current folder |
-| `--file <sqlite-file>` | Open an existing SQLite file, such as a restored backup | Not set |
-| `--env-file <file>` | Load settings from a file before starting | Not set |
+| Option                   | What it does                                                                   | Default                                       |
+| ------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------- |
+| `--port <number>`        | Port to listen on                                                              | `PORT`, or `4400`                             |
+| `--host <host>`          | Address to listen on. Local mode only allows `127.0.0.1`, `localhost` or `::1` | `127.0.0.1`                                   |
+| `--data-dir <directory>` | Folder for the SQLite file and stored screenshots                              | `.visualguard/platform` in the current folder |
+| `--file <sqlite-file>`   | Open an existing SQLite file, such as a restored backup                        | Not set                                       |
+| `--env-file <file>`      | Load settings from a file before starting                                      | Not set                                       |
 
 If you use port 4500, use `http://127.0.0.1:4500` everywhere below.
 
@@ -198,15 +204,15 @@ For a dashboard that already runs elsewhere, use its real HTTPS address in `--se
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `The dashboard requires Node.js 22.12 or newer` | Switch your project to Node.js 22.12 or newer and start again |
-| `Cannot bind dashboard project: fetch failed` | The test could not reach the dashboard; no capture or AI work started. Check terminal A for errors, run the health check, and use the exact host and port the server printed in `--dashboard` |
-| `Configure a public URL and login before listening on an external interface` | Local mode only listens on `127.0.0.1`, `localhost` or `::1`. Remove `--host 0.0.0.0`, or [enable login](/dashboard/login/) |
-| Project or run is missing after the test | The test and the dashboard used different storage. Use the same `--server` and `--dashboard` URL, and the same `--data-dir` for `import`. See [Projects, names and identities](/dashboard/projects/) |
-| Works in one terminal, not in Docker or WSL | `127.0.0.1` inside a container or WSL can be a different machine. Run both commands in the same environment |
-| **Run test** is disabled and the panel says **Runner offline** | Host capture is unsupported, disabled or unavailable. [Connect a private runner](/dashboard/private-runners/) |
-| A dashboard test fails with a Chromium message | Run `npx playwright install chromium` on this computer, then choose **Run test** again |
+| Problem                                                                      | Fix                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `The dashboard requires Node.js 22.12 or newer`                              | Switch your project to Node.js 22.12 or newer and start again                                                                                                                                        |
+| `Cannot bind dashboard project: fetch failed`                                | The test could not reach the dashboard; no capture or AI work started. Check terminal A for errors, run the health check, and use the exact host and port the server printed in `--dashboard`        |
+| `Configure a public URL and login before listening on an external interface` | Local mode only listens on `127.0.0.1`, `localhost` or `::1`. Remove `--host 0.0.0.0`, or [enable login](/dashboard/login/)                                                                          |
+| Project or run is missing after the test                                     | The test and the dashboard used different storage. Use the same `--server` and `--dashboard` URL, and the same `--data-dir` for `import`. See [Projects, names and identities](/dashboard/projects/) |
+| Works in one terminal, not in Docker or WSL                                  | `127.0.0.1` inside a container or WSL can be a different machine. Run both commands in the same environment                                                                                          |
+| **Run test** is disabled and the panel says **Runner offline**               | Host capture is unsupported, disabled or unavailable. [Connect a private runner](/dashboard/private-runners/)                                                                                        |
+| A dashboard test fails with a Chromium message                               | Run `npx playwright install chromium` on this computer, then choose **Run test** again                                                                                                               |
 
 Do not remove `--dashboard` to hide a connection error. Without it, the test may write to a different local workspace. More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
 

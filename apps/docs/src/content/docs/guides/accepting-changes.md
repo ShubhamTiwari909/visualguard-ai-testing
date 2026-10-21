@@ -5,8 +5,16 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/accept.ts", "packages/visualguard/src/core/accepted.ts", "packages/visualguard/src/cli/commands/report.ts", "packages/visualguard/report-app/src/actions.tsx", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/core/run.ts"]
-sidebar: {"order": 8}
+sourcePaths:
+  [
+    "packages/visualguard/src/cli/commands/accept.ts",
+    "packages/visualguard/src/core/accepted.ts",
+    "packages/visualguard/src/cli/commands/report.ts",
+    "packages/visualguard/report-app/src/actions.tsx",
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/core/run.ts",
+  ]
+sidebar: { "order": 8 }
 ---
 
 When you change a page on purpose, VisualGuard still reports the difference. Accepting the change records that it is intentional. Later runs that show the same change mark the page `accepted` instead of `review` or `regression`, so it no longer fails the run.
@@ -68,14 +76,14 @@ You should see each accepted job and a summary:
   Accepted 2 changes in visualguard.accepted.json. Commit this file; matching screenshots will pass from now on.
 ```
 
-| Argument or flag | What it does | Default |
-| --- | --- | --- |
-| `[routes...]` | Routes or patterns to accept, such as `/pricing` or `'/blog/**'`. They match the route names shown in the report. | none |
-| `--all` | Accepts every job marked `review` in the run. It never accepts `regression` jobs. | off |
-| `--viewport <name>` | Accepts only this viewport. Repeatable. | every viewport |
-| `--run <id>` | Uses another run: its folder name, the start of it, or the run number. | the latest run |
-| `--note <text>` | Saves a reason with the acceptance. It is shown in the report. | none |
-| `-c, --config <path>` | Uses another config file. | discovered config |
+| Argument or flag      | What it does                                                                                                      | Default           |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `[routes...]`         | Routes or patterns to accept, such as `/pricing` or `'/blog/**'`. They match the route names shown in the report. | none              |
+| `--all`               | Accepts every job marked `review` in the run. It never accepts `regression` jobs.                                 | off               |
+| `--viewport <name>`   | Accepts only this viewport. Repeatable.                                                                           | every viewport    |
+| `--run <id>`          | Uses another run: its folder name, the start of it, or the run number.                                            | the latest run    |
+| `--note <text>`       | Saves a reason with the acceptance. It is shown in the report.                                                    | none              |
+| `-c, --config <path>` | Uses another config file.                                                                                         | discovered config |
 
 You must name routes or pass `--all`. To accept a `regression`, name its route explicitly. This keeps a bulk accept from hiding a regression by accident.
 
@@ -98,7 +106,9 @@ Acceptances are saved in `visualguard.accepted.json` in the root folder. Commit 
       "hash": "3f9c…",
       "change": {
         "size": { "width": 390, "height": 2412 },
-        "regions": [{ "box": { "x": 16, "y": 640, "width": 358, "height": 220 }, "diffPixels": 18734 }],
+        "regions": [
+          { "box": { "x": 16, "y": 640, "width": 358, "height": 220 }, "diffPixels": 18734 }
+        ],
         "deltas": ["style .plan-card margin-top: 24px → 32px"]
       },
       "acceptedAt": "2026-10-20T09:31:12.000Z",
@@ -128,10 +138,10 @@ output: { acceptedFile: "visual-tests/accepted.json" },
 
 On each run, VisualGuard checks every `review` or `regression` job against the entries for the same job. The `output.acceptMatch` setting decides what counts as the same change:
 
-| Value | A later job is accepted when | Use it when |
-| --- | --- | --- |
+| Value                 | A later job is accepted when                                                                                                                                                                                                                                                                  | Use it when                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `"similar"` (default) | Both screenshots are identical to the accepted ones, **or** the change has the same shape: the same width, nearly the same height, the same layout shift, exactly the same page-structure changes, and the same number of regions in the same places with a similar number of changed pixels. | Most projects. Small rendering noise, such as anti-aliasing, does not undo an acceptance. |
-| `"exact"` | Both screenshots are byte-for-byte identical to the accepted ones. | Rendering is fully repeatable and you want the strictest rule. |
+| `"exact"`             | Both screenshots are byte-for-byte identical to the accepted ones.                                                                                                                                                                                                                            | Rendering is fully repeatable and you want the strictest rule.                            |
 
 ```ts
 output: { acceptMatch: "exact" },
@@ -179,14 +189,14 @@ CI runs the same comparison and marks both jobs `accepted`. A week later, a team
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Name the routes to accept, or pass --all to accept every change marked review.` | Add a route or pattern, or `--all`. |
-| `Nothing to accept in run #…` | No job in that run matches, or the matches are `pass`, `accepted` or `error`. Check the route name in the report, and use `--run` if you meant another run. |
-| `--all` skipped a job | `--all` takes only `review` jobs. Name `regression` jobs explicitly. |
-| An accepted page is flagged again | The change is different, the screenshots moved, or there is a new health problem. Open the report to compare. Accept again if the new change is also intended. |
-| Accepted pages fail in CI but pass locally | Commit `visualguard.accepted.json`, and check that CI uses the same `output.acceptedFile`. With `acceptMatch: "exact"`, small rendering differences between machines break the match; use `"similar"`. |
-| `Could not read visualguard.accepted.json` | The file is not valid JSON, often after a merge conflict. Fix the JSON, or delete the broken entries and accept again. |
+| Problem                                                                          | Fix                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Name the routes to accept, or pass --all to accept every change marked review.` | Add a route or pattern, or `--all`.                                                                                                                                                                    |
+| `Nothing to accept in run #…`                                                    | No job in that run matches, or the matches are `pass`, `accepted` or `error`. Check the route name in the report, and use `--run` if you meant another run.                                            |
+| `--all` skipped a job                                                            | `--all` takes only `review` jobs. Name `regression` jobs explicitly.                                                                                                                                   |
+| An accepted page is flagged again                                                | The change is different, the screenshots moved, or there is a new health problem. Open the report to compare. Accept again if the new change is also intended.                                         |
+| Accepted pages fail in CI but pass locally                                       | Commit `visualguard.accepted.json`, and check that CI uses the same `output.acceptedFile`. With `acceptMatch: "exact"`, small rendering differences between machines break the match; use `"similar"`. |
+| `Could not read visualguard.accepted.json`                                       | The file is not valid JSON, often after a merge conflict. Fix the JSON, or delete the broken entries and accept again.                                                                                 |
 
 For more, see [Capture and reports troubleshooting](/troubleshooting/capture/).
 

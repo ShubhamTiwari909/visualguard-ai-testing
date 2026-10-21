@@ -5,8 +5,15 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["README.md", "packages/visualguard/src/core/status.ts", "packages/visualguard/src/core/types.ts", "packages/visualguard/report-app/src/App.tsx", "packages/visualguard/report-app/src/Compare.tsx"]
-sidebar: {"order": 3}
+sourcePaths:
+  [
+    "README.md",
+    "packages/visualguard/src/core/status.ts",
+    "packages/visualguard/src/core/types.ts",
+    "packages/visualguard/report-app/src/App.tsx",
+    "packages/visualguard/report-app/src/Compare.tsx",
+  ]
+sidebar: { "order": 3 }
 ---
 
 After each run, every comparison gets a status. The status tells you whether something changed and whether a person needs to look. This page explains each status, which statuses fail your build, and where the evidence is saved.
@@ -18,13 +25,13 @@ After each run, every comparison gets a status. The status tells you whether som
 
 ## The five statuses
 
-| Status | What it means | What to do |
-| --- | --- | --- |
-| `pass` | No meaningful change. Differences are within tolerance, or were judged to be noise, and no independent check found a problem. | Nothing. |
-| `accepted` | The change matches one a person already marked as intentional. | Nothing, unless the change was accepted by mistake. |
-| `review` | Something changed, or an independent check found something, and a person should decide. | Open the report and decide: fix it or accept it. |
-| `regression` | A clear failure. Either the built-in analysis found one (such as a removed control or new overlap) or AI classified the change as a regression. | Fix the page, or investigate why it changed. |
-| `error` | The capture or processing failed, so there is no valid result. | Read the error. Often a URL, login or browser problem. |
+| Status       | What it means                                                                                                                                   | What to do                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `pass`       | No meaningful change. Differences are within tolerance, or were judged to be noise, and no independent check found a problem.                   | Nothing.                                               |
+| `accepted`   | The change matches one a person already marked as intentional.                                                                                  | Nothing, unless the change was accepted by mistake.    |
+| `review`     | Something changed, or an independent check found something, and a person should decide.                                                         | Open the report and decide: fix it or accept it.       |
+| `regression` | A clear failure. Either the built-in analysis found one (such as a removed control or new overlap) or AI classified the change as a regression. | Fix the page, or investigate why it changed.           |
+| `error`      | The capture or processing failed, so there is no valid result.                                                                                  | Read the error. Often a URL, login or browser problem. |
 
 `review` is the most common status for a real visual change. VisualGuard does not guess whether you meant to change something. It shows you the evidence and asks.
 
@@ -32,11 +39,11 @@ After each run, every comparison gets a status. The status tells you whether som
 
 The `--fail-on` option decides which statuses make the command exit with code `1`:
 
-| `--fail-on` | Fails on | Typical use |
-| --- | --- | --- |
-| `regression` (default) | `regression`, `error` | Local runs and most CI setups |
-| `review` | `review`, `regression`, `error` | Strict CI where every change needs acceptance first |
-| `any` | Currently the same statuses as `review` | Same as `review` |
+| `--fail-on`            | Fails on                                | Typical use                                         |
+| ---------------------- | --------------------------------------- | --------------------------------------------------- |
+| `regression` (default) | `regression`, `error`                   | Local runs and most CI setups                       |
+| `review`               | `review`, `regression`, `error`         | Strict CI where every change needs acceptance first |
+| `any`                  | Currently the same statuses as `review` | Same as `review`                                    |
 
 Two rules always apply:
 
@@ -53,13 +60,13 @@ npx --no-install visualguard test --fail-on review
 
 Every run writes a folder: `.visualguard/runs/RUN_ID/`. It contains:
 
-| File | What it holds |
-| --- | --- |
-| `manifest.json` | The full record: settings, every job's status and findings, and links to every file |
-| Screenshots | The reference and candidate captures that were available |
-| DOM snapshots | The page structure used to explain changes |
-| Diff images and region crops | The changed areas, highlighted |
-| `index.html` | The HTML report |
+| File                         | What it holds                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------- |
+| `manifest.json`              | The full record: settings, every job's status and findings, and links to every file |
+| Screenshots                  | The reference and candidate captures that were available                            |
+| DOM snapshots                | The page structure used to explain changes                                          |
+| Diff images and region crops | The changed areas, highlighted                                                      |
+| `index.html`                 | The HTML report                                                                     |
 
 VisualGuard keeps the last 10 runs by default and deletes older ones. Change this with `output.keepRuns`. Add `.visualguard/` to `.gitignore`; `init` does this for you. See [run artifacts](/reference/artifacts/).
 
@@ -83,14 +90,14 @@ A report opened straight from disk works for reading. The **Accept change** and 
 
 The report has search, status filters, light and dark themes, and links to each job. Each job offers four comparison views: **Side by side**, **Slider**, **Onion skin** and **Diff**.
 
-| Key | Action |
-| --- | --- |
-| `j` or Down arrow | Next job |
-| `k` or Up arrow | Previous job |
-| `1` to `4` | Side by side, Slider, Onion skin, Diff |
-| `r` | Show or hide changed regions |
-| `z` | Toggle actual size |
-| `/` | Focus search |
+| Key               | Action                                 |
+| ----------------- | -------------------------------------- |
+| `j` or Down arrow | Next job                               |
+| `k` or Up arrow   | Previous job                           |
+| `1` to `4`        | Side by side, Slider, Onion skin, Diff |
+| `r`               | Show or hide changed regions           |
+| `z`               | Toggle actual size                     |
+| `/`               | Focus search                           |
 
 See [inspect and share reports](/guides/reports/).
 
@@ -110,14 +117,14 @@ Independent findings, such as health, accessibility or performance problems, can
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
+| Problem                                           | Fix                                                                                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Every job is `review` because of tiny differences | Make captures stable first, then tune thresholds. See [stable captures](/guides/stable-captures/) and [diff and noise](/guides/diff-and-noise/). |
-| A job is `error` | Open the report or terminal output for the message. Run `visualguard doctor`. |
-| The run passes but you wanted reviews to fail CI | Use `--fail-on review`. |
-| The report opens but images are missing | The folder was copied without its image files. Share the whole run folder. |
-| **Accept change** does nothing | Open the report with `visualguard report`, not from disk. |
-| An older run has disappeared | Only the last `output.keepRuns` runs (default 10) are kept. Raise the number. |
+| A job is `error`                                  | Open the report or terminal output for the message. Run `visualguard doctor`.                                                                    |
+| The run passes but you wanted reviews to fail CI  | Use `--fail-on review`.                                                                                                                          |
+| The report opens but images are missing           | The folder was copied without its image files. Share the whole run folder.                                                                       |
+| **Accept change** does nothing                    | Open the report with `visualguard report`, not from disk.                                                                                        |
+| An older run has disappeared                      | Only the last `output.keepRuns` runs (default 10) are kept. Raise the number.                                                                    |
 
 More help: [capture and report problems](/troubleshooting/capture/).
 

@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["packages/visualguard/CHANGELOG.md", "docs/NPM-PACKAGE-SETUP.md"]
-sidebar: {"order": 8}
+sidebar: { "order": 8 }
 ---
 
 ## Before you start

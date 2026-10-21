@@ -277,12 +277,16 @@ export class TestExecutions {
         ? undefined
         : await this.tests.state.get<UploadToken>("tokens", runnerId);
     await this.tests.auth
-      .audit({ id: owner?.value.ownerId ?? row.value.requestedBy ?? "runner" }, "project-test.finished", {
-        projectId: project,
-        requestId: input.id,
-        runId: input.runId ?? null,
-        status: value.status,
-      })
+      .audit(
+        { id: owner?.value.ownerId ?? row.value.requestedBy ?? "runner" },
+        "project-test.finished",
+        {
+          projectId: project,
+          requestId: input.id,
+          runId: input.runId ?? null,
+          status: value.status,
+        },
+      )
       .catch((error) => console.error("Test finished; unable to record audit event", error));
     return publicExecution(value);
   }

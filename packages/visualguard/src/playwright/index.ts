@@ -144,7 +144,10 @@ async function check(
   const selector = screenshotSelector(config, { screenshotSelector: options.selector });
   const current = new URL(page.url());
   const id = `${routeSlug(testInfo.titlePath.slice(1).join(" ").replace(/\s+/g, "-"))}__${routeSlug(`/${name}`)}-${fingerprint({ file: relative(config.cwd, testInfo.file), title: testInfo.titlePath, name, project: testInfo.project.name, browser: config.browser.name, viewport: config.viewports.playwright, ...(selector ? { selector } : {}) }).slice(0, 12)}`;
-  const dir = testInfo.outputPath("visualguard", routeSlug(`/${name}`) + (selector ? `--section-${fingerprint(selector).slice(0, 12)}` : ""));
+  const dir = testInfo.outputPath(
+    "visualguard",
+    routeSlug(`/${name}`) + (selector ? `--section-${fingerprint(selector).slice(0, 12)}` : ""),
+  );
   mkdirSync(dir, { recursive: true });
 
   const job: JobSpec = {
@@ -198,7 +201,10 @@ async function check(
   const rel = (path: string) => relative(dir, path).split("\\").join("/");
   const stagingPath = join(dir, "staging.png");
   writeFileSync(stagingPath, shot.png);
-  writeFileSync(join(dir, "staging.dom.json"), JSON.stringify(await captureDomSnapshot(page, 4_000, screenshotSelector(config, job))));
+  writeFileSync(
+    join(dir, "staging.dom.json"),
+    JSON.stringify(await captureDomSnapshot(page, 4_000, screenshotSelector(config, job))),
+  );
   const captures: JobResult["captures"] = {
     staging: {
       source: "live",

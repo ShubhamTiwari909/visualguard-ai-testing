@@ -5,8 +5,22 @@ audience: "contributor"
 docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
-sourcePaths: ["CONTRIBUTING.md", "evals/README.md", "evals/run.mjs", "evals/labels.json", "fixtures/site/README.md", "packages/visualguard/vitest.config.ts", "apps/platform/vitest.config.ts", "scripts/pack-smoke.mjs", "scripts/standalone-dashboard-smoke.mjs", "scripts/dashboard-runner-smoke.mjs", ".github/workflows/ci.yml", ".github/workflows/evals.yml"]
-sidebar: {"order": 4}
+sourcePaths:
+  [
+    "CONTRIBUTING.md",
+    "evals/README.md",
+    "evals/run.mjs",
+    "evals/labels.json",
+    "fixtures/site/README.md",
+    "packages/visualguard/vitest.config.ts",
+    "apps/platform/vitest.config.ts",
+    "scripts/pack-smoke.mjs",
+    "scripts/standalone-dashboard-smoke.mjs",
+    "scripts/dashboard-runner-smoke.mjs",
+    ".github/workflows/ci.yml",
+    ".github/workflows/evals.yml",
+  ]
+sidebar: { "order": 4 }
 ---
 
 This page lists every test suite in the repository, what each one proves and when to run it. Use it to pick the smallest check that covers your change, and to know what CI will run on your pull request.
@@ -31,17 +45,17 @@ The repository's `AGENTS.md` defers formatting, lint and type-check commands (`p
 
 ## Choose the right check
 
-| You changed… | Run at least |
-| --- | --- |
-| One area of the engine, such as the differ or the fixer | That area's test file, for example `pnpm --filter visualguard exec vitest run test/diff.test.ts` |
-| Capture, comparison, classification or the fixer together | `pnpm build` then `pnpm test` |
-| Package exports, the report app or the build | `pnpm build`, `pnpm test` and `pnpm test:pack` |
-| Dashboard server or client (`apps/platform`) | `pnpm platform:test`, plus the database contract tests if you touched storage |
-| Dashboard packaging or hosting assets | `pnpm platform:build`, `pnpm --filter visualguard build:dashboard` and `pnpm platform:test:package` |
-| **Run test**, the built-in runner or the private runner | `pnpm platform:test`, then `pnpm build` and `pnpm platform:test:runner` |
-| Classification rules, AI prompts or default models | `pnpm eval` (see [evaluations](#evaluate-classification-quality)) |
-| A fixture page | `pnpm build` then `node evals/run.mjs --provider none` |
-| Documentation | `pnpm docs:test`, `pnpm docs:build` and `pnpm docs:check-links` |
+| You changed…                                              | Run at least                                                                                        |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| One area of the engine, such as the differ or the fixer   | That area's test file, for example `pnpm --filter visualguard exec vitest run test/diff.test.ts`    |
+| Capture, comparison, classification or the fixer together | `pnpm build` then `pnpm test`                                                                       |
+| Package exports, the report app or the build              | `pnpm build`, `pnpm test` and `pnpm test:pack`                                                      |
+| Dashboard server or client (`apps/platform`)              | `pnpm platform:test`, plus the database contract tests if you touched storage                       |
+| Dashboard packaging or hosting assets                     | `pnpm platform:build`, `pnpm --filter visualguard build:dashboard` and `pnpm platform:test:package` |
+| **Run test**, the built-in runner or the private runner   | `pnpm platform:test`, then `pnpm build` and `pnpm platform:test:runner`                             |
+| Classification rules, AI prompts or default models        | `pnpm eval` (see [evaluations](#evaluate-classification-quality))                                   |
+| A fixture page                                            | `pnpm build` then `node evals/run.mjs --provider none`                                              |
+| Documentation                                             | `pnpm docs:test`, `pnpm docs:build` and `pnpm docs:check-links`                                     |
 
 ## 1. Run the engine tests
 
@@ -55,11 +69,11 @@ This runs `vitest run` for every `packages/visualguard/test/**/*.test.ts` file. 
 
 You should see every test file pass. Some suites are skipped unless you turn them on:
 
-| Variable | What it does | Default |
-| --- | --- | --- |
-| `VG_DETERMINISM_RUNS` | How many times the integration test captures each fixture page; every capture must be identical. CI uses `10`. | `2` |
-| `VG_SMOKE_BROWSER` | The browser for `test/browser-smoke.test.ts`: `chromium`, `firefox` or `webkit`. | `chromium` |
-| `VG_E2E_NEXT` | Set to `1` to build `examples/nextjs`, seed regressions and check that `visualguard fix` repairs them. Slow. | off |
+| Variable              | What it does                                                                                                   | Default    |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- | ---------- |
+| `VG_DETERMINISM_RUNS` | How many times the integration test captures each fixture page; every capture must be identical. CI uses `10`. | `2`        |
+| `VG_SMOKE_BROWSER`    | The browser for `test/browser-smoke.test.ts`: `chromium`, `firefox` or `webkit`.                               | `chromium` |
+| `VG_E2E_NEXT`         | Set to `1` to build `examples/nextjs`, seed regressions and check that `visualguard fix` repairs them. Slow.   | off        |
 
 To run one file or a few files:
 
@@ -97,11 +111,11 @@ pnpm --filter @visualguard/platform exec vitest run test/built-in-runner.test.ts
 
 The PostgreSQL and MongoDB versions of the storage tests are skipped unless you point them at a **disposable** test database. The tests write and delete data, so never use a real database.
 
-| Variable | What it turns on |
-| --- | --- |
-| `VISUALGUARD_TEST_DATABASE_URL` | PostgreSQL storage, identity, invitation, baseline, policy and operations contracts. |
-| `VISUALGUARD_TEST_MONGODB_URL` | The same contracts on a MongoDB **replica set**, which supports transactions. |
-| `VISUALGUARD_TEST_MONGODB_STANDALONE_URL` | The limited behavior of a standalone MongoDB server, which has no transactions. |
+| Variable                                  | What it turns on                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| `VISUALGUARD_TEST_DATABASE_URL`           | PostgreSQL storage, identity, invitation, baseline, policy and operations contracts. |
+| `VISUALGUARD_TEST_MONGODB_URL`            | The same contracts on a MongoDB **replica set**, which supports transactions.        |
+| `VISUALGUARD_TEST_MONGODB_STANDALONE_URL` | The limited behavior of a standalone MongoDB server, which has no transactions.      |
 
 This example starts throwaway databases with Docker, the same way CI does:
 
@@ -129,11 +143,11 @@ You should see the `postgres` and `mongo` suites run instead of being skipped. R
 
 These checks install what npm users would get, so they catch problems that source tests cannot see.
 
-| Command | What it does | Needs first |
-| --- | --- | --- |
-| `pnpm test:pack` | Builds, packs `visualguard`, installs the tarball in a throwaway project and checks that `npx visualguard --version` matches `package.json`. | Nothing; it builds. |
+| Command                      | What it does                                                                                                                                                                                                                                                                                                                                                               | Needs first                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `pnpm test:pack`             | Builds, packs `visualguard`, installs the tarball in a throwaway project and checks that `npx visualguard --version` matches `package.json`.                                                                                                                                                                                                                               | Nothing; it builds.                                                   |
 | `pnpm platform:test:package` | Packs `visualguard`, installs it in a fresh consumer project with no repository imports, and starts the packaged dashboard. It checks the core API, the dashboard pages and assets, import, publish, backup and restore, runner polling, the message shown when no dashboard is running, and both deployment scaffolds (Vercel and Cloud Run). It needs no browser binary. | `pnpm platform:build` and `pnpm --filter visualguard build:dashboard` |
-| `pnpm platform:test:runner` | Starts a local dashboard and two tiny pages, saves a project test config, creates a runner credential, and runs `visualguard dashboard runner` with real Chromium. It checks the queue, the claim, live progress, the uploaded result, that the saved config wins over runner settings, and that a revoked credential stops working. | `pnpm build` and Playwright Chromium |
+| `pnpm platform:test:runner`  | Starts a local dashboard and two tiny pages, saves a project test config, creates a runner credential, and runs `visualguard dashboard runner` with real Chromium. It checks the queue, the claim, live progress, the uploaded result, that the saved config wins over runner settings, and that a revoked credential stops working.                                       | `pnpm build` and Playwright Chromium                                  |
 
 You should see a final `passed` line from each script. Each one deletes its temporary folders and stops its servers, even after a failure.
 
@@ -151,23 +165,23 @@ pnpm docs:build
 pnpm docs:check-links
 ```
 
-| Command | What it covers |
-| --- | --- |
-| `pnpm docs:test` | Page metadata, the coverage map, the quickstart example, Action inputs and generated reference drift. |
-| `pnpm docs:build` | Builds the static site. |
-| `pnpm docs:check-links` | Internal links, assets and anchors in the built site. Run after `docs:build`. |
-| `pnpm docs:smoke` | Optional and slow. Installs the published release in a throwaway project, follows the quickstart and the local SQLite dashboard guide. Needs Chromium and free ports 4100 and 4101. |
+| Command                 | What it covers                                                                                                                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm docs:test`        | Page metadata, the coverage map, the quickstart example, Action inputs and generated reference drift.                                                                               |
+| `pnpm docs:build`       | Builds the static site.                                                                                                                                                             |
+| `pnpm docs:check-links` | Internal links, assets and anchors in the built site. Run after `docs:build`.                                                                                                       |
+| `pnpm docs:smoke`       | Optional and slow. Installs the published release in a throwaway project, follows the quickstart and the local SQLite dashboard guide. Needs Chromium and free ports 4100 and 4101. |
 
 ## Evaluate classification quality
 
 The evaluation runner measures how well VisualGuard classifies visual differences. Each route in [`evals/labels.json`](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/evals/labels.json) is a page in [`fixtures/site`](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/fixtures/site) with a production and a staging variant. The label is what a human reviewer would call the difference:
 
-| Label | Meaning |
-| --- | --- |
-| `regression` | Broken: misalignment, overlap, clipping, overflow or missing UI. |
-| `intentional` | A deliberate change: new copy, a restyle or a new element. |
-| `content` | Data changes: prices, posts or dates. |
-| `noise` | Rendering differences nobody would notice. |
+| Label         | Meaning                                                          |
+| ------------- | ---------------------------------------------------------------- |
+| `regression`  | Broken: misalignment, overlap, clipping, overflow or missing UI. |
+| `intentional` | A deliberate change: new copy, a restyle or a new element.       |
+| `content`     | Data changes: prices, posts or dates.                            |
+| `noise`       | Rendering differences nobody would notice.                       |
 
 Every route runs at desktop and mobile, so the labels give about 40 cases.
 
@@ -180,15 +194,15 @@ pnpm eval -- --provider ollama --model qwen2.5vl
 
 `pnpm eval` builds the package first. After a build you can call `node evals/run.mjs` directly with the same options.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `--provider` | The AI provider: `none`, `gemini` or `ollama`. | `none` |
-| `--model` | The model ID for the provider. | The provider's default |
-| `--viewports` | A comma-separated list from `desktop` and `mobile`. | `desktop,mobile` |
-| `--cache` | Reuses cached AI answers. | off |
-| `--all-ai` | Sends every difference to the AI, not only the uncertain ones. | off (uncertain only) |
-| `--min-regression-recall` | Fails the run if regression recall is below this number. | not set |
-| `--min-regression-precision` | Fails the run if regression precision is below this number. | not set |
+| Option                       | What it does                                                   | Default                |
+| ---------------------------- | -------------------------------------------------------------- | ---------------------- |
+| `--provider`                 | The AI provider: `none`, `gemini` or `ollama`.                 | `none`                 |
+| `--model`                    | The model ID for the provider.                                 | The provider's default |
+| `--viewports`                | A comma-separated list from `desktop` and `mobile`.            | `desktop,mobile`       |
+| `--cache`                    | Reuses cached AI answers.                                      | off                    |
+| `--all-ai`                   | Sends every difference to the AI, not only the uncertain ones. | off (uncertain only)   |
+| `--min-regression-recall`    | Fails the run if regression recall is below this number.       | not set                |
+| `--min-regression-precision` | Fails the run if regression precision is below this number.    | not set                |
 
 You should see precision and recall per class, a confusion matrix and the misses. The results are saved to `evals/results/`. Run it before changing prompts or default models. The 1.0 target is regression precision of at least 0.85 and recall of at least 0.90 on the default Gemini model.
 
@@ -237,49 +251,49 @@ node scripts/serve-fixtures.mjs
 
 Every page exists in a `production/` and a `staging/` variant. The fixture server serves `/name` from `name.html` and replaces `{{origin}}` in `.xml` and `.txt` files. The test helper is `packages/visualguard/test/helpers/fixture-server.ts`; the scripts use `scripts/fixture-server.mjs`.
 
-| Page | Difference on staging | Expected without AI |
-| --- | --- | --- |
-| `/` `/identical` `/pricing` `/checkout` | none | pass |
-| `/animated` | none (infinite animation and transition) | pass |
-| `/dynamic` | random price (masked) and clock (frozen) | pass |
-| `/dynamic-change` | random price (not masked) and CTA colour | review: only the CTA (noise map) |
-| `/a11y` | image `alt` and button label removed | pass (with `--a11y`: review) |
-| `/heavy` | 60 KB script added, same pixels | pass (with `--perf`: review) |
-| `/marked-dynamic` | random text marked `data-visualguard-ignore` | pass |
-| `/text-change` | CTA copy "Start free trial" to "Start trial" | review: text change on the CTA |
-| `/color-change` | CTA background colour | review: background-color on the CTA |
-| `/alignment` | `align-items: center` to `flex-start` | review: align-items on `div.actions` |
-| `/spacing` | feature card padding 24px to 12px | review: padding on `div.card` |
-| `/layout-shift` | banner inserted above the hero | review: one shift caused by the banner |
-| `/missing-image` | image points to a missing file | regression: broken image |
-| `/overflow` | promo box wider than a 390px viewport | regression on mobile: horizontal overflow |
-| `/overlap` | badge moved on top of the hero | regression: new overlap |
-| `/hidden` | CTA hidden | regression: control missing |
-| `/contrast` | paragraph text turned light grey | regression: low contrast |
-| `/clipped` | CTA narrowed, text cut off | regression: text cut off |
-| `/misaligned-grid` | one card pushed down 28px | review (AI: regression) |
-| `/wrapped-nav` | larger nav links wrap the header | review (AI: regression) |
-| `/font-size` | bigger heading | review (AI: intentional) |
-| `/nav-item` | new "Blog" link | review (AI: intentional) |
-| `/rounded` | rounder cards and pill buttons | review (AI: intentional) |
-| `/button-style` | uppercase dark buttons | review (AI: intentional) |
-| `/price` | $49 to $59 | review (AI: content) |
-| `/blog-list` | different posts | review (AI: content) |
-| `/footer-year` | © 2025 to © 2026 | review (AI: content) |
-| `/subpixel` | text nudged 0.4px | review (AI: noise) |
+| Page                                    | Difference on staging                        | Expected without AI                       |
+| --------------------------------------- | -------------------------------------------- | ----------------------------------------- |
+| `/` `/identical` `/pricing` `/checkout` | none                                         | pass                                      |
+| `/animated`                             | none (infinite animation and transition)     | pass                                      |
+| `/dynamic`                              | random price (masked) and clock (frozen)     | pass                                      |
+| `/dynamic-change`                       | random price (not masked) and CTA colour     | review: only the CTA (noise map)          |
+| `/a11y`                                 | image `alt` and button label removed         | pass (with `--a11y`: review)              |
+| `/heavy`                                | 60 KB script added, same pixels              | pass (with `--perf`: review)              |
+| `/marked-dynamic`                       | random text marked `data-visualguard-ignore` | pass                                      |
+| `/text-change`                          | CTA copy "Start free trial" to "Start trial" | review: text change on the CTA            |
+| `/color-change`                         | CTA background colour                        | review: background-color on the CTA       |
+| `/alignment`                            | `align-items: center` to `flex-start`        | review: align-items on `div.actions`      |
+| `/spacing`                              | feature card padding 24px to 12px            | review: padding on `div.card`             |
+| `/layout-shift`                         | banner inserted above the hero               | review: one shift caused by the banner    |
+| `/missing-image`                        | image points to a missing file               | regression: broken image                  |
+| `/overflow`                             | promo box wider than a 390px viewport        | regression on mobile: horizontal overflow |
+| `/overlap`                              | badge moved on top of the hero               | regression: new overlap                   |
+| `/hidden`                               | CTA hidden                                   | regression: control missing               |
+| `/contrast`                             | paragraph text turned light grey             | regression: low contrast                  |
+| `/clipped`                              | CTA narrowed, text cut off                   | regression: text cut off                  |
+| `/misaligned-grid`                      | one card pushed down 28px                    | review (AI: regression)                   |
+| `/wrapped-nav`                          | larger nav links wrap the header             | review (AI: regression)                   |
+| `/font-size`                            | bigger heading                               | review (AI: intentional)                  |
+| `/nav-item`                             | new "Blog" link                              | review (AI: intentional)                  |
+| `/rounded`                              | rounder cards and pill buttons               | review (AI: intentional)                  |
+| `/button-style`                         | uppercase dark buttons                       | review (AI: intentional)                  |
+| `/price`                                | $49 to $59                                   | review (AI: content)                      |
+| `/blog-list`                            | different posts                              | review (AI: content)                      |
+| `/footer-year`                          | © 2025 to © 2026                             | review (AI: content)                      |
+| `/subpixel`                             | text nudged 0.4px                            | review (AI: noise)                        |
 
 ## What CI runs
 
 The **CI** workflow (`.github/workflows/ci.yml`) runs on every pull request and every push to `main`:
 
-| Job | What it runs |
-| --- | --- |
-| `platform` | `pnpm platform:test` against real PostgreSQL 17, standalone MongoDB 7 and a MongoDB replica set, then `platform:build`, `build:dashboard` and `platform:test:package`. |
-| `lint` | `pnpm lint`, `pnpm format:check` and `pnpm typecheck`. |
-| `test` | On Ubuntu, macOS and Windows with Node 22 and 24: `pnpm build`, `pnpm test` with `VG_DETERMINISM_RUNS=10` and the pack smoke test. On Ubuntu with Node 22 it also runs `platform:test:runner`. |
-| `browser-smoke` | The browser smoke test in Firefox and WebKit. |
-| `heuristic-evals` | The heuristic evaluation gate, with results uploaded as an artifact. |
-| `example-nextjs` | The Next.js example repair test (`VG_E2E_NEXT=1`). |
+| Job               | What it runs                                                                                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `platform`        | `pnpm platform:test` against real PostgreSQL 17, standalone MongoDB 7 and a MongoDB replica set, then `platform:build`, `build:dashboard` and `platform:test:package`.                         |
+| `lint`            | `pnpm lint`, `pnpm format:check` and `pnpm typecheck`.                                                                                                                                         |
+| `test`            | On Ubuntu, macOS and Windows with Node 22 and 24: `pnpm build`, `pnpm test` with `VG_DETERMINISM_RUNS=10` and the pack smoke test. On Ubuntu with Node 22 it also runs `platform:test:runner`. |
+| `browser-smoke`   | The browser smoke test in Firefox and WebKit.                                                                                                                                                  |
+| `heuristic-evals` | The heuristic evaluation gate, with results uploaded as an artifact.                                                                                                                           |
+| `example-nextjs`  | The Next.js example repair test (`VG_E2E_NEXT=1`).                                                                                                                                             |
 
 The **Documentation** workflow runs the docs checks, and the **Evals** workflow runs the weekly AI evaluation.
 
@@ -296,15 +310,15 @@ A useful bug report contains the Node, Playwright and VisualGuard versions, the 
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Executable doesn't exist` or a browser launch error | Install the browser: `pnpm --filter visualguard exec playwright install chromium`. |
-| `Cannot find module …/dist/…` in a smoke script or eval | Build first with `pnpm build`. |
-| `platform:test:package` cannot find dashboard assets | Run `pnpm platform:build` and `pnpm --filter visualguard build:dashboard` first. |
-| PostgreSQL or MongoDB suites are skipped | Set the matching `VISUALGUARD_TEST_*` variable to a disposable database. |
-| MongoDB replica-set tests fail with a transaction error | The replica set has no primary yet. Wait a few seconds after `rs.initiate`, then retry. |
-| The integration test reports differences between identical captures | Something on the page is not deterministic. Mask it, freeze it or fix the fixture. |
-| `node scripts/serve-fixtures.mjs` fails to start | Ports 4100 or 4101 are in use. Pass other ports: `node scripts/serve-fixtures.mjs 5100 5101`. |
+| Problem                                                             | Fix                                                                                           |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `Executable doesn't exist` or a browser launch error                | Install the browser: `pnpm --filter visualguard exec playwright install chromium`.            |
+| `Cannot find module …/dist/…` in a smoke script or eval             | Build first with `pnpm build`.                                                                |
+| `platform:test:package` cannot find dashboard assets                | Run `pnpm platform:build` and `pnpm --filter visualguard build:dashboard` first.              |
+| PostgreSQL or MongoDB suites are skipped                            | Set the matching `VISUALGUARD_TEST_*` variable to a disposable database.                      |
+| MongoDB replica-set tests fail with a transaction error             | The replica set has no primary yet. Wait a few seconds after `rs.initiate`, then retry.       |
+| The integration test reports differences between identical captures | Something on the page is not deterministic. Mask it, freeze it or fix the fixture.            |
+| `node scripts/serve-fixtures.mjs` fails to start                    | Ports 4100 or 4101 are in use. Pass other ports: `node scripts/serve-fixtures.mjs 5100 5101`. |
 
 For problems that users also see, check [capture troubleshooting](/troubleshooting/capture/) and [dashboard troubleshooting](/troubleshooting/dashboard/).
 

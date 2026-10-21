@@ -6,7 +6,7 @@ docType: "explanation"
 channel: "source"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/READING-THE-CODE.md"]
-sidebar: {"order": 3}
+sidebar: { "order": 3 }
 ---
 
 This guide explains the language patterns used in the package. Read it alongside the comments in each source file and the [architecture guide](/contributing/architecture/), which lists every package file and its connections.

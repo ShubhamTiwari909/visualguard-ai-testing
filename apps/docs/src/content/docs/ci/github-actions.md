@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["action/README.md", "action/action.yml"]
-sidebar: {"order": 2}
+sidebar: { "order": 2 }
 ---
 
 The VisualGuard GitHub Action runs a visual comparison in one workflow step. It installs the browser, runs `visualguard test`, uploads the report as an artifact, writes the job summary, posts one PR comment and fails the job on regressions. Use it when your project already runs on GitHub Actions and you want the shortest workflow.
@@ -68,29 +68,29 @@ The job summary also shows a Markdown table of results. It needs no token.
 
 All inputs are optional.
 
-| Input | What it does | Default |
-| --- | --- | --- |
-| `working-directory` | Folder that contains `visualguard.config.ts`. All other paths are relative to it. | `.` |
-| `browser` | Browser to install and run: `chromium`, `firefox` or `webkit`. Overrides the config. Any other value stops the job with "Unsupported browser". | `chromium` |
-| `output-directory` | Run output folder. Overrides `output.dir`, and is also used by the upload and comment steps. | `.visualguard` |
-| `artifact-name` | Name of the uploaded artifact. Use a different name for each matrix or shard job. | `visualguard-report` |
-| `junit-path` | Where the JUnit XML file is written. It is uploaded with the run. | `visualguard-junit.xml` |
-| `args` | Extra `visualguard test` arguments, such as `--only /pricing` or `--no-ai`. | empty |
-| `fail-on` | Which statuses fail the job: `regression`, `review` or `any`. | `regression` |
-| `staging-url` | Candidate URL for this run, such as a preview deployment. Overrides `baseURL.staging`. | empty |
-| `gemini-api-key` | Gemini API key for AI explanations. Leave empty for heuristics only. | empty |
-| `comment` | `"true"` posts or updates the PR comment; `"false"` skips it. | `true` |
-| `github-token` | Token for the PR comment. It needs `pull-requests: write`. | `${{ github.token }}` |
-| `exec` | How to run your project's binaries: `npx`, `pnpm exec`, `yarn` or `bunx`. | `npx` |
+| Input               | What it does                                                                                                                                   | Default                 |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `working-directory` | Folder that contains `visualguard.config.ts`. All other paths are relative to it.                                                              | `.`                     |
+| `browser`           | Browser to install and run: `chromium`, `firefox` or `webkit`. Overrides the config. Any other value stops the job with "Unsupported browser". | `chromium`              |
+| `output-directory`  | Run output folder. Overrides `output.dir`, and is also used by the upload and comment steps.                                                   | `.visualguard`          |
+| `artifact-name`     | Name of the uploaded artifact. Use a different name for each matrix or shard job.                                                              | `visualguard-report`    |
+| `junit-path`        | Where the JUnit XML file is written. It is uploaded with the run.                                                                              | `visualguard-junit.xml` |
+| `args`              | Extra `visualguard test` arguments, such as `--only /pricing` or `--no-ai`.                                                                    | empty                   |
+| `fail-on`           | Which statuses fail the job: `regression`, `review` or `any`.                                                                                  | `regression`            |
+| `staging-url`       | Candidate URL for this run, such as a preview deployment. Overrides `baseURL.staging`.                                                         | empty                   |
+| `gemini-api-key`    | Gemini API key for AI explanations. Leave empty for heuristics only.                                                                           | empty                   |
+| `comment`           | `"true"` posts or updates the PR comment; `"false"` skips it.                                                                                  | `true`                  |
+| `github-token`      | Token for the PR comment. It needs `pull-requests: write`.                                                                                     | `${{ github.token }}`   |
+| `exec`              | How to run your project's binaries: `npx`, `pnpm exec`, `yarn` or `bunx`.                                                                      | `npx`                   |
 
 Set `browser`, `output-directory` and `junit-path` here instead of only in `args`. The Action uses these inputs for the browser install and the upload path, so values hidden in `args` would not match. Treat `args` as trusted workflow configuration; never build it from PR titles or other user text.
 
 ## Outputs
 
-| Output | What it contains |
-| --- | --- |
-| `report-url` | URL of the uploaded report artifact. |
-| `outcome` | `success` or `failure` of the visual test step. |
+| Output       | What it contains                                |
+| ------------ | ----------------------------------------------- |
+| `report-url` | URL of the uploaded report artifact.            |
+| `outcome`    | `success` or `failure` of the visual test step. |
 
 Use them in later steps by giving the Action step an `id`:
 
@@ -107,11 +107,11 @@ The second step needs `if: always()`, because the Action fails the job when it f
 
 A key alone does not turn on AI if your config says `ai.provider: "none"`. Pick one of these setups:
 
-| Goal | Config | Action inputs |
-| --- | --- | --- |
-| Deterministic, no AI | Any | `args: --no-ai`, no key |
-| Gemini explanations | `ai.provider: "gemini"` | `gemini-api-key: ${{ secrets.GEMINI_API_KEY }}` |
-| Gemini without changing config | Any | `gemini-api-key` plus `args: --provider gemini` |
+| Goal                           | Config                  | Action inputs                                   |
+| ------------------------------ | ----------------------- | ----------------------------------------------- |
+| Deterministic, no AI           | Any                     | `args: --no-ai`, no key                         |
+| Gemini explanations            | `ai.provider: "gemini"` | `gemini-api-key: ${{ secrets.GEMINI_API_KEY }}` |
+| Gemini without changing config | Any                     | `gemini-api-key` plus `args: --provider gemini` |
 
 Start with `--no-ai` for your first job. Add AI after the deterministic result looks right. See [Gemini setup](/guides/ai-gemini/).
 
@@ -184,14 +184,14 @@ On this event the comment step finds the open PR that contains the deployed comm
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Unsupported browser` | Set `browser` to `chromium`, `firefox` or `webkit`. |
-| `visualguard: not found` | Install dependencies before the Action, and set `exec` to match your package manager. |
-| The artifact is empty | Set `output-directory` to your real `output.dir`, relative to `working-directory`. |
-| No PR comment | Grant `pull-requests: write`. Check that `comment` is `"true"` and the event is not `push`. |
-| Matrix jobs overwrite each other | Give each job a unique `artifact-name` and `junit-path`. |
-| AI never runs | Set `ai.provider: "gemini"` in config, or add `--provider gemini` to `args`. |
+| Problem                          | Fix                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| `Unsupported browser`            | Set `browser` to `chromium`, `firefox` or `webkit`.                                         |
+| `visualguard: not found`         | Install dependencies before the Action, and set `exec` to match your package manager.       |
+| The artifact is empty            | Set `output-directory` to your real `output.dir`, relative to `working-directory`.          |
+| No PR comment                    | Grant `pull-requests: write`. Check that `comment` is `"true"` and the event is not `push`. |
+| Matrix jobs overwrite each other | Give each job a unique `artifact-name` and `junit-path`.                                    |
+| AI never runs                    | Set `ai.provider: "gemini"` in config, or add `--provider gemini` to `args`.                |
 
 See [CI troubleshooting](/troubleshooting/ci/) for more.
 

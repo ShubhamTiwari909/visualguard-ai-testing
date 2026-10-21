@@ -132,12 +132,12 @@ For a marked section in your own application, follow [section screenshot testing
 
 A non-zero exit code means VisualGuard found something, not that the install failed.
 
-| Code | Meaning |
-| --- | --- |
-| `0` | The result meets your failure policy. |
-| `1` | A regression or error was found, or the result is incomplete. |
-| `2` | The config or the command is wrong. |
-| `3` | The environment is not ready (browser, URL or AI provider). |
+| Code | Meaning                                                       |
+| ---- | ------------------------------------------------------------- |
+| `0`  | The result meets your failure policy.                         |
+| `1`  | A regression or error was found, or the result is incomplete. |
+| `2`  | The config or the command is wrong.                           |
+| `3`  | The environment is not ready (browser, URL or AI provider).   |
 
 `--fail-on regression` (default) fails on regressions and errors. `--fail-on review` also fails on **Review** statuses. Read the [exit codes page](../apps/docs/src/content/docs/reference/exit-codes.md) for details.
 
@@ -291,10 +291,10 @@ Each project keeps its own saved configuration. The URLs must be reachable from 
 
 It is on by default, except on Vercel. Set these in the dashboard's environment (before starting it).
 
-| Setting | Meaning |
-| --- | --- |
-| `VISUALGUARD_BUILT_IN_RUNNER=off` | Turn it off, so only private runners can run tests. |
-| `VISUALGUARD_BUILT_IN_RUNNER=on` | Turn it on for a host that is not detected as long-running. |
+| Setting                                     | Meaning                                                     |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| `VISUALGUARD_BUILT_IN_RUNNER=off`           | Turn it off, so only private runners can run tests.         |
+| `VISUALGUARD_BUILT_IN_RUNNER=on`            | Turn it on for a host that is not detected as long-running. |
 | `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY=2` | How many tests can run at once across projects (default 1). |
 
 If Chromium is missing, the test fails with a message to install it (step 2).
@@ -605,11 +605,11 @@ See [storage and backups](../apps/docs/src/content/docs/deployment/storage-and-b
 
 These commands read the operational storage directly. Set the same database or data folder as the running dashboard first, then run them from the repository root.
 
-| Command | What it shows |
-| --- | --- |
-| `pnpm platform:operations status` | Storage and readiness summary |
-| `pnpm platform:operations admins` | Administrators (continue with `admins --after CURSOR` if a `nextCursor` is printed) |
-| `pnpm platform:operations preview --user ACCOUNT_ID` | One account and its current version, without its password hash |
+| Command                                              | What it shows                                                                       |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `pnpm platform:operations status`                    | Storage and readiness summary                                                       |
+| `pnpm platform:operations admins`                    | Administrators (continue with `admins --after CURSOR` if a `nextCursor` is printed) |
+| `pnpm platform:operations preview --user ACCOUNT_ID` | One account and its current version, without its password hash                      |
 
 ### Recover a password administrator
 
@@ -661,11 +661,11 @@ mkdir -p output/package-candidate && pnpm --dir packages/visualguard pack --pack
 
 These repository checks do the same in a temporary folder:
 
-| Command | What it checks |
-| --- | --- |
-| `pnpm test:pack` | The packed CLI installs and runs |
-| `pnpm platform:test:package` | The packed dashboard installs and starts in a fresh project |
-| `pnpm platform:test:runner` | A real dashboard-to-browser test against temporary local sites |
+| Command                      | What it checks                                                 |
+| ---------------------------- | -------------------------------------------------------------- |
+| `pnpm test:pack`             | The packed CLI installs and runs                               |
+| `pnpm platform:test:package` | The packed dashboard installs and starts in a fresh project    |
+| `pnpm platform:test:runner`  | A real dashboard-to-browser test against temporary local sites |
 
 ## 13. Try the Next.js example
 
@@ -701,41 +701,41 @@ Look at the result with `git diff`. Run `pnpm unseed` to undo the seeded regress
 
 Run these from the repository root. [CONTRIBUTING.md](../CONTRIBUTING.md) has the full flow; the other background is in [architecture](../apps/docs/src/content/docs/contributing/architecture.md), [reading the code](READING-THE-CODE.md) and [testing](../apps/docs/src/content/docs/contributing/testing.md).
 
-| Command | What it does |
-| --- | --- |
-| `pnpm --filter visualguard build:dashboard` | Rebuild the CLI, report and dashboard files |
-| `pnpm test` | Run the package tests |
-| `pnpm --filter visualguard exec vitest run test/reliability.test.ts` | Run one test file while you work |
-| `pnpm platform:test` | Run the dashboard tests |
-| `pnpm lint` | Check code style |
-| `pnpm typecheck` | Check types in the package and the dashboard |
-| `pnpm format:check` | Check formatting (`pnpm format` fixes it) |
-| `pnpm test:pack` | Check the packed npm artifact |
-| `pnpm eval` | Score the detector on the demo pages (builds first) |
-| `pnpm docs:test` | Check the documentation website content |
-| `pnpm changeset` | Describe a user-facing change |
+| Command                                                              | What it does                                        |
+| -------------------------------------------------------------------- | --------------------------------------------------- |
+| `pnpm --filter visualguard build:dashboard`                          | Rebuild the CLI, report and dashboard files         |
+| `pnpm test`                                                          | Run the package tests                               |
+| `pnpm --filter visualguard exec vitest run test/reliability.test.ts` | Run one test file while you work                    |
+| `pnpm platform:test`                                                 | Run the dashboard tests                             |
+| `pnpm lint`                                                          | Check code style                                    |
+| `pnpm typecheck`                                                     | Check types in the package and the dashboard        |
+| `pnpm format:check`                                                  | Check formatting (`pnpm format` fixes it)           |
+| `pnpm test:pack`                                                     | Check the packed npm artifact                       |
+| `pnpm eval`                                                          | Score the detector on the demo pages (builds first) |
+| `pnpm docs:test`                                                     | Check the documentation website content             |
+| `pnpm changeset`                                                     | Describe a user-facing change                       |
 
 For `pnpm eval`, add `-- --provider gemini` (needs `GEMINI_API_KEY`) or `-- --provider ollama --model qwen2.5vl` to try AI. See `evals/README.md`.
 
 ## 15. Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Executable doesn't exist` or a missing browser | Run the Chromium install from step 2. On Linux, add `--with-deps`. |
-| `Cannot find module` pointing at `packages/visualguard/dist` | Run `pnpm --filter visualguard build:dashboard` from the repository root. |
-| A command or page is missing | You are on an old build. Pull, reinstall and rebuild (step 2). |
-| Connection refused on port 4100 or 4101 | Start the demo sites with `node scripts/serve-fixtures.mjs` and keep that terminal open. |
-| `Cannot bind dashboard project: fetch failed` | The dashboard is not running at that address. Start it, check `curl http://127.0.0.1:4400/api/health`, and use the same port in `--server` and `--dashboard`. |
-| Dashboard shows no projects or runs | Use the same dashboard URL, database and data folder everywhere. Pass `--dashboard http://127.0.0.1:4400` to `test`. |
-| Port 4400 is already in use | Stop the other dashboard, or use `--port` (packaged) or `VISUALGUARD_PLATFORM_PORT` (development), and use that port in every URL. |
-| The dashboard uses the wrong database | Start it with `VISUALGUARD_DATABASE_URL= DATABASE_URL=` for SQLite, or pass the right `--env-file`. Exported shell values beat the file. |
-| `MongoDB URL must include a database name` | Put `/visualguard` before the `?` in the URL. |
-| MongoDB timeout or authentication failure | Check the Atlas IP access list, the database user and the URL-encoded password. |
-| `role "USER" does not exist` (PostgreSQL) | Put the real user and password in `VISUALGUARD_DATABASE_URL`. |
-| Token rejected | In login mode, use the project's own upload token, even on localhost. |
-| Google `redirect_uri_mismatch` | Match scheme, host, port and `/api/auth/callback` exactly. Do not mix `localhost` and `127.0.0.1`. |
-| **Run test** is disabled or fails to start | Save the project's test configuration first. Check Chromium is installed and both URLs open from the dashboard computer. |
-| Test says the browser is unavailable | Install Chromium on the dashboard computer (step 2), or connect a private runner. |
+| Problem                                                      | Fix                                                                                                                                                           |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Executable doesn't exist` or a missing browser              | Run the Chromium install from step 2. On Linux, add `--with-deps`.                                                                                            |
+| `Cannot find module` pointing at `packages/visualguard/dist` | Run `pnpm --filter visualguard build:dashboard` from the repository root.                                                                                     |
+| A command or page is missing                                 | You are on an old build. Pull, reinstall and rebuild (step 2).                                                                                                |
+| Connection refused on port 4100 or 4101                      | Start the demo sites with `node scripts/serve-fixtures.mjs` and keep that terminal open.                                                                      |
+| `Cannot bind dashboard project: fetch failed`                | The dashboard is not running at that address. Start it, check `curl http://127.0.0.1:4400/api/health`, and use the same port in `--server` and `--dashboard`. |
+| Dashboard shows no projects or runs                          | Use the same dashboard URL, database and data folder everywhere. Pass `--dashboard http://127.0.0.1:4400` to `test`.                                          |
+| Port 4400 is already in use                                  | Stop the other dashboard, or use `--port` (packaged) or `VISUALGUARD_PLATFORM_PORT` (development), and use that port in every URL.                            |
+| The dashboard uses the wrong database                        | Start it with `VISUALGUARD_DATABASE_URL= DATABASE_URL=` for SQLite, or pass the right `--env-file`. Exported shell values beat the file.                      |
+| `MongoDB URL must include a database name`                   | Put `/visualguard` before the `?` in the URL.                                                                                                                 |
+| MongoDB timeout or authentication failure                    | Check the Atlas IP access list, the database user and the URL-encoded password.                                                                               |
+| `role "USER" does not exist` (PostgreSQL)                    | Put the real user and password in `VISUALGUARD_DATABASE_URL`.                                                                                                 |
+| Token rejected                                               | In login mode, use the project's own upload token, even on localhost.                                                                                         |
+| Google `redirect_uri_mismatch`                               | Match scheme, host, port and `/api/auth/callback` exactly. Do not mix `localhost` and `127.0.0.1`.                                                            |
+| **Run test** is disabled or fails to start                   | Save the project's test configuration first. Check Chromium is installed and both URLs open from the dashboard computer.                                      |
+| Test says the browser is unavailable                         | Install Chromium on the dashboard computer (step 2), or connect a private runner.                                                                             |
 
 For more, see [dashboard troubleshooting](../apps/docs/src/content/docs/troubleshooting/dashboard.md), [capture troubleshooting](../apps/docs/src/content/docs/troubleshooting/capture.md) and [installation troubleshooting](../apps/docs/src/content/docs/troubleshooting/installation.md).
 
@@ -743,43 +743,43 @@ For more, see [dashboard troubleshooting](../apps/docs/src/content/docs/troubles
 
 In the commands below, `vg` stands for `node packages/visualguard/dist/cli.js`. Every command also supports `--help`.
 
-| Command | What it does |
-| --- | --- |
-| `node scripts/serve-fixtures.mjs` | Start the demo sites on ports 4100 and 4101 |
-| `vg URL [URL2]` | Scan one site, or compare two URLs, with no config |
-| `vg init` | Create `visualguard.config.ts` (add `--workflow` for a GitHub workflow) |
-| `vg doctor --config FILE` | Check Playwright, the config, the URLs and AI |
-| `vg test --config FILE` | Capture, compare and save a run |
-| `vg test --config FILE --list` | Show the planned URL pairs without capturing |
-| `vg test --config FILE --no-ai` | Compare without AI |
-| `vg test --config FILE --provider gemini` | Compare with Gemini (`ollama` needs `--model`) |
-| `vg test PROJECT --dashboard URL --config FILE` | Capture and publish to a dashboard project |
-| `vg test --shard 1/4` then `vg merge PATHS...` | Split a run into parts and join the results |
-| `vg report [--run ID]` | Open the HTML report (`--no-open`, `--no-serve`, `--port`) |
-| `vg analyze [--run ID]` | Add AI to a saved run without capturing again |
-| `vg accept [ROUTES...]` | Mark changes as intentional (`--all`, `--note`) |
-| `vg fix [ROUTES...]` | Propose, apply and verify fixes (`--include-review`, `--auto`, `--pr`) |
-| `vg watch [ROUTES...]` | Re-test changed routes while you edit |
-| `vg monitor [URL]` | Compare a live site with its own earlier capture (`--reset`, `--workflow`) |
-| `vg auth ENV` | Log in once in a browser and save the session |
-| `vg comment` | Post the result on a GitHub pull request (`--dry-run`) |
-| `vg dashboard --env-file FILE` | Start the dashboard (`--host`, `--port`, `--data-dir`, `--file`) |
-| `vg dashboard project create ID --name NAME --server URL` | Create a dashboard project |
-| `vg dashboard import RUN_DIR --project ID` | Save a run straight into the database |
-| `vg dashboard publish RUN_DIR --project ID --server URL` | Upload a saved run to a running dashboard |
-| `vg dashboard runner --project ID --server URL` | Connect a private runner (optional) |
-| `vg dashboard baseline pull SET --project ID --out DIR` | Download an approved baseline |
-| `vg dashboard policy assess --project ID` | Check a visual policy (`--enforce`) |
-| `vg dashboard policy reconcile --project ID --pr N` | Refresh GitHub checks (`--all`) |
-| `vg dashboard export FILE` | Save a portable evidence backup |
-| `vg dashboard restore FILE` | Merge a portable backup into a workspace |
-| `vg dashboard assets --out DIR` | Copy the prebuilt UI for static hosting |
-| `vg dashboard init --target vercel\|cloud-run` | Generate a hosting project |
-| `pnpm platform:dev` | Start the dashboard with hot reload |
-| `pnpm platform:build` then `pnpm platform:start` | Build and serve the dashboard |
-| `pnpm platform:operations status\|admins\|preview\|recover` | Inspect or recover the dashboard storage |
-| `pnpm test`, `pnpm platform:test` | Run the package and dashboard tests |
-| `pnpm lint`, `pnpm typecheck`, `pnpm format:check` | Check style, types and formatting |
-| `pnpm test:pack`, `pnpm eval` | Check the packed package; score the detector |
+| Command                                                     | What it does                                                               |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `node scripts/serve-fixtures.mjs`                           | Start the demo sites on ports 4100 and 4101                                |
+| `vg URL [URL2]`                                             | Scan one site, or compare two URLs, with no config                         |
+| `vg init`                                                   | Create `visualguard.config.ts` (add `--workflow` for a GitHub workflow)    |
+| `vg doctor --config FILE`                                   | Check Playwright, the config, the URLs and AI                              |
+| `vg test --config FILE`                                     | Capture, compare and save a run                                            |
+| `vg test --config FILE --list`                              | Show the planned URL pairs without capturing                               |
+| `vg test --config FILE --no-ai`                             | Compare without AI                                                         |
+| `vg test --config FILE --provider gemini`                   | Compare with Gemini (`ollama` needs `--model`)                             |
+| `vg test PROJECT --dashboard URL --config FILE`             | Capture and publish to a dashboard project                                 |
+| `vg test --shard 1/4` then `vg merge PATHS...`              | Split a run into parts and join the results                                |
+| `vg report [--run ID]`                                      | Open the HTML report (`--no-open`, `--no-serve`, `--port`)                 |
+| `vg analyze [--run ID]`                                     | Add AI to a saved run without capturing again                              |
+| `vg accept [ROUTES...]`                                     | Mark changes as intentional (`--all`, `--note`)                            |
+| `vg fix [ROUTES...]`                                        | Propose, apply and verify fixes (`--include-review`, `--auto`, `--pr`)     |
+| `vg watch [ROUTES...]`                                      | Re-test changed routes while you edit                                      |
+| `vg monitor [URL]`                                          | Compare a live site with its own earlier capture (`--reset`, `--workflow`) |
+| `vg auth ENV`                                               | Log in once in a browser and save the session                              |
+| `vg comment`                                                | Post the result on a GitHub pull request (`--dry-run`)                     |
+| `vg dashboard --env-file FILE`                              | Start the dashboard (`--host`, `--port`, `--data-dir`, `--file`)           |
+| `vg dashboard project create ID --name NAME --server URL`   | Create a dashboard project                                                 |
+| `vg dashboard import RUN_DIR --project ID`                  | Save a run straight into the database                                      |
+| `vg dashboard publish RUN_DIR --project ID --server URL`    | Upload a saved run to a running dashboard                                  |
+| `vg dashboard runner --project ID --server URL`             | Connect a private runner (optional)                                        |
+| `vg dashboard baseline pull SET --project ID --out DIR`     | Download an approved baseline                                              |
+| `vg dashboard policy assess --project ID`                   | Check a visual policy (`--enforce`)                                        |
+| `vg dashboard policy reconcile --project ID --pr N`         | Refresh GitHub checks (`--all`)                                            |
+| `vg dashboard export FILE`                                  | Save a portable evidence backup                                            |
+| `vg dashboard restore FILE`                                 | Merge a portable backup into a workspace                                   |
+| `vg dashboard assets --out DIR`                             | Copy the prebuilt UI for static hosting                                    |
+| `vg dashboard init --target vercel\|cloud-run`              | Generate a hosting project                                                 |
+| `pnpm platform:dev`                                         | Start the dashboard with hot reload                                        |
+| `pnpm platform:build` then `pnpm platform:start`            | Build and serve the dashboard                                              |
+| `pnpm platform:operations status\|admins\|preview\|recover` | Inspect or recover the dashboard storage                                   |
+| `pnpm test`, `pnpm platform:test`                           | Run the package and dashboard tests                                        |
+| `pnpm lint`, `pnpm typecheck`, `pnpm format:check`          | Check style, types and formatting                                          |
+| `pnpm test:pack`, `pnpm eval`                               | Check the packed package; score the detector                               |
 
 For every flag and default, see the [command reference](COMMAND-REFERENCE.md).

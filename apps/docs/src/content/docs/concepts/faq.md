@@ -5,8 +5,16 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/core/status.ts", "packages/visualguard/src/cli/commands/auth.ts", "packages/visualguard/src/cli/commands/zero-config.ts", "apps/platform/server/built-in-runner.ts", "action/action.yml"]
-sidebar: {"order": 5}
+sourcePaths:
+  [
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/core/status.ts",
+    "packages/visualguard/src/cli/commands/auth.ts",
+    "packages/visualguard/src/cli/commands/zero-config.ts",
+    "apps/platform/server/built-in-runner.ts",
+    "action/action.yml",
+  ]
+sidebar: { "order": 5 }
 ---
 
 Quick answers to the questions people ask most when they start with VisualGuard. Each answer links to the page with the full details. If your question is about a specific task, try [Find what you need](/start/common-tasks/).
