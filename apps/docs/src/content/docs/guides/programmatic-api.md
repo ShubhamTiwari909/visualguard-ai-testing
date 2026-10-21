@@ -211,6 +211,96 @@ them before capture. The SDK does not promote approved baseline sets or provisio
 GCS storage. Keep browser, OS and viewport consistent between baseline creation
 and CI; incompatible references need deliberate regeneration.
 
+## 6a. Daily monitor runs
+
+Use `monitor` for a live site compared with its previous capture, such as a daily
+production check. This requires a release whose `RunVisualGuardOptions` includes
+`monitor`; the initial SDK's compare/baseline-only API cannot substitute for the
+monitor command. Build the source package when evaluating this addition before
+its next npm release.
+
+```js
+import { runVisualGuard } from "visualguard";
+
+const result = await runVisualGuard({
+  monitor: { dir: "visualguard/snapshots", update: "unless-regression" },
+  failOn: "regression",
+  reports: { githubSummary: Boolean(process.env.GITHUB_STEP_SUMMARY) },
+});
+console.log("Snapshots:", result.snapshotDir);
+console.log("Evidence:", result.runDir);
+console.log("Verdict:", result.manifest.summary);
+process.exitCode = result.exitCode;
+```
+
+Set `baseURL.production` (or `VISUALGUARD_PRODUCTION_URL`) to the live site. When
+production is absent, staging is used. When both are configured, production wins;
+monitoring captures that one site, not a production/staging pair. The call performs
+**one run**. Your scheduler decides when to run it again.
+
+| Monitor option                | Behavior                                                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `monitor: true`               | Uses `config.monitor.dir/<host>`, including the normalized port, exactly like the CLI.                                      |
+| `monitor: { dir }`            | Uses that **exact** snapshot folder, resolved against `cwd`; no host is appended. Use separate folders for different sites. |
+| `update: "unless-regression"` | Keeps regressed/error jobs' previous references. Pass, accepted and review jobs advance after final classification.         |
+| `update: "always"`            | Explicitly refreshes snapshots, including regressed or incompatible references; use only when accepting that behavior.      |
+| `reset: true`                 | Deliberately replaces captured references for a fresh start, equivalent to CLI `monitor --reset`.                           |
+| `result.snapshotDir`          | Absolute snapshot folder actually used. Returned only for monitor runs; distinct from the report/evidence folder.           |
+
+Omitted `update` follows `config.monitor.update`, whose default is
+`unless-regression`. For a daily policy that must retain regressions, explicitly
+set `update: "unless-regression"` as shown. Do not combine `monitor` with the
+baseline-only `updateBaselines` option. Use `monitor.reset` for deliberate resets.
+
+The engine runs in `mode: "monitor"`, compares health against the stored health
+sidecar, and retains incompatible references by rejecting the run under the
+normal update policy. It does not silently replace mismatched viewport/browser/
+capture settings. Restore all snapshot sidecars, not only PNGs. Approved-baseline
+write protections still apply. Section selectors use the same separate snapshot
+identity as other capture flows.
+
+On the first run there is no previous evidence: snapshots are initialized for
+eligible captures, and existing health problems are reported as review findings.
+Once references exist, known broken images are excluded from new health findings;
+new broken images are regressions. A regressed page keeps its old reference and
+is reported again on subsequent runs until fixed or explicitly reset. A review
+can fail `failOn: "review"` while still advancing its snapshot; snapshot policy
+uses the final job status, not the overall process exit code.
+
+This rolling policy is different from updating fixed baselines on every CI run.
+The advice in the baseline section applies to fixed/approved references. Monitor
+snapshots intentionally advance for eligible pages while retaining regressions.
+
+### Keep the existing storage and notification code
+
+Pull remote snapshots **before** calling the SDK. After a completed run, use
+`result.manifest`, `result.runDir`, `result.snapshotDir` and `result.exitCode`
+directly in your publisher and notifier. A regression is a returned result, so
+publish its evidence and notify before assigning the final process exit status.
+Setup/cancellation/compatibility failures reject instead; handle those as execution
+failures, without treating a partial folder as a completed comparison.
+
+The SDK does not provide GCS path checks, `complete.json`, `execution.json`, upload
+transactions, Zapier or Teams delivery. Keep those guarantees in your existing
+code. The optional [daily orchestration example](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/examples/sdk/daily-monitor.mjs) accepts your existing restore,
+publish, persist and notify functions; its order is:
+
+1. Restore the exact snapshot folder.
+2. Await the monitor result, including HTML/JUnit and optional job summary.
+3. Publish the complete `result.runDir` using the existing publisher.
+4. Persist `result.snapshotDir` and all sidecars, retaining regressed references.
+5. Notify using this exact result; return it for the calling script's exit policy.
+
+The daily orchestration example checks the returned mode and snapshot folder
+before invoking publishers. This catches an older JavaScript SDK that ignores an
+unknown `monitor` option instead of running the intended monitoring flow.
+
+The integration functions own path validation, upload completion markers,
+idempotency and failure notifications. A rejected upload/notification operation
+still needs the caller's existing failure policy. Do not find the "latest run"
+again: concurrent executions can change that lookup. Use separate output/snapshot
+folders and storage concurrency controls when daily executions can overlap.
+
 ## 7. Configure GitHub Actions
 
 1. Install the dependencies locally and commit the lockfile, config and script.

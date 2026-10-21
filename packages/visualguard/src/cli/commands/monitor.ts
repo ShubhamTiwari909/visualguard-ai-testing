@@ -11,10 +11,10 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { Option, type Command } from "commander";
 import pc from "picocolors";
-import { normalizeBaseURL } from "../../config/urls.js";
+import { resolveMonitorRun } from "../../config/monitor.js";
 import { ConfigError } from "../../core/errors.js";
 import { createRun } from "../../core/run.js";
 import { exitCodeFor, FAIL_ON_VALUES } from "../../core/status.js";
@@ -88,26 +88,14 @@ export async function runMonitorCommand(
 ): Promise<number> {
   if (flags.workflow) return writeMonitorWorkflow(flags.workflow, url);
 
-  const config = await loadResolvedConfig({ ...flags, production: url ?? flags.production });
-  const site = config.baseURL.production ?? config.baseURL.staging;
-  if (!site) {
-    throw new ConfigError("Nothing to monitor: pass a URL or set baseURL.production.", {
-      hint: "npx visualguard monitor https://example.com",
-    });
-  }
-  // The live site is the "current" side; the previous capture is the reference.
-  config.baseURL = { production: site, staging: site };
-  const host = normalizeBaseURL(site).host.replace(/[^a-z0-9.-]+/gi, "_");
-  const snapshotDir = resolve(config.cwd, config.monitor.dir, host);
+  const resolved = await loadResolvedConfig({ ...flags, production: url ?? flags.production });
+  const { config, snapshotDir, options } = resolveMonitorRun(resolved, { reset: flags.reset });
 
   const reporters = standardReporters(config, flags, (manifest) =>
     nextSteps(manifest, snapshotDir),
   );
   const { manifest } = await createRun(config, {
-    mode: "monitor",
-    baselineDir: snapshotDir,
-    updateBaselines: flags.reset || config.monitor.update === "always" ? true : "unless-regression",
-    baselineHealth: true,
+    ...options,
     failOn: flags.failOn,
     debug: flags.debug,
     ai: flags.ai === false ? false : undefined,

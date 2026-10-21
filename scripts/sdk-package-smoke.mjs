@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createServer } from "node:http";
-import { cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -113,8 +113,71 @@ try {
     await readFile(join(consumer, "node_modules/visualguard/dist/index.d.ts"), "utf8"),
     /runVisualGuard/,
   );
+  await cp(join(repo, "examples/sdk/daily-monitor.mjs"), join(consumer, "daily-monitor.mjs"));
+  await writeFile(
+    join(consumer, "daily-check.mjs"),
+    `
+import { writeFile } from "node:fs/promises";
+import { runDailyMonitor } from "./daily-monitor.mjs";
+const events = [];
+const host = new URL(process.env.VISUALGUARD_PRODUCTION_URL).host.replace(/[^a-z0-9.-]+/gi, "_");
+const result = await runDailyMonitor({
+  snapshotDir: "snapshots/" + host,
+  restoreSnapshots: async () => { events.push("restore"); },
+  publishRun: async () => { events.push("publish"); },
+  persistSnapshots: async () => { events.push("persist"); },
+  notify: async () => { events.push("notify"); },
+});
+await writeFile("daily-result.json", JSON.stringify({
+  events, mode: result.manifest.mode, snapshotDir: result.snapshotDir,
+  exitCode: result.exitCode, runDir: result.runDir,
+}));
+process.exitCode = result.exitCode;
+`,
+  );
+  await exec(process.execPath, ["daily-check.mjs"], { cwd: consumer, env });
+  const daily = JSON.parse(await readFile(join(consumer, "daily-result.json"), "utf8"));
+  assert.deepEqual(daily.events, ["restore", "publish", "persist", "notify"]);
+  assert.equal(daily.mode, "monitor");
+  assert.equal(daily.exitCode, 0);
+  assert.equal(
+    daily.snapshotDir,
+    join(
+      await realpath(consumer),
+      "snapshots",
+      new URL(origin).host.replace(/[^a-z0-9.-]+/gi, "_"),
+    ),
+  );
+  assert.ok((await readFile(join(daily.runDir, "manifest.json"))).length);
+  assert.match(
+    await readFile(join(consumer, "node_modules/visualguard/dist/index.d.ts"), "utf8"),
+    /SDKMonitorOptions/,
+  );
+  await writeFile(
+    join(consumer, "cli-monitor.config.mjs"),
+    'export default { routes: ["/"], viewports: { desktop: { width: 1440, height: 900 } }, ai: { provider: "none" }, monitor: { dir: "snapshots" } };',
+  );
+  await exec(
+    process.execPath,
+    [
+      join(consumer, "node_modules/visualguard/dist/cli.js"),
+      "monitor",
+      origin,
+      "--config",
+      "cli-monitor.config.mjs",
+      "--no-ai",
+      "--ci",
+    ],
+    { cwd: consumer, env },
+  );
+  const afterCLI = JSON.parse(await readFile(join(runRoot, "index.json"), "utf8"));
+  const cliManifest = JSON.parse(
+    await readFile(join(runRoot, afterCLI.runs.at(-1).id, "manifest.json"), "utf8"),
+  );
+  assert.equal(cliManifest.mode, "monitor");
+  assert.equal(cliManifest.jobs[0].captures.production.source, "baseline");
   console.log(
-    "SDK package smoke passed: fresh consumer, public export/declarations, documented script/config, pass/fail exit status, HTML/JUnit/JSON, screenshots and GitHub summary.",
+    "SDK package smoke passed: fresh consumer, public export/declarations, documented script/config, pass/fail exit status, HTML/JUnit/JSON, screenshots, GitHub summary, daily monitor orchestration and CLI snapshot interoperability.",
   );
 } finally {
   await new Promise((done, reject) => server.close((error) => (error ? reject(error) : done())));
