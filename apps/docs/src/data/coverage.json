@@ -3864,6 +3864,14 @@
     },
     {
       "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.5.0",
+      "anchor": "350",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "SDK monitor release; snapshot policies and daily CI orchestration are documented in the SDK guide."
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
       "heading": "3.4.0",
       "anchor": "340",
       "destination": "/guides/programmatic-api/",
