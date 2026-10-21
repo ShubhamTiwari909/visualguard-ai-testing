@@ -3861,6 +3861,30 @@
       "disposition": "migrated",
       "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
       "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.4.0",
+      "anchor": "340",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "SDK release preparation; installation and usage are documented in the programmatic SDK guide."
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.3.0",
+      "anchor": "330",
+      "destination": "/releases/",
+      "disposition": "migrated",
+      "reason": "Preserve the published 3.3.0 changelog and its documentation notes as release history."
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Documentation",
+      "anchor": "Documentation",
+      "destination": "/releases/",
+      "disposition": "migrated",
+      "reason": "Preserve the published 3.3.0 changelog and its documentation notes as release history."
     }
   ]
 }
