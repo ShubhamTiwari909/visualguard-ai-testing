@@ -129,3 +129,49 @@ it("reverts a desktop repair that changes the previously passing mobile variant"
     await staging.close();
   }
 }, 60_000);
+
+it.each([false, true])("section repairs preserve an unrelated section's candidate appearance (collateral change: %s)", async (damageSibling) => {
+  const config = testConfig({
+    routes: [
+      { path: "/example", name: "Checkout", screenshot: { selector: '[data-visualguard="checkout"]' } },
+      { path: "/example", name: "Summary", screenshot: { selector: '[data-visualguard="summary"]' } },
+    ],
+    fix: { enabled: true, include: ["staging/**"], maxAttempts: 1, allowSourceUpload: true },
+  });
+  const html = (checkout: string, summary: string) =>
+    `<style>body{margin:0}section{width:400px;height:100px;font:24px Arial}</style><section data-visualguard="checkout">${checkout}</section><section data-visualguard="summary">${summary}</section>`;
+  const before = html("Before checkout", "Intentional summary");
+  for (const variant of ["production", "staging"]) {
+    mkdirSync(join(config.cwd, variant));
+    writeFileSync(join(config.cwd, variant, "example.html"), variant === "production" ? html("After checkout", "Expected summary") : before);
+  }
+  writeFileSync(join(config.cwd, ".gitignore"), ".visualguard/\n");
+  execFileSync("git", ["init", "-q"], { cwd: config.cwd });
+  execFileSync("git", ["add", "."], { cwd: config.cwd });
+  execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "initial"], { cwd: config.cwd });
+  const production = await startFixtureServer("production", config.cwd);
+  const staging = await startFixtureServer("staging", config.cwd);
+  try {
+    config.baseURL = { production: production.url, staging: staging.url };
+    config.fix.verify.server = { url: staging.url, readyTimeoutMs: 5000 };
+    const { manifest } = await createRun(config).start();
+    expect(manifest.jobs.map((job) => job.status)).toEqual(["review", "review"]);
+    const provider = new MockProvider(() => ({
+      summary: "Restore checkout",
+      confidence: 1,
+      edits: [
+        { file: "staging/example.html", search: "Before checkout", replace: "After checkout", reason: "restore checkout" },
+        ...(damageSibling ? [{ file: "staging/example.html", search: "Intentional summary", replace: "Unexpected summary", reason: "unwanted side effect" }] : []),
+      ],
+    }));
+    const outcomes = await fixRegressions(config, {
+      includeReview: true, provider, yes: true,
+      callbacks: { confirm: async (proposal) => proposal.job.name === "Checkout", consent: async () => true, progress: () => {} },
+    });
+    expect(outcomes.find((outcome) => outcome.job.name === "Checkout")?.result).toBe(damageSibling ? "failed" : "fixed");
+    expect(readFileSync(join(config.cwd, "staging/example.html"), "utf8")).toBe(damageSibling ? before : html("After checkout", "Intentional summary"));
+  } finally {
+    await production.close();
+    await staging.close();
+  }
+}, 90_000);

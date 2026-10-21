@@ -22,8 +22,8 @@ const server = createServer((request, response) => {
   const path = request.url ?? "/";
   const staging = path.includes("/staging/");
   const scenario = path.split("/").pop();
-  const section = `<section data-visualguard="checkout" style="width:240px;height:${scenario === "tall" ? 400 : 140}px;background:${scenario === "inside" && staging ? "red" : "blue"};position:relative;${scenario === "hidden" ? "display:none" : ""}"><button data-testid="pay" style="position:absolute;left:20px;top:30px;width:100px;height:40px">${scenario === "masked" && staging ? "New price" : "Pay now"}</button></section>`;
-  response.writeHead(200, { "content-type": "text/html" }).end(`<!doctype html><style>body{margin:0}header{height:${scenario === "offset" && staging ? 900 : 600}px;background:${staging ? "pink" : "yellow"}}main{margin-left:80px}</style><header>Outside section</header><main>${scenario === "missing" || scenario === "delayed" ? "" : section}${scenario === "duplicate" ? section : ""}<aside data-visualguard="summary" style="height:80px;width:100px;background:green">Summary</aside></main>${scenario === "delayed" ? `<script>setTimeout(()=>document.querySelector('main').insertAdjacentHTML('afterbegin',${JSON.stringify(section)}),100)</script>` : ""}`);
+  const section = `<section data-visualguard="checkout" style="width:240px;height:${scenario === "tall" ? 400 : 140}px;background:${scenario === "inside" && staging ? "red" : "blue"};position:relative;${scenario === "hidden" ? "display:none" : scenario === "transparent" ? "opacity:0" : ""}"><button data-testid="pay" style="position:absolute;left:20px;top:30px;width:100px;height:40px">${scenario === "masked" && staging ? "New price" : "Pay now"}</button></section>`;
+  response.writeHead(200, { "content-type": "text/html" }).end(`<!doctype html><style>body{margin:0}header{height:${scenario === "offset" && staging ? 900 : 600}px;background:${staging ? "pink" : "yellow"}}main{margin-left:80px}</style><header>Outside section</header><main style="${scenario === "ancestor-transparent" ? "opacity:0" : ""}">${scenario === "missing" || scenario === "delayed" ? "" : section}${scenario === "duplicate" ? section : ""}<aside data-visualguard="summary" style="height:80px;width:100px;background:green">Summary</aside></main>${scenario === "delayed" ? `<template id="delayed-section">${section}</template><script>setTimeout(()=>document.querySelector('main').prepend(document.querySelector('#delayed-section').content.cloneNode(true)),100)</script>` : ""}`);
 });
 
 beforeAll(async () => {
@@ -130,6 +130,11 @@ describe("real browser section capture", () => {
   it.each(["missing", "hidden", "duplicate"])("reports %s targets instead of capturing the page", async (scenario) => {
     const settings = config(`/${scenario}`);
     await expect(capturePage({ browser, config: settings, job: job(settings), env: "staging" })).rejects.toThrow(/exactly one visible element/);
+  });
+
+  it.each(["transparent", "ancestor-transparent"])("rejects a %s section rather than saving blank evidence", async (scenario) => {
+    const settings = config(`/${scenario}`);
+    await expect(capturePage({ browser, config: settings, job: job(settings), env: "staging" })).rejects.toThrow(/must be visible/);
   });
 
   it("rejects malformed selectors and oversized sections", async () => {
