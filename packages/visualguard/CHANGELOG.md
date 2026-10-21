@@ -1,5 +1,37 @@
 # visualguard
 
+## 3.4.0
+
+### Minor Changes
+
+- 65a9ea0: Add the typed `runVisualGuard` SDK for scripts and CI. Support inline or discovered configuration, isolated environment resolution, section capture, explicit baseline updates, cancellation and progress, HTML/JUnit reports, optional GitHub summaries, and structured policy verdicts without changing the caller's process exit status. Include repository and Astro guides plus a runnable CI script and workflow example.
+
+## 3.3.0
+
+### Minor Changes
+
+- 0a1cb01: Let the dashboard run **Run test** itself with just the signed-in user's authorization: no runner credential is needed on a local or container-hosted dashboard. A connected private runner still takes priority. Cloud Run scaffolds now install Chromium; serverless hosts such as Vercel keep requiring a private runner unless `VISUALGUARD_BUILT_IN_RUNNER=on` is set. Add `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY`.
+
+  Reserve built-in runner capacity before persisting requests so simultaneous projects respect the process concurrency limit. Release slots after failed saves and completed captures.
+
+- 592c5cf: Add a project-specific visual test editor and Run test action backed by durable execution requests and a connected private runner. Include a foreground dashboard runner CLI, separately scoped expiring runner credentials, bounded capture, leases/heartbeats, progress and result links. Keep browser execution and AI credentials on the runner; preserve offline tests and upload-only tokens.
+- b32a009: Show live stage and measured comparison progress for dashboard-triggered visual tests. Persist bounded runner reports through serialized lease heartbeats, retain partial progress on failure, and show distinct upload/finalization states with accessible progress indicators.
+- 97e834a: Persist an independent, validated visual comparison configuration for each dashboard project, with project permissions and version-checked edits. Support separate production/staging URLs, routes, viewports and AI provider/model without storing executable config or credentials.
+- d9bcf91: Capture individual sections using a CSS selector such as `[data-visualguard="checkout"]` in `screenshot.selector`, with route overrides and explicit page fallback. Keep section jobs and baselines distinct, scope DOM explanations to the image, reject invalid or ambiguous targets, and support the same scope in Playwright checks, recaptures, and verified fixes.
+
+### Patch Changes
+
+- Keep automatic repairs isolated to the selected section while still rejecting changes that damage another captured section. Reject transparent section targets, including targets inside transparent parents, instead of accepting blank screenshots.
+- 613b4e2: Explain dashboard connection failures with the target origin and startup/network recovery steps, preserve the original cause for debug output, and document the complete AI-plus-dashboard startup sequence.
+- cdfec35: Reduce MongoDB run deletion latency by batching artifact cleanup queue writes, bounding concurrent cleanup work and indexing artifact references/chunks. Preserve shared evidence, active upload checks, generation-safe deletion and durable retry tasks; await all cleanup workers before returning.
+- 277e9b9: Move Delete project from People & integrations to the selected project's run-history section. Preserve maintainer/admin visibility, project ID confirmation, expected run-count checks and post-deletion navigation.
+- 6578cb5: Include the `/policies` rewrite in generated Vercel deployments so direct navigation and refresh load the dashboard. Existing deployment folders still need regeneration or the documented manual rewrite.
+
+### Documentation
+
+- Add a complete section screenshot guide to the repository and Astro documentation website, covering data attributes, global and route selectors, Playwright checks, baseline separation, target requirements, and troubleshooting.
+- Add implementation plans for AI-agent MCP integration and daily GitHub Actions runs with Cloud Run and Google Cloud Storage. These integrations are plans, not implemented features in this release.
+
 ## 3.2.0
 
 ### Upgrade from 3.1.0
