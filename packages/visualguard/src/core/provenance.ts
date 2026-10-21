@@ -15,6 +15,7 @@ import { execFileSync } from "node:child_process";
 import { basename, dirname, join } from "node:path";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { ResolvedConfig } from "../config/resolve.js";
+import { screenshotSelector } from "../config/screenshot.js";
 import { ConfigError } from "./errors.js";
 import type { JobSpec } from "./types.js";
 
@@ -62,13 +63,15 @@ export function sourceRevision(cwd: string): string | undefined {
  */
 export function capturePolicy(
   config: ResolvedConfig,
-  job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide">,
+  job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide" | "screenshotSelector">,
 ) {
+  const { selector: _globalSelector, ...screenshot } = config.screenshot;
+  const selector = screenshotSelector(config, job);
   return {
     browser: config.browser,
     viewport: config.viewports[job.viewport]!,
     stabilize: config.stabilize,
-    screenshot: config.screenshot,
+    screenshot: { ...screenshot, ...(selector ? { selector } : {}) },
     checks: config.checks,
     diff: config.diff,
     waitFor: job.waitFor,
@@ -86,7 +89,7 @@ export type CapturePolicy = ReturnType<typeof capturePolicy>;
  */
 export function renderingIdentity(
   config: ResolvedConfig,
-  job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide">,
+  job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide" | "screenshotSelector">,
   project?: string,
 ) {
   const { diff: _diff, ...policy } = capturePolicy(config, job);

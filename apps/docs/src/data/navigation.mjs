@@ -5,7 +5,7 @@ export const navigation = [
   { label: 'Start here', items: pages('start/choose-setup', 'start/requirements', 'start/install', 'start/quickstart', 'start/common-tasks') },
   { label: 'Understand VisualGuard', collapsed: true, items: pages('concepts/how-it-works', 'concepts/comparison-modes', 'concepts/results', 'concepts/glossary', 'concepts/faq') },
   { label: 'Testing guides', collapsed: true, items: [
-    { label: 'Set up comparisons', items: pages('guides/zero-config-scans', 'guides/configuration', 'guides/routes', 'guides/browsers-and-viewports', 'guides/stable-captures', 'guides/application-auth', 'guides/playwright', 'guides/nextjs-example') },
+    { label: 'Set up comparisons', items: pages('guides/zero-config-scans', 'guides/configuration', 'guides/routes', 'guides/browsers-and-viewports', 'guides/stable-captures', 'guides/section-capture', 'guides/application-auth', 'guides/playwright', 'guides/nextjs-example') },
     { label: 'Understand and act on results', items: pages('guides/diff-and-noise', 'guides/reports', 'guides/accepting-changes', 'guides/local-baselines', 'guides/fixes', 'guides/accessibility-and-performance') },
     { label: 'Add AI analysis', items: pages('guides/ai-gemini', 'guides/ai-ollama', 'guides/ai-policy-and-budgets') },
     { label: 'Automate and extend', items: pages('guides/watch', 'guides/monitoring', 'guides/programmatic-api', 'guides/reporters') },

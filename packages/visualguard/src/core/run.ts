@@ -434,9 +434,9 @@ export class Run extends RunEmitter {
            * Collect and persist optional DOM evidence after the screenshot. A DOM failure
            * weakens explanation, but does not invalidate the captured image.
            */
-          afterScreenshot: async (page) => {
+          afterScreenshot: async (page, selector) => {
             // A failed DOM snapshot only costs the explanation, never the capture.
-            dom = await captureDomSnapshot(page).catch(() => undefined);
+            dom = await captureDomSnapshot(page, 4_000, selector).catch(() => undefined);
           },
         });
         const imagePath = join(jobDir, `${env}.png`);
@@ -655,6 +655,7 @@ export class Run extends RunEmitter {
     runDir: string,
     capture: CaptureResult,
     job: Pick<JobSpec, "viewport"> & {
+      screenshotSelector?: string | null;
       waitFor?: string;
       mask?: string[];
       hide?: string[];
@@ -668,6 +669,9 @@ export class Run extends RunEmitter {
       baselinePath,
       renderingIdentity(this.config, {
         viewport: job.viewport,
+        screenshotSelector: job.screenshotSelector !== undefined
+          ? job.screenshotSelector
+          : job.capturePolicy ? job.capturePolicy.screenshot.selector ?? null : undefined,
         waitFor: job.waitFor ?? job.capturePolicy?.waitFor,
         mask: job.mask ?? job.capturePolicy?.mask ?? [],
         hide: job.hide ?? job.capturePolicy?.hide ?? [],

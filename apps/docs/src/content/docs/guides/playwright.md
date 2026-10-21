@@ -136,6 +136,7 @@ You should see both sides in the same state in the attached screenshots. Adapt t
 | `name` | Name of this checkpoint. Must be unique within the test. Used in attachments and baseline names. | `"page"` |
 | `referenceSetup` | Async function that receives the fresh reference `Page` and brings it to the same state. | none |
 | `waitFor` | Selector that must be visible on both sides before the screenshot. | none |
+| `selector` | Capture one section matching this CSS selector. `null` restores page capture. See [section capture](/guides/section-capture/). | inherits `screenshot.selector` |
 | `mask` | Selectors to cover with a solid box. Masked areas keep their size. | `[]` |
 | `hide` | Selectors to hide. | `[]` |
 | `failOn` | What fails the test: `"regression"`, `"review"` or `"any"`. Overrides `visualguardOptions.failOn`. | `"regression"` |

@@ -72,6 +72,7 @@ Use `freezeTime` when the page shows "today", a countdown or a relative date lik
 | Option | What it does | Default |
 | --- | --- | --- |
 | `screenshot.fullPage` | Captures the whole page height. `false` captures only the visible window. | `true` |
+| `screenshot.selector` | Capture exactly one visible element matching this CSS selector. Overrides page framing; oversized sections error rather than truncate. See [section capture](/guides/section-capture/). | not set |
 | `screenshot.maxHeight` | The tallest full-page screenshot, in pixels. Longer pages are cut at this height. Scrolling for lazy content also stops here. | `15000` |
 
 A page cut at the maximum height shows "cut at max height" in the report's page health details. Raise `maxHeight` if the bottom of the page matters. Very tall screenshots take longer to compare.

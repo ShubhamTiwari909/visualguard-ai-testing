@@ -3649,6 +3649,14 @@
       "disposition": "retained historical",
       "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
       "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Capture one section",
+      "anchor": "capture-one-section",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Full setup, route overrides, baseline behavior, and troubleshooting are maintained in the section-capture guide."
     }
   ]
 }

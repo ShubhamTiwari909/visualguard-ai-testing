@@ -33,6 +33,29 @@ test("an unchanged page passes", async ({ page, visualguard }) => {
   expect(result.urls.production).toBe("http://127.0.0.1:4210/identical");
 });
 
+test.describe("section screenshots", () => {
+  test.use({ visualguardOptions: { config: {
+    baseURL: { production: "http://127.0.0.1:4210", staging: STAGING },
+    screenshot: { selector: '[data-visualguard="checkout"]' },
+    stabilize: { networkQuietMs: 0 },
+  } } });
+
+  test("inherits the selector and allows a per-check page override", async ({ page, visualguard }) => {
+    const content = '<section data-visualguard="checkout" style="width:240px;height:140px;background:blue">Checkout</section>';
+    await page.goto(`${STAGING}/identical`);
+    await page.setContent(content);
+    const referenceSetup = async (reference: typeof page) => { await reference.setContent(content); };
+    const result = await visualguard.check(page, { name: "checkout", referenceSetup });
+    expect(result.captures.production?.size).toEqual({ width: 240, height: 140 });
+    expect(result.captures.staging?.size).toEqual({ width: 240, height: 140 });
+    const full = await visualguard.check(page, { name: "page", selector: null, referenceSetup });
+    expect(full.captures.staging?.size.width).toBe(1280);
+    expect(full.capturePolicy?.screenshot.selector).toBeUndefined();
+    expect(full.id).not.toBe(result.id);
+    await expect(visualguard.check(page, { selector: " " })).rejects.toThrow(/must not be empty/);
+  });
+});
+
 test("a broken image fails with its explanation", async ({ page, visualguard }) => {
   await page.goto(`${STAGING}/missing-image`);
   await expect(visualguard.check(page, { name: "product" })).rejects.toThrow(

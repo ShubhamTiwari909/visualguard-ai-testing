@@ -21,3 +21,7 @@ Let users capture and compare a marked section instead of the whole page. A CSS 
 4. Document markup, configuration, setup, baseline migration, limits, and troubleshooting in the Astro site and package guide. Regenerate the configuration reference.
 
 Keep this planning commit separate. Commit implementation, documentation, and focused tests together. Preserve existing offline behavior and leave unrelated local files untouched.
+
+## Completion
+
+All four phases are implemented. The focused configuration, routing, reliability, baseline, repair-verification, section-capture, and public Playwright-fixture suites passed (65 Vitest checks, including a nested eight-test Playwright suite). The section and fixture suites were rerun after the final capture adjustment and passed. Documentation content, examples, generated references, the 86-page Astro build, and its 12,804 internal links/assets/anchors passed. Formatting, lint, and type-check commands remain deferred under the repository instructions. No npm package has been published for this feature.

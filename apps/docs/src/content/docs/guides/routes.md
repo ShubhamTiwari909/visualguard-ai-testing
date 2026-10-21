@@ -233,6 +233,7 @@ For capture problems, see [Capture and reports troubleshooting](/troubleshooting
 
 ## Next steps
 
+- [Capture one section](/guides/section-capture/): set `screenshot.selector` per route, compare several sections, or use `selector: null` for a page override.
 - [Choose browsers and viewports](/guides/browsers-and-viewports/): decide the screen sizes for each page.
 - [Make captures repeatable](/guides/stable-captures/): use `waitFor`, `mask` and `hide` well.
 - [Scan URLs without a config](/guides/zero-config-scans/): try discovery on any site with one command.

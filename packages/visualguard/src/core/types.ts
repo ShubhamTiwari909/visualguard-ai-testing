@@ -66,6 +66,8 @@ export interface JobSpec {
   viewport: string;
   urls: Record<Env, string>;
   waitFor?: string;
+  /** Route/check section override; null explicitly captures the page. */
+  screenshotSelector?: string | null;
   mask: string[];
   hide: string[];
 }

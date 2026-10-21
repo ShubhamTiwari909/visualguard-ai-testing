@@ -146,6 +146,7 @@ Generated from the current configuration input schema. `not set` means the field
 | `stabilize.stabilityAttempts` | integer | `3` | minimum: 1; maximum: 10 |
 | `stabilize.stabilityIntervalMs` | integer | `150` | minimum: 0; maximum: 9007199254740991 |
 | `screenshot` | object | `{}` | — |
+| `screenshot.selector` | string | not set | minLength: 1 |
 | `screenshot.fullPage` | boolean | `true` | — |
 | `screenshot.maxHeight` | integer | `15000` | maximum: 9007199254740991; exclusiveMinimum: 0 |
 | `diff` | object | `{}` | — |
