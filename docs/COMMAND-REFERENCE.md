@@ -83,6 +83,8 @@ visualguard test [project] [options]
 - Policy: `--fail-on <regression|review|any>` sets what makes the exit code non-zero (default `regression`).
 - Preview: `--list` prints the URL pairs that would be tested, then exits.
 
+Section framing is a config setting, not a separate CLI flag: set `screenshot.selector` globally or on route objects. Use `--only` to filter configured section jobs; `--route` replaces route entries and therefore removes their per-route selectors. See [section screenshot testing](SECTION-SCREENSHOT-TESTING.md).
+
 Project-bound form: add a dashboard project ID or exact name to save the run to the dashboard.
 
 - `--dashboard <url>`: dashboard origin (or `VISUALGUARD_DASHBOARD_URL`). Needs a project. Without it the run goes to local dashboard storage.

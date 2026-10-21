@@ -187,6 +187,7 @@ export interface ExpandedRoute {
   name: string;
   paths: Record<Env, string>;
   waitFor?: string;
+  screenshotSelector?: string | null;
   mask: string[];
   hide: string[];
 }
@@ -216,7 +217,7 @@ export function expandRoutes(inputs: readonly RouteInput[]): ExpandRoutesResult 
    * keeps the two path values distinct in the deduplication key.
    */
   const push = (route: ExpandedRoute) => {
-    const key = `${route.paths.production}\u0000${route.paths.staging}`;
+    const key = `${route.paths.production}\u0000${route.paths.staging}\u0000${JSON.stringify(route.screenshotSelector)}`;
     if (seen.has(key)) return;
     seen.add(key);
     routes.push(route);
@@ -226,6 +227,7 @@ export function expandRoutes(inputs: readonly RouteInput[]): ExpandRoutesResult 
     const object: RouteObject = typeof input === "string" ? { path: input } : input;
     const base = {
       waitFor: object.waitFor,
+      screenshotSelector: object.screenshot?.selector,
       mask: object.mask ?? [],
       hide: object.hide ?? [],
     };

@@ -129,6 +129,8 @@ Open `http://127.0.0.1:4400`, select the project, choose **Configure tests**, th
 | [Install in your project](docs/NPM-PACKAGE-SETUP.md)                       | Step-by-step setup with the npm package, with or without a dashboard.  |
 | [Run this repository](docs/LOCAL-SETUP.md)                                 | Try the demo and the dashboard from a source checkout.                 |
 | [Configuration](apps/docs/src/content/docs/guides/configuration.md)        | Routes, viewports, stable captures, tolerances, AI and fix settings.   |
+| [Section screenshot testing](docs/SECTION-SCREENSHOT-TESTING.md)           | Select one `data-*` container, configure routes, and verify cropped results. |
+| [AI agent integration plan](docs/MCP-INTEGRATION-PLAN.md)                  | Proposed MCP support for Claude Code, Codex, and Gemini CLI. |
 | [All guides and reference](apps/docs/src/content/docs/index.mdx)           | Baselines, Playwright, CI, sharding, API, deployment and troubleshooting. |
 | [GitHub Action](action/README.md)                                          | Run VisualGuard in a workflow.                                         |
 | [Next.js example](examples/nextjs/README.md)                               | Seed three regressions and repair them.                                |

@@ -12,6 +12,7 @@
 
 import type { Browser, Page } from "playwright";
 import type { ResolvedConfig } from "../config/resolve.js";
+import { screenshotSelector } from "../config/screenshot.js";
 import type { CaptureHookContext } from "../config/schema.js";
 import { errorMessage } from "../core/errors.js";
 import type { Env, HealthSignals, JobSpec, Size } from "../core/types.js";
@@ -45,7 +46,7 @@ export interface CaptureRequest {
   /**
    * Called with the stabilised page right after the screenshot (DOM snapshots, Phase 4).
    */
-  afterScreenshot?: (page: Page) => Promise<void>;
+  afterScreenshot?: (page: Page, selector?: string) => Promise<void>;
   /**
    * Save a Playwright trace of the final attempt here.
    */
@@ -196,7 +197,7 @@ async function captureOnce(
     hookContext,
   });
 
-  await afterScreenshot?.(page);
+  await afterScreenshot?.(page, screenshotSelector(config, job));
 
   if (checks && config.checks.accessibility.enabled) {
     // axe schedules work with timers, which the paused clock would hold forever.
@@ -214,7 +215,7 @@ async function captureOnce(
 
 export interface ShootContext {
   config: ResolvedConfig;
-  job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide">;
+  job: Pick<JobSpec, "viewport" | "waitFor" | "mask" | "hide" | "screenshotSelector">;
   /**
    * Filled in with broken images and overflow.
    */
@@ -265,6 +266,21 @@ export async function stabilizeAndShoot(
       .waitForLoadState("networkidle", { timeout: stabilize.networkQuietTimeoutMs })
       .catch(() => {});
   await config.hooks.beforeCapture?.(hookContext);
+  const selector = screenshotSelector(config, job);
+  const target = selector ? page.locator(`css:light=${selector}`) : undefined;
+  if (target) {
+    try {
+      // Validate a plain CSS selector, then let Playwright wait for a unique visible target.
+      await page.evaluate((value) => document.querySelectorAll(value).length, selector!);
+      await target.waitFor({ state: "visible", timeout: config.browser.actionTimeoutMs });
+      await target.scrollIntoViewIfNeeded();
+    } catch (error) {
+      throw new Error(
+        `Section capture requires exactly one visible element matching ${JSON.stringify(selector)}: ${errorMessage(error)}`,
+        { cause: error },
+      );
+    }
+  }
   if (stabilize.pauseMedia) await pauseMedia(page);
   if (clock) await pauseClock(page, clock.base, clock.installedAt);
 
@@ -277,7 +293,7 @@ export async function stabilizeAndShoot(
     health.horizontalOverflow = { documentWidth: metrics.documentWidth, viewportWidth };
   }
 
-  const truncated = screenshot.fullPage && metrics.documentHeight > screenshot.maxHeight;
+  const truncated = !target && screenshot.fullPage && metrics.documentHeight > screenshot.maxHeight;
   const mask = [IGNORE_MASK_SELECTOR, ...stabilize.mask, ...job.mask].map((selector) =>
     page.locator(selector),
   );
@@ -285,19 +301,40 @@ export async function stabilizeAndShoot(
    * Take one screenshot with the same masks, scale and clipping rules each time. Reusing this
    * closure makes the stability loop compare equivalent capture settings.
    */
-  const shoot = () =>
-    page.screenshot({
+  const shoot = async () => {
+    const options = {
       type: "png",
-      fullPage: screenshot.fullPage,
       animations: stabilize.disableAnimations ? "disabled" : "allow",
       caret: "hide",
       scale: "css",
       mask,
       maskColor: MASK_COLOR,
+    } as const;
+    if (target) {
+      const count = await target.count();
+      if (count !== 1)
+        throw new Error(`Section selector ${JSON.stringify(selector)} matched ${count} elements; expected exactly one.`);
+      const box = await target.boundingBox();
+      const transparent = await target.evaluate((element) => {
+        for (let current: Element | null = element; current; current = current.parentElement) {
+          if (getComputedStyle(current).opacity === "0") return true;
+        }
+        return false;
+      });
+      if (!box || box.width <= 0 || box.height <= 0 || !(await target.isVisible()) || transparent)
+        throw new Error(`Section ${JSON.stringify(selector)} must be visible and have a nonempty bounding box.`);
+      if (box.height > screenshot.maxHeight)
+        throw new Error(`Section ${JSON.stringify(selector)} is ${box.height}px tall, exceeding screenshot.maxHeight (${screenshot.maxHeight}px). Increase maxHeight or select a smaller section.`);
+      return target.screenshot(options);
+    }
+    return page.screenshot({
+      ...options,
+      fullPage: screenshot.fullPage,
       clip: truncated
         ? { x: 0, y: 0, width: metrics.documentWidth, height: screenshot.maxHeight }
         : undefined,
     });
+  };
 
   // Stability loop: keep shooting until two consecutive screenshots match.
   let png = await shoot();

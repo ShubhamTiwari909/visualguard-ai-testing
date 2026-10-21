@@ -93,7 +93,7 @@ The config has one level of top-level groups. This table says what each group is
 | `environments` | Extra request headers and a saved login state for each site. | [Application auth](/guides/application-auth/) |
 | `hooks` | Your own code that runs before navigation and before each screenshot. | [Step 6](#6-start-from-a-complete-example) |
 | `stabilize` | How VisualGuard makes pages hold still: animations, clock, fonts, network, hidden and masked elements. | [Stable captures](/guides/stable-captures/) |
-| `screenshot` | Full-page capture and the maximum height. | [Stable captures](/guides/stable-captures/) |
+| `screenshot` | Capture a page or one selected section, with a maximum height. | [Section capture](/guides/section-capture/) and [stable captures](/guides/stable-captures/) |
 | `diff` | How much change is allowed, how changed areas are grouped, and the noise map. | [Differences and noise](/guides/diff-and-noise/) |
 | `checks` | Optional accessibility and performance checks. Both are off by default. | [Accessibility and performance](/guides/accessibility-and-performance/) |
 | `ai` | AI provider, model and spending limits. The default provider is `"none"`. | [Gemini](/guides/ai-gemini/), [AI policy](/guides/ai-policy-and-budgets/) |

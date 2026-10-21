@@ -48,6 +48,7 @@ export const routePathSchema = z.string().refine((value) => value.startsWith("/"
 });
 
 const selectorListSchema = z.array(z.string().min(1));
+const screenshotSelectorSchema = z.string().trim().min(1);
 
 export const routeObjectSchema = z.object({
   path: routePathSchema,
@@ -76,6 +77,8 @@ export const routeObjectSchema = z.object({
    */
   mask: selectorListSchema.optional(),
   hide: selectorListSchema.optional(),
+  /** Override the global section selector; null restores page capture. */
+  screenshot: z.object({ selector: screenshotSelectorSchema.nullable() }).optional(),
 });
 
 export const routeInputSchema = z.union([routePathSchema, routeObjectSchema]);
@@ -273,6 +276,8 @@ export const configSchema = z.object({
 
   screenshot: z
     .object({
+      /** Capture one visible element matching this CSS selector instead of the page. */
+      selector: screenshotSelectorSchema.optional(),
       fullPage: z.boolean().default(true),
       maxHeight: z.number().int().positive().default(15_000),
     })

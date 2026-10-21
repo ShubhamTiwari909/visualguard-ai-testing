@@ -160,6 +160,12 @@ export function selectFixableJobs(
   );
 }
 
+/** Viewports of the same section share a repair goal; other sections retain their own evidence. */
+function sameRepairScope(a: JobResult, b: JobResult): boolean {
+  return a.route === b.route &&
+    a.capturePolicy?.screenshot.selector === b.capturePolicy?.screenshot.selector;
+}
+
 /**
  * Require enabled fixing and an acceptable workspace state before proposing changes.
  * Dirty-source policy is checked here so subsequent writes follow the requested protection.
@@ -407,7 +413,7 @@ export async function applyAndVerify(
       for (const original of options.scope) {
         if (original.id === job.id) continue;
         const reference =
-          original.route === job.route && original.status !== "accepted"
+          sameRepairScope(original, job) && original.status !== "accepted"
             ? original.captures.production
             : original.captures.staging;
         if (!reference) throw new Error(`Missing scope reference: ${original.id}`);
@@ -500,9 +506,7 @@ export async function fixRegressions(
       );
     }
     const fixed = new Set(outcomes.filter((o) => o.result === "fixed").map((o) => o.job.id));
-    const fixedRoutes = new Set(
-      outcomes.filter((o) => o.result === "fixed").map((o) => o.job.route),
-    );
+    const fixedJobs = outcomes.filter((o) => o.result === "fixed").map((o) => o.job);
     if (server && fixed.size) {
       // Conservative full original-run scope: unresolved/intentional pages must retain their
       // pre-fix staging look, and repaired pages must retain the expected reference look.
@@ -510,7 +514,7 @@ export async function fixRegressions(
         options.signal?.throwIfAborted();
         const target =
           fixed.has(original.id) ||
-          (fixedRoutes.has(original.route) && original.status !== "accepted");
+          (original.status !== "accepted" && fixedJobs.some((job) => sameRepairScope(original, job)));
         const reference = target ? original.captures.production : original.captures.staging;
         if (!reference) throw new Error(`Missing reference for final verification: ${original.id}`);
         const check = await verifyAgainstProduction(

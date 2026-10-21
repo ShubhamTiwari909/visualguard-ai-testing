@@ -18,6 +18,7 @@ import { captureDomSnapshot } from "../capture/dom-snapshot.js";
 import { loadConfig, loadEnvFiles, parseConfig } from "../config/load.js";
 import { resolveConfig, type ResolvedConfig } from "../config/resolve.js";
 import type { VisualGuardConfig } from "../config/schema.js";
+import { screenshotSelector } from "../config/screenshot.js";
 import { routeSlug } from "../config/urls.js";
 import { classifyComparison } from "../core/comparison.js";
 import { applyAccepted, readAccepted } from "../core/accepted.js";
@@ -66,6 +67,8 @@ export interface VisualGuardOptions {
 }
 
 export interface CheckOptions {
+  /** Override screenshot.selector for this check; null captures the page. */
+  selector?: string | null;
   /**
    * Bring a fresh production page to the same interactive state as the test page.
    */
@@ -136,9 +139,12 @@ async function check(
     },
   };
   const name = options.name ?? "page";
+  if (typeof options.selector === "string" && !options.selector.trim())
+    throw new Error("Section selector must not be empty.");
+  const selector = screenshotSelector(config, { screenshotSelector: options.selector });
   const current = new URL(page.url());
-  const id = `${routeSlug(testInfo.titlePath.slice(1).join(" ").replace(/\s+/g, "-"))}__${routeSlug(`/${name}`)}-${fingerprint({ file: relative(config.cwd, testInfo.file), title: testInfo.titlePath, name, project: testInfo.project.name, browser: config.browser.name, viewport: config.viewports.playwright }).slice(0, 12)}`;
-  const dir = testInfo.outputPath("visualguard", routeSlug(`/${name}`));
+  const id = `${routeSlug(testInfo.titlePath.slice(1).join(" ").replace(/\s+/g, "-"))}__${routeSlug(`/${name}`)}-${fingerprint({ file: relative(config.cwd, testInfo.file), title: testInfo.titlePath, name, project: testInfo.project.name, browser: config.browser.name, viewport: config.viewports.playwright, ...(selector ? { selector } : {}) }).slice(0, 12)}`;
+  const dir = testInfo.outputPath("visualguard", routeSlug(`/${name}`) + (selector ? `--section-${fingerprint(selector).slice(0, 12)}` : ""));
   mkdirSync(dir, { recursive: true });
 
   const job: JobSpec = {
@@ -151,6 +157,7 @@ async function check(
       staging: current.href,
     },
     waitFor: options.waitFor,
+    screenshotSelector: options.selector,
     mask: options.mask ?? [],
     hide: options.hide ?? [],
   };
@@ -191,7 +198,7 @@ async function check(
   const rel = (path: string) => relative(dir, path).split("\\").join("/");
   const stagingPath = join(dir, "staging.png");
   writeFileSync(stagingPath, shot.png);
-  writeFileSync(join(dir, "staging.dom.json"), JSON.stringify(await captureDomSnapshot(page)));
+  writeFileSync(join(dir, "staging.dom.json"), JSON.stringify(await captureDomSnapshot(page, 4_000, screenshotSelector(config, job))));
   const captures: JobResult["captures"] = {
     staging: {
       source: "live",
@@ -233,9 +240,9 @@ async function check(
        * Save optional reference DOM evidence after the production screenshot. Catch snapshot
        * errors so the captured image remains usable.
        */
-      afterScreenshot: async (reference) => {
+      afterScreenshot: async (reference, selector) => {
         if (!saveDom) return;
-        await captureDomSnapshot(reference)
+        await captureDomSnapshot(reference, 4_000, selector)
           .then((dom) => writeFileSync(join(dir, "production.dom.json"), JSON.stringify(dom)))
           .catch(() => {});
       },

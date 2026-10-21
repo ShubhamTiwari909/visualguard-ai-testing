@@ -257,6 +257,26 @@ You should see logged-in pages in the screenshots, not a login screen. Session f
 
 ## 6. More checks and modes
 
+### Section screenshot testing with data attributes
+
+Use an installed release that supports `screenshot.selector`. Add a unique attribute to the container in both production and staging:
+
+```html
+<section data-visualguard="checkout">Your checkout content</section>
+```
+
+Keep your existing URLs and routes in `visualguard.config.ts` and add:
+
+```ts
+screenshot: { selector: '[data-visualguard="checkout"]' },
+```
+
+Start your application, then run `npx --no-install visualguard test --no-ai` and `npx --no-install visualguard report`. Confirm each screenshot contains only that container. Older releases can ignore unknown settings, so check the screenshot dimensions rather than assuming the field is active.
+
+For route-specific sections, use `{ path: "/checkout", screenshot: { selector: '[data-visualguard="checkout"]' } }`. Different selectors can create separate checks for the same page; a route override with `selector: null` captures the page. Missing, hidden, or duplicate targets cause errors. Page-wide health checks still apply, and section baselines need explicit creation.
+
+The [repository walkthrough](SECTION-SCREENSHOT-TESTING.md) and [Astro guide](../apps/docs/src/content/docs/guides/section-capture.md) cover the full setup, multiple sections, baseline migration, Playwright states, and troubleshooting.
+
 ### Accessibility and performance
 
 `--a11y` reports new accessibility problems. `--perf` reports slower loads, layout shift and heavier pages:

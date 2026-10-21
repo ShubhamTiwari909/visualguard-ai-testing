@@ -79,6 +79,8 @@ When the same setting comes from several places, VisualGuard uses this order: co
 
 More help: [installation problems](/troubleshooting/installation/).
 
+Section framing uses global `screenshot.selector` or a route object's `screenshot: { selector: "…" }`. A route override with `selector: null` restores page capture; a global selector must be a nonblank string. Different route selectors can produce independent jobs for the same page. See [section screenshot testing](/guides/section-capture/) for complete markup, configuration, baseline, and verification steps.
+
 <!-- generated-reference -->
 
 ## Field types, defaults and constraints
@@ -146,6 +148,7 @@ Generated from the current configuration input schema. `not set` means the field
 | `stabilize.stabilityAttempts` | integer | `3` | minimum: 1; maximum: 10 |
 | `stabilize.stabilityIntervalMs` | integer | `150` | minimum: 0; maximum: 9007199254740991 |
 | `screenshot` | object | `{}` | — |
+| `screenshot.selector` | string | not set | minLength: 1 |
 | `screenshot.fullPage` | boolean | `true` | — |
 | `screenshot.maxHeight` | integer | `15000` | maximum: 9007199254740991; exclusiveMinimum: 0 |
 | `diff` | object | `{}` | — |

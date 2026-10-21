@@ -9,6 +9,8 @@ sourcePaths: ["packages/visualguard/src/index.ts", "packages/visualguard/src/con
 sidebar: {"order": 18}
 ---
 
+For planned Claude Code, Codex, and Gemini CLI access through MCP, see the [AI agent integration roadmap](/contributing/mcp-integration/). The MCP server is proposed; the API examples below are the current integration path.
+
 Use the public JavaScript API when you want to start a comparison from your own tool or script. Your application still needs Playwright and reachable target URLs. Importing VisualGuard does not start a test.
 
 ## Before you start

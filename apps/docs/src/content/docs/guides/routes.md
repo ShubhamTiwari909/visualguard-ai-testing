@@ -54,10 +54,11 @@ routes: [
 | `params` | Values for dynamic segments such as `[slug]`. See step 3. | none |
 | `mask` | Selectors to cover with a solid box on this page only. | none |
 | `hide` | Selectors to make invisible on this page only. | none |
+| `screenshot.selector` | Capture one visible section using a CSS selector. A route can set `null` to restore page capture. | inherits global `screenshot.selector` |
 
 `mask` and `hide` here add to the site-wide lists in `stabilize`. [Make captures repeatable](/guides/stable-captures/) explains the difference between them.
 
-If two entries produce the same production and staging paths, VisualGuard keeps only the first one.
+If two entries produce the same production/staging paths and the same section-selector override, VisualGuard keeps only the first one. Different section selectors can create separate checks for the same page. See [section capture](/guides/section-capture/) for a complete example.
 
 ## 2. Map a page that moved
 
@@ -233,6 +234,7 @@ For capture problems, see [Capture and reports troubleshooting](/troubleshooting
 
 ## Next steps
 
+- [Capture one section](/guides/section-capture/): set `screenshot.selector` per route, compare several sections, or use `selector: null` for a page override.
 - [Choose browsers and viewports](/guides/browsers-and-viewports/): decide the screen sizes for each page.
 - [Make captures repeatable](/guides/stable-captures/): use `waitFor`, `mask` and `hide` well.
 - [Scan URLs without a config](/guides/zero-config-scans/): try discovery on any site with one command.

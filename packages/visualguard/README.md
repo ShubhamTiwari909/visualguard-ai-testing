@@ -174,6 +174,37 @@ used up (or the key is rejected), the run stops calling it at once instead of re
 On Google's free (unpaid) tier, submitted content may be used to improve Google products; that
 includes screenshots of unreleased pages. Use Ollama or a paid key for confidential work.
 
+## Capture one section
+
+Mark a visible container on both versions of your page:
+
+```html
+<section data-visualguard="checkout">Your checkout content</section>
+```
+
+Select it in `visualguard.config.ts` (requires a release containing section capture):
+
+```ts
+import { defineConfig } from "visualguard";
+
+export default defineConfig({
+  baseURL: { production: "https://shop.example.com", staging: "http://localhost:3000" },
+  routes: ["/checkout"],
+  screenshot: { selector: '[data-visualguard="checkout"]' },
+  ai: { provider: "none" },
+});
+```
+
+Start your application, run `npx visualguard test`, then open `npx visualguard report`.
+Only the selected element is saved and visually compared. A route object can set its own
+`screenshot: { selector: "…" }`; `selector: null` captures the page instead. Use multiple route
+entries with different selectors to check several sections independently. Missing, hidden,
+duplicate, or oversized targets fail capture; there is no full-page fallback. Page health and
+optional accessibility/performance checks remain page-wide. Section baselines are separate
+from page baselines and need explicit creation. Playwright checks inherit the global selector
+and accept a per-check `selector` override. See the [repository setup guide](../../docs/SECTION-SCREENSHOT-TESTING.md)
+or the [Astro section-capture guide](../../apps/docs/src/content/docs/guides/section-capture.md).
+
 ## Fixing regressions
 
 ```ts
@@ -350,7 +381,7 @@ test("checkout summary", async ({ page, visualguard }) => {
 `check` stabilises the page, captures the same path on `baseURL.production` (or compares with a
 baseline in `visualguard/baselines/playwright/` when there's no production URL; `--update-snapshots`
 refreshes them), explains the difference, attaches the screenshots to the Playwright report, and
-fails the test per `failOn` (default `regression`). Options: `name`, `mask`, `hide`, `waitFor`,
+fails the test per `failOn` (default `regression`). Options: `name`, `selector`, `mask`, `hide`, `waitFor`,
 `failOn`; configure with `test.use({ visualguardOptions: { config, configPath, failOn } })`.
 
 ## Logged-in pages

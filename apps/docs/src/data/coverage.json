@@ -20,7 +20,8 @@
     "evals/README.md",
     "fixtures/site/README.md",
     "PLAN.md",
-    "packages/visualguard/CHANGELOG.md"
+    "packages/visualguard/CHANGELOG.md",
+    "docs/SECTION-SCREENSHOT-TESTING.md"
   ],
   "sections": [
     {
@@ -3649,6 +3650,126 @@
       "disposition": "retained historical",
       "reason": "Immutable package changelog retained in the repository; current release availability and the relevant upgrade are summarized on the website.",
       "reviewedAgainst": "69ccdf157326ef52788948cb8fc479c121ec0f0b"
+    },
+    {
+      "source": "packages/visualguard/README.md",
+      "heading": "Capture one section",
+      "anchor": "capture-one-section",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Full setup, route overrides, baseline behavior, and troubleshooting are maintained in the section-capture guide."
+    },
+    {
+      "source": "docs/NPM-PACKAGE-SETUP.md",
+      "heading": "Section screenshot testing with data attributes",
+      "anchor": "section-screenshot-testing-with-data-attributes",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/LOCAL-SETUP.md",
+      "heading": "Test a marked section",
+      "anchor": "test-a-marked-section",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "Section screenshot testing with data attributes",
+      "anchor": "section-screenshot-testing-with-data-attributes",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "Before you start",
+      "anchor": "before-you-start",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "1. Mark your section",
+      "anchor": "1-mark-your-section",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "2. Configure the selector",
+      "anchor": "2-configure-the-selector",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "3. Run and verify",
+      "anchor": "3-run-and-verify",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "4. Choose different sections per route",
+      "anchor": "4-choose-different-sections-per-route",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "5. Use saved baselines or interactive states",
+      "anchor": "5-use-saved-baselines-or-interactive-states",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "Capture scope and limits",
+      "anchor": "capture-scope-and-limits",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "Troubleshooting",
+      "anchor": "troubleshooting",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "Where results are saved",
+      "anchor": "where-results-are-saved",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "Source checkout: try the existing demo section",
+      "anchor": "source-checkout-try-the-existing-demo-section",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SECTION-SCREENSHOT-TESTING.md",
+      "heading": "Next steps",
+      "anchor": "next-steps",
+      "destination": "/guides/section-capture/",
+      "disposition": "migrated",
+      "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
     }
   ]
 }

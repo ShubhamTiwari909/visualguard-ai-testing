@@ -13,6 +13,7 @@
 import { matchesAny } from "../config/glob.js";
 import type { ResolvedConfig } from "../config/resolve.js";
 import { resolveRoutes } from "../config/routes.js";
+import { screenshotSelector } from "../config/screenshot.js";
 import { joinURL, routeSlug, shortHash, type ExpandedRoute } from "../config/urls.js";
 import { ConfigError } from "./errors.js";
 import type { Env, JobSpec } from "./types.js";
@@ -36,6 +37,8 @@ export function buildJobs(config: ResolvedConfig, routes: readonly ExpandedRoute
 
   for (const route of routes) {
     let slug = routeSlug(route.route);
+    const selector = screenshotSelector(config, route);
+    if (selector) slug += `--section-${shortHash(selector, 12)}`;
     if ([...usedIds].some((id) => id.startsWith(`${slug}__`))) slug += `-${shortHash(route.route)}`;
 
     for (const viewport of Object.keys(config.viewports)) {
@@ -54,6 +57,7 @@ export function buildJobs(config: ResolvedConfig, routes: readonly ExpandedRoute
         viewport,
         urls,
         waitFor: route.waitFor,
+        screenshotSelector: route.screenshotSelector,
         mask: route.mask,
         hide: route.hide,
       });

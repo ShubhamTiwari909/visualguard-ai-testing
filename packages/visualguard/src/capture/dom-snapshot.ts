@@ -64,7 +64,7 @@ export interface DomNode {
    */
   clip?: boolean;
   /**
-   * [x, y, width, height] in page coordinates.
+   * [x, y, width, height] in page coordinates, or relative to a section image's origin.
    */
   box: [number, number, number, number];
   /**
@@ -164,6 +164,7 @@ export const STYLE_PROPERTIES = [
 interface CollectArgs {
   maxNodes: number;
   props: readonly string[];
+  selector?: string;
 }
 
 /**
@@ -173,7 +174,7 @@ interface CollectArgs {
  * styles. This entire function and its nested helpers are serialized into the page; they cannot
  * access imported Node.js helpers.
  */
-function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version"> {
+function collect({ maxNodes, props, selector }: CollectArgs): Omit<DomSnapshot, "version"> {
   const SKIP = new Set([
     "SCRIPT",
     "STYLE",
@@ -190,6 +191,9 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
   const styleIndex = new Map<string, number>();
   const scrollX = window.scrollX;
   const scrollY = window.scrollY;
+  const root = selector ? document.querySelector(selector) : document.body;
+  if (!root) throw new Error(`Section DOM target not found: ${selector}`);
+  const rootBox = selector ? root.getBoundingClientRect() : undefined;
   let truncated = false;
 
   /**
@@ -245,6 +249,10 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
     const parts: string[] = [segment(el)];
     let current = el.parentElement;
     for (let depth = 0; current && current !== document.body && depth < 2; depth++) {
+      if (selector && current === root) {
+        parts.unshift(selector);
+        break;
+      }
       const parentTestId = testIdOf(current);
       if (parentTestId) {
         parts.unshift(`[data-testid="${parentTestId}"]`);
@@ -279,7 +287,9 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
       (computed.visibility !== "hidden" &&
         computed.opacity !== "0" &&
         rect.width > 0 &&
-        rect.height > 0);
+        rect.height > 0 &&
+        (!rootBox || (rect.right > rootBox.left && rect.left < rootBox.right &&
+          rect.bottom > rootBox.top && rect.top < rootBox.bottom)));
 
     let index = parentIndex;
     if (visible) {
@@ -305,17 +315,18 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
         i: nodes.length,
         p: parentIndex,
         tag: el.tagName.toLowerCase(),
-        sel: selectorFor(el),
+        sel: selector && el === root ? selector : selectorFor(el),
         box: [
-          Math.round(rect.left + scrollX),
-          Math.round(rect.top + scrollY),
+          Math.round(rootBox ? rect.left - rootBox.left : rect.left + scrollX),
+          Math.round(rootBox ? rect.top - rootBox.top : rect.top + scrollY),
           Math.round(rect.width),
           Math.round(rect.height),
         ],
         s,
         n: 0,
       };
-      if (testId) node.key = `testid:${testId}`;
+      if (selector && el === root) node.key = `section:${selector}`;
+      else if (testId) node.key = `testid:${testId}`;
       else if (stableId(el.id)) node.key = `id:${el.id}`;
       const className = el.getAttribute("class");
       if (className) node.cls = className.slice(0, 160);
@@ -347,10 +358,12 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
     if (el.shadowRoot) for (const child of Array.from(el.shadowRoot.children)) visit(child, index);
   };
 
-  visit(document.body, -1);
+  visit(root, -1);
   return {
     url: location.href,
-    viewport: { width: window.innerWidth, height: window.innerHeight },
+    viewport: rootBox
+      ? { width: Math.round(rootBox.width), height: Math.round(rootBox.height) }
+      : { width: window.innerWidth, height: window.innerHeight },
     nodes,
     styles,
     truncated,
@@ -361,7 +374,7 @@ function collect({ maxNodes, props }: CollectArgs): Omit<DomSnapshot, "version">
  * Pass the self-contained collector and allowed style names into page.evaluate. Wrap the
  * browser result with a version so saved snapshots can be read consistently.
  */
-export async function captureDomSnapshot(page: Page, maxNodes = 4_000): Promise<DomSnapshot> {
-  const result = await page.evaluate(collect, { maxNodes, props: STYLE_PROPERTIES });
+export async function captureDomSnapshot(page: Page, maxNodes = 4_000, selector?: string): Promise<DomSnapshot> {
+  const result = await page.evaluate(collect, { maxNodes, props: STYLE_PROPERTIES, selector });
   return { version: 1, ...result };
 }
