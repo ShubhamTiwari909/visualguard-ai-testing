@@ -79,6 +79,8 @@ When the same setting comes from several places, VisualGuard uses this order: co
 
 More help: [installation problems](/troubleshooting/installation/).
 
+Section framing uses global `screenshot.selector` or a route object's `screenshot: { selector: "…" }`. A route override with `selector: null` restores page capture; a global selector must be a nonblank string. Different route selectors can produce independent jobs for the same page. See [section screenshot testing](/guides/section-capture/) for complete markup, configuration, baseline, and verification steps.
+
 <!-- generated-reference -->
 
 ## Field types, defaults and constraints

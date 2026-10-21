@@ -29,6 +29,8 @@ Use this page when you know what you want to do but not where it lives. Find you
 | Compare production with staging using my config | `visualguard test` | [Run your first visual test](/start/quickstart/) |
 | See which pages and screen sizes would be tested, without capturing | `visualguard test --list` | [Select routes](/guides/routes/) |
 | Test only some pages | `visualguard test --route /pricing` or `--only "/blog/**"` | [Select routes](/guides/routes/) |
+| Screenshot one marked section | Add `screenshot.selector: '[data-visualguard="checkout"]'` in the config, then run `visualguard test` | [Capture a single section](/guides/section-capture/) |
+| Compare several sections on one page | Add named route entries with different `screenshot.selector` values | [Per-route section settings](/guides/section-capture/#4-choose-different-sections-per-route) |
 | Test one screen size | `visualguard test --viewport mobile` | [Browsers and viewports](/guides/browsers-and-viewports/) |
 | Use Firefox or WebKit instead of Chromium | `visualguard test --browser firefox` | [Browsers and viewports](/guides/browsers-and-viewports/) |
 | Point a run at different URLs for one time | `visualguard test --production URL --staging URL` | [Configure your project](/guides/configuration/) |

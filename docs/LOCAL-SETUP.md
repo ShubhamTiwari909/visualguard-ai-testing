@@ -124,6 +124,10 @@ You should see the reference, candidate and diff images for the color change, us
 
 To try other pages, add more routes: `/identical`, `/hidden`, `/alignment`, `/dynamic-change` and more (see `fixtures/site/production`). Use `report --run RUN_ID` to open an older run, or `report --no-open` to skip opening a browser.
 
+### Test a marked section
+
+For a marked section in your own application, follow [section screenshot testing](SECTION-SCREENSHOT-TESTING.md). After building this source checkout, compare with `node packages/visualguard/dist/cli.js test --config PATH --no-ai` and open the report with `node packages/visualguard/dist/cli.js report --config PATH`, both from the repository root. Replace `PATH` with your section config file. The guide explains `data-visualguard` markup, global/per-route selectors, and how to verify that only the container was captured. The existing demo `/color-change` page already has `[data-testid="hero"]`, which can also be used as `screenshot.selector` on that route on both demo servers.
+
 ### Exit codes
 
 A non-zero exit code means VisualGuard found something, not that the install failed.

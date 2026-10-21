@@ -202,7 +202,8 @@ entries with different selectors to check several sections independently. Missin
 duplicate, or oversized targets fail capture; there is no full-page fallback. Page health and
 optional accessibility/performance checks remain page-wide. Section baselines are separate
 from page baselines and need explicit creation. Playwright checks inherit the global selector
-and accept a per-check `selector` override. See the [complete section-capture guide](../../apps/docs/src/content/docs/guides/section-capture.md).
+and accept a per-check `selector` override. See the [repository setup guide](../../docs/SECTION-SCREENSHOT-TESTING.md)
+or the [Astro section-capture guide](../../apps/docs/src/content/docs/guides/section-capture.md).
 
 ## Fixing regressions
 

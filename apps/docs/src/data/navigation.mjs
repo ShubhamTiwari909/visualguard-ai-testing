@@ -20,7 +20,7 @@ export const navigation = [
   ] },
   { label: 'Troubleshooting', collapsed: true, items: pages('troubleshooting', 'troubleshooting/installation', 'troubleshooting/capture', 'troubleshooting/ci', 'troubleshooting/dashboard') },
   { label: 'Releases', collapsed: true, items: pages('releases', 'releases/migration') },
-  { label: 'Contributing', collapsed: true, items: pages('contributing/local-setup', 'contributing/architecture', 'contributing/reading-the-code', 'contributing/testing', 'contributing/documentation', 'contributing/releases') },
+  { label: 'Contributing', collapsed: true, items: pages('contributing/local-setup', 'contributing/architecture', 'contributing/reading-the-code', 'contributing/testing', 'contributing/documentation', 'contributing/releases', 'contributing/mcp-integration') },
 ];
 
 export function navigationErrors(publicSlugs, groups = navigation) {
