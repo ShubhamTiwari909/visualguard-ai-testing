@@ -15,6 +15,7 @@ export {
   type RunVisualGuardOptions,
   type VisualGuardResult,
   type SDKReports,
+  type SDKMonitorOptions,
 } from "./sdk.js";
 
 // Configuration

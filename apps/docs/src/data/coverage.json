@@ -3885,6 +3885,22 @@
       "destination": "/releases/",
       "disposition": "migrated",
       "reason": "Preserve the published 3.3.0 changelog and its documentation notes as release history."
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "6a. Daily monitor runs",
+      "anchor": "6a-daily-monitor-runs",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "SDK monitor semantics and caller-owned daily storage/notification orchestration are documented in both guides."
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "Keep the existing storage and notification code",
+      "anchor": "keep-the-existing-storage-and-notification-code",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "SDK monitor semantics and caller-owned daily storage/notification orchestration are documented in both guides."
     }
   ]
 }

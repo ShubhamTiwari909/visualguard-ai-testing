@@ -2,6 +2,7 @@ import { join, resolve } from "node:path";
 import { loadConfig, loadEnvFiles, parseConfig } from "./config/load.js";
 import { resolveConfig, type ConfigOverrides } from "./config/resolve.js";
 import type { VisualGuardConfig } from "./config/schema.js";
+import { resolveMonitorRun, type MonitorOptions } from "./config/monitor.js";
 import { ConfigError, type ExitCode } from "./core/errors.js";
 import type { RunEvent } from "./core/events.js";
 import { createRun, type RunOptions, type RunOutcome } from "./core/run.js";
@@ -20,6 +21,8 @@ export interface SDKReports {
   reportURL?: string;
 }
 
+export type SDKMonitorOptions = MonitorOptions;
+
 export interface RunVisualGuardOptions extends Pick<
   RunOptions,
   "signal" | "ai" | "aiCache" | "debug" | "shard" | "runGroup" | "failOn" | "reporters"
@@ -35,12 +38,16 @@ export interface RunVisualGuardOptions extends Pick<
   loadEnv?: boolean;
   /** Explicitly update snapshots. Only valid with config.mode = baseline. */
   updateBaselines?: boolean;
+  /** Run one rolling monitor comparison. Use monitor.reset for deliberate snapshot replacement. */
+  monitor?: true | SDKMonitorOptions;
   reports?: SDKReports;
   /** Synchronous progress observer; exceptions are ignored by the run's reporter boundary. */
   onEvent?: (event: RunEvent) => void;
 }
 
 export interface VisualGuardResult extends RunOutcome {
+  /** Absolute rolling snapshot folder for monitor runs; persist separately from runDir. */
+  snapshotDir?: string;
   /** Policy verdict; the SDK does not change process.exitCode. */
   exitCode: ExitCode;
   passed: boolean;
@@ -82,18 +89,28 @@ export async function runVisualGuard(
     options.config === undefined
       ? await loadConfig({ cwd, configPath: options.configPath })
       : { config: parseConfig(options.config, "SDK config"), configPath: undefined };
-  const config = resolveConfig(loaded.config, {
+  const resolved = resolveConfig(loaded.config, {
     cwd,
     configPath: loaded.configPath,
     env,
     overrides: options.overrides,
   });
   // Validate resolver overrides too; low-level callers may otherwise bypass schema checks.
-  parseConfig(config, "resolved SDK config");
-  if (config.mode === "baseline") {
+  parseConfig(resolved, "resolved SDK config");
+  if (options.monitor !== undefined && options.updateBaselines !== undefined) {
+    throw new ConfigError(
+      "Use monitor.reset or monitor.update instead of updateBaselines when monitoring.",
+    );
+  }
+  const monitoring =
+    options.monitor === undefined
+      ? undefined
+      : resolveMonitorRun(resolved, options.monitor === true ? {} : options.monitor);
+  const config = monitoring?.config ?? resolved;
+  if (!monitoring && config.mode === "baseline") {
     if (!config.baseURL.staging) throw new ConfigError("Baseline mode requires baseURL.staging.");
     config.baseURL.production ??= config.baseURL.staging;
-  } else {
+  } else if (!monitoring) {
     if (options.updateBaselines) throw new ConfigError("updateBaselines requires mode: baseline.");
     if (!config.baseURL.production || !config.baseURL.staging) {
       throw new ConfigError("Compare mode requires baseURL.production and baseURL.staging.");
@@ -115,13 +132,17 @@ export async function runVisualGuard(
     runGroup: options.runGroup,
     failOn,
     env,
-    mode: config.mode,
-    ...(config.mode === "baseline"
-      ? {
-          baselineDir: resolve(cwd, config.baseline.dir),
-          updateBaselines: options.updateBaselines,
-        }
-      : {}),
+    ...(monitoring
+      ? monitoring.options
+      : {
+          mode: config.mode,
+          ...(config.mode === "baseline"
+            ? {
+                baselineDir: resolve(cwd, config.baseline.dir),
+                updateBaselines: options.updateBaselines,
+              }
+            : {}),
+        }),
     reporters: [
       {
         name: "sdk",
@@ -149,5 +170,11 @@ export async function runVisualGuard(
     ],
   }).start();
   const exitCode = exitCodeFor(outcome.manifest, failOn);
-  return { ...outcome, artifacts, exitCode, passed: exitCode === 0 };
+  return {
+    ...outcome,
+    ...(monitoring ? { snapshotDir: monitoring.snapshotDir } : {}),
+    artifacts,
+    exitCode,
+    passed: exitCode === 0,
+  };
 }

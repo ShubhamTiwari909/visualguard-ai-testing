@@ -40,22 +40,28 @@ Calling `defineConfig` alone does not validate inputs or start anything. A low-l
 
 ## Runs, results and reporters
 
-| Export                                                            | Purpose                                                                                                                                                                     |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runVisualGuard(options?)`                                        | Resolves file/inline config, runs capture, writes HTML/JUnit by default, and returns `{ manifest, runDir, exitCode, passed, artifacts }`. Does not set process exit status. |
-| `RunVisualGuardOptions`, `VisualGuardResult`, `SDKReports`        | TypeScript contracts for SDK inputs, returned evidence/verdict, and report selection.                                                                                       |
-| `createRun(resolved, options?)`, `Run`                            | Create a run, then await `.start()` for `{ manifest, runDir }`. Options include an abort signal and explicit reporters.                                                     |
-| `planJobs`, `buildJobs`                                           | Plan capture jobs from resolved settings/routes. Planning can involve discovery; use CLI `test --list` for ordinary inspection.                                             |
-| `summarize(jobs)`                                                 | Count every result status, including zero counts.                                                                                                                           |
-| `exitCodeFor(manifest, failOn)`                                   | Evaluate `regression`, `review` or `any` failure policy; incomplete evidence also fails.                                                                                    |
-| `readRunIndex(outputDir)`                                         | Read the saved run list beneath the configured output directory.                                                                                                            |
-| `findRun(outputDir, id?)`                                         | Resolve an indexed run and its folder; omitting the ID selects the latest.                                                                                                  |
-| `readManifest(runDir)`                                            | Read one run's manifest.                                                                                                                                                    |
-| `terminalReporter`, `jsonReporter`                                | Create public reporter implementations.                                                                                                                                     |
-| `VisualGuardError`, `ConfigError`, `EnvironmentError`, `ExitCode` | Identify errors and process outcomes.                                                                                                                                       |
-| `VERSION`                                                         | Embedded build version; inspect package metadata too when investigating a version-label mismatch.                                                                           |
+| Export                                                                          | Purpose                                                                                                                                                                     |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runVisualGuard(options?)`                                                      | Resolves file/inline config, runs capture, writes HTML/JUnit by default, and returns `{ manifest, runDir, exitCode, passed, artifacts }`. Does not set process exit status. |
+| `RunVisualGuardOptions`, `VisualGuardResult`, `SDKReports`, `SDKMonitorOptions` | TypeScript contracts for SDK inputs, returned evidence/verdict, and report selection.                                                                                       |
+| `createRun(resolved, options?)`, `Run`                                          | Create a run, then await `.start()` for `{ manifest, runDir }`. Options include an abort signal and explicit reporters.                                                     |
+| `planJobs`, `buildJobs`                                                         | Plan capture jobs from resolved settings/routes. Planning can involve discovery; use CLI `test --list` for ordinary inspection.                                             |
+| `summarize(jobs)`                                                               | Count every result status, including zero counts.                                                                                                                           |
+| `exitCodeFor(manifest, failOn)`                                                 | Evaluate `regression`, `review` or `any` failure policy; incomplete evidence also fails.                                                                                    |
+| `readRunIndex(outputDir)`                                                       | Read the saved run list beneath the configured output directory.                                                                                                            |
+| `findRun(outputDir, id?)`                                                       | Resolve an indexed run and its folder; omitting the ID selects the latest.                                                                                                  |
+| `readManifest(runDir)`                                                          | Read one run's manifest.                                                                                                                                                    |
+| `terminalReporter`, `jsonReporter`                                              | Create public reporter implementations.                                                                                                                                     |
+| `VisualGuardError`, `ConfigError`, `EnvironmentError`, `ExitCode`               | Identify errors and process outcomes.                                                                                                                                       |
+| `VERSION`                                                                       | Embedded build version; inspect package metadata too when investigating a version-label mismatch.                                                                           |
 
 The package also exports URL helpers (`joinURL`, `expandRoutes`, `routeSlug`) and TypeScript contracts for config, routes, capture hooks, jobs, manifests, reporters and events. Use the installed declarations for exact signatures. [Run from code](/guides/programmatic-api/) gives a runnable example; [custom reporters](/guides/reporters/) explains callbacks and awaited final output.
+
+For daily Node.js monitoring, pass `monitor: true` or typed `SDKMonitorOptions`
+to `runVisualGuard`. This selects rolling monitor semantics and baseline health
+comparison, rather than baseline-mode snapshot refreshes. `result.snapshotDir`
+identifies the folder to persist. See [monitor options and migration](/guides/programmatic-api/#6a-daily-monitor-runs)
+for exact directory rules, deliberate resets and cloud integration boundaries.
 
 ## Dashboard entry point
 

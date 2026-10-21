@@ -4,10 +4,12 @@ description: "Create rolling monitoring references, choose an update policy and 
 audience: "developer"
 docType: "how-to"
 channel: "both"
-lastReviewed: "2026-10-20"
+lastReviewed: "2026-10-21"
 sourcePaths:
   [
     "packages/visualguard/src/cli/commands/monitor.ts",
+    "packages/visualguard/src/config/monitor.ts",
+    "packages/visualguard/src/sdk.ts",
     "packages/visualguard/src/setup/workflow-template.ts",
   ]
 sidebar: { "order": 17 }
@@ -16,6 +18,12 @@ sidebar: { "order": 17 }
 Monitoring compares a live site with its previous saved appearance. Use it to spot production changes such as CMS edits or broken third-party content. It does not require a second deployment. Monitoring and [watching local source edits](/guides/watch/) are separate workflows.
 
 ## Before you start
+
+For Node.js scripts, the [SDK monitor flow](/guides/programmatic-api/#6a-daily-monitor-runs)
+uses the same rolling snapshots and baseline health policy, and returns the
+manifest, run directory, snapshot directory and exit code directly. Use a release
+whose SDK types include `monitor`; earlier SDK releases only support compare and
+baseline calls. The CLI remains available for existing daily jobs.
 
 [Install VisualGuard and Chromium](/start/install/). Choose a URL reachable by the machine or CI job that will capture it. The commands below use the candidate page from the [local quickstart](/start/quickstart/); keep its server running, or replace the address with your real production origin.
 
