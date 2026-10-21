@@ -29,7 +29,7 @@ jobs:
     env:
       DOCS_SITE_URL: ${{ inputs.site_url }}
       DOCS_BASE_PATH: ${{ inputs.base_path }}
-      DOCS_PRODUCTION: 'true'
+      DOCS_PRODUCTION: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

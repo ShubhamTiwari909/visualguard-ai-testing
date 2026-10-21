@@ -8,5 +8,5 @@ export function screenshotSelector(
 ): string | undefined {
   return job.screenshotSelector === null
     ? undefined
-    : job.screenshotSelector ?? config.screenshot.selector;
+    : (job.screenshotSelector ?? config.screenshot.selector);
 }

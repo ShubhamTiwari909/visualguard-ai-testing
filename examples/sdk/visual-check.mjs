@@ -12,7 +12,8 @@ try {
     failOn: "review",
     reports: { githubSummary: Boolean(process.env.GITHUB_STEP_SUMMARY) },
     onEvent(event) {
-      if (event.type === "job:end") console.log(`${event.job.status}: ${event.job.name} (${event.job.viewport})`);
+      if (event.type === "job:end")
+        console.log(`${event.job.status}: ${event.job.name} (${event.job.viewport})`);
     },
   });
   console.log("Summary:", result.manifest.summary);
@@ -22,7 +23,11 @@ try {
   process.exitCode = result.exitCode;
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = controller.signal.aborted ? 130 : error instanceof VisualGuardError ? error.exitCode : 1;
+  process.exitCode = controller.signal.aborted
+    ? 130
+    : error instanceof VisualGuardError
+      ? error.exitCode
+      : 1;
 } finally {
   process.removeListener("SIGINT", stop);
   process.removeListener("SIGTERM", stop);

@@ -5,8 +5,20 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/report.ts", "packages/visualguard/src/core/runs.ts", "packages/visualguard/src/core/status.ts", "packages/visualguard/src/reporters/html.ts", "packages/visualguard/src/server/report-server.ts", "packages/visualguard/report-app/src/App.tsx", "packages/visualguard/report-app/src/Compare.tsx", "packages/visualguard/report-app/src/JobDetail.tsx", "packages/visualguard/report-app/src/actions.tsx", "packages/visualguard/report-app/src/data.ts"]
-sidebar: {"order": 7}
+sourcePaths:
+  [
+    "packages/visualguard/src/cli/commands/report.ts",
+    "packages/visualguard/src/core/runs.ts",
+    "packages/visualguard/src/core/status.ts",
+    "packages/visualguard/src/reporters/html.ts",
+    "packages/visualguard/src/server/report-server.ts",
+    "packages/visualguard/report-app/src/App.tsx",
+    "packages/visualguard/report-app/src/Compare.tsx",
+    "packages/visualguard/report-app/src/JobDetail.tsx",
+    "packages/visualguard/report-app/src/actions.tsx",
+    "packages/visualguard/report-app/src/data.ts",
+  ]
+sidebar: { "order": 7 }
 ---
 
 Every test run saves its screenshots, a results file and an HTML report in a run folder. This page shows what is in that folder, how to open the report, how to read each view, and how to share a run with someone else.
@@ -69,13 +81,13 @@ You should see:
 
 Your browser opens the **Local** address. The report is served only on your own machine (`127.0.0.1`). Keep the command running while you use the report, and press Ctrl+C when you are done.
 
-| Flag | What it does | Default |
-| --- | --- | --- |
-| `-c, --config <path>` | Uses this config file to find the output folder. | discovered config |
-| `--run <id>` | Opens another run. Pass the folder name, the start of it, or the run number such as `7` or `#7`. | the latest run |
-| `--port <n>` | Serves on this port. | a random free port |
-| `--no-open` | Does not open a browser. In CI, the browser never opens. | opens |
-| `--no-serve` | Writes `index.html`, prints its `file://` address, and exits. | serves |
+| Flag                  | What it does                                                                                     | Default            |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ------------------ |
+| `-c, --config <path>` | Uses this config file to find the output folder.                                                 | discovered config  |
+| `--run <id>`          | Opens another run. Pass the folder name, the start of it, or the run number such as `7` or `#7`. | the latest run     |
+| `--port <n>`          | Serves on this port.                                                                             | a random free port |
+| `--no-open`           | Does not open a browser. In CI, the browser never opens.                                         | opens              |
+| `--no-serve`          | Writes `index.html`, prints its `file://` address, and exits.                                    | serves             |
 
 ```bash
 npx visualguard report --run 5
@@ -90,23 +102,23 @@ npx visualguard report --no-serve
 
 Each job gets one status:
 
-| Status | Meaning |
-| --- | --- |
-| `pass` | Within the allowed change, or the difference was judged to be noise with no other problem. |
-| `accepted` | Matches a change someone accepted as intentional. |
-| `review` | A difference or a check result needs a person to look at it. |
-| `regression` | A clear problem, such as a broken page, or a change classified as a regression. |
-| `error` | The page could not be captured or compared. |
+| Status       | Meaning                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| `pass`       | Within the allowed change, or the difference was judged to be noise with no other problem. |
+| `accepted`   | Matches a change someone accepted as intentional.                                          |
+| `review`     | A difference or a check result needs a person to look at it.                               |
+| `regression` | A clear problem, such as a broken page, or a change classified as a regression.            |
+| `error`      | The page could not be captured or compared.                                                |
 
 The terminal prints a summary like `12 passed · 2 review · 1 regression · 0 errors`, followed by the run folder.
 
 The `--fail-on` flag of `test` decides which statuses make the command fail with a non-zero exit code:
 
-| `--fail-on` | Fails on |
-| --- | --- |
-| `regression` (default) | `regression`, `error` |
-| `review` | `review`, `regression`, `error` |
-| `any` | the same as `review` |
+| `--fail-on`            | Fails on                        |
+| ---------------------- | ------------------------------- |
+| `regression` (default) | `regression`, `error`           |
+| `review`               | `review`, `regression`, `error` |
+| `any`                  | the same as `review`            |
 
 A merged run with missing shards always fails. See [Read result statuses](/concepts/results/) for how statuses are decided.
 
@@ -122,20 +134,20 @@ The list on the left shows every job, sorted with errors first, then regressions
 
 Select a job to see its details. The two sides are labelled by mode:
 
-| Run type | Left side | Right side |
-| --- | --- | --- |
-| Compare | Production | Staging |
-| Baseline or scan | Baseline | Current |
-| Monitor | Previous | Current |
+| Run type         | Left side  | Right side |
+| ---------------- | ---------- | ---------- |
+| Compare          | Production | Staging    |
+| Baseline or scan | Baseline   | Current    |
+| Monitor          | Previous   | Current    |
 
 Pick a view with the **Comparison mode** buttons or a number key:
 
-| View | Key | What it shows | Use it to |
-| --- | --- | --- | --- |
-| Side by side | `1` | Both screenshots next to each other. | See the overall layout and size differences. |
-| Slider | `2` | One image over the other, with a handle you drag left and right. | Spot small moves and colour changes at one place. |
-| Onion skin | `3` | One image over the other, with an opacity slider. | Check alignment and spacing. |
-| Diff | `4` | The diff image, with changed pixels highlighted. Not available when the job passed. | Find every changed pixel at a glance. |
+| View         | Key | What it shows                                                                       | Use it to                                         |
+| ------------ | --- | ----------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Side by side | `1` | Both screenshots next to each other.                                                | See the overall layout and size differences.      |
+| Slider       | `2` | One image over the other, with a handle you drag left and right.                    | Spot small moves and colour changes at one place. |
+| Onion skin   | `3` | One image over the other, with an opacity slider.                                   | Check alignment and spacing.                      |
+| Diff         | `4` | The diff image, with changed pixels highlighted. Not available when the job passed. | Find every changed pixel at a glance.             |
 
 Two checkboxes change the display:
 
@@ -151,15 +163,15 @@ Below the screenshots, you can find:
 
 ### Keyboard shortcuts
 
-| Key | Action |
-| --- | --- |
-| `j` or `↓` | Next job |
-| `k` or `↑` | Previous job |
+| Key        | Action                                 |
+| ---------- | -------------------------------------- |
+| `j` or `↓` | Next job                               |
+| `k` or `↑` | Previous job                           |
 | `1` to `4` | Side by side, Slider, Onion skin, Diff |
-| `r` | Show or hide regions |
-| `z` | Actual size on or off |
-| `/` | Jump to the search box |
-| `Esc` | Leave the search box |
+| `r`        | Show or hide regions                   |
+| `z`        | Actual size on or off                  |
+| `/`        | Jump to the search box                 |
+| `Esc`      | Leave the search box                   |
 
 The address bar updates as you move, for example `#/jobs/pricing__desktop?view=diff`. Copy it to link someone to one job and view. The **Dark theme** and **Light theme** button is remembered in your browser.
 
@@ -167,11 +179,11 @@ The address bar updates as you move, for example `#/jobs/pricing__desktop?view=d
 
 A job with status `review` or `regression` and both screenshots has actions:
 
-| Action | When you see it | What it does |
-| --- | --- | --- |
-| **Accept change** | The report is opened with `npx visualguard report`. | Records the change in `visualguard.accepted.json` and marks the job `accepted`. See [Accept intentional local changes](/guides/accepting-changes/). |
-| **Generate fix** | Same, and `fix.enabled` is `true`. | Proposes a code change, shows the diff, and applies it only after you confirm. See [Fixes](/guides/fixes/). |
-| **Copy accept command** | The report is opened as a file. | Copies the matching `npx visualguard accept` command to run in a terminal. |
+| Action                  | When you see it                                     | What it does                                                                                                                                        |
+| ----------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Accept change**       | The report is opened with `npx visualguard report`. | Records the change in `visualguard.accepted.json` and marks the job `accepted`. See [Accept intentional local changes](/guides/accepting-changes/). |
+| **Generate fix**        | Same, and `fix.enabled` is `true`.                  | Proposes a code change, shows the diff, and applies it only after you confirm. See [Fixes](/guides/fixes/).                                         |
+| **Copy accept command** | The report is opened as a file.                     | Copies the matching `npx visualguard accept` command to run in a terminal.                                                                          |
 
 ## 7. Share a run
 
@@ -194,11 +206,11 @@ In CI, upload the run folder as a build artifact. Set `report.publicURL` to wher
 
 ## 8. Control how many runs are kept
 
-| Setting | What it does | Default |
-| --- | --- | --- |
-| `output.dir` | Where runs are saved. | `.visualguard` |
-| `output.keepRuns` | After each run, the oldest runs beyond this number are deleted. | `10` |
-| `report.html` | Writes `index.html` into each run folder. `npx visualguard report` writes it anyway when you open a run. | `true` |
+| Setting           | What it does                                                                                             | Default        |
+| ----------------- | -------------------------------------------------------------------------------------------------------- | -------------- |
+| `output.dir`      | Where runs are saved.                                                                                    | `.visualguard` |
+| `output.keepRuns` | After each run, the oldest runs beyond this number are deleted.                                          | `10`           |
+| `report.html`     | Writes `index.html` into each run folder. `npx visualguard report` writes it anyway when you open a run. | `true`         |
 
 `init` adds `.visualguard/` to `.gitignore`. Keep it there: runs are local evidence, not source code.
 
@@ -215,15 +227,15 @@ Sam's test run ends with `14 passed · 1 review · 0 regressions`. Sam runs `npx
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `No runs found in .visualguard` | Run a test first, or run `report` from the same folder. If you used `--output-dir`, set `VISUALGUARD_OUTPUT_DIR`. |
-| `Run "…" not found` or `is ambiguous` | Pass a longer part of the run folder name, or the run number. |
-| Screenshots are broken in a shared report | Only `index.html` was shared. Share the whole run folder. |
-| No **Accept change** button | The report was opened as a file, or the job is `pass`, `accepted` or `error`. Use `npx visualguard report`, or the copied command. |
-| A run you need was deleted | It was older than `output.keepRuns`. Raise the number, or copy runs you want to keep. |
-| `The report app is missing from this install of VisualGuard.` | Reinstall the package. See [Installation troubleshooting](/troubleshooting/installation/). |
-| The browser does not open | It never opens in CI. Use `--no-open` and open the printed **Local** address yourself. |
+| Problem                                                       | Fix                                                                                                                                |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `No runs found in .visualguard`                               | Run a test first, or run `report` from the same folder. If you used `--output-dir`, set `VISUALGUARD_OUTPUT_DIR`.                  |
+| `Run "…" not found` or `is ambiguous`                         | Pass a longer part of the run folder name, or the run number.                                                                      |
+| Screenshots are broken in a shared report                     | Only `index.html` was shared. Share the whole run folder.                                                                          |
+| No **Accept change** button                                   | The report was opened as a file, or the job is `pass`, `accepted` or `error`. Use `npx visualguard report`, or the copied command. |
+| A run you need was deleted                                    | It was older than `output.keepRuns`. Raise the number, or copy runs you want to keep.                                              |
+| `The report app is missing from this install of VisualGuard.` | Reinstall the package. See [Installation troubleshooting](/troubleshooting/installation/).                                         |
+| The browser does not open                                     | It never opens in CI. Use `--no-open` and open the printed **Local** address yourself.                                             |
 
 For more, see [Capture and reports troubleshooting](/troubleshooting/capture/).
 

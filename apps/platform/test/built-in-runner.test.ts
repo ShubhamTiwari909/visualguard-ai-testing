@@ -54,7 +54,11 @@ describe("built-in dashboard test runner", () => {
         metadata: { environment: "dashboard", deployment: job.id },
       });
       mocks.importRun.mockResolvedValueOnce({ run });
-      const result = await io.transport.upload({ runDir: "/tmp/x", signal: new AbortController().signal, metadata: {} as never });
+      const result = await io.transport.upload({
+        runDir: "/tmp/x",
+        signal: new AbortController().signal,
+        metadata: {} as never,
+      });
       await io.transport.complete({ id: job.id, lease: job.lease, runId: result.id });
     });
     expect((await jobs.status(owner, "storefront")).builtInRunner).toBe(true);
@@ -103,9 +107,15 @@ describe("built-in dashboard test runner", () => {
     let resume!: () => void;
     let entered!: () => void;
     let finish!: () => void;
-    const paused = new Promise<void>((resolve) => { resume = resolve; });
-    const auditing = new Promise<void>((resolve) => { entered = resolve; });
-    const captured = new Promise<void>((resolve) => { finish = resolve; });
+    const paused = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+    const auditing = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const captured = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
     const audit = p.auth.audit.bind(p.auth);
     vi.spyOn(p.auth, "audit").mockImplementation(async (...args) => {
       if (args[1] === "project-test.requested" && args[2]?.projectId === "storefront") {

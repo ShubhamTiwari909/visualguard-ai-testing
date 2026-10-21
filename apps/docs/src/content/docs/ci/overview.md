@@ -5,8 +5,16 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-21"
-sourcePaths: ["README.md", "packages/visualguard/src/setup/workflow-template.ts", "packages/visualguard/src/cli/commands/comment.ts", "packages/visualguard/src/cli/commands/monitor.ts", "action/action.yml", "packages/visualguard/src/sdk.ts"]
-sidebar: {"order": 1}
+sourcePaths:
+  [
+    "README.md",
+    "packages/visualguard/src/setup/workflow-template.ts",
+    "packages/visualguard/src/cli/commands/comment.ts",
+    "packages/visualguard/src/cli/commands/monitor.ts",
+    "action/action.yml",
+    "packages/visualguard/src/sdk.ts",
+  ]
+sidebar: { "order": 1 }
 ---
 
 This page shows how to run VisualGuard in continuous integration (CI), so every pull request is compared automatically. It covers four ways to set it up, the steps every CI job needs, and the files a job should keep.
@@ -20,12 +28,12 @@ This page shows how to run VisualGuard in continuous integration (CI), so every 
 
 ## Choose a setup
 
-| Setup | Best for | What you get |
-| --- | --- | --- |
-| `visualguard init --workflow` | A first GitHub workflow with no extra decisions | A ready `.github/workflows/visualguard.yml` that tests, uploads the report, comments on the PR and then fails on regressions. |
-| [The GitHub Action](/ci/github-actions/) | GitHub workflows you want to keep short | One step that installs the browser, tests, uploads artifacts, comments and fails the job. Every input is an option. |
-| Plain commands | Any CI system (GitLab, CircleCI, Jenkins, Buildkite) | The two commands below, plus your CI's own artifact upload. |
-| [Node.js SDK](/guides/programmatic-api/) | Custom scripts, typed integration and CI logic | `runVisualGuard()` returns structured results, report paths and a policy verdict. Your script sets its exit status and your CI uploads evidence. |
+| Setup                                    | Best for                                             | What you get                                                                                                                                     |
+| ---------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `visualguard init --workflow`            | A first GitHub workflow with no extra decisions      | A ready `.github/workflows/visualguard.yml` that tests, uploads the report, comments on the PR and then fails on regressions.                    |
+| [The GitHub Action](/ci/github-actions/) | GitHub workflows you want to keep short              | One step that installs the browser, tests, uploads artifacts, comments and fails the job. Every input is an option.                              |
+| Plain commands                           | Any CI system (GitLab, CircleCI, Jenkins, Buildkite) | The two commands below, plus your CI's own artifact upload.                                                                                      |
+| [Node.js SDK](/guides/programmatic-api/) | Custom scripts, typed integration and CI logic       | `runVisualGuard()` returns structured results, report paths and a policy verdict. Your script sets its exit status and your CI uploads evidence. |
 
 The CLI setups run these two commands:
 
@@ -42,13 +50,13 @@ Install VisualGuard and Playwright in your app, commit the lockfile, and install
 the browser on the CI worker. A script can use the same config:
 
 ```js
-import { runVisualGuard } from 'visualguard';
+import { runVisualGuard } from "visualguard";
 
 const result = await runVisualGuard({
-  failOn: 'review',
+  failOn: "review",
   reports: { githubSummary: Boolean(process.env.GITHUB_STEP_SUMMARY) },
 });
-console.log('Upload this whole directory:', result.runDir);
+console.log("Upload this whole directory:", result.runDir);
 process.exitCode = result.exitCode;
 ```
 
@@ -106,22 +114,22 @@ Whatever CI you use, keep this order. It makes sure a failed comparison still le
 
 A CI run can produce several outputs. Each one is separate, so one can fail while another works.
 
-| Output | Where it appears | Needs |
-| --- | --- | --- |
-| Exit code | The job passes or fails. `0` means the run meets `--fail-on`; `1` means it does not; `2` is a usage error; `3` is an environment problem. | Nothing |
-| Job summary | The GitHub run's summary page, written when `GITHUB_STEP_SUMMARY` is set (`report.githubSummary`, on by default). | Nothing; no token |
-| Run artifact | Your CI's artifact storage. Contains `index.html`, screenshots, diffs and `manifest.json`. | An upload step |
-| JUnit XML | Your CI's test view. Failing jobs follow `--fail-on`. | `--junit <path>` or `report.junit` |
-| PR comment | One sticky comment on the pull request, updated on each run. | `visualguard comment` and a token with `pull-requests: write` |
-| Webhook | A JSON summary POSTed to Slack, n8n, Zapier or similar. It includes a ready-to-post `text` field. | `report.webhook` or `VISUALGUARD_WEBHOOK_URL` |
+| Output       | Where it appears                                                                                                                          | Needs                                                         |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Exit code    | The job passes or fails. `0` means the run meets `--fail-on`; `1` means it does not; `2` is a usage error; `3` is an environment problem. | Nothing                                                       |
+| Job summary  | The GitHub run's summary page, written when `GITHUB_STEP_SUMMARY` is set (`report.githubSummary`, on by default).                         | Nothing; no token                                             |
+| Run artifact | Your CI's artifact storage. Contains `index.html`, screenshots, diffs and `manifest.json`.                                                | An upload step                                                |
+| JUnit XML    | Your CI's test view. Failing jobs follow `--fail-on`.                                                                                     | `--junit <path>` or `report.junit`                            |
+| PR comment   | One sticky comment on the pull request, updated on each run.                                                                              | `visualguard comment` and a token with `pull-requests: write` |
+| Webhook      | A JSON summary POSTed to Slack, n8n, Zapier or similar. It includes a ready-to-post `text` field.                                         | `report.webhook` or `VISUALGUARD_WEBHOOK_URL`                 |
 
 `--fail-on` decides which statuses fail the run:
 
-| Value | Fails on | Default |
-| --- | --- | --- |
-| `regression` | Regressions and errors | Yes |
-| `review` | Reviews, regressions and errors | No |
-| `any` | Currently the same statuses as `review` | No |
+| Value        | Fails on                                | Default |
+| ------------ | --------------------------------------- | ------- |
+| `regression` | Regressions and errors                  | Yes     |
+| `review`     | Reviews, regressions and errors         | No      |
+| `any`        | Currently the same statuses as `review` | No      |
 
 `report.publicURL` adds a link to the report in comments and summaries. It does not host the report for you; you must publish the files there yourself.
 
@@ -133,14 +141,14 @@ A CI run can produce several outputs. Each one is separate, so one can fail whil
 npx --no-install visualguard comment --link "$ARTIFACT_URL"
 ```
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `--link <url>` | Link to the full report, such as the artifact URL | `report.publicURL` |
-| `--run <id>` | Which run to describe: an ID, ID prefix or run number | The latest run |
-| `--pr <number>` | Pull request number | Read from the GitHub event |
-| `--repo <owner/name>` | Repository | `GITHUB_REPOSITORY` |
-| `--dry-run` | Print the comment instead of posting it | Off |
-| `-c, --config <path>` | Config file path | Auto-detected |
+| Option                | What it does                                          | Default                    |
+| --------------------- | ----------------------------------------------------- | -------------------------- |
+| `--link <url>`        | Link to the full report, such as the artifact URL     | `report.publicURL`         |
+| `--run <id>`          | Which run to describe: an ID, ID prefix or run number | The latest run             |
+| `--pr <number>`       | Pull request number                                   | Read from the GitHub event |
+| `--repo <owner/name>` | Repository                                            | `GITHUB_REPOSITORY`        |
+| `--dry-run`           | Print the comment instead of posting it               | Off                        |
+| `-c, --config <path>` | Config file path                                      | Auto-detected              |
 
 The command reads its token from `GITHUB_TOKEN` (or `GH_TOKEN`). The token needs `pull-requests: write`. For events without a PR, such as `push` or `deployment_status`, it looks up the open PR that contains the commit. If there is none, it prints "No pull request for this run; skipping the comment" and exits normally.
 
@@ -195,14 +203,14 @@ If the trial passes when it should fail, check which routes ran, your masks, the
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Executable doesn't exist` or a missing browser | Add `npx playwright install --with-deps <browser>` before the test, for the same browser as your config. |
-| The artifact is empty | Upload `.visualguard/runs/` (or your `output.dir`), and run the upload step even when the test failed. |
-| `GITHUB_TOKEN is not set` | Pass `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` to the comment step. |
-| Comment fails with HTTP 403 or 404 | Grant `pull-requests: write`. Fork PRs have a read-only token; skip the comment there. |
-| The job passes but should fail | Check `--fail-on`, the route list and that the candidate URL really serves the new build. |
-| Baseline-mode runs fail only in CI | Baselines saved on your laptop use different fonts and OS rendering. Save baselines on the same CI image, or see [stable captures](/guides/stable-captures/). |
+| Problem                                         | Fix                                                                                                                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Executable doesn't exist` or a missing browser | Add `npx playwright install --with-deps <browser>` before the test, for the same browser as your config.                                                      |
+| The artifact is empty                           | Upload `.visualguard/runs/` (or your `output.dir`), and run the upload step even when the test failed.                                                        |
+| `GITHUB_TOKEN is not set`                       | Pass `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` to the comment step.                                                                                         |
+| Comment fails with HTTP 403 or 404              | Grant `pull-requests: write`. Fork PRs have a read-only token; skip the comment there.                                                                        |
+| The job passes but should fail                  | Check `--fail-on`, the route list and that the candidate URL really serves the new build.                                                                     |
+| Baseline-mode runs fail only in CI              | Baselines saved on your laptop use different fonts and OS rendering. Save baselines on the same CI image, or see [stable captures](/guides/stable-captures/). |
 
 See [CI troubleshooting](/troubleshooting/ci/) for more.
 

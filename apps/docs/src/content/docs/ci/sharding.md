@@ -5,8 +5,14 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["README.md", "packages/visualguard/src/cli/commands/merge.ts", "packages/visualguard/src/core/merge.ts", "packages/visualguard/src/core/run.ts"]
-sidebar: {"order": 4}
+sourcePaths:
+  [
+    "README.md",
+    "packages/visualguard/src/cli/commands/merge.ts",
+    "packages/visualguard/src/core/merge.ts",
+    "packages/visualguard/src/core/run.ts",
+  ]
+sidebar: { "order": 4 }
 ---
 
 Sharding splits one comparison into parts that run in parallel on different CI jobs. Each part is called a shard. When all shards finish, `visualguard merge` combines them into one run, one report and one exit code. Use it when a single job takes too long.
@@ -23,11 +29,11 @@ VisualGuard plans every job (one route at one viewport) first. It sorts the jobs
 
 Each shard also records a **run group**: one ID shared by all shards of the same execution. Merge uses it to refuse parts from different executions.
 
-| Where the run group comes from | Value |
-| --- | --- |
-| `--run-group <id>` | Your value |
-| `VISUALGUARD_RUN_GROUP` | Your value |
-| GitHub Actions (automatic) | `<GITHUB_RUN_ID>-<GITHUB_RUN_ATTEMPT>` |
+| Where the run group comes from | Value                                  |
+| ------------------------------ | -------------------------------------- |
+| `--run-group <id>`             | Your value                             |
+| `VISUALGUARD_RUN_GROUP`        | Your value                             |
+| GitHub Actions (automatic)     | `<GITHUB_RUN_ID>-<GITHUB_RUN_ATTEMPT>` |
 
 Outside GitHub Actions, a sharded run without a group stops with "Sharded runs require --run-group or VISUALGUARD_RUN_GROUP (automatic in GitHub Actions)."
 
@@ -54,30 +60,30 @@ npx --no-install visualguard merge downloaded-shards --ci --junit merged-junit.x
 
 You can pass run folders, `.visualguard` folders, or a folder of downloaded artifacts. Merge finds the runs inside. It writes a new combined run with its own report under your output folder, and returns one exit code.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `<paths...>` | Run folders, `.visualguard` folders, or a folder of downloaded CI artifacts | Required |
-| `--fail-on <level>` | `regression`, `review` or `any` | `regression` |
-| `--allow-partial` | Make an incomplete report when shards or jobs are missing. Still exits non-zero. | Off |
-| `--junit <path>` | Write a JUnit XML file for the merged run | none |
-| `--json` | Print the merged manifest JSON to stdout | Off |
-| `--ci` | No colours | Off |
-| `-c, --config <path>` | Config file path | Auto-detected |
+| Option                | What it does                                                                     | Default       |
+| --------------------- | -------------------------------------------------------------------------------- | ------------- |
+| `<paths...>`          | Run folders, `.visualguard` folders, or a folder of downloaded CI artifacts      | Required      |
+| `--fail-on <level>`   | `regression`, `review` or `any`                                                  | `regression`  |
+| `--allow-partial`     | Make an incomplete report when shards or jobs are missing. Still exits non-zero. | Off           |
+| `--junit <path>`      | Write a JUnit XML file for the merged run                                        | none          |
+| `--json`              | Print the merged manifest JSON to stdout                                         | Off           |
+| `--ci`                | No colours                                                                       | Off           |
+| `-c, --config <path>` | Config file path                                                                 | Auto-detected |
 
 ## What merge refuses
 
 Merge checks that the shards belong together before it trusts them.
 
-| Merge stops when | Error message starts with |
-| --- | --- |
-| No runs are found | `No runs found in ...` |
-| Runs use different modes (compare and baseline) | `Can't merge runs of different modes` |
-| A run was made by an old release without provenance | `Cannot merge legacy runs without provenance` |
-| Group, commit, config, browser or shard count differ | `Cannot merge incompatible runs` |
-| The same shard number appears twice | `Duplicate shard indices in merge inputs.` |
-| The same job appears twice | `Duplicate job IDs in merge inputs.` |
-| A job is not in the planned list | `Unexpected jobs in shard inputs.` |
-| A shard or job is missing | `Incomplete shard set or missing jobs` |
+| Merge stops when                                     | Error message starts with                     |
+| ---------------------------------------------------- | --------------------------------------------- |
+| No runs are found                                    | `No runs found in ...`                        |
+| Runs use different modes (compare and baseline)      | `Can't merge runs of different modes`         |
+| A run was made by an old release without provenance  | `Cannot merge legacy runs without provenance` |
+| Group, commit, config, browser or shard count differ | `Cannot merge incompatible runs`              |
+| The same shard number appears twice                  | `Duplicate shard indices in merge inputs.`    |
+| The same job appears twice                           | `Duplicate job IDs in merge inputs.`          |
+| A job is not in the planned list                     | `Unexpected jobs in shard inputs.`            |
+| A shard or job is missing                            | `Incomplete shard set or missing jobs`        |
 
 For a legacy run, rerun the shards with the current release.
 
@@ -150,12 +156,12 @@ If you use the GitHub Action for each shard, pass the shard through `args: --sha
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Sharded runs require --run-group ...` | Pass `--run-group` or set `VISUALGUARD_RUN_GROUP` to the same value on every shard. |
-| `Cannot merge incompatible runs` | Shards ran with different commits, configs, browsers or groups. Rerun all shards from one commit. |
-| `Incomplete shard set or missing jobs` | A shard failed to upload or download. Check every shard artifact exists, then merge again. |
-| `No runs found in ...` | Point merge at the folder that holds the downloaded run folders. |
+| Problem                                                     | Fix                                                                                                                           |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `Sharded runs require --run-group ...`                      | Pass `--run-group` or set `VISUALGUARD_RUN_GROUP` to the same value on every shard.                                           |
+| `Cannot merge incompatible runs`                            | Shards ran with different commits, configs, browsers or groups. Rerun all shards from one commit.                             |
+| `Incomplete shard set or missing jobs`                      | A shard failed to upload or download. Check every shard artifact exists, then merge again.                                    |
+| `No runs found in ...`                                      | Point merge at the folder that holds the downloaded run folders.                                                              |
 | `Cannot merge incompatible runs` after "Re-run failed jobs" | On GitHub, each attempt has its own run group, so old and new shards do not match. Re-run all jobs, not only the failed ones. |
 
 See [CI troubleshooting](/troubleshooting/ci/) for more.

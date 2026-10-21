@@ -5,8 +5,14 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/server/scaffold.ts", "apps/platform/server/runtime.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/database.ts"]
-sidebar: {"order": 4}
+sourcePaths:
+  [
+    "apps/platform/server/scaffold.ts",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/server/built-in-runner.ts",
+    "apps/platform/server/database.ts",
+  ]
+sidebar: { "order": 4 }
 ---
 
 This tutorial deploys the VisualGuard dashboard to Vercel as its own project. You will generate a small deployment folder, connect an external database, set the environment variables, deploy, and check that everything works. Vercel serves the UI as static files and handles the API in one serverless function.
@@ -32,13 +38,13 @@ cd deploy/visualguard-vercel
 
 You should see the full path of the new folder. It must be empty or not exist yet; `init` never overwrites files. It contains:
 
-| File | Purpose |
-| --- | --- |
-| `package.json` | Depends only on `visualguard`. `build` copies the prebuilt UI into `public/`. |
-| `api/dashboard.mjs` | The serverless function that handles every `/api/...` request. |
-| `vercel.json` | Build settings, page rewrites, a 300-second function limit and private headers for `/invite`. |
-| `.env.example` | The variables you must set. Do not put real secrets here. |
-| `.gitignore` | Keeps `node_modules/`, `.env*`, `.vercel/` and `public/` out of Git. |
+| File                | Purpose                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| `package.json`      | Depends only on `visualguard`. `build` copies the prebuilt UI into `public/`.                 |
+| `api/dashboard.mjs` | The serverless function that handles every `/api/...` request.                                |
+| `vercel.json`       | Build settings, page rewrites, a 300-second function limit and private headers for `/invite`. |
+| `.env.example`      | The variables you must set. Do not put real secrets here.                                     |
+| `.gitignore`        | Keeps `node_modules/`, `.env*`, `.vercel/` and `public/` out of Git.                          |
 
 ## 2. Pin the package version
 
@@ -80,12 +86,12 @@ vercel link
 
 When `vercel link` asks, create a new project. In the project settings, check:
 
-| Setting | Value |
-| --- | --- |
-| Framework preset | Other |
-| Node.js version | 22.x |
-| Build command | `npm run build` |
-| Output directory | `public` |
+| Setting          | Value           |
+| ---------------- | --------------- |
+| Framework preset | Other           |
+| Node.js version  | 22.x            |
+| Build command    | `npm run build` |
+| Output directory | `public`        |
 
 `vercel.json` already sets the build command and output directory.
 
@@ -108,14 +114,14 @@ vercel env add VISUALGUARD_ADMIN_PASSWORD production
 vercel env add VISUALGUARD_USER_ADMISSION production
 ```
 
-| Variable | What to enter |
-| --- | --- |
-| `VISUALGUARD_DATABASE_URL` | Your database URL. |
-| `VISUALGUARD_PUBLIC_URL` | The project's stable HTTPS origin, such as `https://my-team-visualguard.vercel.app`. No path. |
-| `VISUALGUARD_AUTH_MODE` | `login` |
-| `VISUALGUARD_ADMIN_EMAIL` | The first administrator's email. |
-| `VISUALGUARD_ADMIN_PASSWORD` | A unique password of 12 to 256 characters. |
-| `VISUALGUARD_USER_ADMISSION` | `invite` for a new workspace. |
+| Variable                     | What to enter                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `VISUALGUARD_DATABASE_URL`   | Your database URL.                                                                            |
+| `VISUALGUARD_PUBLIC_URL`     | The project's stable HTTPS origin, such as `https://my-team-visualguard.vercel.app`. No path. |
+| `VISUALGUARD_AUTH_MODE`      | `login`                                                                                       |
+| `VISUALGUARD_ADMIN_EMAIL`    | The first administrator's email.                                                              |
+| `VISUALGUARD_ADMIN_PASSWORD` | A unique password of 12 to 256 characters.                                                    |
+| `VISUALGUARD_USER_ADMISSION` | `invite` for a new workspace.                                                                 |
 
 A local `.env` file does not set production variables. See [Vercel environment variables](https://vercel.com/docs/environment-variables).
 
@@ -173,15 +179,15 @@ A static page loading does not prove the API, credentials or database work. Chec
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| "Dashboard unavailable; check deployment configuration" (503) | Open the function logs. Usually the database URL is missing or wrong. |
-| "Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data" | Add `VISUALGUARD_DATABASE_URL` for Production and redeploy. |
-| Refreshing a page gives 404 | Add the missing rewrite in `vercel.json` and redeploy. |
-| "Hosted login requires HTTPS" or "Hosted login requires VISUALGUARD_PUBLIC_URL" | Set `VISUALGUARD_PUBLIC_URL` to the exact `https://` origin. |
-| Sign-in fails on a deployment-specific URL | Open the dashboard at the exact `VISUALGUARD_PUBLIC_URL`, not a per-deployment `*.vercel.app` address. |
-| Run test never starts | Connect a private runner. Vercel cannot run the built-in runner. |
-| Large uploads fail | Publish with the `visualguard` CLI, which uploads in chunks. Direct API requests over 4.5 MB are rejected by Vercel. |
+| Problem                                                                         | Fix                                                                                                                  |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| "Dashboard unavailable; check deployment configuration" (503)                   | Open the function logs. Usually the database URL is missing or wrong.                                                |
+| "Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data"     | Add `VISUALGUARD_DATABASE_URL` for Production and redeploy.                                                          |
+| Refreshing a page gives 404                                                     | Add the missing rewrite in `vercel.json` and redeploy.                                                               |
+| "Hosted login requires HTTPS" or "Hosted login requires VISUALGUARD_PUBLIC_URL" | Set `VISUALGUARD_PUBLIC_URL` to the exact `https://` origin.                                                         |
+| Sign-in fails on a deployment-specific URL                                      | Open the dashboard at the exact `VISUALGUARD_PUBLIC_URL`, not a per-deployment `*.vercel.app` address.               |
+| Run test never starts                                                           | Connect a private runner. Vercel cannot run the built-in runner.                                                     |
+| Large uploads fail                                                              | Publish with the `visualguard` CLI, which uploads in chunks. Direct API requests over 4.5 MB are rejected by Vercel. |
 
 See [dashboard troubleshooting](/troubleshooting/dashboard/) for more.
 

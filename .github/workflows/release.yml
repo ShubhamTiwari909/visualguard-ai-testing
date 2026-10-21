@@ -3,6 +3,13 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the prepared version to npm
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: write
@@ -15,6 +22,7 @@ concurrency:
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +37,8 @@ jobs:
         uses: changesets/action@v1
         with:
           version: pnpm version-packages
-          publish: pnpm release
+          # Merging a prepared version must not publish it without maintainer intent.
+          publish: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && 'pnpm release' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"

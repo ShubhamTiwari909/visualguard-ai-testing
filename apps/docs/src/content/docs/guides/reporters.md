@@ -5,8 +5,14 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-21"
-sourcePaths: ["packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/events.ts", "packages/visualguard/src/cli/shared.ts", "packages/visualguard/src/sdk.ts"]
-sidebar: {"order": 19}
+sourcePaths:
+  [
+    "packages/visualguard/src/core/run.ts",
+    "packages/visualguard/src/core/events.ts",
+    "packages/visualguard/src/cli/shared.ts",
+    "packages/visualguard/src/sdk.ts",
+  ]
+sidebar: { "order": 19 }
 ---
 
 A reporter consumes progress or completed results. It does not make a result pass or host the evidence for you. Choose the CLI integrations for ordinary automation, or a custom reporter when another tool needs the manifest.
@@ -40,12 +46,12 @@ GitHub summaries need the job-provided `GITHUB_STEP_SUMMARY` environment. Settin
 With `runVisualGuard`, select output through the call's `reports` option:
 
 ```js
-import { runVisualGuard } from 'visualguard';
+import { runVisualGuard } from "visualguard";
 
 const result = await runVisualGuard({
   reports: {
     html: true,
-    junit: 'test-results/visualguard.xml',
+    junit: "test-results/visualguard.xml",
     githubSummary: Boolean(process.env.GITHUB_STEP_SUMMARY),
   },
 });
@@ -65,20 +71,27 @@ settings. See the [SDK guide](/guides/programmatic-api/#5-reports-diffs-and-prog
 Create `visual-reporter.mjs` in your application's root:
 
 ```js
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export const summaryReporter = {
-  name: 'team-summary',
+  name: "team-summary",
   onEvent(event) {
-    if (event.type === 'job:end') console.error(event.job.route, event.job.status);
+    if (event.type === "job:end") console.error(event.job.route, event.job.status);
   },
   async onRunEnd(manifest, context) {
-    await writeFile(join(context.runDir, 'team-summary.json'), JSON.stringify({
-      id: manifest.id,
-      summary: manifest.summary,
-      incomplete: Boolean(manifest.incomplete),
-    }, null, 2));
+    await writeFile(
+      join(context.runDir, "team-summary.json"),
+      JSON.stringify(
+        {
+          id: manifest.id,
+          summary: manifest.summary,
+          incomplete: Boolean(manifest.incomplete),
+        },
+        null,
+        2,
+      ),
+    );
   },
 };
 ```

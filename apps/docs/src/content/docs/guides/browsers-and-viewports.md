@@ -5,8 +5,14 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/config/resolve.ts", "packages/visualguard/src/capture/browser.ts", "packages/visualguard/src/core/provenance.ts"]
-sidebar: {"order": 4}
+sourcePaths:
+  [
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/config/resolve.ts",
+    "packages/visualguard/src/capture/browser.ts",
+    "packages/visualguard/src/core/provenance.ts",
+  ]
+sidebar: { "order": 4 }
 ---
 
 A viewport is the size of the browser window used for a screenshot, such as a desktop screen or a phone. The browser settings choose the engine and how pages render: language, time zone and light or dark theme. This page shows how to set both, and how to switch them for a single run.
@@ -45,12 +51,12 @@ viewports: {
 },
 ```
 
-| Field | What it does | Allowed values | Default |
-| --- | --- | --- | --- |
-| `width` | Window width in CSS pixels. | 200 to 7680 | required |
-| `height` | Window height in CSS pixels. With full-page screenshots, the image can be taller than this. | 200 to 4320 | required |
-| `isMobile` | Uses mobile browser behaviour, such as the `meta viewport` tag. Ignored in Firefox. | `true` or `false` | off |
-| `hasTouch` | Reports a touch screen to the page. | `true` or `false` | off |
+| Field               | What it does                                                                                                                 | Allowed values       | Default                     |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
+| `width`             | Window width in CSS pixels.                                                                                                  | 200 to 7680          | required                    |
+| `height`            | Window height in CSS pixels. With full-page screenshots, the image can be taller than this.                                  | 200 to 4320          | required                    |
+| `isMobile`          | Uses mobile browser behaviour, such as the `meta viewport` tag. Ignored in Firefox.                                          | `true` or `false`    | off                         |
+| `hasTouch`          | Reports a touch screen to the page.                                                                                          | `true` or `false`    | off                         |
 | `deviceScaleFactor` | Pixel density for this viewport. `2` makes a sharper image twice as wide in pixels. It replaces `browser.deviceScaleFactor`. | more than 0, up to 4 | `browser.deviceScaleFactor` |
 
 If you leave out `viewports`, VisualGuard uses one viewport: `desktop`, 1440 × 900. You must define at least one.
@@ -75,17 +81,17 @@ browser: {
 },
 ```
 
-| Field | What it does | Default |
-| --- | --- | --- |
-| `name` | The engine: `"chromium"`, `"firefox"` or `"webkit"` (the Safari engine). | `"chromium"` |
-| `locale` | The browser language, used for `Accept-Language` and for date and number formats. | `"en-US"` |
-| `timezoneId` | The time zone for dates shown by the page. | `"UTC"` |
-| `colorScheme` | What the page sees for `prefers-color-scheme`: `"light"`, `"dark"` or `"no-preference"`. | `"light"` |
-| `deviceScaleFactor` | Pixel density for viewports that do not set their own. More than 0, up to 4. | `1` |
-| `navigationTimeoutMs` | How long to wait for a page to load. | `30000` |
-| `actionTimeoutMs` | How long to wait for things such as a route's `waitFor` selector. | `15000` |
-| `headless` | Runs the browser without a window. Set `false` to watch captures while debugging. | `true` |
-| `ignoreHTTPSErrors` | Accepts invalid or self-signed HTTPS certificates. It also skips the check that both sites are reachable before the run. | `false` |
+| Field                 | What it does                                                                                                             | Default      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| `name`                | The engine: `"chromium"`, `"firefox"` or `"webkit"` (the Safari engine).                                                 | `"chromium"` |
+| `locale`              | The browser language, used for `Accept-Language` and for date and number formats.                                        | `"en-US"`    |
+| `timezoneId`          | The time zone for dates shown by the page.                                                                               | `"UTC"`      |
+| `colorScheme`         | What the page sees for `prefers-color-scheme`: `"light"`, `"dark"` or `"no-preference"`.                                 | `"light"`    |
+| `deviceScaleFactor`   | Pixel density for viewports that do not set their own. More than 0, up to 4.                                             | `1`          |
+| `navigationTimeoutMs` | How long to wait for a page to load.                                                                                     | `30000`      |
+| `actionTimeoutMs`     | How long to wait for things such as a route's `waitFor` selector.                                                        | `15000`      |
+| `headless`            | Runs the browser without a window. Set `false` to watch captures while debugging.                                        | `true`       |
+| `ignoreHTTPSErrors`   | Accepts invalid or self-signed HTTPS certificates. It also skips the check that both sites are reachable before the run. | `false`      |
 
 VisualGuard also sets a few things you cannot change, so captures stay consistent:
 
@@ -97,10 +103,10 @@ VisualGuard also sets a few things you cannot change, so captures stay consisten
 
 These flags and variables override the config for one run:
 
-| Flag | Environment variable | What it does |
-| --- | --- | --- |
-| `--browser <name>` | `VISUALGUARD_BROWSER` | Uses another engine. The flag wins over the variable. |
-| `--viewport <name>` | none | Keeps only this viewport. Repeat it for more. The name must exist in `viewports`. |
+| Flag                | Environment variable  | What it does                                                                      |
+| ------------------- | --------------------- | --------------------------------------------------------------------------------- |
+| `--browser <name>`  | `VISUALGUARD_BROWSER` | Uses another engine. The flag wins over the variable.                             |
+| `--viewport <name>` | none                  | Keeps only this viewport. Repeat it for more. The name must exist in `viewports`. |
 
 ```bash
 # Only the mobile size
@@ -174,16 +180,16 @@ For example, baselines created on macOS will not match a Linux CI machine. Creat
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Playwright's … browser is not installed.` | Run the command in the hint, for example `npx playwright install webkit`. On Linux add `--with-deps`. |
-| `Unknown viewport: …` | Use a name from `viewports`. The error lists the configured names. |
-| `viewport names may only use letters, digits and -` | Rename the viewport, for example `mobile-small` instead of `mobile small`. |
-| A mobile layout looks like desktop in Firefox | Firefox ignores `isMobile`. Rely on `width` for responsive layouts, or use Chromium or WebKit for mobile checks. |
-| Page load times out | Raise `browser.navigationTimeoutMs`, or check that the site responds. |
-| `waitFor` times out | Check the selector, or raise `browser.actionTimeoutMs`. |
-| Certificate errors on a local HTTPS site | Set `browser.ignoreHTTPSErrors: true` for that config only. |
-| `Baseline rendering settings do not match` | Use the settings the baselines were made with, or recreate them with `--update-baselines`. |
+| Problem                                             | Fix                                                                                                              |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Playwright's … browser is not installed.`          | Run the command in the hint, for example `npx playwright install webkit`. On Linux add `--with-deps`.            |
+| `Unknown viewport: …`                               | Use a name from `viewports`. The error lists the configured names.                                               |
+| `viewport names may only use letters, digits and -` | Rename the viewport, for example `mobile-small` instead of `mobile small`.                                       |
+| A mobile layout looks like desktop in Firefox       | Firefox ignores `isMobile`. Rely on `width` for responsive layouts, or use Chromium or WebKit for mobile checks. |
+| Page load times out                                 | Raise `browser.navigationTimeoutMs`, or check that the site responds.                                            |
+| `waitFor` times out                                 | Check the selector, or raise `browser.actionTimeoutMs`.                                                          |
+| Certificate errors on a local HTTPS site            | Set `browser.ignoreHTTPSErrors: true` for that config only.                                                      |
+| `Baseline rendering settings do not match`          | Use the settings the baselines were made with, or recreate them with `--update-baselines`.                       |
 
 For more, see [Installation troubleshooting](/troubleshooting/installation/) and [Capture troubleshooting](/troubleshooting/capture/).
 

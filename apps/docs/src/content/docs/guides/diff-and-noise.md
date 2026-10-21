@@ -5,8 +5,17 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/diff/compute.ts", "packages/visualguard/src/diff/noise.ts", "packages/visualguard/src/diff/regions.ts", "packages/visualguard/src/diff/shift.ts", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/provenance.ts"]
-sidebar: {"order": 6}
+sourcePaths:
+  [
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/diff/compute.ts",
+    "packages/visualguard/src/diff/noise.ts",
+    "packages/visualguard/src/diff/regions.ts",
+    "packages/visualguard/src/diff/shift.ts",
+    "packages/visualguard/src/core/run.ts",
+    "packages/visualguard/src/core/provenance.ts",
+  ]
+sidebar: { "order": 6 }
 ---
 
 After both screenshots are taken, VisualGuard compares them pixel by pixel. The `diff` settings decide when two pixels count as different, how much difference is allowed before a page needs review, and how changed areas are grouped in the report.
@@ -35,12 +44,12 @@ For each job (one page at one viewport), VisualGuard:
 
 Two kinds of setting work together. `threshold` decides whether one pixel counts as changed. `maxDiffPixels` and `maxDiffRatio` decide how many changed pixels are allowed in total.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `threshold` | Colour tolerance for one pixel, from 0 to 1. `0` means any colour change counts. Higher values ignore smaller colour changes. | `0.1` |
-| `maxDiffPixels` | The job passes if at most this many pixels differ. | `20` |
-| `maxDiffRatio` | The job also passes if at most this share of all pixels differ, from 0 to 1. `0` turns this rule off. | `0` |
-| `ignoreAntialiasing` | Ignores pixels that look like smoothed edges of text and shapes. | `true` |
+| Option               | What it does                                                                                                                  | Default |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `threshold`          | Colour tolerance for one pixel, from 0 to 1. `0` means any colour change counts. Higher values ignore smaller colour changes. | `0.1`   |
+| `maxDiffPixels`      | The job passes if at most this many pixels differ.                                                                            | `20`    |
+| `maxDiffRatio`       | The job also passes if at most this share of all pixels differ, from 0 to 1. `0` turns this rule off.                         | `0`     |
+| `ignoreAntialiasing` | Ignores pixels that look like smoothed edges of text and shapes.                                                              | `true`  |
 
 A job passes when **either** rule is met: the count is within `maxDiffPixels`, or the share is within `maxDiffRatio` (when that is above 0).
 
@@ -58,12 +67,12 @@ diff: {
 
 ### When to change each one
 
-| Situation | What to change |
-| --- | --- |
-| Tiny colour shifts in gradients or shadows show up as differences | Raise `threshold` a little, for example to `0.15`. |
-| You need to catch very subtle colour changes, such as a brand colour tweak | Lower `threshold`, for example to `0.05`. |
-| A handful of scattered pixels differ on every run | Raise `maxDiffPixels` a little, for example to `50`. |
-| Very tall pages fail because of a few hundred noisy pixels | Set `maxDiffRatio` to a small share, for example `0.0005` (0.05% of the page). |
+| Situation                                                                  | What to change                                                                 |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Tiny colour shifts in gradients or shadows show up as differences          | Raise `threshold` a little, for example to `0.15`.                             |
+| You need to catch very subtle colour changes, such as a brand colour tweak | Lower `threshold`, for example to `0.05`.                                      |
+| A handful of scattered pixels differ on every run                          | Raise `maxDiffPixels` a little, for example to `50`.                           |
+| Very tall pages fail because of a few hundred noisy pixels                 | Set `maxDiffRatio` to a small share, for example `0.0005` (0.05% of the page). |
 
 :::caution
 Every allowance can also hide a real change. A one-word text change can be fewer than 100 pixels. Raise these values in small steps, and never raise them just to make a known regression pass. Accept intentional changes instead. See [Accept intentional local changes](/guides/accepting-changes/).
@@ -75,10 +84,10 @@ Some content changes on every page load: a random testimonial, an ad, a "people 
 
 When a job does not pass, the noise map loads the reference side once more. In compare mode that is the production site; in baseline mode it is the current site. VisualGuard then compares the two loads of the same page. Areas that differ between them are grown to the element they sit in, and left out of the comparison.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `noiseMap` | Turns the noise map on or off. | `true` |
-| `noiseMapMaxRatio` | If the changing areas cover more than this share of the page, the noise map is not used. | `0.25` |
+| Option             | What it does                                                                             | Default |
+| ------------------ | ---------------------------------------------------------------------------------------- | ------- |
+| `noiseMap`         | Turns the noise map on or off.                                                           | `true`  |
+| `noiseMapMaxRatio` | If the changing areas cover more than this share of the page, the noise map is not used. | `0.25`  |
 
 The noise map is skipped in two cases, and the report says why:
 
@@ -100,14 +109,14 @@ Set `noiseMap: false` when:
 
 These settings change how regions look in the report and how many reach the AI. They do not change whether a job passes.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `detectShift` | Finds content that moved up or down because something was inserted or removed, and reports it as one shift region. | `true` |
-| `regionCellSize` | Changed pixels are grouped in square cells of this size, in pixels (4 to 64). | `16` |
-| `regionMergeDistance` | Regions closer than this many pixels are merged into one. | `32` |
-| `regionPadding` | Extra pixels around each region when cropping it for the report. | `24` |
-| `maxRegions` | The most regions kept per job. The largest are kept. | `10` |
-| `engine` | The comparison engine. Only `"pixelmatch"` is available. | `"pixelmatch"` |
+| Option                | What it does                                                                                                       | Default        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------- |
+| `detectShift`         | Finds content that moved up or down because something was inserted or removed, and reports it as one shift region. | `true`         |
+| `regionCellSize`      | Changed pixels are grouped in square cells of this size, in pixels (4 to 64).                                      | `16`           |
+| `regionMergeDistance` | Regions closer than this many pixels are merged into one.                                                          | `32`           |
+| `regionPadding`       | Extra pixels around each region when cropping it for the report.                                                   | `24`           |
+| `maxRegions`          | The most regions kept per job. The largest are kept.                                                               | `10`           |
+| `engine`              | The comparison engine. Only `"pixelmatch"` is available.                                                           | `"pixelmatch"` |
 
 Raise `regionMergeDistance` if one change, such as a new card, shows up as many small regions. Lower it if separate changes are merged into one big box.
 
@@ -151,15 +160,15 @@ If step 2 passes the page, your allowances are too loose.
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `diff.threshold: … Hint: threshold is per-pixel colour tolerance (0–1)` | Use a value between 0 and 1. Use `maxDiffPixels` to allow a number of pixels. |
-| An expected change is missing from the report | Lower `maxDiffPixels`, set `maxDiffRatio` back to `0`, or check that a mask, hide or noise area does not cover it. |
-| `Noise map not applied: the page size changes between loads` | Content loads late and changes the height. Add a route `waitFor`, or stabilize the late content. |
-| `Noise map not applied: …% of the page changes between loads` | The page is not stable. See [Make captures repeatable](/guides/stable-captures/). |
-| One change shows as many small regions | Raise `regionMergeDistance`. |
-| Everything below a new element is marked as changed | Make sure `detectShift` is `true`. |
-| A page fails with a size difference | The two pages have different heights. Look at the **Side by side** view to see which content is extra. |
+| Problem                                                                 | Fix                                                                                                                |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `diff.threshold: … Hint: threshold is per-pixel colour tolerance (0–1)` | Use a value between 0 and 1. Use `maxDiffPixels` to allow a number of pixels.                                      |
+| An expected change is missing from the report                           | Lower `maxDiffPixels`, set `maxDiffRatio` back to `0`, or check that a mask, hide or noise area does not cover it. |
+| `Noise map not applied: the page size changes between loads`            | Content loads late and changes the height. Add a route `waitFor`, or stabilize the late content.                   |
+| `Noise map not applied: …% of the page changes between loads`           | The page is not stable. See [Make captures repeatable](/guides/stable-captures/).                                  |
+| One change shows as many small regions                                  | Raise `regionMergeDistance`.                                                                                       |
+| Everything below a new element is marked as changed                     | Make sure `detectShift` is `true`.                                                                                 |
+| A page fails with a size difference                                     | The two pages have different heights. Look at the **Side by side** view to see which content is extra.             |
 
 For other capture problems, see [Capture troubleshooting](/troubleshooting/capture/).
 

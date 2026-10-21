@@ -5,8 +5,16 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/dashboard.ts", "packages/visualguard/src/cli/commands/test.ts", "apps/platform/server/upload-client.ts", "apps/platform/server/ingest.ts", "apps/platform/client/settings.tsx"]
-sidebar: {"order": 5}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "packages/visualguard/src/cli/commands/dashboard.ts",
+    "packages/visualguard/src/cli/commands/test.ts",
+    "apps/platform/server/upload-client.ts",
+    "apps/platform/server/ingest.ts",
+    "apps/platform/client/settings.tsx",
+  ]
+sidebar: { "order": 5 }
 ---
 
 Publishing sends a run from the machine that captured it to a dashboard project. Use this page to connect the CLI or CI to a dashboard, create the upload token a login dashboard needs, and retry an upload that failed without capturing again.
@@ -20,17 +28,17 @@ Publishing sends a run from the machine that captured it to a dashboard project.
 
 ## Choose how to send a run
 
-| Method | Command | When to use it |
-| --- | --- | --- |
-| Capture and publish | `visualguard test PROJECT --dashboard URL` | Everyday use on your computer or in CI |
-| Publish a saved run | `visualguard dashboard publish RUN_DIR --project ID --server URL` | Retry after a failed upload, or send an older run |
-| Import on the host | `visualguard dashboard import RUN_DIR --project ID` | You are on the dashboard machine and can open its storage directly |
+| Method              | Command                                                           | When to use it                                                     |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Capture and publish | `visualguard test PROJECT --dashboard URL`                        | Everyday use on your computer or in CI                             |
+| Publish a saved run | `visualguard dashboard publish RUN_DIR --project ID --server URL` | Retry after a failed upload, or send an older run                  |
+| Import on the host  | `visualguard dashboard import RUN_DIR --project ID`               | You are on the dashboard machine and can open its storage directly |
 
 `--dashboard` and `--server` only connect to a dashboard that is already running. They never start one.
 
-| Dashboard mode | Upload token needed? |
-| --- | --- |
-| Local mode on `127.0.0.1` | No |
+| Dashboard mode                  | Upload token needed?        |
+| ------------------------------- | --------------------------- |
+| Local mode on `127.0.0.1`       | No                          |
 | Login mode, even on `127.0.0.1` | Yes, a project upload token |
 
 Remote dashboards must use HTTPS. Plain HTTP only works for `localhost`, `127.0.0.1` and `[::1]`.
@@ -77,14 +85,14 @@ With `VISUALGUARD_DASHBOARD_URL` set, this is the same as adding `--dashboard ht
 
 Add labels so the team can filter the run later:
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `--environment <name>` | Environment label shown in Run history | `staging` |
-| `--run-name <name>` | Custom run name | `Run #N` |
-| `--branch <name>` | Branch label | Not set |
-| `--commit <sha>` | Source commit. Needed for baselines and policies | Taken from the capture when known |
-| `--pr <number>` | Pull request number | Not set |
-| `--deployment <id>` | Deployment label, such as a preview URL ID | Not set |
+| Option                 | What it does                                     | Default                           |
+| ---------------------- | ------------------------------------------------ | --------------------------------- |
+| `--environment <name>` | Environment label shown in Run history           | `staging`                         |
+| `--run-name <name>`    | Custom run name                                  | `Run #N`                          |
+| `--branch <name>`      | Branch label                                     | Not set                           |
+| `--commit <sha>`       | Source commit. Needed for baselines and policies | Taken from the capture when known |
+| `--pr <number>`        | Pull request number                              | Not set                           |
+| `--deployment <id>`    | Deployment label, such as a preview URL ID       | Not set                           |
 
 Example for a pull request in CI:
 
@@ -135,13 +143,13 @@ You should see `Imported: /runs/<id> [<status>]`. Refresh the dashboard to see i
 
 ## Upload limits
 
-| Limit | Value |
-| --- | --- |
-| Files per run | 4096 |
-| Size of one file | 32 MiB |
-| Size of `manifest.json` | 16 MiB |
-| Total size of one run | 512 MiB |
-| Metadata record on MongoDB | 12 MiB |
+| Limit                      | Value   |
+| -------------------------- | ------- |
+| Files per run              | 4096    |
+| Size of one file           | 32 MiB  |
+| Size of `manifest.json`    | 16 MiB  |
+| Total size of one run      | 512 MiB |
+| Metadata record on MongoDB | 12 MiB  |
 
 Split a very large test into smaller, complete runs, for example with [sharding](/ci/sharding/).
 
@@ -153,14 +161,14 @@ Split a very large test into smaller, complete runs, for example with [sharding]
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Set VISUALGUARD_UPLOAD_TOKEN for a dashboard requiring login` | The dashboard runs in login mode. Create an upload token and set it |
-| `Set VISUALGUARD_UPLOAD_TOKEN to a project upload credential` | Remote dashboards always need a token. Check the variable name and that `--env-file` points to the right file |
-| `Remote uploads require HTTPS` | Use the dashboard's `https://` address |
-| `Upload credential does not permit this project` | The token belongs to another project. Use that project's token, or create one here |
-| `Cannot bind dashboard project: ...` | The CLI could not reach the dashboard or find the project. Check the URL, the token and the project ID |
-| `Upload session missing or expired; start a new upload` | More than 24 hours passed. Run `dashboard publish` again for a fresh upload |
+| Problem                                                        | Fix                                                                                                           |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Set VISUALGUARD_UPLOAD_TOKEN for a dashboard requiring login` | The dashboard runs in login mode. Create an upload token and set it                                           |
+| `Set VISUALGUARD_UPLOAD_TOKEN to a project upload credential`  | Remote dashboards always need a token. Check the variable name and that `--env-file` points to the right file |
+| `Remote uploads require HTTPS`                                 | Use the dashboard's `https://` address                                                                        |
+| `Upload credential does not permit this project`               | The token belongs to another project. Use that project's token, or create one here                            |
+| `Cannot bind dashboard project: ...`                           | The CLI could not reach the dashboard or find the project. Check the URL, the token and the project ID        |
+| `Upload session missing or expired; start a new upload`        | More than 24 hours passed. Run `dashboard publish` again for a fresh upload                                   |
 
 Do not capture again just to hide an upload failure. Publish the saved run. More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
 

@@ -5,8 +5,13 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/PRODUCT-FEATURES.md", "packages/visualguard/src/core/status.ts", "apps/platform/server/built-in-runner.ts"]
-sidebar: {"order": 1}
+sourcePaths:
+  [
+    "docs/PRODUCT-FEATURES.md",
+    "packages/visualguard/src/core/status.ts",
+    "apps/platform/server/built-in-runner.ts",
+  ]
+sidebar: { "order": 1 }
 ---
 
 This page explains what happens when you run VisualGuard, from opening a page to making a release decision. Read it once before you rely on results. It makes every other page easier to follow.
@@ -36,12 +41,12 @@ VisualGuard tests any page a browser can open. React, Next.js, Vue and plain HTM
 
 ## Where the reference comes from
 
-| Reference | When to use it | Read |
-| --- | --- | --- |
-| Another running site, such as production | You can run both versions at once | [Comparison modes](/concepts/comparison-modes/) |
-| Saved local baselines | There is no stable second site, such as a component gallery | [Create local baselines](/guides/local-baselines/) |
-| An earlier scan of the same site | Quick exploration or monitoring a live site | [Monitor a site](/guides/monitoring/) |
-| A state reached inside a Playwright test | The page needs clicks or a login first | [Use inside Playwright tests](/guides/playwright/) |
+| Reference                                | When to use it                                              | Read                                               |
+| ---------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| Another running site, such as production | You can run both versions at once                           | [Comparison modes](/concepts/comparison-modes/)    |
+| Saved local baselines                    | There is no stable second site, such as a component gallery | [Create local baselines](/guides/local-baselines/) |
+| An earlier scan of the same site         | Quick exploration or monitoring a live site                 | [Monitor a site](/guides/monitoring/)              |
+| A state reached inside a Playwright test | The page needs clicks or a login first                      | [Use inside Playwright tests](/guides/playwright/) |
 
 ## How changes are judged
 
@@ -53,12 +58,12 @@ The final status decides the exit code. By default, `regression` and `error` fai
 
 ## Where things run and where results go
 
-| Part | Where it runs | What it stores |
-| --- | --- | --- |
-| The browser capture (`visualguard test`) | Your computer or a CI worker | A run folder under `.visualguard/runs/` |
-| The local report (`visualguard report`) | Your computer | Reads the run folder; serves it on a local port |
-| The optional dashboard (`visualguard dashboard`) | Your computer or a host you choose | Run history, projects, reviews and baselines in SQLite, PostgreSQL or MongoDB |
-| A dashboard-requested test (**Run test**) | The dashboard host, or a private runner you connect | The run, saved into the dashboard project |
+| Part                                             | Where it runs                                       | What it stores                                                                |
+| ------------------------------------------------ | --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| The browser capture (`visualguard test`)         | Your computer or a CI worker                        | A run folder under `.visualguard/runs/`                                       |
+| The local report (`visualguard report`)          | Your computer                                       | Reads the run folder; serves it on a local port                               |
+| The optional dashboard (`visualguard dashboard`) | Your computer or a host you choose                  | Run history, projects, reviews and baselines in SQLite, PostgreSQL or MongoDB |
+| A dashboard-requested test (**Run test**)        | The dashboard host, or a private runner you connect | The run, saved into the dashboard project                                     |
 
 Local results are just files. You can open, copy or import them later. The dashboard is a separate server that you start or host yourself. Hosting it never creates a schedule or runs tests on its own.
 
@@ -74,12 +79,12 @@ See [release availability](/releases/).
 
 ## Who uses VisualGuard
 
-| Reader | Typical use |
-| --- | --- |
-| Developer | Check a branch or local change before opening a pull request |
-| QA engineer | Compare important screens across releases and investigate differences |
-| Designer or reviewer | Inspect screenshots and approve the intended appearance |
-| Team lead or maintainer | Manage shared references and review rules |
+| Reader                        | Typical use                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------- |
+| Developer                     | Check a branch or local change before opening a pull request                  |
+| QA engineer                   | Compare important screens across releases and investigate differences         |
+| Designer or reviewer          | Inspect screenshots and approve the intended appearance                       |
+| Team lead or maintainer       | Manage shared references and review rules                                     |
 | Platform engineer or operator | Host the dashboard, manage access, keep evidence safe and recover the install |
 
 ## Example: one pull request from start to finish
@@ -98,12 +103,12 @@ See the full [glossary](/concepts/glossary/).
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| Every run shows small differences you did not make | Captures are not repeatable yet. See [make captures repeatable](/guides/stable-captures/). |
-| A run passed but you expected a change | Check that both URLs point to the versions you meant. Run `visualguard test --list`. |
-| The dashboard shows no runs | Tests run outside the dashboard. Publish with `visualguard test PROJECT --dashboard URL`, or import a run. See [publishing](/dashboard/publishing/). |
-| **Run test** has no available capturer | Enable supported dashboard-host capture or connect a [private runner](/dashboard/private-runners/). |
+| Problem                                            | Fix                                                                                                                                                  |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every run shows small differences you did not make | Captures are not repeatable yet. See [make captures repeatable](/guides/stable-captures/).                                                           |
+| A run passed but you expected a change             | Check that both URLs point to the versions you meant. Run `visualguard test --list`.                                                                 |
+| The dashboard shows no runs                        | Tests run outside the dashboard. Publish with `visualguard test PROJECT --dashboard URL`, or import a run. See [publishing](/dashboard/publishing/). |
+| **Run test** has no available capturer             | Enable supported dashboard-host capture or connect a [private runner](/dashboard/private-runners/).                                                  |
 
 More help: [troubleshooting](/troubleshooting/).
 

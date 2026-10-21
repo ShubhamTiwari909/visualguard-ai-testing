@@ -10,7 +10,12 @@
  */
 
 export { VERSION } from "./core/version.js";
-export { runVisualGuard, type RunVisualGuardOptions, type VisualGuardResult, type SDKReports } from "./sdk.js";
+export {
+  runVisualGuard,
+  type RunVisualGuardOptions,
+  type VisualGuardResult,
+  type SDKReports,
+} from "./sdk.js";
 
 // Configuration
 export { defineConfig, loadConfig, loadEnvFiles, parseConfig } from "./config/load.js";

@@ -5,8 +5,15 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["README.md", "docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/monitor.ts", "packages/visualguard/src/core/provenance.ts", "packages/visualguard/src/core/run.ts"]
-sidebar: {"order": 3}
+sourcePaths:
+  [
+    "README.md",
+    "docs/NPM-PACKAGE-SETUP.md",
+    "packages/visualguard/src/cli/commands/monitor.ts",
+    "packages/visualguard/src/core/provenance.ts",
+    "packages/visualguard/src/core/run.ts",
+  ]
+sidebar: { "order": 3 }
 ---
 
 A baseline is a saved "expected" screenshot that later runs compare against. VisualGuard has three kinds, and each one is created and updated by a different command. Use this page to pick the right kind and to find the exact commands for it. New to the term? See the [glossary](/concepts/glossary/).
@@ -18,11 +25,11 @@ A baseline is a saved "expected" screenshot that later runs compare against. Vis
 
 ## Which baseline do I need?
 
-| Kind | Who owns it | How it is created | How it is updated | Where it lives |
-| --- | --- | --- | --- | --- |
-| Local baselines | Your repository | `test --update-baselines` | `test --update-baselines` again, on purpose | `baseline.dir` (default `visualguard/baselines`) |
-| Approved team baselines | The dashboard, after review | Promotion in the dashboard | A new approved version, then a new `baseline pull` | A new folder you choose with `--out` |
-| Monitor snapshots | The `monitor` command | The first `monitor` run | Automatically after each run, unless a page regressed | `monitor.dir` (default `.visualguard/monitor`), one folder per host |
+| Kind                    | Who owns it                 | How it is created          | How it is updated                                     | Where it lives                                                      |
+| ----------------------- | --------------------------- | -------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------- |
+| Local baselines         | Your repository             | `test --update-baselines`  | `test --update-baselines` again, on purpose           | `baseline.dir` (default `visualguard/baselines`)                    |
+| Approved team baselines | The dashboard, after review | Promotion in the dashboard | A new approved version, then a new `baseline pull`    | A new folder you choose with `--out`                                |
+| Monitor snapshots       | The `monitor` command       | The first `monitor` run    | Automatically after each run, unless a page regressed | `monitor.dir` (default `.visualguard/monitor`), one folder per host |
 
 ## Local baselines
 
@@ -93,13 +100,13 @@ Monitor snapshots are not a human approval. Never use a rolling snapshot as evid
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `No baseline yet; run with --update-baselines to save one` | Check the pages, then run `test --update-baselines` once. |
-| `Baseline rendering settings do not match: PATH` | Use the original browser, platform, viewport and theme, or regenerate the baselines. |
-| `Baseline metadata missing for PATH` | Regenerate the baselines, or set `baseline.legacy: "allow"` briefly while you migrate. |
-| `Approved baselines cannot be updated locally` or `Approved snapshots cannot be updated locally` | Promote a new version in the dashboard and pull it into a new folder. |
-| `Nothing to monitor: pass a URL or set baseURL.production.` | Pass the site URL to `monitor`, or set `baseURL.production`. |
+| Problem                                                                                          | Fix                                                                                    |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `No baseline yet; run with --update-baselines to save one`                                       | Check the pages, then run `test --update-baselines` once.                              |
+| `Baseline rendering settings do not match: PATH`                                                 | Use the original browser, platform, viewport and theme, or regenerate the baselines.   |
+| `Baseline metadata missing for PATH`                                                             | Regenerate the baselines, or set `baseline.legacy: "allow"` briefly while you migrate. |
+| `Approved baselines cannot be updated locally` or `Approved snapshots cannot be updated locally` | Promote a new version in the dashboard and pull it into a new folder.                  |
+| `Nothing to monitor: pass a URL or set baseURL.production.`                                      | Pass the site URL to `monitor`, or set `baseURL.production`.                           |
 
 More help: [capture and baseline problems](/troubleshooting/capture/).
 

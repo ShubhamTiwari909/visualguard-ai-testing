@@ -5,8 +5,15 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-21"
-sourcePaths: ["packages/visualguard/src/sdk.ts", "packages/visualguard/src/index.ts", "examples/sdk/visual-check.mjs", "examples/sdk/github-actions.yml", "docs/SDK-GUIDE.md"]
-sidebar: {"order": 18}
+sourcePaths:
+  [
+    "packages/visualguard/src/sdk.ts",
+    "packages/visualguard/src/index.ts",
+    "examples/sdk/visual-check.mjs",
+    "examples/sdk/github-actions.yml",
+    "docs/SDK-GUIDE.md",
+  ]
+sidebar: { "order": 18 }
 ---
 
 Use `runVisualGuard` from the `visualguard` package to run visual comparisons in
@@ -36,13 +43,13 @@ The SDK does not start application servers or bypass Cloud Run authentication.
 Create `visualguard.config.mjs` in the application root:
 
 ```js
-import { defineConfig } from 'visualguard';
+import { defineConfig } from "visualguard";
 
 export default defineConfig({
-  routes: ['/'],
+  routes: ["/"],
   viewports: { desktop: { width: 1440, height: 900 } },
-  ai: { provider: 'none' },
-  output: { dir: '.visualguard', keepRuns: 10 },
+  ai: { provider: "none" },
+  output: { dir: ".visualguard", keepRuns: 10 },
 });
 ```
 
@@ -57,14 +64,14 @@ Copy [the complete script](https://github.com/ShubhamTiwari909/visualguard-ai-te
 `scripts/visual-check.mjs` in your application. The essential flow is:
 
 ```js
-import { runVisualGuard, VisualGuardError } from 'visualguard';
+import { runVisualGuard, VisualGuardError } from "visualguard";
 
 try {
-  const result = await runVisualGuard({ failOn: 'review' });
+  const result = await runVisualGuard({ failOn: "review" });
   console.log(result.manifest.summary);
-  console.log('Evidence:', result.runDir);
-  console.log('HTML:', result.artifacts.html);
-  console.log('JUnit:', result.artifacts.junit);
+  console.log("Evidence:", result.runDir);
+  console.log("HTML:", result.artifacts.html);
+  console.log("JUnit:", result.artifacts.junit);
   process.exitCode = result.exitCode;
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
@@ -84,7 +91,10 @@ Use your actual URLs. On Windows, set the variables using your shell or `.env`.
 An explicit config path is supported:
 
 ```js
-const result = await runVisualGuard({ cwd: '/absolute/app/path', configPath: 'config/visualguard.config.ts' });
+const result = await runVisualGuard({
+  cwd: "/absolute/app/path",
+  configPath: "config/visualguard.config.ts",
+});
 ```
 
 Paths resolve from `cwd` (default: `process.cwd()`), including config, output,
@@ -98,14 +108,14 @@ file, defaults plus environment/overrides are used; routes follow normal discove
 const result = await runVisualGuard({
   config: {
     baseURL: {
-      production: 'https://production.example.com',
-      staging: 'https://staging.example.com',
+      production: "https://production.example.com",
+      staging: "https://staging.example.com",
     },
-    routes: ['/checkout'],
+    routes: ["/checkout"],
     screenshot: { selector: '[data-visualguard="checkout"]' },
-    ai: { provider: 'none' },
+    ai: { provider: "none" },
   },
-  failOn: 'review',
+  failOn: "review",
 });
 ```
 
@@ -117,16 +127,16 @@ Health, accessibility and performance checks remain page-wide.
 
 ## 4. Understand results and errors
 
-| Result field | Meaning |
-| --- | --- |
-| `manifest` | Full structured run: IDs, summary, jobs, findings, captures, diffs and provenance. |
-| `runDir` | Absolute directory containing the complete saved evidence. |
-| `exitCode` | `0` for a passing completed comparison; `1` when the selected policy fails. |
-| `passed` | Whether `exitCode` is zero. A review may pass the default regression policy. |
-| `artifacts.manifest` | Absolute `manifest.json` path. |
-| `artifacts.html` | Absolute `index.html` path, unless disabled. |
-| `artifacts.junit` | Absolute JUnit path, unless disabled. |
-| `artifacts.githubSummary` | Summary file path when explicitly enabled. |
+| Result field              | Meaning                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| `manifest`                | Full structured run: IDs, summary, jobs, findings, captures, diffs and provenance. |
+| `runDir`                  | Absolute directory containing the complete saved evidence.                         |
+| `exitCode`                | `0` for a passing completed comparison; `1` when the selected policy fails.        |
+| `passed`                  | Whether `exitCode` is zero. A review may pass the default regression policy.       |
+| `artifacts.manifest`      | Absolute `manifest.json` path.                                                     |
+| `artifacts.html`          | Absolute `index.html` path, unless disabled.                                       |
+| `artifacts.junit`         | Absolute JUnit path, unless disabled.                                              |
+| `artifacts.githubSummary` | Summary file path when explicitly enabled.                                         |
 
 The default `failOn: 'regression'` fails regressions and error jobs. Use `'review'`
 to fail review results too; `'any'` has the same current failing statuses as
@@ -149,12 +159,12 @@ progress callback or reporter:
 const result = await runVisualGuard({
   reports: {
     html: true,
-    junit: 'test-results/visualguard.xml',
+    junit: "test-results/visualguard.xml",
     githubSummary: Boolean(process.env.GITHUB_STEP_SUMMARY),
     reportURL: process.env.VISUALGUARD_REPORT_URL,
   },
   onEvent(event) {
-    if (event.type === 'job:end') console.log(event.job.name, event.job.status);
+    if (event.type === "job:end") console.log(event.job.name, event.job.status);
   },
 });
 ```
@@ -262,16 +272,16 @@ merge flow to verify completeness before deciding the final suite outcome.
 
 ## Troubleshooting and verification
 
-| Symptom | Check |
-| --- | --- |
-| `runVisualGuard` is not exported | Install/build a release containing the SDK; inspect `npm ls visualguard`. |
-| Missing URLs/config | Check `cwd`, `configPath`, and actual CI variables. Inline config skips file discovery. |
-| Browser launch fails | Install matching Playwright browser binaries and Linux dependencies on that runner. |
-| Review result but CI passes | Select `failOn: 'review'` and assign `process.exitCode = result.exitCode`. |
-| No report after a failure | Setup/cancellation errors reject before report completion; inspect the script error. |
-| HTML has no screenshots | Download/upload the full run directory with images and preserve relative paths. |
-| No GitHub summary | Enable `reports.githubSummary` only with a valid `GITHUB_STEP_SUMMARY`. |
-| Baseline mismatch | Restore all sidecars, match rendering identity and keep section/page references separate. |
+| Symptom                          | Check                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------- |
+| `runVisualGuard` is not exported | Install/build a release containing the SDK; inspect `npm ls visualguard`.                 |
+| Missing URLs/config              | Check `cwd`, `configPath`, and actual CI variables. Inline config skips file discovery.   |
+| Browser launch fails             | Install matching Playwright browser binaries and Linux dependencies on that runner.       |
+| Review result but CI passes      | Select `failOn: 'review'` and assign `process.exitCode = result.exitCode`.                |
+| No report after a failure        | Setup/cancellation errors reject before report completion; inspect the script error.      |
+| HTML has no screenshots          | Download/upload the full run directory with images and preserve relative paths.           |
+| No GitHub summary                | Enable `reports.githubSummary` only with a valid `GITHUB_STEP_SUMMARY`.                   |
+| Baseline mismatch                | Restore all sidecars, match rendering identity and keep section/page references separate. |
 
 Verify once with matching pages (pass), once with a deliberate visual change
 (`failOn: 'review'` fails), and once with an invalid section (error result).

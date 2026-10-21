@@ -146,15 +146,15 @@ Open the checkout on the test page before calling this check. `referenceSetup` o
 
 ## Troubleshooting
 
-| Symptom | Check and fix |
-| --- | --- |
-| Target is missing | Inspect both URLs, authentication state, route, and viewport. Add the attribute to both environments and ensure the UI state is open. |
-| More than one element matches | Give the container a unique attribute value, or narrow the CSS selector. Hidden duplicates also make a selector ambiguous. |
-| Target is invisible or empty | Check conditional rendering, `display`, `visibility`, `opacity`, dimensions, and whether a parent hides it. |
-| The target appears too late | Use `waitFor`, a capture hook, or increase `browser.actionTimeoutMs` to wait for expected content. |
-| A full page was captured | Check your installed version supports the feature, the config file was loaded, and a route did not set `selector: null`. |
-| A baseline is missing or incompatible | Explicitly generate the intended section references; do not reuse page references. |
-| An unrelated failure remains | Inspect page-wide health/accessibility/performance findings separately from the section's visual diff. |
+| Symptom                               | Check and fix                                                                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Target is missing                     | Inspect both URLs, authentication state, route, and viewport. Add the attribute to both environments and ensure the UI state is open. |
+| More than one element matches         | Give the container a unique attribute value, or narrow the CSS selector. Hidden duplicates also make a selector ambiguous.            |
+| Target is invisible or empty          | Check conditional rendering, `display`, `visibility`, `opacity`, dimensions, and whether a parent hides it.                           |
+| The target appears too late           | Use `waitFor`, a capture hook, or increase `browser.actionTimeoutMs` to wait for expected content.                                    |
+| A full page was captured              | Check your installed version supports the feature, the config file was loaded, and a route did not set `selector: null`.              |
+| A baseline is missing or incompatible | Explicitly generate the intended section references; do not reuse page references.                                                    |
+| An unrelated failure remains          | Inspect page-wide health/accessibility/performance findings separately from the section's visual diff.                                |
 
 ## Where results are saved
 

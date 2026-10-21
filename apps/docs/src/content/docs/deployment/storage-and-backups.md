@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/backup.ts"]
-sidebar: {"order": 7}
+sidebar: { "order": 7 }
 ---
 
 ## Before you start

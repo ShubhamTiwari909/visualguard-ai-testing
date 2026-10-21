@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/LOCAL-SETUP.md", "docs/PRODUCT-FEATURES.md", "apps/platform/client/reviews.tsx"]
-sidebar: {"order": 11}
+sidebar: { "order": 11 }
 ---
 
 Use team review when another person needs to inspect a captured visual change and record a decision. The decision stays attached to the exact check in the saved run. It does not change the original screenshots or turn unrelated failures into passes.
@@ -41,11 +41,11 @@ Choose **Review inbox** to find work waiting for a decision. Its initial view fo
 
 Enter a reason first. Use a decision that covers the entire selected check:
 
-| Action | Use it when |
-| --- | --- |
+| Action                    | Use it when                                                            |
+| ------------------------- | ---------------------------------------------------------------------- |
 | **Approve visual change** | All visual changes in this exact check are intentional and acceptable. |
-| **Request changes** | At least one visual defect remains; explain what must change. |
-| **Withdraw decision** | An existing decision should no longer stand; provide the reason. |
+| **Request changes**       | At least one visual defect remains; explain what must change.          |
+| **Withdraw decision**     | An existing decision should no longer stand; provide the reason.       |
 
 For example, “The wider checkout button matches the approved design; text and spacing are unchanged” explains an approval. “The price overlaps the checkout control on mobile” gives a developer a specific fix.
 
@@ -63,13 +63,13 @@ Open the check as the assigned reviewer, inspect both images, record a reasoned 
 
 ## Troubleshooting
 
-| Problem | What to do |
-| --- | --- |
-| Decision buttons are disabled | Enter a nonblank reason and check that reference and candidate were successfully compared. Failed captures can still be discussed and assigned. |
-| Only read access is shown | Ask a maintainer for Reviewer access to this project. |
-| A teammate is missing from the reviewer selector | Check their active account and project membership. |
-| Another person changed the record | Refresh the thread, inspect the latest history and retry deliberately. |
-| Approval did not make the release pass | Inspect independent failures, other checks, missing coverage and the selected visual policy. |
+| Problem                                          | What to do                                                                                                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Decision buttons are disabled                    | Enter a nonblank reason and check that reference and candidate were successfully compared. Failed captures can still be discussed and assigned. |
+| Only read access is shown                        | Ask a maintainer for Reviewer access to this project.                                                                                           |
+| A teammate is missing from the reviewer selector | Check their active account and project membership.                                                                                              |
+| Another person changed the record                | Refresh the thread, inspect the latest history and retry deliberately.                                                                          |
+| Approval did not make the release pass           | Inspect independent failures, other checks, missing coverage and the selected visual policy.                                                    |
 
 More help: [dashboard troubleshooting](/troubleshooting/dashboard/).
 

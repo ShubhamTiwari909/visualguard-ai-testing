@@ -5,8 +5,16 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/ai/factory.ts", "packages/visualguard/src/ai/providers/gemini.ts", "packages/visualguard/src/ai/tasks/analyze-diff.ts", "packages/visualguard/src/cli/commands/analyze.ts", "packages/visualguard/src/cli/commands/doctor.ts", "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md"]
-sidebar: {"order": 9}
+sourcePaths:
+  [
+    "packages/visualguard/src/ai/factory.ts",
+    "packages/visualguard/src/ai/providers/gemini.ts",
+    "packages/visualguard/src/ai/tasks/analyze-diff.ts",
+    "packages/visualguard/src/cli/commands/analyze.ts",
+    "packages/visualguard/src/cli/commands/doctor.ts",
+    "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md",
+  ]
+sidebar: { "order": 9 }
 ---
 
 This page shows how to connect Google's Gemini models to VisualGuard. With Gemini on, every changed page gets a short explanation: what changed, whether it looks like a bug, the likely cause and a suggested fix. Use it when the plain pixel and DOM checks leave too many pages in **review** and you want help sorting them.
@@ -28,23 +36,23 @@ Without AI, VisualGuard finds the changed areas of a page, matches them to DOM e
 
 With Gemini on, each changed page that is not already a regression is sent to the model. The model returns:
 
-| Field | What it means |
-| --- | --- |
-| Classification | One of `regression`, `intentional`, `content` (data such as prices or dates) or `noise` (anti-aliasing, font rendering). |
-| Model confidence | A number from 0 to 1. It is the model's own estimate, not a measured probability. |
-| Title and summary | One line for lists, and a short explanation. |
-| Likely cause | What probably caused the change, when the model can tell. |
-| Affected elements | Selectors from the captured page. VisualGuard drops any selector the page does not contain. |
-| Suggested fix | For regressions, a description and sometimes a small CSS or class diff. |
+| Field             | What it means                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Classification    | One of `regression`, `intentional`, `content` (data such as prices or dates) or `noise` (anti-aliasing, font rendering). |
+| Model confidence  | A number from 0 to 1. It is the model's own estimate, not a measured probability.                                        |
+| Title and summary | One line for lists, and a short explanation.                                                                             |
+| Likely cause      | What probably caused the change, when the model can tell.                                                                |
+| Affected elements | Selectors from the captured page. VisualGuard drops any selector the page does not contain.                              |
+| Suggested fix     | For regressions, a description and sometimes a small CSS or class diff.                                                  |
 
 The classification can change the page status:
 
-| Model says | Resulting status |
-| --- | --- |
-| `regression` | **regression** |
-| `intentional` or `content` | **review** |
+| Model says                            | Resulting status                                      |
+| ------------------------------------- | ----------------------------------------------------- |
+| `regression`                          | **regression**                                        |
+| `intentional` or `content`            | **review**                                            |
 | `noise` with confidence 0.8 or higher | **pass**, unless a health check also asked for review |
-| `noise` below 0.8 | **review** |
+| `noise` below 0.8                     | **review**                                            |
 
 Gemini can never turn a VisualGuard regression into a pass. To keep every status exactly as the deterministic checks decided, set `ai.advisory: true` (see [Control AI policy and cost](/guides/ai-policy-and-budgets/)).
 
@@ -171,15 +179,15 @@ Run `doctor` after changing the model. If your key cannot use it, `doctor` lists
 
 These `ai` options matter most for Gemini. The full list, with budgets and the cache, is in [Control AI policy and cost](/guides/ai-policy-and-budgets/).
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `provider` | `"gemini"`, `"ollama"` or `"none"`. | `"none"` |
-| `model` | Gemini model ID. | `gemini-flash-latest` |
-| `thinking` | How much the model reasons before answering: `"off"`, `"low"` or `"default"` (the model's own setting). Thinking is billed as output tokens and is most of each call's time. | `"low"` |
-| `imageDetail` | Tokens spent per image: `"low"`, `"medium"` or `"high"`. `"high"` costs about four times `"medium"`. | `"medium"` |
-| `analyze` | `"uncertain"` skips pages VisualGuard already marked as regressions. `"all"` also explains those pages. | `"uncertain"` |
-| `advisory` | `true` adds explanations without changing any status. | `false` |
-| `timeoutMs` | Time limit, in milliseconds, for each request and for all AI work in one command. | `120000` |
+| Option        | What it does                                                                                                                                                                 | Default               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `provider`    | `"gemini"`, `"ollama"` or `"none"`.                                                                                                                                          | `"none"`              |
+| `model`       | Gemini model ID.                                                                                                                                                             | `gemini-flash-latest` |
+| `thinking`    | How much the model reasons before answering: `"off"`, `"low"` or `"default"` (the model's own setting). Thinking is billed as output tokens and is most of each call's time. | `"low"`               |
+| `imageDetail` | Tokens spent per image: `"low"`, `"medium"` or `"high"`. `"high"` costs about four times `"medium"`.                                                                         | `"medium"`            |
+| `analyze`     | `"uncertain"` skips pages VisualGuard already marked as regressions. `"all"` also explains those pages.                                                                      | `"uncertain"`         |
+| `advisory`    | `true` adds explanations without changing any status.                                                                                                                        | `false`               |
+| `timeoutMs`   | Time limit, in milliseconds, for each request and for all AI work in one command.                                                                                            | `120000`              |
 
 If a model rejects a `thinking` or `imageDetail` setting, VisualGuard retries without it and remembers that for the rest of the run.
 
@@ -197,17 +205,17 @@ npx --no-install visualguard analyze --run 12 --provider gemini --no-cache
 
 You should see `Analyzing N changed pages from run #12 with gemini (model)`, one line per page, and a summary such as `2 passed · 1 review · 1 regression · 0 errors · 3 AI calls (1 cached or skipped)`. The run's manifest and HTML report are updated in place.
 
-| Flag | What it does | Default |
-| --- | --- | --- |
-| `--run <id>` | Run ID, ID prefix or run number. | Latest run |
-| `--provider <name>` | `gemini` or `ollama`. | From config |
-| `--model <id>` | Model ID. | Provider default |
-| `--no-cache` | Ask the model again instead of reusing cached answers. | Cache on |
-| `--only <glob>` | Analyze only matching routes. Repeat for more. | All routes |
-| `--fail-on <level>` | What makes the exit code non-zero: `regression`, `review` or `any`. | `regression` |
-| `--ci` | No colours. | Off |
-| `--json` | Print the updated manifest as JSON on stdout. Progress goes to stderr. | Off |
-| `-c, --config <path>` | Config file path. | `visualguard.config.ts` |
+| Flag                  | What it does                                                           | Default                 |
+| --------------------- | ---------------------------------------------------------------------- | ----------------------- |
+| `--run <id>`          | Run ID, ID prefix or run number.                                       | Latest run              |
+| `--provider <name>`   | `gemini` or `ollama`.                                                  | From config             |
+| `--model <id>`        | Model ID.                                                              | Provider default        |
+| `--no-cache`          | Ask the model again instead of reusing cached answers.                 | Cache on                |
+| `--only <glob>`       | Analyze only matching routes. Repeat for more.                         | All routes              |
+| `--fail-on <level>`   | What makes the exit code non-zero: `regression`, `review` or `any`.    | `regression`            |
+| `--ci`                | No colours.                                                            | Off                     |
+| `--json`              | Print the updated manifest as JSON on stdout. Progress goes to stderr. | Off                     |
+| `-c, --config <path>` | Config file path.                                                      | `visualguard.config.ts` |
 
 `analyze` looks at every changed page, including pages already marked as regressions, whatever `ai.analyze` says. It needs a provider: with no provider set, it stops with `No AI provider is configured`. Usage from earlier analysis of the same run counts toward the same budgets.
 
@@ -215,15 +223,15 @@ You should see `Analyzing N changed pages from run #12 with gemini (model)`, one
 
 AI problems never fail a run. The page keeps the status VisualGuard decided, and the reason is saved as an info finding on the page.
 
-| Message | What happened | What VisualGuard does |
-| --- | --- | --- |
-| `AI off: GEMINI_API_KEY is not set; using heuristics only` | No key was found. | Runs without AI. |
-| `Gemini rejected the API key (check GEMINI_API_KEY)` | The key is wrong or has no access. | Stops AI for the rest of the run. |
-| `Gemini model "…" is not available; set ai.model to a current model id` | The model ID is unknown to your key. | Stops AI for the rest of the run. |
-| `Gemini quota used up …; it resets in …` | A daily quota ran out, or Google asked to wait more than a minute. | Stops AI for the rest of the run. |
-| `Gemini rate limit reached` | A short rate limit. | Retries, up to 4 attempts per request, waiting up to 60 seconds. |
-| `AI skipped: …` | An earlier page hit one of the stopping errors above. | Skips AI for later pages. |
-| `AI budget reached (ai.maxCallsPerRun); explained by heuristics only` | The call limit was used up. | Skips AI for later pages. |
+| Message                                                                 | What happened                                                      | What VisualGuard does                                            |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| `AI off: GEMINI_API_KEY is not set; using heuristics only`              | No key was found.                                                  | Runs without AI.                                                 |
+| `Gemini rejected the API key (check GEMINI_API_KEY)`                    | The key is wrong or has no access.                                 | Stops AI for the rest of the run.                                |
+| `Gemini model "…" is not available; set ai.model to a current model id` | The model ID is unknown to your key.                               | Stops AI for the rest of the run.                                |
+| `Gemini quota used up …; it resets in …`                                | A daily quota ran out, or Google asked to wait more than a minute. | Stops AI for the rest of the run.                                |
+| `Gemini rate limit reached`                                             | A short rate limit.                                                | Retries, up to 4 attempts per request, waiting up to 60 seconds. |
+| `AI skipped: …`                                                         | An earlier page hit one of the stopping errors above.              | Skips AI for later pages.                                        |
+| `AI budget reached (ai.maxCallsPerRun); explained by heuristics only`   | The call limit was used up.                                        | Skips AI for later pages.                                        |
 
 If the model returns an answer that does not match the expected format, VisualGuard asks once more with a correction note before giving up on that page.
 
@@ -251,15 +259,15 @@ Also confirm the key does not appear in `visualguard.config.ts`, the report or y
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| Header says `off (heuristics only)` | Set `ai.provider: "gemini"` or pass `--provider gemini`. Removing `--no-ai` alone does not turn AI on. |
-| `GEMINI_API_KEY is not set` | Add the key to `.env.local` in the folder you run commands from, or export it in the shell. In CI, map the secret to `GEMINI_API_KEY`. |
-| `Gemini rejected the API key` | Create a new key in AI Studio and replace the old one. Check for extra spaces or quotes. |
-| `model "…" is not available` | Run `doctor` to see the models your key can use, then set `ai.model` or `--model`. |
-| `quota used up` | Wait for the reset time shown, use a paid key, or lower `maxCallsPerRun`. |
-| Pages show `AI analysis failed: … aborted` late in a long run | `timeoutMs` covers all AI work in one command. Raise it, or analyze afterwards with `analyze`. |
-| Analysis did not change after editing settings | Cached answers are reused. Run `analyze --no-cache`. |
+| Problem                                                       | Fix                                                                                                                                    |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Header says `off (heuristics only)`                           | Set `ai.provider: "gemini"` or pass `--provider gemini`. Removing `--no-ai` alone does not turn AI on.                                 |
+| `GEMINI_API_KEY is not set`                                   | Add the key to `.env.local` in the folder you run commands from, or export it in the shell. In CI, map the secret to `GEMINI_API_KEY`. |
+| `Gemini rejected the API key`                                 | Create a new key in AI Studio and replace the old one. Check for extra spaces or quotes.                                               |
+| `model "…" is not available`                                  | Run `doctor` to see the models your key can use, then set `ai.model` or `--model`.                                                     |
+| `quota used up`                                               | Wait for the reset time shown, use a paid key, or lower `maxCallsPerRun`.                                                              |
+| Pages show `AI analysis failed: … aborted` late in a long run | `timeoutMs` covers all AI work in one command. Raise it, or analyze afterwards with `analyze`.                                         |
+| Analysis did not change after editing settings                | Cached answers are reused. Run `analyze --no-cache`.                                                                                   |
 
 See [Troubleshooting](/troubleshooting/) for capture and install problems.
 

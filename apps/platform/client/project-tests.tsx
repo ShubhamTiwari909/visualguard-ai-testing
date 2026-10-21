@@ -136,12 +136,7 @@ export function ProjectTestControls({
         <div>
           <h3>Visual test</h3>
           <p>
-            {online
-              ? "Runner connected"
-              : builtIn
-                ? "Runs on this dashboard"
-                : "Runner offline"}{" "}
-            ·{" "}
+            {online ? "Runner connected" : builtIn ? "Runs on this dashboard" : "Runner offline"} ·{" "}
             {settings
               ? `Configuration v${settings.version}`
               : "Configure this project's test settings"}
@@ -158,7 +153,9 @@ export function ProjectTestControls({
             </button>
             <button
               className="vg-button vg-button-primary"
-              disabled={!loaded || !settings || !(online || builtIn) || active || dirty || Boolean(pending)}
+              disabled={
+                !loaded || !settings || !(online || builtIn) || active || dirty || Boolean(pending)
+              }
               onClick={() =>
                 void act("run", async () => {
                   const result = await mutation<ProjectTestExecution>(
@@ -312,7 +309,9 @@ export function ProjectTestControls({
       )}
       {canManage && (
         <details className="vg-runner-setup">
-          <summary>{builtIn ? "Use a private runner instead" : "Connect a runner for this project"}</summary>
+          <summary>
+            {builtIn ? "Use a private runner instead" : "Connect a runner for this project"}
+          </summary>
           <p>
             {builtIn
               ? "Tests run on this dashboard's server with your sign-in, so no credential is needed. Connect a private runner only when the application URLs are reachable from your own computer or CI worker but not from the dashboard; a connected runner takes priority. "

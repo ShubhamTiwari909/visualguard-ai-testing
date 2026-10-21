@@ -54,25 +54,40 @@ export interface VisualGuardResult extends RunOutcome {
 }
 
 /** Run the CLI's comparison engine from Node.js without owning the caller's process. */
-export async function runVisualGuard(options: RunVisualGuardOptions = {}): Promise<VisualGuardResult> {
+export async function runVisualGuard(
+  options: RunVisualGuardOptions = {},
+): Promise<VisualGuardResult> {
   options.signal?.throwIfAborted();
   if (options.config !== undefined && options.configPath !== undefined) {
     throw new ConfigError("Use either config or configPath, not both.");
   }
   const failOn = options.failOn ?? "regression";
-  if (!FAIL_ON_VALUES.includes(failOn)) throw new ConfigError("failOn must be regression, review or any.");
+  if (!FAIL_ON_VALUES.includes(failOn))
+    throw new ConfigError("failOn must be regression, review or any.");
   const shard = options.shard;
-  if (shard && (!Number.isSafeInteger(shard.index) || !Number.isSafeInteger(shard.total) ||
-    shard.index < 1 || shard.total < 1 || shard.index > shard.total)) {
+  if (
+    shard &&
+    (!Number.isSafeInteger(shard.index) ||
+      !Number.isSafeInteger(shard.total) ||
+      shard.index < 1 ||
+      shard.total < 1 ||
+      shard.index > shard.total)
+  ) {
     throw new ConfigError("shard needs integer index and total, with 1 <= index <= total.");
   }
   const cwd = resolve(options.cwd ?? process.cwd());
   const env = { ...(options.env ?? process.env) };
   if (options.loadEnv !== false) loadEnvFiles(cwd, env);
-  const loaded = options.config === undefined
-    ? await loadConfig({ cwd, configPath: options.configPath })
-    : { config: parseConfig(options.config, "SDK config"), configPath: undefined };
-  const config = resolveConfig(loaded.config, { cwd, configPath: loaded.configPath, env, overrides: options.overrides });
+  const loaded =
+    options.config === undefined
+      ? await loadConfig({ cwd, configPath: options.configPath })
+      : { config: parseConfig(options.config, "SDK config"), configPath: undefined };
+  const config = resolveConfig(loaded.config, {
+    cwd,
+    configPath: loaded.configPath,
+    env,
+    overrides: options.overrides,
+  });
   // Validate resolver overrides too; low-level callers may otherwise bypass schema checks.
   parseConfig(config, "resolved SDK config");
   if (config.mode === "baseline") {
@@ -85,7 +100,8 @@ export async function runVisualGuard(options: RunVisualGuardOptions = {}): Promi
     }
   }
   const reports = options.reports ?? {};
-  if (typeof reports.junit === "string" && !reports.junit.trim()) throw new ConfigError("reports.junit must be a non-empty path.");
+  if (typeof reports.junit === "string" && !reports.junit.trim())
+    throw new ConfigError("reports.junit must be a non-empty path.");
   if (reports.githubSummary && !env.GITHUB_STEP_SUMMARY?.trim()) {
     throw new ConfigError("reports.githubSummary requires GITHUB_STEP_SUMMARY.");
   }
@@ -100,27 +116,37 @@ export async function runVisualGuard(options: RunVisualGuardOptions = {}): Promi
     failOn,
     env,
     mode: config.mode,
-    ...(config.mode === "baseline" ? {
-      baselineDir: resolve(cwd, config.baseline.dir),
-      updateBaselines: options.updateBaselines,
-    } : {}),
-    reporters: [{
-      name: "sdk",
-      onEvent: options.onEvent,
-      async onRunEnd(manifest, context) {
-        artifacts.manifest = join(context.runDir, "manifest.json");
-        if (reports.html !== false) artifacts.html = writeReport(context.runDir, manifest);
-        if (reports.junit !== false) {
-          artifacts.junit = typeof reports.junit === "string"
-            ? resolve(cwd, reports.junit) : join(context.runDir, "junit.xml");
-          await junitReporter(artifacts.junit, failOn).onRunEnd!(manifest, context);
+    ...(config.mode === "baseline"
+      ? {
+          baselineDir: resolve(cwd, config.baseline.dir),
+          updateBaselines: options.updateBaselines,
         }
-        if (reports.githubSummary) {
-          artifacts.githubSummary = resolve(cwd, env.GITHUB_STEP_SUMMARY!);
-          await githubSummaryReporter(artifacts.githubSummary, reports.reportURL).onRunEnd!(manifest, context);
-        }
+      : {}),
+    reporters: [
+      {
+        name: "sdk",
+        onEvent: options.onEvent,
+        async onRunEnd(manifest, context) {
+          artifacts.manifest = join(context.runDir, "manifest.json");
+          if (reports.html !== false) artifacts.html = writeReport(context.runDir, manifest);
+          if (reports.junit !== false) {
+            artifacts.junit =
+              typeof reports.junit === "string"
+                ? resolve(cwd, reports.junit)
+                : join(context.runDir, "junit.xml");
+            await junitReporter(artifacts.junit, failOn).onRunEnd!(manifest, context);
+          }
+          if (reports.githubSummary) {
+            artifacts.githubSummary = resolve(cwd, env.GITHUB_STEP_SUMMARY!);
+            await githubSummaryReporter(artifacts.githubSummary, reports.reportURL).onRunEnd!(
+              manifest,
+              context,
+            );
+          }
+        },
       },
-    }, ...(options.reporters ?? [])],
+      ...(options.reporters ?? []),
+    ],
   }).start();
   const exitCode = exitCodeFor(outcome.manifest, failOn);
   return { ...outcome, artifacts, exitCode, passed: exitCode === 0 };

@@ -15,7 +15,13 @@ export interface ExecutionTransport {
     signal: AbortSignal,
   ): Promise<unknown>;
   complete(
-    body: { id: string; lease: string; runId?: string; failed?: boolean; reason?: "browser-unavailable" },
+    body: {
+      id: string;
+      lease: string;
+      runId?: string;
+      failed?: boolean;
+      reason?: "browser-unavailable";
+    },
     signal?: AbortSignal,
   ): Promise<unknown>;
   upload(input: {
@@ -55,7 +61,8 @@ export async function executeClaimedTest(
     if (stopped || renewing) return renewing;
     const snapshot = progress;
     renewedAt = Date.now();
-    renewing = io.transport.heartbeat({ ...lease, progress: snapshot }, signal)
+    renewing = io.transport
+      .heartbeat({ ...lease, progress: snapshot }, signal)
       .then(() => {
         sent = snapshot;
         confirmedAt = Date.now();
@@ -93,7 +100,7 @@ export async function executeClaimedTest(
     clearInterval(timer);
     await renewing;
   };
-  let uploaded: Awaited<ReturnType<typeof uploadRun>> | undefined;
+  let uploaded: Awaited<ReturnType<ExecutionTransport["upload"]>> | undefined;
   try {
     const config = projectTestConfig.parse(job.config);
     const workDir = resolve(io.root, job.id);
@@ -169,9 +176,7 @@ export async function executeClaimedTest(
         await delay(500 * (attempt + 1), undefined, { signal });
       }
     }
-    console.log(
-      `Dashboard test finished: ${io.link(result.url)} [${result.status}]`,
-    );
+    console.log(`Dashboard test finished: ${io.link(result.url)} [${result.status}]`);
   } catch (error) {
     await stopHeartbeat();
     if (uploaded) {
@@ -181,7 +186,9 @@ export async function executeClaimedTest(
       );
     } else {
       const reason = io.failureReason?.(error);
-      await io.transport.complete({ ...lease, failed: true, ...(reason ? { reason } : {}) }).catch(() => {});
+      await io.transport
+        .complete({ ...lease, failed: true, ...(reason ? { reason } : {}) })
+        .catch(() => {});
       console.error(
         `Dashboard test failed; evidence remains under ${io.root}.`,
         error instanceof Error ? error.message : "Runner error",

@@ -5,8 +5,14 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/server/config.ts", "apps/platform/server/database.ts", "apps/platform/.env.example", ".github/workflows/ci.yml"]
-sidebar: {"order": 2}
+sourcePaths:
+  [
+    "apps/platform/server/config.ts",
+    "apps/platform/server/database.ts",
+    "apps/platform/.env.example",
+    ".github/workflows/ci.yml",
+  ]
+sidebar: { "order": 2 }
 ---
 
 This tutorial moves the dashboard from its default SQLite file to PostgreSQL. You will create a database and user, write the connection URL, start the dashboard, and prove that runs survive a restart. Use it before a [Vercel](/deployment/vercel/) or [Cloud Run](/deployment/cloud-run/) deployment, or whenever several people share one dashboard.
@@ -71,14 +77,14 @@ The URL has this shape:
 postgresql://USER:PASSWORD@HOST:PORT/DATABASE?OPTIONS
 ```
 
-| Part | Local Docker example | Hosted example |
-| --- | --- | --- |
-| `USER` | `visualguard` | `visualguard` |
-| `PASSWORD` | `visualguard_local_only` | Your password, URL-encoded |
-| `HOST` | `127.0.0.1` | Your provider's hostname |
-| `PORT` | `5433` | Usually `5432` (can be left out) |
-| `DATABASE` | `visualguard` | `visualguard` |
-| `OPTIONS` | none | TLS options from your provider, often `sslmode=require` |
+| Part       | Local Docker example     | Hosted example                                          |
+| ---------- | ------------------------ | ------------------------------------------------------- |
+| `USER`     | `visualguard`            | `visualguard`                                           |
+| `PASSWORD` | `visualguard_local_only` | Your password, URL-encoded                              |
+| `HOST`     | `127.0.0.1`              | Your provider's hostname                                |
+| `PORT`     | `5433`                   | Usually `5432` (can be left out)                        |
+| `DATABASE` | `visualguard`            | `visualguard`                                           |
+| `OPTIONS`  | none                     | TLS options from your provider, often `sslmode=require` |
 
 URL-encode special characters in the user and password only, for example `@` as `%40` and `/` as `%2F`. Do not encode the whole URL. Use your provider's exact TLS settings; many reject connections without TLS. Replace every placeholder with a real value. A literal `USER`, or your laptop's username, is not a database role.
 
@@ -134,6 +140,7 @@ The first command creates the project. The second captures your app and uploads 
    ```
 
    Both counts should be at least `1`. For a hosted database, run the same two queries in your provider's SQL console.
+
 3. Stop the dashboard with Ctrl+C. Start it again with the same command.
 4. Open the run again. It should still be there with its screenshots.
 
@@ -151,15 +158,15 @@ Accounts are not part of the export, so they create users again. See [backups](/
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `ECONNREFUSED` | The database is not running or the port is wrong. For Docker, run `docker ps` and use port `5433`. |
-| `password authentication failed for user` | The user or password is wrong, or a special character is not URL-encoded. |
-| `permission denied for schema public` | Make the role the database owner, or grant `USAGE, CREATE ON SCHEMA public`. |
-| `database "visualguard" does not exist` | Create it, or fix the name after the last `/` in the URL. |
-| `timeout exceeded when trying to connect` | Your address is not allowed by the provider's firewall, or TLS settings are wrong. |
-| `Database URL must use postgresql://, postgres://, mongodb:// or mongodb+srv://` | Fix the URL scheme. Check for stray quotes or spaces. |
-| Runs from yesterday are missing | The dashboard opened a different database. Check for an exported `VISUALGUARD_DATABASE_URL` or `DATABASE_URL`. |
+| Problem                                                                          | Fix                                                                                                            |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `ECONNREFUSED`                                                                   | The database is not running or the port is wrong. For Docker, run `docker ps` and use port `5433`.             |
+| `password authentication failed for user`                                        | The user or password is wrong, or a special character is not URL-encoded.                                      |
+| `permission denied for schema public`                                            | Make the role the database owner, or grant `USAGE, CREATE ON SCHEMA public`.                                   |
+| `database "visualguard" does not exist`                                          | Create it, or fix the name after the last `/` in the URL.                                                      |
+| `timeout exceeded when trying to connect`                                        | Your address is not allowed by the provider's firewall, or TLS settings are wrong.                             |
+| `Database URL must use postgresql://, postgres://, mongodb:// or mongodb+srv://` | Fix the URL scheme. Check for stray quotes or spaces.                                                          |
+| Runs from yesterday are missing                                                  | The dashboard opened a different database. Check for an exported `VISUALGUARD_DATABASE_URL` or `DATABASE_URL`. |
 
 See [dashboard troubleshooting](/troubleshooting/dashboard/) for more.
 

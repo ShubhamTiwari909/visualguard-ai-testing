@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "docs/LOCAL-SETUP.md", "apps/platform/server/policies.ts"]
-sidebar: {"order": 13}
+sidebar: { "order": 13 }
 ---
 
 ## Before you start

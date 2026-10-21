@@ -5,8 +5,14 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["package.json", "packages/visualguard/package.json", "packages/visualguard/src/cli/commands/doctor.ts", "docs/RELIABILITY-CHANGES.md"]
-sidebar: {"order": 3}
+sourcePaths:
+  [
+    "package.json",
+    "packages/visualguard/package.json",
+    "packages/visualguard/src/cli/commands/doctor.ts",
+    "docs/RELIABILITY-CHANGES.md",
+  ]
+sidebar: { "order": 3 }
 ---
 
 This page lists what you need before you install VisualGuard. The basic needs are small: Node.js, a browser that Playwright can drive, and an app the browser can reach. Everything else, such as AI or a dashboard, is optional and listed separately.
@@ -18,14 +24,14 @@ This page lists what you need before you install VisualGuard. The basic needs ar
 
 ## What every user needs
 
-| Need | Minimum | How to check |
-| --- | --- | --- |
-| Node.js | **22.12** or newer | `node --version` |
-| A package manager | npm (comes with Node.js) or pnpm | `npm --version` or `pnpm --version` |
-| Playwright | **1.45** or newer (a peer dependency) | `npx playwright --version` |
-| A Playwright browser | Chromium by default; Firefox or WebKit if you choose them | `npx --no-install visualguard doctor` after install |
-| Something to test | Two reachable versions of your app, or the demo in the [quickstart](/start/quickstart/) | Open both URLs in a browser |
-| Network access | The capture machine must reach every URL it tests | `npx --no-install visualguard doctor` checks each URL |
+| Need                 | Minimum                                                                                 | How to check                                          |
+| -------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Node.js              | **22.12** or newer                                                                      | `node --version`                                      |
+| A package manager    | npm (comes with Node.js) or pnpm                                                        | `npm --version` or `pnpm --version`                   |
+| Playwright           | **1.45** or newer (a peer dependency)                                                   | `npx playwright --version`                            |
+| A Playwright browser | Chromium by default; Firefox or WebKit if you choose them                               | `npx --no-install visualguard doctor` after install   |
+| Something to test    | Two reachable versions of your app, or the demo in the [quickstart](/start/quickstart/) | Open both URLs in a browser                           |
+| Network access       | The capture machine must reach every URL it tests                                       | `npx --no-install visualguard doctor` checks each URL |
 
 Notes:
 
@@ -51,10 +57,10 @@ You should see Playwright download the browser and finish without errors. `--wit
 
 ### Operating systems
 
-| System | Status |
-| --- | --- |
-| macOS | Supported. Chromium is in the full test matrix. |
-| Linux | Supported. Chromium is in the full test matrix; Firefox and WebKit have smaller smoke tests. |
+| System  | Status                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| macOS   | Supported. Chromium is in the full test matrix.                                                                                                                                   |
+| Linux   | Supported. Chromium is in the full test matrix; Firefox and WebKit have smaller smoke tests.                                                                                      |
 | Windows | Supported. Chromium is in the full test matrix. One-line npm and VisualGuard commands work in PowerShell. Use WSL for examples with `export`, heredocs or `\` line continuations. |
 
 See [compatibility](/reference/compatibility/) for the full tested scope.
@@ -73,15 +79,15 @@ If you use nvm and already have Node 24 installed, run `nvm use 24` to select it
 
 You only need these for the features named in the left column.
 
-| Feature | What you also need |
-| --- | --- |
-| Local visual tests, reports and baselines | Nothing more. No login, database or AI key. |
-| Local dashboard | Nothing more. SQLite is built in; there is no database service to install. |
-| Shared team dashboard | Login, a fixed HTTPS address, and a persistent PostgreSQL database or MongoDB with transaction support. See [hosting](/deployment/overview/). |
-| Google sign-in | A Google web OAuth client with the right callback address. Password sign-in works without it. See [Google sign-in](/dashboard/google-sign-in/). |
-| AI analysis | A Gemini API key, or a reachable Ollama server with the chosen model installed. See [Gemini](/guides/ai-gemini/) or [Ollama](/guides/ai-ollama/). |
-| Publishing to a hosted dashboard | The dashboard URL, an existing project and a project upload token. See [publishing](/dashboard/publishing/). |
-| **Run test** from the dashboard | A signed-in maintainer and either enabled dashboard-host capture with Chromium, or a connected [private runner](/dashboard/private-runners/) with a project runner credential. Use a private runner on Vercel or if the installed dashboard does not support host capture. |
+| Feature                                   | What you also need                                                                                                                                                                                                                                                         |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local visual tests, reports and baselines | Nothing more. No login, database or AI key.                                                                                                                                                                                                                                |
+| Local dashboard                           | Nothing more. SQLite is built in; there is no database service to install.                                                                                                                                                                                                 |
+| Shared team dashboard                     | Login, a fixed HTTPS address, and a persistent PostgreSQL database or MongoDB with transaction support. See [hosting](/deployment/overview/).                                                                                                                              |
+| Google sign-in                            | A Google web OAuth client with the right callback address. Password sign-in works without it. See [Google sign-in](/dashboard/google-sign-in/).                                                                                                                            |
+| AI analysis                               | A Gemini API key, or a reachable Ollama server with the chosen model installed. See [Gemini](/guides/ai-gemini/) or [Ollama](/guides/ai-ollama/).                                                                                                                          |
+| Publishing to a hosted dashboard          | The dashboard URL, an existing project and a project upload token. See [publishing](/dashboard/publishing/).                                                                                                                                                               |
+| **Run test** from the dashboard           | A signed-in maintainer and either enabled dashboard-host capture with Chromium, or a connected [private runner](/dashboard/private-runners/) with a project runner credential. Use a private runner on Vercel or if the installed dashboard does not support host capture. |
 
 :::note
 A dashboard host that only stores and shows results does not need Playwright browsers. A host that runs **Run test** itself does, and so does every private runner.
@@ -99,10 +105,10 @@ A developer joins a team that already uses VisualGuard. They run `node --version
 
 These extra needs apply only if you work on VisualGuard's own source code.
 
-| Need | Version |
-| --- | --- |
-| Git | Any current version |
-| pnpm | **9.0.0** |
+| Need                               | Version                                                     |
+| ---------------------------------- | ----------------------------------------------------------- |
+| Git                                | Any current version                                         |
+| pnpm                               | **9.0.0**                                                   |
 | Node.js for the documentation site | **22.22** or newer (Node 24 meets every tested requirement) |
 
 The docs site needs a newer Node than the CLI. This does not raise the CLI's 22.12 minimum. To install a checkout without the docs site, run:
@@ -121,14 +127,14 @@ A root install may still read workspace metadata, so use a current Node release 
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `node --version` shows an older version | Install Node 22.12 or newer, reopen the terminal, and select it with `nvm use` if you use nvm. |
-| Doctor says the browser executable is missing | Run `npx playwright install chromium` from the same app folder. |
-| The browser fails to start on Linux or CI | Run `npx playwright install --with-deps chromium` to add system libraries. |
-| Doctor cannot reach a URL | Start the app, check the port, and make sure the capture machine can reach that host. |
-| A PowerShell command fails on `export` or `\` | Use WSL for that example, or rewrite it as a single line. |
-| Dashboard cannot load its database driver | Reinstall without `--omit=optional`. |
+| Problem                                       | Fix                                                                                            |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `node --version` shows an older version       | Install Node 22.12 or newer, reopen the terminal, and select it with `nvm use` if you use nvm. |
+| Doctor says the browser executable is missing | Run `npx playwright install chromium` from the same app folder.                                |
+| The browser fails to start on Linux or CI     | Run `npx playwright install --with-deps chromium` to add system libraries.                     |
+| Doctor cannot reach a URL                     | Start the app, check the port, and make sure the capture machine can reach that host.          |
+| A PowerShell command fails on `export` or `\` | Use WSL for that example, or rewrite it as a single line.                                      |
+| Dashboard cannot load its database driver     | Reinstall without `--omit=optional`.                                                           |
 
 More fixes: [installation problems](/troubleshooting/installation/).
 

@@ -6,7 +6,7 @@ docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["packages/visualguard/README.md", "docs/NPM-PACKAGE-SETUP.md"]
-sidebar: {"order": 5}
+sidebar: { "order": 5 }
 ---
 
 Every run writes `.visualguard/runs/<run>/` with `manifest.json`, the screenshots, a diff image,

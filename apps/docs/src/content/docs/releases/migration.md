@@ -6,7 +6,7 @@ docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/RELIABILITY-CHANGES.md", "packages/visualguard/CHANGELOG.md"]
-sidebar: {"order": 2}
+sidebar: { "order": 2 }
 ---
 
 ### Baselines

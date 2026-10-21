@@ -5,8 +5,13 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/project-tests.ts", "apps/platform/client/project-tests.tsx"]
-sidebar: {"order": 6}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "apps/platform/server/project-tests.ts",
+    "apps/platform/client/project-tests.tsx",
+  ]
+sidebar: { "order": 6 }
 ---
 
 Each dashboard project can save a test profile: the two URLs to compare, the routes, the viewports and an optional AI provider. **Run test** uses this saved profile. This page shows how to fill it in, what each field accepts and how versions protect you from overwriting a teammate's change.
@@ -27,14 +32,14 @@ You should see the **PROJECT** panel with a **Visual test** area. If nothing is 
 
 The form is headed **Project test configuration** and says the values are saved only for this project.
 
-| Field | What it accepts | Default |
-| --- | --- | --- |
-| **Production / reference URL** | The approved version, as an `http://` or `https://` address. No user name, password, `?query` or `#fragment` | Empty |
-| **Staging / candidate URL** | The new version to check, with the same rules | Empty |
-| **Routes (one per line)** | 1 to 100 paths, each starting with a single `/`, such as `/` or `/checkout` | `/` |
-| **Viewports (JSON)** | 1 to 8 named sizes. Names use letters, numbers, `_` or `-` (up to 40). Width 200 to 3840, height 200 to 2160 | `{"desktop": {"width": 1280, "height": 800}}` |
-| **AI provider** | **None**, **Gemini** or **Ollama** | **None** |
-| **AI model (optional)** | A model name, shown when the provider is not None | Provider default |
+| Field                          | What it accepts                                                                                              | Default                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| **Production / reference URL** | The approved version, as an `http://` or `https://` address. No user name, password, `?query` or `#fragment` | Empty                                         |
+| **Staging / candidate URL**    | The new version to check, with the same rules                                                                | Empty                                         |
+| **Routes (one per line)**      | 1 to 100 paths, each starting with a single `/`, such as `/` or `/checkout`                                  | `/`                                           |
+| **Viewports (JSON)**           | 1 to 8 named sizes. Names use letters, numbers, `_` or `-` (up to 40). Width 200 to 3840, height 200 to 2160 | `{"desktop": {"width": 1280, "height": 800}}` |
+| **AI provider**                | **None**, **Gemini** or **Ollama**                                                                           | **None**                                      |
+| **AI model (optional)**        | A model name, shown when the provider is not None                                                            | Provider default                              |
 
 A realistic example for a store with a desktop and a phone size:
 
@@ -69,10 +74,10 @@ Every save records which version you started from.
 
 ## Example: two projects, two profiles
 
-| Project | Production / reference URL | Staging / candidate URL |
-| --- | --- | --- |
+| Project      | Production / reference URL | Staging / candidate URL            |
+| ------------ | -------------------------- | ---------------------------------- |
 | `storefront` | `https://shop.example.com` | `https://preview-shop.example.com` |
-| `docs` | `https://docs.example.com` | `http://127.0.0.1:3001` |
+| `docs`       | `https://docs.example.com` | `http://127.0.0.1:3001`            |
 
 Each project keeps its own values in the dashboard database. Saving one never changes the other.
 
@@ -98,12 +103,12 @@ Dashboard tests always capture with Chromium, one page at a time.
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Invalid request fields` when saving | A value breaks a rule in the table above. Check that URLs have no `user:pass@`, `?...` or `#...`; that routes look like `/checkout`, not `checkout`, `//checkout` or a full URL; and that there are 1 to 8 viewports within the size limits |
-| A JSON error when saving | The viewport box is not valid JSON. Check quotes, commas and braces |
-| `Project configuration changed; refresh before saving` | Someone saved first. Refresh, review and save again |
-| **Configure tests** is missing | You are a Viewer or Reviewer. Ask a Maintainer or administrator |
+| Problem                                                | Fix                                                                                                                                                                                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Invalid request fields` when saving                   | A value breaks a rule in the table above. Check that URLs have no `user:pass@`, `?...` or `#...`; that routes look like `/checkout`, not `checkout`, `//checkout` or a full URL; and that there are 1 to 8 viewports within the size limits |
+| A JSON error when saving                               | The viewport box is not valid JSON. Check quotes, commas and braces                                                                                                                                                                         |
+| `Project configuration changed; refresh before saving` | Someone saved first. Refresh, review and save again                                                                                                                                                                                         |
+| **Configure tests** is missing                         | You are a Viewer or Reviewer. Ask a Maintainer or administrator                                                                                                                                                                             |
 
 More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
 
