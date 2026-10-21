@@ -139,6 +139,7 @@ Open the checkout on the test page before calling this check. `referenceSetup` o
 - Section capture takes precedence over `screenshot.fullPage`. A section taller than `screenshot.maxHeight` causes an error; increase that limit deliberately or select a smaller element. Element screenshots show the container's visible rectangle, including clipping by its own scrollable content; they do not expand an inner scrolling area to expose all its contents.
 - Existing stabilization, masks, hides, retries, and noise-map recaptures still apply. Hiding or masking the whole target makes the check unhelpful; mask only dynamic descendants.
 - DOM explanations cover the selected subtree and use coordinates relative to the screenshot. Moving the entire container elsewhere on the page is outside the visual scope of this check. Changes to the container's own size or its content remain visible.
+- Verified fixes share a repair goal across viewports of the same section. An unrelated section on the same route must retain its captured candidate appearance unless it is also fixed; unexpected collateral changes still cause a rollback. A container hidden by a fully transparent parent is rejected instead of producing blank evidence.
 - Navigation, failed requests, console errors, broken-image checks, horizontal overflow, and optional accessibility/performance checks remain page-wide. Selecting a section does not turn these into section-only checks.
 - Overlays covering the section can appear in its screenshot. Close or hide unrelated overlays with your usual capture hooks. Embedded frames and shadow-root-only targets are outside this initial selector workflow.
 - This configuration is available to CLI runs and Playwright checks. The dashboard's saved project-settings form does not yet expose a section-selector field; run using the config file and publish the evidence through the existing CLI workflow.
@@ -193,4 +194,3 @@ A Review result is an expected visual finding for this demo. Whether it produces
 ## Next steps
 
 Use [stable captures](../apps/docs/src/content/docs/guides/stable-captures.md) to handle dynamic content, [routes](../apps/docs/src/content/docs/guides/routes.md) for route selection, and [reports](../apps/docs/src/content/docs/guides/reports.md) to inspect evidence.
-

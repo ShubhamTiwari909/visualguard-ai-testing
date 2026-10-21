@@ -315,8 +315,13 @@ export async function stabilizeAndShoot(
       if (count !== 1)
         throw new Error(`Section selector ${JSON.stringify(selector)} matched ${count} elements; expected exactly one.`);
       const box = await target.boundingBox();
-      if (!box || box.width <= 0 || box.height <= 0 || !(await target.isVisible()) ||
-          await target.evaluate((element) => getComputedStyle(element).opacity === "0"))
+      const transparent = await target.evaluate((element) => {
+        for (let current: Element | null = element; current; current = current.parentElement) {
+          if (getComputedStyle(current).opacity === "0") return true;
+        }
+        return false;
+      });
+      if (!box || box.width <= 0 || box.height <= 0 || !(await target.isVisible()) || transparent)
         throw new Error(`Section ${JSON.stringify(selector)} must be visible and have a nonempty bounding box.`);
       if (box.height > screenshot.maxHeight)
         throw new Error(`Section ${JSON.stringify(selector)} is ${box.height}px tall, exceeding screenshot.maxHeight (${screenshot.maxHeight}px). Increase maxHeight or select a smaller section.`);
