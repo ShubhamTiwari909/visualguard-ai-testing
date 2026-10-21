@@ -4,8 +4,8 @@ description: Find visual changes, understand the evidence and make confident rel
 audience: developer
 docType: explanation
 channel: both
-lastReviewed: '2026-10-20'
-sourcePaths: ['README.md', 'apps/docs/astro.config.mjs']
+lastReviewed: '2026-10-21'
+sourcePaths: ['README.md', 'apps/docs/astro.config.mjs', 'packages/visualguard/src/sdk.ts']
 template: splash
 hero:
   title: Visual testing,<br />with evidence.
@@ -29,6 +29,7 @@ VisualGuard opens your pages in a real browser and takes screenshots. It compare
 
 - **No AI needed.** The built-in analysis finds changed pixels and links them to the page elements that changed. Gemini or Ollama can add plain-language explanations and repair suggestions if you want them.
 - **No account or database needed** for local tests. Results are saved as files with an HTML report.
+- **A Node.js SDK** lets your scripts and CI jobs run comparisons, read structured results, and save HTML/JUnit reports. Follow [SDK for scripts and CI](/guides/programmatic-api/).
 - **An optional dashboard** adds run history, projects, team reviews and approved baselines. It can run on your computer with a built-in SQLite file, or on a shared host.
 
 Start with one page and one screen size. Read the report before you change tolerances or add optional services.
@@ -64,6 +65,8 @@ Learn the ideas behind the tool before you rely on its results.
 ### Testing guides
 
 Step-by-step guides for everyday testing work: [configuring a project](/guides/configuration/), [choosing routes](/guides/routes/), [making captures repeatable](/guides/stable-captures/), [reading reports](/guides/reports/), [accepting intentional changes](/guides/accepting-changes/), [local baselines](/guides/local-baselines/), [logged-in pages](/guides/application-auth/), [AI analysis](/guides/ai-gemini/), [fixes](/guides/fixes/), [Playwright tests](/guides/playwright/) and more.
+
+For automation in your own code, start with [SDK for scripts and CI](/guides/programmatic-api/). It covers installation, file and inline config, section screenshots, baseline updates, progress, cancellation, failure policies and report artifacts.
 
 ### Dashboard & teams
 

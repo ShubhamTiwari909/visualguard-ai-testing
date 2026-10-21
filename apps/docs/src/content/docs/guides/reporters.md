@@ -4,8 +4,8 @@ description: "Choose CLI reports or API callbacks, write a custom reporter and p
 audience: "developer"
 docType: "how-to"
 channel: "both"
-lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/events.ts", "packages/visualguard/src/cli/shared.ts"]
+lastReviewed: "2026-10-21"
+sourcePaths: ["packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/events.ts", "packages/visualguard/src/cli/shared.ts", "packages/visualguard/src/sdk.ts"]
 sidebar: {"order": 19}
 ---
 
@@ -35,6 +35,31 @@ report: {
 
 GitHub summaries need the job-provided `GITHUB_STEP_SUMMARY` environment. Setting `report.publicURL` supplies links; it does not upload or host your evidence.
 
+## SDK output formats
+
+With `runVisualGuard`, select output through the call's `reports` option:
+
+```js
+import { runVisualGuard } from 'visualguard';
+
+const result = await runVisualGuard({
+  reports: {
+    html: true,
+    junit: 'test-results/visualguard.xml',
+    githubSummary: Boolean(process.env.GITHUB_STEP_SUMMARY),
+  },
+});
+process.exitCode = result.exitCode;
+```
+
+HTML and JUnit are enabled by default; the default JUnit path is inside the saved
+run directory. GitHub summaries must be enabled explicitly. The returned
+`artifacts` object contains absolute paths. Custom JUnit paths resolve against
+`cwd` and need a separate upload when outside `runDir`. Preserve all screenshot
+and diff files alongside the HTML. The SDK selects its reporters through the call's
+`reports` and `reporters` options; it does not apply config-file CLI reporter
+settings. See the [SDK guide](/guides/programmatic-api/#5-reports-diffs-and-progress).
+
 ## Write a custom reporter
 
 Create `visual-reporter.mjs` in your application's root:
@@ -58,7 +83,7 @@ export const summaryReporter = {
 };
 ```
 
-In an executable config, import `summaryReporter` from `./visual-reporter.mjs` and set `reporters: [summaryReporter]` inside `defineConfig`. Keep all other existing config fields. For the programmatic example, import the same object and add it to the `createRun` options' reporters array.
+In an executable config for CLI runs, import `summaryReporter` from `./visual-reporter.mjs` and set `reporters: [summaryReporter]` inside `defineConfig`. Keep all other existing config fields. With the SDK, import the same object and pass `runVisualGuard({ reporters: [summaryReporter] })`. Existing low-level callers can add it to the `createRun` options' reporters array.
 
 `onEvent` is synchronous and receives `run:start`, `job:start`, `job:captured`, `job:end`, `run:end` or `warning`. Use `onRunEnd` for awaited final output; it receives the manifest and a context containing `runDir` and resolved config. Avoid slow network calls during capture events. Follow the public event types rather than inventing progress totals or assuming every event means a passing result.
 

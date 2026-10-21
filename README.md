@@ -130,6 +130,7 @@ Open `http://127.0.0.1:4400`, select the project, choose **Configure tests**, th
 | [Run this repository](docs/LOCAL-SETUP.md)                                 | Try the demo and the dashboard from a source checkout.                 |
 | [Configuration](apps/docs/src/content/docs/guides/configuration.md)        | Routes, viewports, stable captures, tolerances, AI and fix settings.   |
 | [Section screenshot testing](docs/SECTION-SCREENSHOT-TESTING.md)           | Select one `data-*` container, configure routes, and verify cropped results. |
+| [SDK for scripts and CI](docs/SDK-GUIDE.md)                                | Run comparisons from Node.js with structured verdicts, HTML/JUnit reports and CI artifacts. |
 | [AI agent integration plan](docs/MCP-INTEGRATION-PLAN.md)                  | Proposed MCP support for Claude Code, Codex, and Gemini CLI. |
 | [All guides and reference](apps/docs/src/content/docs/index.mdx)           | Baselines, Playwright, CI, sharding, API, deployment and troubleshooting. |
 | [GitHub Action](action/README.md)                                          | Run VisualGuard in a workflow.                                         |

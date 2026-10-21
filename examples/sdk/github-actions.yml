@@ -1,0 +1,33 @@
+# Copy to .github/workflows/visual-sdk.yml in the application being tested.
+# Copy visual-check.mjs to scripts/ and visualguard.config.mjs to the application root.
+name: VisualGuard SDK
+on:
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VISUALGUARD_PRODUCTION_URL: ${{ vars.VISUALGUARD_PRODUCTION_URL }}
+      VISUALGUARD_STAGING_URL: ${{ vars.VISUALGUARD_STAGING_URL }}
+      VISUALGUARD_AI_PROVIDER: none
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/visual-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visualguard-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .visualguard/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14

@@ -28,6 +28,7 @@ A **run** is one execution. A **check** is one page at one viewport. A **baselin
 - **One site over time.** Save screenshots as local baselines, then compare later runs against them. Run `npx visualguard https://example.com` to scan one site and compare it on the next scan, or pass two URLs to compare them.
 - **Specific pages.** List routes, filter them, add dynamic examples such as blog slugs, or let VisualGuard find pages from Next.js files, a sitemap or a crawl. Pick viewports, locale, theme and Chromium, Firefox or WebKit.
 - **Interactive states.** The `visualguard/playwright` fixture checks a page after your Playwright test logs in or opens a dialog.
+- **Scripts and CI.** Call `runVisualGuard` from Node.js for typed configuration, structured verdicts, HTML/JUnit reports and progress. Your script controls its exit status; see the [SDK guide](SDK-GUIDE.md).
 - **One section at a time.** Mark a container with `data-visualguard="checkout"` and select it through `screenshot.selector` in `visualguard.config.ts`. Set different selectors per route, compare several sections of one page, or explicitly restore page capture. Requires a release containing section capture; see the [complete section-testing flow](SECTION-SCREENSHOT-TESTING.md).
 
 ### Understand
@@ -75,6 +76,7 @@ A **run** is one execution. A **check** is one page at one viewport. A **baselin
 | Run it from this repository's source       | [LOCAL-SETUP.md](LOCAL-SETUP.md)                                                                                               |
 | Look up commands and configuration         | [Package README](../packages/visualguard/README.md)                                                                            |
 | Test only a marked section of a page       | [Section screenshot testing](SECTION-SCREENSHOT-TESTING.md) |
+| Run visual checks from a Node.js script    | [SDK guide](SDK-GUIDE.md) |
 | Learn the dashboard, reviews and policies  | [Dashboard overview](../apps/docs/src/content/docs/dashboard/overview.md)                                                      |
 | Deploy the dashboard                       | [Deployment overview](../apps/docs/src/content/docs/deployment/overview.md)                                                    |
 | Set up CI                                  | [CI overview](../apps/docs/src/content/docs/ci/overview.md)                                                                    |

@@ -4,6 +4,10 @@ This guide takes the published `visualguard` npm package from install to a share
 
 Run every command from your application's root folder.
 
+For Node.js scripts and CI integrations, use the [SDK guide](SDK-GUIDE.md). Its
+`runVisualGuard` helper uses the same config and capture engine with structured
+results, HTML/JUnit reports and caller-controlled exit status.
+
 ## Contents
 
 1. [Choose your setup](#1-choose-your-setup)

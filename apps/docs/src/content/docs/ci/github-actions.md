@@ -197,6 +197,7 @@ See [CI troubleshooting](/troubleshooting/ci/) for more.
 
 ## Next steps
 
+- [Use the Node.js SDK](/guides/programmatic-api/): run a custom script with structured results, JUnit and uploaded diff evidence.
 - [Test preview deployments](/ci/preview-deployments/): compare each PR's real preview build.
 - [Shard large suites](/ci/sharding/): split routes across jobs and merge the results.
 - [Deliver GitHub checks](/ci/github-checks/): add a dashboard policy check to each PR.

@@ -4,8 +4,8 @@ description: "Pick the smallest VisualGuard setup for local tests, a dashboard, 
 audience: "developer"
 docType: "explanation"
 channel: "both"
-lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/dashboard.ts"]
+lastReviewed: "2026-10-21"
+sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/dashboard.ts", "packages/visualguard/src/sdk.ts"]
 sidebar: {"order": 1}
 ---
 
@@ -21,6 +21,7 @@ VisualGuard works at several sizes. You can run it as a single command on your l
 | You want | Database | Login or token | Start here |
 | --- | --- | --- | --- |
 | Visual tests and HTML reports only | None | None | [Run your first visual test](/start/quickstart/) |
+| Visual comparisons from a Node.js script or custom CI job | None | Only credentials required by the target app or optional services | [SDK for scripts and CI](/guides/programmatic-api/) |
 | A dashboard with history on your own computer | A SQLite file, created for you | None in the default local mode | [Start a local dashboard](/dashboard/local/) |
 | A local dashboard backed by PostgreSQL | A dedicated PostgreSQL database | Optional login; a token is needed once login is on | [Use PostgreSQL](/deployment/postgresql/) |
 | A local dashboard backed by MongoDB | A dedicated MongoDB database; a replica set for full team features | Same as PostgreSQL | [Use MongoDB](/deployment/mongodb/) |
@@ -30,6 +31,7 @@ VisualGuard works at several sizes. You can run it as a single command on your l
 ### What each setup gives you
 
 - **Tests only.** You run `visualguard test`. Results are saved under `.visualguard/runs/` with an HTML report. Nothing else is installed or hosted. This is the right start for almost everyone.
+- **SDK.** Your Node.js script awaits `runVisualGuard()` using a config file or inline options. It receives structured results and HTML/JUnit paths, then decides the process exit status. Start with the [complete SDK guide](/guides/programmatic-api/), including section capture and a GitHub Actions example.
 - **Local dashboard.** You run `visualguard dashboard`. It opens at `http://127.0.0.1:4400` and keeps run history in an embedded SQLite file. You do not need to install PostgreSQL or MongoDB.
 - **Shared dashboard.** You host one dashboard for your team. People sign in, see the same projects and record [reviews](/dashboard/reviews/). Tests still run on a computer or CI worker, or on the dashboard host when your release supports it (see below).
 

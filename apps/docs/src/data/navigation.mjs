@@ -8,7 +8,11 @@ export const navigation = [
     { label: 'Set up comparisons', items: pages('guides/zero-config-scans', 'guides/configuration', 'guides/routes', 'guides/browsers-and-viewports', 'guides/stable-captures', 'guides/section-capture', 'guides/application-auth', 'guides/playwright', 'guides/nextjs-example') },
     { label: 'Understand and act on results', items: pages('guides/diff-and-noise', 'guides/reports', 'guides/accepting-changes', 'guides/local-baselines', 'guides/fixes', 'guides/accessibility-and-performance') },
     { label: 'Add AI analysis', items: pages('guides/ai-gemini', 'guides/ai-ollama', 'guides/ai-policy-and-budgets') },
-    { label: 'Automate and extend', items: pages('guides/watch', 'guides/monitoring', 'guides/programmatic-api', 'guides/reporters') },
+    { label: 'Automate and extend', items: [
+      ...pages('guides/watch', 'guides/monitoring'),
+      { label: 'SDK for scripts and CI', slug: 'guides/programmatic-api' },
+      ...pages('guides/reporters'),
+    ] },
   ] },
   { label: 'Dashboard & teams', collapsed: true, items: pages('dashboard/overview', 'dashboard/local', 'dashboard/tour', 'dashboard/login', 'dashboard/google-sign-in', 'dashboard/projects', 'dashboard/people-and-permissions', 'dashboard/publishing', 'dashboard/project-configuration', 'dashboard/run-tests', 'dashboard/execution-progress', 'dashboard/private-runners', 'dashboard/reviews', 'dashboard/approved-baselines', 'dashboard/visual-policies') },
   { label: 'CI & pull requests', collapsed: true, items: pages('ci/overview', 'ci/github-actions', 'ci/preview-deployments', 'ci/github-checks', 'ci/sharding') },

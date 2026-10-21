@@ -4,19 +4,19 @@ description: "Use supported exports without relying on internal dashboard endpoi
 audience: "developer"
 docType: "reference"
 channel: "both"
-lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/index.ts", "packages/visualguard/src/dashboard.ts", "packages/visualguard/src/playwright/index.ts"]
+lastReviewed: "2026-10-21"
+sourcePaths: ["packages/visualguard/src/index.ts", "packages/visualguard/src/dashboard.ts", "packages/visualguard/src/playwright/index.ts", "packages/visualguard/src/sdk.ts"]
 sidebar: {"order": 6}
 ---
 
 | Import | Supported purpose |
 | --- | --- |
-| `visualguard` | Configuration/load/resolve helpers; run APIs; public result/event types; status helpers; terminal/JSON reporters. |
+| `visualguard` | `runVisualGuard` script/CI SDK; configuration/load/resolve helpers; low-level run APIs; public result/event types; status helpers; terminal/JSON reporters. |
 | `visualguard/playwright` | Extended Playwright `test`, fixture/check options and checkpoint integration. |
 | `visualguard/dashboard` | Packaged dashboard runtime and documented dashboard project API. |
 | `visualguard/package.json` | Published package metadata, useful for identifying an artifact with a mismatched CLI version label. |
 
-Importing the library does not start capture. Call `createRun(...).start()` and select API reporters/cancellation explicitly. [Run from code](/guides/programmatic-api/) for a complete example; [Playwright guide](/guides/playwright/) shows fixture behavior.
+Importing the library does not start capture. Await `runVisualGuard(options)` for the script/CI SDK, or use `createRun(...).start()` for the low-level API. See [SDK setup and examples](/guides/programmatic-api/) and the [Playwright guide](/guides/playwright/).
 
 The source barrel/declaration files define exact exported names/types. Internal `apps/platform/server/*` and dashboard HTTP endpoints are implementation details unless explicitly documented as supported. Do not build an external integration around an inferred endpoint compatibility promise. CLI commands provide the documented operational flows.
 
@@ -30,12 +30,14 @@ The source barrel/declaration files define exact exported names/types. Internal 
 | `parseConfig(raw, source?)` | Returns validated config with defaults | Validate a plain object you already have. |
 | `resolveConfig(config, options)` | Returns resolved paths, URLs and runtime settings | Pass `cwd`, optional `configPath`, environment and overrides before running. |
 
-Calling `defineConfig` alone does not validate inputs or start anything. A custom API caller must load its own environment files; the CLI already handles that. See [configuration precedence](/guides/configuration/) before applying overrides.
+Calling `defineConfig` alone does not validate inputs or start anything. A low-level API caller must load its own environment files. The SDK loads files into a copied environment by default; config modules still read the real process environment. See [SDK environment behavior](/guides/programmatic-api/#8-environment-overrides-and-cancellation) and [configuration precedence](/guides/configuration/).
 
 ## Runs, results and reporters
 
 | Export | Purpose |
 | --- | --- |
+| `runVisualGuard(options?)` | Resolves file/inline config, runs capture, writes HTML/JUnit by default, and returns `{ manifest, runDir, exitCode, passed, artifacts }`. Does not set process exit status. |
+| `RunVisualGuardOptions`, `VisualGuardResult`, `SDKReports` | TypeScript contracts for SDK inputs, returned evidence/verdict, and report selection. |
 | `createRun(resolved, options?)`, `Run` | Create a run, then await `.start()` for `{ manifest, runDir }`. Options include an abort signal and explicit reporters. |
 | `planJobs`, `buildJobs` | Plan capture jobs from resolved settings/routes. Planning can involve discovery; use CLI `test --list` for ordinary inspection. |
 | `summarize(jobs)` | Count every result status, including zero counts. |

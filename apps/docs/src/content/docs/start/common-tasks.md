@@ -4,8 +4,8 @@ description: "A task map that links every VisualGuard goal to its command or das
 audience: "developer"
 docType: "reference"
 channel: "both"
-lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/program.ts", "packages/visualguard/src/cli/commands/dashboard.ts", "packages/visualguard/src/cli/shared.ts", "apps/platform/client/main.tsx"]
+lastReviewed: "2026-10-21"
+sourcePaths: ["packages/visualguard/src/cli/program.ts", "packages/visualguard/src/cli/commands/dashboard.ts", "packages/visualguard/src/cli/shared.ts", "apps/platform/client/main.tsx", "packages/visualguard/src/sdk.ts"]
 sidebar: {"order": 5}
 ---
 
@@ -39,7 +39,7 @@ Use this page when you know what you want to do but not where it lives. Find you
 | Test pages behind a login | `visualguard auth staging`, then reuse the saved session | [Capture authenticated pages](/guides/application-auth/) |
 | Re-test automatically while I edit code | `visualguard watch` | [Watch local development](/guides/watch/) |
 | Check a page after a click or form step | `visualguard/playwright` test fixture | [Use inside Playwright tests](/guides/playwright/) |
-| Run VisualGuard from my own script | `import { loadConfig, resolveConfig, createRun } from "visualguard"` | [Run VisualGuard from code](/guides/programmatic-api/) |
+| Run VisualGuard from my own script | `import { runVisualGuard } from "visualguard"`, then await the result | [SDK for scripts and CI](/guides/programmatic-api/) |
 | Watch a live site for unexpected changes, such as nightly | `visualguard monitor` | [Monitor a site over time](/guides/monitoring/) |
 | Start monitoring again from fresh snapshots | `visualguard monitor --reset` | [Monitor a site over time](/guides/monitoring/) |
 | Save Playwright traces to debug a capture | `visualguard test --debug` | [Capture problems](/troubleshooting/capture/) |
@@ -98,6 +98,7 @@ Use this page when you know what you want to do but not where it lives. Find you
 | I want to… | Command or UI place | Read |
 | --- | --- | --- |
 | Run visual tests on every pull request | GitHub Action, or `visualguard test --ci` in any CI | [Run visual tests in CI](/ci/overview/) |
+| Control comparisons and CI failure from JavaScript | `runVisualGuard({ failOn: 'review' })`, then set `process.exitCode = result.exitCode` | [SDK setup and CI workflow](/guides/programmatic-api/) |
 | Create a GitHub workflow file | `visualguard init --workflow` | [Use the GitHub Action](/ci/github-actions/) |
 | Create a scheduled monitoring workflow | `visualguard monitor --workflow "0 3 * * *"` | [Monitor a site over time](/guides/monitoring/) |
 | Post or update a summary comment on the pull request | `visualguard comment --link REPORT_URL` (try `--dry-run` first) | [Use the GitHub Action](/ci/github-actions/) |

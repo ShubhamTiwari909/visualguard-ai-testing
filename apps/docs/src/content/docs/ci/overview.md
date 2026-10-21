@@ -4,12 +4,12 @@ description: "Choose a CI setup, run VisualGuard on every pull request and keep 
 audience: "developer"
 docType: "how-to"
 channel: "both"
-lastReviewed: "2026-10-20"
-sourcePaths: ["README.md", "packages/visualguard/src/setup/workflow-template.ts", "packages/visualguard/src/cli/commands/comment.ts", "packages/visualguard/src/cli/commands/monitor.ts", "action/action.yml"]
+lastReviewed: "2026-10-21"
+sourcePaths: ["README.md", "packages/visualguard/src/setup/workflow-template.ts", "packages/visualguard/src/cli/commands/comment.ts", "packages/visualguard/src/cli/commands/monitor.ts", "action/action.yml", "packages/visualguard/src/sdk.ts"]
 sidebar: {"order": 1}
 ---
 
-This page shows how to run VisualGuard in continuous integration (CI), so every pull request is compared automatically. It covers the three ways to set it up, the steps every CI job needs, and the files a job should keep.
+This page shows how to run VisualGuard in continuous integration (CI), so every pull request is compared automatically. It covers four ways to set it up, the steps every CI job needs, and the files a job should keep.
 
 ## Before you start
 
@@ -25,8 +25,9 @@ This page shows how to run VisualGuard in continuous integration (CI), so every 
 | `visualguard init --workflow` | A first GitHub workflow with no extra decisions | A ready `.github/workflows/visualguard.yml` that tests, uploads the report, comments on the PR and then fails on regressions. |
 | [The GitHub Action](/ci/github-actions/) | GitHub workflows you want to keep short | One step that installs the browser, tests, uploads artifacts, comments and fails the job. Every input is an option. |
 | Plain commands | Any CI system (GitLab, CircleCI, Jenkins, Buildkite) | The two commands below, plus your CI's own artifact upload. |
+| [Node.js SDK](/guides/programmatic-api/) | Custom scripts, typed integration and CI logic | `runVisualGuard()` returns structured results, report paths and a policy verdict. Your script sets its exit status and your CI uploads evidence. |
 
-Every setup runs the same two commands:
+The CLI setups run these two commands:
 
 ```bash
 npx playwright install --with-deps chromium
@@ -34,6 +35,34 @@ npx --no-install visualguard test --ci --junit visualguard-junit.xml
 ```
 
 `--ci` turns off prompts, colours and spinners. `--junit` writes a JUnit XML file that most CI systems can display as test results. `npx --no-install` makes sure the job runs the version in your lockfile, not a newer download.
+
+### Run through the SDK
+
+Install VisualGuard and Playwright in your app, commit the lockfile, and install
+the browser on the CI worker. A script can use the same config:
+
+```js
+import { runVisualGuard } from 'visualguard';
+
+const result = await runVisualGuard({
+  failOn: 'review',
+  reports: { githubSummary: Boolean(process.env.GITHUB_STEP_SUMMARY) },
+});
+console.log('Upload this whole directory:', result.runDir);
+process.exitCode = result.exitCode;
+```
+
+The SDK writes HTML and JUnit by default and returns the manifest. It does not set
+the process exit status itself. Use an artifact step with `if: always()` to retain
+the run directory even when this script fails. Include hidden files when uploading
+`.visualguard/`; screenshots and diffs must stay beside the HTML. Setup failures
+reject the promise and may have no report to upload.
+
+The [complete SDK guide](/guides/programmatic-api/#7-configure-github-actions)
+includes a runnable script, manual/pull-request workflow, environment variables,
+baseline persistence and cancellation. SDK GitHub summaries are opt-in; the CLI
+report settings and defaults described below apply to CLI workflows. SDK execution
+does not automatically post PR comments or publish dashboard evidence.
 
 ## 1. Generate a GitHub workflow
 
