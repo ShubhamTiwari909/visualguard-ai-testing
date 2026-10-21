@@ -5,8 +5,15 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/ai/factory.ts", "packages/visualguard/src/ai/providers/ollama.ts", "packages/visualguard/src/ai/tasks/analyze-diff.ts", "packages/visualguard/src/cli/commands/doctor.ts", "packages/visualguard/src/cli/commands/analyze.ts"]
-sidebar: {"order": 10}
+sourcePaths:
+  [
+    "packages/visualguard/src/ai/factory.ts",
+    "packages/visualguard/src/ai/providers/ollama.ts",
+    "packages/visualguard/src/ai/tasks/analyze-diff.ts",
+    "packages/visualguard/src/cli/commands/doctor.ts",
+    "packages/visualguard/src/cli/commands/analyze.ts",
+  ]
+sidebar: { "order": 10 }
 ---
 
 This page shows how to run VisualGuard's AI analysis with [Ollama](https://ollama.com), a free tool that runs AI models on your own computer. Screenshots never leave your machine (or the server you point it at), and you do not need a cloud API key. Use it for confidential projects, offline work, or to avoid per-call costs.
@@ -104,11 +111,11 @@ You should see an **AI provider** line like `ollama at http://127.0.0.1:11434 (q
 
 If it is a warning, the message says what is wrong:
 
-| Doctor message | Meaning |
-| --- | --- |
+| Doctor message                 | Meaning                                                             |
+| ------------------------------ | ------------------------------------------------------------------- |
 | `"qwen2.5vl" is not installed` | Run `ollama pull qwen2.5vl`, or set `ai.model` to a model you have. |
-| `"…" can't read images` | The model is text-only. Pick a vision model. |
-| A connection error | Ollama is not running at that host. Start it, or fix `OLLAMA_HOST`. |
+| `"…" can't read images`        | The model is text-only. Pick a vision model.                        |
+| A connection error             | Ollama is not running at that host. Start it, or fix `OLLAMA_HOST`. |
 
 ## 6. Run a test
 
@@ -139,13 +146,13 @@ Everything else is the same: the same prompt, the same classification rules, the
 
 ## Ollama settings
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `ai.provider` | Set to `"ollama"`. | `"none"` |
-| `ai.model` | Installed vision model name. | `qwen2.5vl` |
-| `ai.timeoutMs` | Time limit in milliseconds for each request and for all AI work in one command. Local models can be slow, so raise this on slower machines. | `120000` |
-| `ai.concurrency` | Pages analysed at the same time (1 to 8). Lower it if your machine runs out of memory. | `4` |
-| `OLLAMA_HOST` (env) | Where Ollama listens. | `http://127.0.0.1:11434` |
+| Option              | What it does                                                                                                                                | Default                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `ai.provider`       | Set to `"ollama"`.                                                                                                                          | `"none"`                 |
+| `ai.model`          | Installed vision model name.                                                                                                                | `qwen2.5vl`              |
+| `ai.timeoutMs`      | Time limit in milliseconds for each request and for all AI work in one command. Local models can be slow, so raise this on slower machines. | `120000`                 |
+| `ai.concurrency`    | Pages analysed at the same time (1 to 8). Lower it if your machine runs out of memory.                                                      | `4`                      |
+| `OLLAMA_HOST` (env) | Where Ollama listens.                                                                                                                       | `http://127.0.0.1:11434` |
 
 Budgets, `advisory`, `analyze` and `intent` work the same as with Gemini. See [Control AI policy and cost](/guides/ai-policy-and-budgets/).
 
@@ -166,13 +173,13 @@ To go back to checks without AI for one run, add `--no-ai`.
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Ollama is not reachable at http://…` | Start the Ollama app or `ollama serve`. Check `OLLAMA_HOST`, including the `http://` prefix and port. |
-| `Ollama model "…" is not installed. Run: ollama pull …` | Run the `ollama pull` command shown, or set `ai.model` to an installed model. |
-| `AI analysis failed: … aborted` on later pages | The time limit covers all AI work in one command. Raise `ai.timeoutMs`, or lower the number of changed pages per run. |
-| Machine freezes or swaps during analysis | Lower `ai.concurrency` to 1 or 2, or use a smaller vision model. |
-| Answers look vague or wrong | Small models are less accurate than cloud models. Try a larger vision model, or set `ai.advisory: true` so answers never change statuses. |
+| Problem                                                 | Fix                                                                                                                                       |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `Ollama is not reachable at http://…`                   | Start the Ollama app or `ollama serve`. Check `OLLAMA_HOST`, including the `http://` prefix and port.                                     |
+| `Ollama model "…" is not installed. Run: ollama pull …` | Run the `ollama pull` command shown, or set `ai.model` to an installed model.                                                             |
+| `AI analysis failed: … aborted` on later pages          | The time limit covers all AI work in one command. Raise `ai.timeoutMs`, or lower the number of changed pages per run.                     |
+| Machine freezes or swaps during analysis                | Lower `ai.concurrency` to 1 or 2, or use a smaller vision model.                                                                          |
+| Answers look vague or wrong                             | Small models are less accurate than cloud models. Try a larger vision model, or set `ai.advisory: true` so answers never change statuses. |
 
 See [Troubleshooting](/troubleshooting/) for capture and install problems.
 

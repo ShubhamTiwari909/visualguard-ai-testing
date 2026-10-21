@@ -5,8 +5,13 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/server/database.ts", "apps/platform/server/config.ts", "apps/platform/server/scaffold.ts"]
-sidebar: {"order": 6}
+sourcePaths:
+  [
+    "apps/platform/server/database.ts",
+    "apps/platform/server/config.ts",
+    "apps/platform/server/scaffold.ts",
+  ]
+sidebar: { "order": 6 }
 ---
 
 Cloud SQL is Google's managed PostgreSQL. This tutorial connects it to the dashboard you deployed on Cloud Run. Instead of a public database address, Cloud Run reaches Cloud SQL through a private Unix socket, and the passwords live in Secret Manager.
@@ -113,12 +118,12 @@ gcloud run deploy visualguard-dashboard \
   --set-secrets VISUALGUARD_DATABASE_URL=visualguard-db-url:1,VISUALGUARD_ADMIN_PASSWORD=visualguard-admin-password:1
 ```
 
-| Flag | Why |
-| --- | --- |
-| `--service-account` | Run as the identity that can reach Cloud SQL and the secrets. |
+| Flag                           | Why                                                                     |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `--service-account`            | Run as the identity that can reach Cloud SQL and the secrets.           |
 | `--execution-environment gen2` | The second-generation environment Google documents for this connection. |
-| `--add-cloudsql-instances` | Mount the instance's socket under `/cloudsql/`. |
-| `--set-secrets` | Map pinned secret versions to environment variables. |
+| `--add-cloudsql-instances`     | Mount the instance's socket under `/cloudsql/`.                         |
+| `--set-secrets`                | Map pinned secret versions to environment variables.                    |
 
 The remaining flags are explained in [Cloud Run step 5](/deployment/cloud-run/#5-deploy). Then continue with Cloud Run steps 6 and 7 to set the public URL and allow browser access.
 
@@ -144,14 +149,14 @@ Six months later, the team rotates the password. They set a new password with `g
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `ENOENT` on `/cloudsql/...` | The instance is not attached. Add `--add-cloudsql-instances` with the exact connection name. |
-| `password authentication failed` | The secret's URL has the wrong password. Rebuild it and add a new secret version. |
-| Permission denied reading a secret | Grant `roles/secretmanager.secretAccessor` on that secret to the runtime service account. |
+| Problem                                                    | Fix                                                                                             |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `ENOENT` on `/cloudsql/...`                                | The instance is not attached. Add `--add-cloudsql-instances` with the exact connection name.    |
+| `password authentication failed`                           | The secret's URL has the wrong password. Rebuild it and add a new secret version.               |
+| Permission denied reading a secret                         | Grant `roles/secretmanager.secretAccessor` on that secret to the runtime service account.       |
 | `Cannot update environment variable ... to the given type` | The variable is still a plain value. Remove it from the env-vars file, then set it as a secret. |
-| Connection times out with a private-IP instance | Add VPC egress from Cloud Run to the instance's network. |
-| `permission denied for schema public` | Grant the `visualguard` user `USAGE, CREATE` on the schema. |
+| Connection times out with a private-IP instance            | Add VPC egress from Cloud Run to the instance's network.                                        |
+| `permission denied for schema public`                      | Grant the `visualguard` user `USAGE, CREATE` on the schema.                                     |
 
 See [dashboard troubleshooting](/troubleshooting/dashboard/) for more.
 

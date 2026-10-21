@@ -5,8 +5,13 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/watch.ts", "packages/visualguard/src/fixer/verify.ts", "packages/visualguard/src/config/schema.ts"]
-sidebar: {"order": 14}
+sourcePaths:
+  [
+    "packages/visualguard/src/cli/commands/watch.ts",
+    "packages/visualguard/src/fixer/verify.ts",
+    "packages/visualguard/src/config/schema.ts",
+  ]
+sidebar: { "order": 14 }
 ---
 
 This page shows how to use `visualguard watch`. It keeps running while you code. Each time you save a file, it works out which pages use that file, captures just those pages on your local dev server and compares them with production. Use it to see the visual effect of a change within seconds, before you open a pull request.
@@ -94,15 +99,15 @@ Saves that happen close together are grouped into one run. Saves during a run ar
 
 ## Options
 
-| Flag | What it does | Default |
-| --- | --- | --- |
-| `[routes...]` | Watch only these routes or globs. | All configured routes |
-| `--staging <url>` | Local URL to test. | `fix.verify.server.url`, then `baseURL.staging` |
-| `--viewport <name>` | Run only this viewport. Repeat for more. | All viewports |
-| `--provider <name>` | AI provider: `gemini`, `ollama` or `none`. | From config |
-| `--model <id>` | AI model ID. | Provider default |
-| `--no-ai` | Skip AI analysis. | AI on if configured |
-| `-c, --config <path>` | Config file path. | `visualguard.config.ts` |
+| Flag                  | What it does                               | Default                                         |
+| --------------------- | ------------------------------------------ | ----------------------------------------------- |
+| `[routes...]`         | Watch only these routes or globs.          | All configured routes                           |
+| `--staging <url>`     | Local URL to test.                         | `fix.verify.server.url`, then `baseURL.staging` |
+| `--viewport <name>`   | Run only this viewport. Repeat for more.   | All viewports                                   |
+| `--provider <name>`   | AI provider: `gemini`, `ollama` or `none`. | From config                                     |
+| `--model <id>`        | AI model ID.                               | Provider default                                |
+| `--no-ai`             | Skip AI analysis.                          | AI on if configured                             |
+| `-c, --config <path>` | Config file path.                          | `visualguard.config.ts`                         |
 
 :::tip
 If AI is turned on in your config, every save can cost model calls. Add `--no-ai` while you iterate, and keep a single viewport with `--viewport desktop` for faster feedback.
@@ -128,14 +133,14 @@ You change the padding in `components/PricingCard.tsx` of a Next.js app. Watch p
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Nothing to watch: set fix.verify.server.url or pass --staging <url>.` | Pass `--staging`, or set `fix.verify.server.url` or `baseURL.staging`. |
-| `Set baseURL.production (or use mode: "baseline").` | Add the production URL to your config. |
-| Saving a file does nothing | The file is outside `fix.include`. Add its folder. |
-| Every save tests all routes | The file is not traced to a Next.js page, or your app is not Next.js. Narrow it with `[routes...]`. |
-| `Nothing is answering at http://…` | Start your dev server, or set `fix.verify.server.command`. |
-| Every page differs from production | The dev build looks different from production. Hide dev-only elements with `stabilize.hide`. |
+| Problem                                                                | Fix                                                                                                 |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `Nothing to watch: set fix.verify.server.url or pass --staging <url>.` | Pass `--staging`, or set `fix.verify.server.url` or `baseURL.staging`.                              |
+| `Set baseURL.production (or use mode: "baseline").`                    | Add the production URL to your config.                                                              |
+| Saving a file does nothing                                             | The file is outside `fix.include`. Add its folder.                                                  |
+| Every save tests all routes                                            | The file is not traced to a Next.js page, or your app is not Next.js. Narrow it with `[routes...]`. |
+| `Nothing is answering at http://…`                                     | Start your dev server, or set `fix.verify.server.command`.                                          |
+| Every page differs from production                                     | The dev build looks different from production. Hide dev-only elements with `stabilize.hide`.        |
 
 See [Capture problems](/troubleshooting/capture/) for more.
 

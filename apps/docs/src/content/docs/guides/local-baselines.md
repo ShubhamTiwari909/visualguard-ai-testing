@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "docs/RELIABILITY-CHANGES.md"]
-sidebar: {"order": 6}
+sidebar: { "order": 6 }
 ---
 
 ## Before you start

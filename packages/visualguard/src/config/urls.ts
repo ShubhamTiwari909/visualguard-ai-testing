@@ -101,14 +101,16 @@ export function joinURL(base: string | URL, route: string): string {
   return url.href;
 }
 
-const DYNAMIC_SEGMENT = /\[\[?(\.\.\.)?([^\]]+?)\]?\]/g;
+// A parameter name cannot contain either bracket. Excluding the opening bracket
+// prevents repeated failed matches from rescanning long malformed inputs.
+const DYNAMIC_SEGMENT = /\[\[?(\.\.\.)?([^[\]]+)\]?\]/g;
 
 /**
  * Detect a bracketed route parameter such as [slug]. This tells expansion whether concrete
  * parameter values are required.
  */
 export function isDynamicRoute(path: string): boolean {
-  return /\[[^\]]+\]/.test(path);
+  return /\[[^[\]]+\]/.test(path);
 }
 
 /**
@@ -132,7 +134,13 @@ export function applyParams(path: string, params: Record<string, string | string
     },
   );
   // "/docs/[[...slug]]" without a value leaves a trailing slash: "/docs/" -> "/docs".
-  return result.length > 1 ? result.replace(/\/+$/, "") || "/" : result;
+  return result.length > 1 ? trimTrailingSlashes(result) || "/" : result;
+}
+
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === "/") end--;
+  return value.slice(0, end);
 }
 
 /**
@@ -143,7 +151,7 @@ export function applyParams(path: string, params: Record<string, string | string
  */
 export function routeSlug(route: string): string {
   const { path, query, hash } = splitRoute(route);
-  const trimmed = path.replace(/^\/+|\/+$/g, "");
+  const trimmed = trimTrailingSlashes(path.replace(/^\/+/, ""));
   let slug = trimmed
     ? trimmed
         .split("/")

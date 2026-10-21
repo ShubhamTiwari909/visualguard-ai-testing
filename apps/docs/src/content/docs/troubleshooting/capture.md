@@ -5,8 +5,20 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["README.md", "docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/provenance.ts", "packages/visualguard/src/ai/analyze-job.ts", "packages/visualguard/src/ai/budget.ts", "packages/visualguard/src/ai/factory.ts", "packages/visualguard/src/fixer/fix.ts", "packages/visualguard/src/fixer/auto.ts", "packages/visualguard/src/fixer/verify.ts"]
-sidebar: {"order": 3}
+sourcePaths:
+  [
+    "README.md",
+    "docs/NPM-PACKAGE-SETUP.md",
+    "packages/visualguard/src/core/run.ts",
+    "packages/visualguard/src/core/provenance.ts",
+    "packages/visualguard/src/ai/analyze-job.ts",
+    "packages/visualguard/src/ai/budget.ts",
+    "packages/visualguard/src/ai/factory.ts",
+    "packages/visualguard/src/fixer/fix.ts",
+    "packages/visualguard/src/fixer/auto.ts",
+    "packages/visualguard/src/fixer/verify.ts",
+  ]
+sidebar: { "order": 3 }
 ---
 
 Use this page when `visualguard test` runs but the screenshots, the report, the AI analysis or an automatic fix is not what you expect. Each problem lists the likely cause, the exact fix and how to confirm it.
@@ -63,6 +75,7 @@ You see `Missing base URL for staging` (or production).
   ```
 
   If you see `storageState file for staging not found: PATH`, the config points to a session file that does not exist. Create it with `auth` or fix the path.
+
 - **Confirm:** open the new screenshot in the report. It should show the real page, not a login form.
 
 ### A real change is not detected
@@ -153,14 +166,14 @@ AI analysis is optional. When it cannot run, VisualGuard keeps the result from i
 
 Common messages and fixes:
 
-| Message | Fix |
-| --- | --- |
-| `Gemini rejected the API key (check GEMINI_API_KEY)` | Create a new key, update the secret and rerun. |
-| `Gemini model "ID" is not available; set ai.model to a current model id` | Set `ai.model` to a model your key can use. `doctor` lists valid choices. |
-| `Gemini quota used up ...` | Wait for the reset time shown, or use another key or model. |
-| `Gemini rate limit reached` | VisualGuard retries short waits itself. Lower `ai.concurrency` if it keeps happening. |
-| `Ollama is not reachable at HOST` | Start Ollama, or set `OLLAMA_HOST` to the right address. |
-| `Ollama model "ID" is not installed. Run: ollama pull ID` | Run that command, then rerun. Pick a model that can read images. |
+| Message                                                                  | Fix                                                                                   |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `Gemini rejected the API key (check GEMINI_API_KEY)`                     | Create a new key, update the secret and rerun.                                        |
+| `Gemini model "ID" is not available; set ai.model to a current model id` | Set `ai.model` to a model your key can use. `doctor` lists valid choices.             |
+| `Gemini quota used up ...`                                               | Wait for the reset time shown, or use another key or model.                           |
+| `Gemini rate limit reached`                                              | VisualGuard retries short waits itself. Lower `ai.concurrency` if it keeps happening. |
+| `Ollama is not reachable at HOST`                                        | Start Ollama, or set `OLLAMA_HOST` to the right address.                              |
+| `Ollama model "ID" is not installed. Run: ollama pull ID`                | Run that command, then rerun. Pick a model that can read images.                      |
 
 **Confirm:** rerun only the analysis, without capturing again:
 
@@ -229,15 +242,15 @@ You see one of these messages:
 
 ### Other fix errors
 
-| Message | Fix |
-| --- | --- |
-| `Automatic fixing requires fix.verify.server for visual verification.` | Configure `fix.verify.server` before using `--auto`. |
-| `Sending source code to PROVIDER hasn't been allowed.` | Run `visualguard fix` once in a terminal and allow it, or set `fix.allowSourceUpload: true`. |
-| `A server is already running at URL` | Stop it so VisualGuard can start the dev server from the fix worktree, or use `--in-place`. |
-| `Nothing is answering at URL` | Start your dev server, or set `fix.verify.server.command`. |
-| `PATH changed since the proposal; generate a new proposal.` | A file changed after the proposal. Run `fix` again. |
-| `No source files matched this change (check fix.include).` | Add the right source folders to `fix.include`. |
-| `--pr, --branch, --in-place and --keep-worktree need --auto.` | Add `--auto`, or drop those flags. |
+| Message                                                                | Fix                                                                                          |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Automatic fixing requires fix.verify.server for visual verification.` | Configure `fix.verify.server` before using `--auto`.                                         |
+| `Sending source code to PROVIDER hasn't been allowed.`                 | Run `visualguard fix` once in a terminal and allow it, or set `fix.allowSourceUpload: true`. |
+| `A server is already running at URL`                                   | Stop it so VisualGuard can start the dev server from the fix worktree, or use `--in-place`.  |
+| `Nothing is answering at URL`                                          | Start your dev server, or set `fix.verify.server.command`.                                   |
+| `PATH changed since the proposal; generate a new proposal.`            | A file changed after the proposal. Run `fix` again.                                          |
+| `No source files matched this change (check fix.include).`             | Add the right source folders to `fix.include`.                                               |
+| `--pr, --branch, --in-place and --keep-worktree need --auto.`          | Add `--auto`, or drop those flags.                                                           |
 
 ## Next steps
 

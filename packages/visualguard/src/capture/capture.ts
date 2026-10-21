@@ -313,7 +313,9 @@ export async function stabilizeAndShoot(
     if (target) {
       const count = await target.count();
       if (count !== 1)
-        throw new Error(`Section selector ${JSON.stringify(selector)} matched ${count} elements; expected exactly one.`);
+        throw new Error(
+          `Section selector ${JSON.stringify(selector)} matched ${count} elements; expected exactly one.`,
+        );
       const box = await target.boundingBox();
       const transparent = await target.evaluate((element) => {
         for (let current: Element | null = element; current; current = current.parentElement) {
@@ -322,9 +324,13 @@ export async function stabilizeAndShoot(
         return false;
       });
       if (!box || box.width <= 0 || box.height <= 0 || !(await target.isVisible()) || transparent)
-        throw new Error(`Section ${JSON.stringify(selector)} must be visible and have a nonempty bounding box.`);
+        throw new Error(
+          `Section ${JSON.stringify(selector)} must be visible and have a nonempty bounding box.`,
+        );
       if (box.height > screenshot.maxHeight)
-        throw new Error(`Section ${JSON.stringify(selector)} is ${box.height}px tall, exceeding screenshot.maxHeight (${screenshot.maxHeight}px). Increase maxHeight or select a smaller section.`);
+        throw new Error(
+          `Section ${JSON.stringify(selector)} is ${box.height}px tall, exceeding screenshot.maxHeight (${screenshot.maxHeight}px). Increase maxHeight or select a smaller section.`,
+        );
       return target.screenshot(options);
     }
     return page.screenshot({

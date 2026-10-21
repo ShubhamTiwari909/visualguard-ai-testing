@@ -5,8 +5,16 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["action/README.md", "action/action.yml", "docs/RELIABILITY-CHANGES.md", "packages/visualguard/src/core/merge.ts", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/reporters/github-comment.ts"]
-sidebar: {"order": 5}
+sourcePaths:
+  [
+    "action/README.md",
+    "action/action.yml",
+    "docs/RELIABILITY-CHANGES.md",
+    "packages/visualguard/src/core/merge.ts",
+    "packages/visualguard/src/core/run.ts",
+    "packages/visualguard/src/reporters/github-comment.ts",
+  ]
+sidebar: { "order": 5 }
 ---
 
 Use this page when VisualGuard passes on your computer but fails in continuous integration (CI), when a pull request comment or artifact is missing, or when sharded results will not merge. Each problem lists the likely cause, the exact fix and how to confirm it.
@@ -30,6 +38,7 @@ You see `Playwright's chromium browser is not installed.` or `Could not launch c
   ```
 
   The [VisualGuard GitHub Action](/ci/github-actions/) does this for you with its `browser` input.
+
 - **Confirm:** rerun one route, for example with `args: --only /`, and check that the job captures it.
 
 ## Preview URL is not ready or is private
@@ -72,14 +81,14 @@ The log may show `VisualGuard could not comment on the pull request.`
 
 ## Shards fail to start or will not merge
 
-| Message | Likely cause and fix |
-| --- | --- |
-| `Sharded runs require --run-group or VISUALGUARD_RUN_GROUP (automatic in GitHub Actions).` | Outside GitHub Actions, give every shard of one execution the same `--run-group` value. |
-| `--shard must look like 1/4 (got "...")` | Use `INDEX/TOTAL`, such as `2/4`. |
-| `Cannot merge incompatible runs (group, revision, configuration or shard count differs).` | The inputs come from different executions. Download the shards of one execution only. |
-| `Cannot merge legacy runs without provenance; rerun the shards.` | The shards came from an older version. Capture them again. |
-| `Duplicate shard indices in merge inputs.` or `Duplicate job IDs in merge inputs.` | The same shard was downloaded twice. Remove the duplicate folder. |
-| `Incomplete shard set or missing jobs; pass --allow-partial to produce an explicitly incomplete report.` | A shard failed or was not downloaded. Rerun it. |
+| Message                                                                                                  | Likely cause and fix                                                                    |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `Sharded runs require --run-group or VISUALGUARD_RUN_GROUP (automatic in GitHub Actions).`               | Outside GitHub Actions, give every shard of one execution the same `--run-group` value. |
+| `--shard must look like 1/4 (got "...")`                                                                 | Use `INDEX/TOTAL`, such as `2/4`.                                                       |
+| `Cannot merge incompatible runs (group, revision, configuration or shard count differs).`                | The inputs come from different executions. Download the shards of one execution only.   |
+| `Cannot merge legacy runs without provenance; rerun the shards.`                                         | The shards came from an older version. Capture them again.                              |
+| `Duplicate shard indices in merge inputs.` or `Duplicate job IDs in merge inputs.`                       | The same shard was downloaded twice. Remove the duplicate folder.                       |
+| `Incomplete shard set or missing jobs; pass --allow-partial to produce an explicitly incomplete report.` | A shard failed or was not downloaded. Rerun it.                                         |
 
 Example of a correct split outside GitHub Actions:
 

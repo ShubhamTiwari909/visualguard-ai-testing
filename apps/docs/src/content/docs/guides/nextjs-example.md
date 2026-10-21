@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "source"
 lastReviewed: "2026-10-20"
 sourcePaths: ["examples/nextjs/README.md", "examples/nextjs/GEMINI-SCREENSHOT-TESTING.md"]
-sidebar: {"order": 25}
+sidebar: { "order": 25 }
 ---
 
 ## Before you start

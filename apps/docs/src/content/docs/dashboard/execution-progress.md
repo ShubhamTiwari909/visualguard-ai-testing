@@ -5,8 +5,14 @@ audience: "developer"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/client/execution-progress.tsx"]
-sidebar: {"order": 9}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "apps/platform/server/test-runner.ts",
+    "apps/platform/server/test-executions.ts",
+    "apps/platform/client/execution-progress.tsx",
+  ]
+sidebar: { "order": 9 }
 ---
 
 After you choose **Run test**, the project panel shows a progress box. This page explains every message in that box, what the comparison count measures, and what to do when a test stalls or fails. It applies to both the built-in runner and private runners.
@@ -20,17 +26,17 @@ After you choose **Run test**, the project panel shows a progress box. This page
 
 A dashboard test request has four states. The progress box title tells you which one, and during running, which stage.
 
-| Title in the progress box | State | What is happening |
-| --- | --- | --- |
-| **Waiting for the runner…** | Queued | The request is saved. No capturer has claimed it yet |
-| **Starting the browser…** | Running: starting | A capturer claimed the saved profile and is preparing |
-| **Capturing screenshots…** | Running: capturing | Pages are loading and screenshots are being taken |
-| **Comparing and analyzing…** | Running: comparing | The candidate screenshot was captured and is being compared, with AI if selected |
-| **Uploading test results…** | Running: uploading | All comparisons are done; the evidence is being stored |
-| **Saving the result link…** | Running: finalizing | The stored run is being linked to the request |
-| **Running visual comparison…** | Running, no detail | An older private runner that does not report stages |
-| **Test finished** | Completed | A run was created. **View result** opens it |
-| **Test could not finish** | Failed | The test stopped. The reason appears in red |
+| Title in the progress box      | State               | What is happening                                                                |
+| ------------------------------ | ------------------- | -------------------------------------------------------------------------------- |
+| **Waiting for the runner…**    | Queued              | The request is saved. No capturer has claimed it yet                             |
+| **Starting the browser…**      | Running: starting   | A capturer claimed the saved profile and is preparing                            |
+| **Capturing screenshots…**     | Running: capturing  | Pages are loading and screenshots are being taken                                |
+| **Comparing and analyzing…**   | Running: comparing  | The candidate screenshot was captured and is being compared, with AI if selected |
+| **Uploading test results…**    | Running: uploading  | All comparisons are done; the evidence is being stored                           |
+| **Saving the result link…**    | Running: finalizing | The stored run is being linked to the request                                    |
+| **Running visual comparison…** | Running, no detail  | An older private runner that does not report stages                              |
+| **Test finished**              | Completed           | A run was created. **View result** opens it                                      |
+| **Test could not finish**      | Failed              | The test stopped. The reason appears in red                                      |
 
 Next to the title you see **Configuration v3** (or your version). That is the exact profile version this test uses. Editing the profile later does not change a test that already started.
 
@@ -57,12 +63,12 @@ A failed test keeps its last count and stage, so you can see how far it got.
 
 ## Why a test fails
 
-| Message | Cause |
-| --- | --- |
-| `Runner disconnected or timed out. Start the runner and request a new test.` | No capturer claimed the request within 5 minutes, or the capturer stopped renewing its 60-second lease |
-| `Chromium is not installed on the dashboard host. Run npx playwright install chromium there, or connect a private runner.` | The built-in runner could not start a browser |
-| `Capture or upload failed on the dashboard host. Check the dashboard server logs.` | The built-in runner hit an error while capturing or uploading |
-| `Capture or upload failed. Check runner output; any captured evidence remains on the runner.` | A private runner hit an error |
+| Message                                                                                                                    | Cause                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `Runner disconnected or timed out. Start the runner and request a new test.`                                               | No capturer claimed the request within 5 minutes, or the capturer stopped renewing its 60-second lease |
+| `Chromium is not installed on the dashboard host. Run npx playwright install chromium there, or connect a private runner.` | The built-in runner could not start a browser                                                          |
+| `Capture or upload failed on the dashboard host. Check the dashboard server logs.`                                         | The built-in runner hit an error while capturing or uploading                                          |
+| `Capture or upload failed. Check runner output; any captured evidence remains on the runner.`                              | A private runner hit an error                                                                          |
 
 A test also stops after 15 minutes. VisualGuard never silently captures a failed test again. Request a new one when you have fixed the cause.
 
@@ -83,12 +89,12 @@ Unsaved edits in the form never affect a queued or running test. Only the saved 
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| The box never leaves **Waiting for the runner…** | Start or reconnect the private runner, or check the built-in runner is on. See [Run tests from the dashboard](/dashboard/run-tests/) |
-| Only **Running visual comparison…** with no stages | Upgrade the private runner to match the dashboard |
-| The count stops and the test fails as disconnected | The capturer stopped or lost contact. Check its log, then request a new test |
-| **Test finished** but no **View result** button | Refresh the page. If it still is missing, check the dashboard log for the `Dashboard test finished` line |
+| Problem                                            | Fix                                                                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| The box never leaves **Waiting for the runner…**   | Start or reconnect the private runner, or check the built-in runner is on. See [Run tests from the dashboard](/dashboard/run-tests/) |
+| Only **Running visual comparison…** with no stages | Upgrade the private runner to match the dashboard                                                                                    |
+| The count stops and the test fails as disconnected | The capturer stopped or lost contact. Check its log, then request a new test                                                         |
+| **Test finished** but no **View result** button    | Refresh the page. If it still is missing, check the dashboard log for the `Dashboard test finished` line                             |
 
 More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
 

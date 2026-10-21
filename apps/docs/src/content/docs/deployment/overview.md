@@ -5,8 +5,15 @@ audience: "operator"
 docType: "explanation"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/server/config.ts", "apps/platform/server/runtime.ts", "apps/platform/server/scaffold.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/auth.ts"]
-sidebar: {"order": 1}
+sourcePaths:
+  [
+    "apps/platform/server/config.ts",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/server/scaffold.ts",
+    "apps/platform/server/built-in-runner.ts",
+    "apps/platform/server/auth.ts",
+  ]
+sidebar: { "order": 1 }
 ---
 
 The VisualGuard dashboard is a separate web app that stores runs, screenshots, reviews and baselines for a team. This page helps you make three choices before you deploy it: which database, which host, and which machine runs the browsers. Each choice links to a step-by-step guide.
@@ -25,21 +32,21 @@ The hosted and external-database paths on these pages are reviewed against the s
 
 The dashboard picks its database from `VISUALGUARD_DATABASE_URL` (or `DATABASE_URL` if that is unset). It stores **everything** there: accounts, runs, reviews, baselines, policies, and the screenshot and DOM files themselves.
 
-| Database | URL | Good for | Limits |
-| --- | --- | --- | --- |
-| SQLite (default) | Leave the URL empty | One computer, local mode, trying things out | Not supported on Vercel or Cloud Run, because their disks are temporary. |
-| [PostgreSQL](/deployment/postgresql/) | `postgresql://` or `postgres://` | Most shared deployments; managed services are easy to find | You manage capacity and backups. |
-| [MongoDB](/deployment/mongodb/) | `mongodb://` or `mongodb+srv://` | Teams already on MongoDB or Atlas | Needs a replica set or sharded cluster for the full team workflow. |
+| Database                              | URL                              | Good for                                                   | Limits                                                                   |
+| ------------------------------------- | -------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| SQLite (default)                      | Leave the URL empty              | One computer, local mode, trying things out                | Not supported on Vercel or Cloud Run, because their disks are temporary. |
+| [PostgreSQL](/deployment/postgresql/) | `postgresql://` or `postgres://` | Most shared deployments; managed services are easy to find | You manage capacity and backups.                                         |
+| [MongoDB](/deployment/mongodb/)       | `mongodb://` or `mongodb+srv://` | Teams already on MongoDB or Atlas                          | Needs a replica set or sharded cluster for the full team workflow.       |
 
 Any other URL scheme stops startup with "Database URL must use postgresql://, postgres://, mongodb:// or mongodb+srv://". A new database is a new, empty workspace. Switching does not copy history from your local SQLite; see [backups](/deployment/storage-and-backups/) to move evidence.
 
 ## Choice 2: the host
 
-| Host | How it runs | Guide |
-| --- | --- | --- |
-| Vercel | Static UI plus one serverless API function. | [Deploy to Vercel](/deployment/vercel/) |
-| Google Cloud Run | One container built from a generated Dockerfile. | [Deploy to Cloud Run](/deployment/cloud-run/), plus [Cloud SQL](/deployment/cloud-sql/) for Google's PostgreSQL |
-| Your own server or Docker | `visualguard dashboard` as a long-running Node process. | Use the Cloud Run Dockerfile, or run the command under a process manager. |
+| Host                      | How it runs                                             | Guide                                                                                                           |
+| ------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Vercel                    | Static UI plus one serverless API function.             | [Deploy to Vercel](/deployment/vercel/)                                                                         |
+| Google Cloud Run          | One container built from a generated Dockerfile.        | [Deploy to Cloud Run](/deployment/cloud-run/), plus [Cloud SQL](/deployment/cloud-sql/) for Google's PostgreSQL |
+| Your own server or Docker | `visualguard dashboard` as a long-running Node process. | Use the Cloud Run Dockerfile, or run the command under a process manager.                                       |
 
 `visualguard dashboard init --target vercel` or `--target cloud-run` generates a small deployment folder. It needs no React, Vite or VisualGuard source code. On your own server, run:
 
@@ -53,9 +60,9 @@ Put an HTTPS reverse proxy in front of it. Login mode refuses a plain `http://` 
 
 The **Run test** button in the dashboard needs a machine with a browser that can reach your app. CI runs are separate: CI captures on its own runners and publishes the results.
 
-| Option | Where captures run | Works on |
-| --- | --- | --- |
-| Built-in runner | The dashboard server, using the signed-in user's authorization. No runner token. | Cloud Run (the generated image installs Chromium) and your own server. Off by default on Vercel. |
+| Option                                        | Where captures run                                                                        | Works on                                                                                                          |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Built-in runner                               | The dashboard server, using the signed-in user's authorization. No runner token.          | Cloud Run (the generated image installs Chromium) and your own server. Off by default on Vercel.                  |
 | [Private runner](/dashboard/private-runners/) | A machine you connect with `visualguard dashboard runner`. Takes priority when connected. | Any host. Required on Vercel, and when the dashboard cannot reach your app (for example a VPN-only staging site). |
 
 :::caution
@@ -66,14 +73,14 @@ Check the installed dashboard and generated image before relying on host capture
 
 ## Settings every hosted dashboard needs
 
-| Variable | Value | Notes |
-| --- | --- | --- |
-| `VISUALGUARD_DATABASE_URL` | Your database URL | Required on Vercel and Cloud Run. Startup fails with "Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data" otherwise. |
-| `VISUALGUARD_PUBLIC_URL` | The exact HTTPS origin, such as `https://visualguard.example.com` | No path, query or trailing route. Required for login mode. |
-| `VISUALGUARD_AUTH_MODE` | `login` | `local` only works on loopback. |
-| `VISUALGUARD_ADMIN_EMAIL` | The first administrator's email | Used once, to create the first account. |
-| `VISUALGUARD_ADMIN_PASSWORD` | 12 to 256 characters | Changing it later does not reset an existing account. |
-| `VISUALGUARD_USER_ADMISSION` | `invite` or `legacy` | New workspaces default to `invite`. Existing workspaces with users must set it before upgrading. |
+| Variable                     | Value                                                             | Notes                                                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VISUALGUARD_DATABASE_URL`   | Your database URL                                                 | Required on Vercel and Cloud Run. Startup fails with "Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data" otherwise. |
+| `VISUALGUARD_PUBLIC_URL`     | The exact HTTPS origin, such as `https://visualguard.example.com` | No path, query or trailing route. Required for login mode.                                                                                  |
+| `VISUALGUARD_AUTH_MODE`      | `login`                                                           | `local` only works on loopback.                                                                                                             |
+| `VISUALGUARD_ADMIN_EMAIL`    | The first administrator's email                                   | Used once, to create the first account.                                                                                                     |
+| `VISUALGUARD_ADMIN_PASSWORD` | 12 to 256 characters                                              | Changing it later does not reset an existing account.                                                                                       |
+| `VISUALGUARD_USER_ADMISSION` | `invite` or `legacy`                                              | New workspaces default to `invite`. Existing workspaces with users must set it before upgrading.                                            |
 
 Keep all of them server-side. Never prefix them with `NEXT_PUBLIC_` or `VITE_`, or they may end up in browser code. A host-generated domain is fine to start; a custom domain is optional. Add [Google sign-in](/dashboard/google-sign-in/) later if you want it.
 

@@ -12,13 +12,13 @@ This document proposes future tools, package paths, and setup examples. There is
 
 ## 2. What official client documentation establishes
 
-| Client or standard | Verified capability | Consequence for VisualGuard |
-| --- | --- | --- |
-| Claude Code | Local stdio servers and remote HTTP servers; local servers can be registered with `claude mcp add`. | Start with a local command and document Claude Code separately from Claude web/Desktop. [Official Claude Code guide](https://code.claude.com/docs/en/mcp). |
-| Codex | Supports stdio and Streamable HTTP, command arguments, environment settings, and a working directory. | Provide a `config.toml` example and a registration command. Desktop/cloud reachability must be tested for the intended host. [Official OpenAI documentation](https://developers.openai.com/codex/mcp). |
-| Gemini CLI | Supports stdio and Streamable HTTP through `mcpServers` configuration, plus tool/resource discovery. | Provide a `.gemini/settings.json` example; check schema and image handling in a real client. [Official Gemini CLI guide](https://geminicli.com/docs/tools/mcp-server/). |
-| MCP | Defines stdio and Streamable HTTP transport bindings. | Reuse a supported SDK and keep the tool contract independent of transport. [MCP transports](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports). |
-| TypeScript SDK | The official documentation currently identifies v2 as stable; v1 is a maintenance line. | Evaluate `@modelcontextprotocol/server` and the corresponding client package for tests. Verify legacy-client compatibility before selecting and pinning a release. [Current SDK documentation](https://ts.sdk.modelcontextprotocol.io/v2/). |
+| Client or standard | Verified capability                                                                                   | Consequence for VisualGuard                                                                                                                                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code        | Local stdio servers and remote HTTP servers; local servers can be registered with `claude mcp add`.   | Start with a local command and document Claude Code separately from Claude web/Desktop. [Official Claude Code guide](https://code.claude.com/docs/en/mcp).                                                                                  |
+| Codex              | Supports stdio and Streamable HTTP, command arguments, environment settings, and a working directory. | Provide a `config.toml` example and a registration command. Desktop/cloud reachability must be tested for the intended host. [Official OpenAI documentation](https://developers.openai.com/codex/mcp).                                      |
+| Gemini CLI         | Supports stdio and Streamable HTTP through `mcpServers` configuration, plus tool/resource discovery.  | Provide a `.gemini/settings.json` example; check schema and image handling in a real client. [Official Gemini CLI guide](https://geminicli.com/docs/tools/mcp-server/).                                                                     |
+| MCP                | Defines stdio and Streamable HTTP transport bindings.                                                 | Reuse a supported SDK and keep the tool contract independent of transport. [MCP transports](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports).                                                                     |
+| TypeScript SDK     | The official documentation currently identifies v2 as stable; v1 is a maintenance line.               | Evaluate `@modelcontextprotocol/server` and the corresponding client package for tests. Verify legacy-client compatibility before selecting and pinning a release. [Current SDK documentation](https://ts.sdk.modelcontextprotocol.io/v2/). |
 
 These are client capabilities, not tested VisualGuard integrations. Supporting Gemini CLI does not automatically support every Gemini chat product; the same distinction applies to Claude Code and other Claude surfaces. A local stdio process also does not automatically become reachable from a cloud agent.
 
@@ -35,7 +35,9 @@ The user first marks the container and configures it as described in [section sc
 ```
 
 ```ts
-screenshot: { selector: '[data-visualguard="checkout"]' }
+screenshot: {
+  selector: '[data-visualguard="checkout"]';
+}
 ```
 
 The agent then:
@@ -51,16 +53,16 @@ The initial version uses sections already configured in `visualguard.config.ts`.
 
 ## 4. Existing implementation to reuse
 
-| Existing module | Reuse | Integration detail |
-| --- | --- | --- |
-| `packages/visualguard/src/index.ts` | Public API exports. | Import the package API rather than deep-importing internal capture files. |
-| `src/config/load.ts` and `src/config/resolve.ts` | Config discovery, validation, environment handling, and runtime settings. | Load the trusted workspace's config once for a prepared profile. Never return its headers, storage-state contents, environment variables, or hook source. |
-| `src/core/jobs.ts` | `planJobs` and stable job IDs. | List actual section-aware jobs and preserve per-route overrides; do not rebuild selector semantics in the adapter. |
-| `src/core/run.ts` | `createRun`, `RunOptions`, reporters, and `AbortSignal`. | Pass run mode and baseline directory explicitly. `createRun(config)` alone defaults to compare mode even if config describes a baseline workflow. |
-| `src/core/events.ts` | Run/job start/end events and warnings. | Convert events into bounded operation progress. Progress is informative and cannot replace a final manifest. |
-| `src/core/runs.ts` | Saved run index and manifests. | Validate saved evidence and scope lookups to the configured output directory. |
-| `src/core/status.ts` | Summary and exit/failure policy helpers. | Keep engine status separate from operation completion and reviewer approval. |
-| `src/capture/capture.ts` and `src/core/provenance.ts` | Section capture, reliability checks, and baseline identity. | Exercise these through the engine; do not crop arbitrary saved page images or bypass baseline compatibility. |
+| Existing module                                       | Reuse                                                                     | Integration detail                                                                                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/visualguard/src/index.ts`                   | Public API exports.                                                       | Import the package API rather than deep-importing internal capture files.                                                                                 |
+| `src/config/load.ts` and `src/config/resolve.ts`      | Config discovery, validation, environment handling, and runtime settings. | Load the trusted workspace's config once for a prepared profile. Never return its headers, storage-state contents, environment variables, or hook source. |
+| `src/core/jobs.ts`                                    | `planJobs` and stable job IDs.                                            | List actual section-aware jobs and preserve per-route overrides; do not rebuild selector semantics in the adapter.                                        |
+| `src/core/run.ts`                                     | `createRun`, `RunOptions`, reporters, and `AbortSignal`.                  | Pass run mode and baseline directory explicitly. `createRun(config)` alone defaults to compare mode even if config describes a baseline workflow.         |
+| `src/core/events.ts`                                  | Run/job start/end events and warnings.                                    | Convert events into bounded operation progress. Progress is informative and cannot replace a final manifest.                                              |
+| `src/core/runs.ts`                                    | Saved run index and manifests.                                            | Validate saved evidence and scope lookups to the configured output directory.                                                                             |
+| `src/core/status.ts`                                  | Summary and exit/failure policy helpers.                                  | Keep engine status separate from operation completion and reviewer approval.                                                                              |
+| `src/capture/capture.ts` and `src/core/provenance.ts` | Section capture, reliability checks, and baseline identity.               | Exercise these through the engine; do not crop arbitrary saved page images or bypass baseline compatibility.                                              |
 
 The repository currently has no MCP server dependency or implementation. It already has the engine contracts needed for an adapter; operation persistence, MCP schemas, content filtering, and client interoperability are new work.
 
@@ -101,15 +103,15 @@ The initial package should require a Node version compatible with both the engin
 
 Names below are proposed. Final schemas should use straightforward JSON objects, enums, bounded arrays, and explicit optional fields that all three clients can consume.
 
-| Tool | Main inputs | Result and side effects |
-| --- | --- | --- |
-| `visualguard_capabilities` | none | Adapter/engine versions, available features, named profiles, limits, and supported modes. No config secrets. |
-| `visualguard_plan` | `profile`, optional route/viewport filters | Target IDs, labels, selectors, mode, expected coverage, and sanitized environment labels. Does not capture images. |
-| `visualguard_start_run` | `planId`, selected `targetIds`, required `idempotencyKey` | Returns an `operationId` immediately. Opens browsers/network connections and writes normal run artifacts. Rejects stale plans. |
-| `visualguard_run_status` | `operationId` | Queued/running/terminal state, completed/total jobs, latest bounded warnings, and final run ID if available. |
-| `visualguard_run_result` | run ID, optional job IDs and cursor | Bounded summary, engine statuses, failure policy outcome, incomplete/error indicators, findings, and artifact IDs. |
-| `visualguard_artifact` | artifact ID, requested representation | Metadata or explicitly requested bounded image content. No arbitrary file reads. |
-| `visualguard_cancel_run` | `operationId` | Requests cancellation through the worker's `AbortController`; reports cancellation separately from passing/failing. |
+| Tool                       | Main inputs                                               | Result and side effects                                                                                                        |
+| -------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `visualguard_capabilities` | none                                                      | Adapter/engine versions, available features, named profiles, limits, and supported modes. No config secrets.                   |
+| `visualguard_plan`         | `profile`, optional route/viewport filters                | Target IDs, labels, selectors, mode, expected coverage, and sanitized environment labels. Does not capture images.             |
+| `visualguard_start_run`    | `planId`, selected `targetIds`, required `idempotencyKey` | Returns an `operationId` immediately. Opens browsers/network connections and writes normal run artifacts. Rejects stale plans. |
+| `visualguard_run_status`   | `operationId`                                             | Queued/running/terminal state, completed/total jobs, latest bounded warnings, and final run ID if available.                   |
+| `visualguard_run_result`   | run ID, optional job IDs and cursor                       | Bounded summary, engine statuses, failure policy outcome, incomplete/error indicators, findings, and artifact IDs.             |
+| `visualguard_artifact`     | artifact ID, requested representation                     | Metadata or explicitly requested bounded image content. No arbitrary file reads.                                               |
+| `visualguard_cancel_run`   | `operationId`                                             | Requests cancellation through the worker's `AbortController`; reports cancellation separately from passing/failing.            |
 
 Run start and cancellation are side-effecting tools. A completed comparison may contain regressions; return `state: completed` with the engine outcome rather than confusing this with a transport failure. Conversely, malformed inputs, an unavailable browser, rejected scope, and failed artifact validation need explicit structured errors. Never label an interrupted or partial capture as a successful comparison.
 
@@ -179,7 +181,11 @@ Merge into the appropriate trusted Codex `config.toml`, then verify with `codex 
   "mcpServers": {
     "visualguard": {
       "command": "node",
-      "args": ["/absolute/path/to/visualguard/packages/visualguard-mcp/dist/cli.js", "--workspace", "/absolute/path/to/application"],
+      "args": [
+        "/absolute/path/to/visualguard/packages/visualguard-mcp/dist/cli.js",
+        "--workspace",
+        "/absolute/path/to/application"
+      ],
       "cwd": "/absolute/path/to/application"
     }
   }
@@ -190,14 +196,14 @@ Merge this server into `.gemini/settings.json`; do not overwrite existing settin
 
 ## 11. Implementation phases and completion gates
 
-| Phase | Deliverables | Completion gate |
-| --- | --- | --- |
-| M01 — compatibility prototype | Choose supported SDK/protocol combinations; register one diagnostic tool over stdio; test normal JSON and image results in all three clients. Confirm package naming and engine compatibility. | Record tested client/Node/SDK versions; older negotiated clients either work through the SDK's supported compatibility path or receive an explicit incompatibility message. No unsupported universal-compatibility claim. |
-| M02 — local inspection | Workspace/profile bootstrap, isolated worker, capabilities, route/section planning, saved-run lookup, artifact validation, bounded output. | Read tools never start captures; stdout stays valid protocol output even when trusted config logs. Escape and secret-redaction tests pass. |
-| M03 — execution lifecycle | Start/status/result/cancel tools, persisted operation IDs, bounded queue, idempotency, deadlines, cleanup, explicit run-mode translation. | Full-page and section jobs produce the same engine evidence/verdicts as CLI runs; retries do not duplicate work; cancellation/restart never appears as a pass. |
-| M04 — client delivery | Fresh-consumer package smoke test, complete setup/troubleshooting for Claude Code/Codex/Gemini CLI, website and repository guides, release notes. | Complete the checkout-section workflow in each real client. Document limitations and verify all referenced packed files exist. This is the first public local MVP release. |
-| M05 — hosted dashboard MCP | Streamable HTTP, identity/delegated access, project-scoped read access, audit/rate limits, deployment and cancellation ownership. | Independent project-isolation, authentication, and unauthorized-artifact tests pass. Hosted agents can reach the endpoint without assuming access to a user's local filesystem. |
-| M06 — optional client packaging and mutations | Evaluate client marketplace/plugin/extension packaging and separately scoped review/fix/publish tools. | Each client distribution follows its current requirements; every new mutation has a dedicated contract and focused authorization/evidence tests. |
+| Phase                                         | Deliverables                                                                                                                                                                                   | Completion gate                                                                                                                                                                                                           |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M01 — compatibility prototype                 | Choose supported SDK/protocol combinations; register one diagnostic tool over stdio; test normal JSON and image results in all three clients. Confirm package naming and engine compatibility. | Record tested client/Node/SDK versions; older negotiated clients either work through the SDK's supported compatibility path or receive an explicit incompatibility message. No unsupported universal-compatibility claim. |
+| M02 — local inspection                        | Workspace/profile bootstrap, isolated worker, capabilities, route/section planning, saved-run lookup, artifact validation, bounded output.                                                     | Read tools never start captures; stdout stays valid protocol output even when trusted config logs. Escape and secret-redaction tests pass.                                                                                |
+| M03 — execution lifecycle                     | Start/status/result/cancel tools, persisted operation IDs, bounded queue, idempotency, deadlines, cleanup, explicit run-mode translation.                                                      | Full-page and section jobs produce the same engine evidence/verdicts as CLI runs; retries do not duplicate work; cancellation/restart never appears as a pass.                                                            |
+| M04 — client delivery                         | Fresh-consumer package smoke test, complete setup/troubleshooting for Claude Code/Codex/Gemini CLI, website and repository guides, release notes.                                              | Complete the checkout-section workflow in each real client. Document limitations and verify all referenced packed files exist. This is the first public local MVP release.                                                |
+| M05 — hosted dashboard MCP                    | Streamable HTTP, identity/delegated access, project-scoped read access, audit/rate limits, deployment and cancellation ownership.                                                              | Independent project-isolation, authentication, and unauthorized-artifact tests pass. Hosted agents can reach the endpoint without assuming access to a user's local filesystem.                                           |
+| M06 — optional client packaging and mutations | Evaluate client marketplace/plugin/extension packaging and separately scoped review/fix/publish tools.                                                                                         | Each client distribution follows its current requirements; every new mutation has a dedicated contract and focused authorization/evidence tests.                                                                          |
 
 Implement one requested phase at a time. Keep phase implementation, docs, and focused tests in the same feature commit. This planning document precedes those commits. Formatting, lint, and type-check commands remain deferred under the repository's current instructions; do not report them as passed.
 

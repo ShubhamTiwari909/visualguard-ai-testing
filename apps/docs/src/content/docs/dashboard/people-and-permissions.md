@@ -6,7 +6,7 @@ docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/PRODUCT-FEATURES.md", "docs/LOCAL-SETUP.md"]
-sidebar: {"order": 10}
+sidebar: { "order": 10 }
 ---
 
 ## Before you start

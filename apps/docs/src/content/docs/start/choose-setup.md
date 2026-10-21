@@ -4,9 +4,14 @@ description: "Pick the smallest VisualGuard setup for local tests, a dashboard, 
 audience: "developer"
 docType: "explanation"
 channel: "both"
-lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/dashboard.ts"]
-sidebar: {"order": 1}
+lastReviewed: "2026-10-21"
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "packages/visualguard/src/cli/commands/dashboard.ts",
+    "packages/visualguard/src/sdk.ts",
+  ]
+sidebar: { "order": 1 }
 ---
 
 VisualGuard works at several sizes. You can run it as a single command on your laptop, or as a shared dashboard for a whole team. This page helps you pick the smallest setup that does what you need today. You can add more later without starting again.
@@ -18,18 +23,20 @@ VisualGuard works at several sizes. You can run it as a single command on your l
 
 ## Pick a setup
 
-| You want | Database | Login or token | Start here |
-| --- | --- | --- | --- |
-| Visual tests and HTML reports only | None | None | [Run your first visual test](/start/quickstart/) |
-| A dashboard with history on your own computer | A SQLite file, created for you | None in the default local mode | [Start a local dashboard](/dashboard/local/) |
-| A local dashboard backed by PostgreSQL | A dedicated PostgreSQL database | Optional login; a token is needed once login is on | [Use PostgreSQL](/deployment/postgresql/) |
-| A local dashboard backed by MongoDB | A dedicated MongoDB database; a replica set for full team features | Same as PostgreSQL | [Use MongoDB](/deployment/mongodb/) |
-| A shared team dashboard on Cloud Run or Vercel | External PostgreSQL, or MongoDB that supports transactions | Login, plus project upload tokens for publishing | [Choose dashboard hosting](/deployment/overview/) |
-| To change VisualGuard itself | None for tests; SQLite for the local dashboard | None locally | [Run from source locally](/contributing/local-setup/) |
+| You want                                                  | Database                                                           | Login or token                                                   | Start here                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| Visual tests and HTML reports only                        | None                                                               | None                                                             | [Run your first visual test](/start/quickstart/)      |
+| Visual comparisons from a Node.js script or custom CI job | None                                                               | Only credentials required by the target app or optional services | [SDK for scripts and CI](/guides/programmatic-api/)   |
+| A dashboard with history on your own computer             | A SQLite file, created for you                                     | None in the default local mode                                   | [Start a local dashboard](/dashboard/local/)          |
+| A local dashboard backed by PostgreSQL                    | A dedicated PostgreSQL database                                    | Optional login; a token is needed once login is on               | [Use PostgreSQL](/deployment/postgresql/)             |
+| A local dashboard backed by MongoDB                       | A dedicated MongoDB database; a replica set for full team features | Same as PostgreSQL                                               | [Use MongoDB](/deployment/mongodb/)                   |
+| A shared team dashboard on Cloud Run or Vercel            | External PostgreSQL, or MongoDB that supports transactions         | Login, plus project upload tokens for publishing                 | [Choose dashboard hosting](/deployment/overview/)     |
+| To change VisualGuard itself                              | None for tests; SQLite for the local dashboard                     | None locally                                                     | [Run from source locally](/contributing/local-setup/) |
 
 ### What each setup gives you
 
 - **Tests only.** You run `visualguard test`. Results are saved under `.visualguard/runs/` with an HTML report. Nothing else is installed or hosted. This is the right start for almost everyone.
+- **SDK.** Your Node.js script awaits `runVisualGuard()` using a config file or inline options. It receives structured results and HTML/JUnit paths, then decides the process exit status. Start with the [complete SDK guide](/guides/programmatic-api/), including section capture and a GitHub Actions example.
 - **Local dashboard.** You run `visualguard dashboard`. It opens at `http://127.0.0.1:4400` and keeps run history in an embedded SQLite file. You do not need to install PostgreSQL or MongoDB.
 - **Shared dashboard.** You host one dashboard for your team. People sign in, see the same projects and record [reviews](/dashboard/reviews/). Tests still run on a computer or CI worker, or on the dashboard host when your release supports it (see below).
 
@@ -67,12 +74,12 @@ Add [AI analysis](/guides/ai-gemini/) at any step. It is always optional.
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| You are not sure whether you need a dashboard | Start without one. You can [import saved runs](/dashboard/local/) into a dashboard later. |
+| Problem                                           | Fix                                                                                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| You are not sure whether you need a dashboard     | Start without one. You can [import saved runs](/dashboard/local/) into a dashboard later.                                      |
 | The dashboard picked up your app's `DATABASE_URL` | Set `VISUALGUARD_DATABASE_URL=` (empty) in the dashboard's env file to force SQLite. See [local dashboard](/dashboard/local/). |
-| **Run test** does not start a capture | Check the project's execution status. If host capture is unavailable, connect a [private runner](/dashboard/private-runners/). |
-| Team members each started their own dashboard | Host one shared dashboard and [invite people](/dashboard/people-and-permissions/) instead. |
+| **Run test** does not start a capture             | Check the project's execution status. If host capture is unavailable, connect a [private runner](/dashboard/private-runners/). |
+| Team members each started their own dashboard     | Host one shared dashboard and [invite people](/dashboard/people-and-permissions/) instead.                                     |
 
 More help: [troubleshooting](/troubleshooting/).
 

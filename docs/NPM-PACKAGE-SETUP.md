@@ -4,6 +4,10 @@ This guide takes the published `visualguard` npm package from install to a share
 
 Run every command from your application's root folder.
 
+For Node.js scripts and CI integrations, use the [SDK guide](SDK-GUIDE.md). Its
+`runVisualGuard` helper uses the same config and capture engine with structured
+results, HTML/JUnit reports and caller-controlled exit status.
+
 ## Contents
 
 1. [Choose your setup](#1-choose-your-setup)
@@ -380,10 +384,10 @@ You should see `.github/workflows/visualguard.yml`. Commit it.
 To write the workflow yourself, add this step after checkout, Node setup and `npm ci`. Give the job `contents: read` and `pull-requests: write` permissions:
 
 ```yaml
-      - uses: ShubhamTiwari909/visualguard-ai-testing/action@v1
-        with:
-          gemini-api-key: ${{ secrets.GEMINI_API_KEY }} # optional
-          # staging-url: ${{ vars.STAGING_URL }}
+- uses: ShubhamTiwari909/visualguard-ai-testing/action@v1
+  with:
+    gemini-api-key: ${{ secrets.GEMINI_API_KEY }} # optional
+    # staging-url: ${{ vars.STAGING_URL }}
 ```
 
 The Action installs the browser, runs the test, uploads the report, comments and fails on regressions. A key alone does not turn AI on: also set `ai.provider` in config or pass `args: --provider gemini`. Pin the Action to a release tag. All inputs are in [GitHub Actions](../apps/docs/src/content/docs/ci/github-actions.md).
@@ -857,22 +861,22 @@ Run `policy reconcile --all` on a schedule, at least every five minutes, and sta
 
 ## 16. Troubleshooting
 
-| Problem                                         | Fix                                                                                                         |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Browser or Chromium not found                   | Run `npx playwright install chromium` on the machine that captures. On Linux or CI, add `--with-deps`       |
-| `test` exits nonzero                            | A change was found. Run `report`, then `accept` the intended ones                                           |
-| Pages fail to load or time out                  | Start both servers, then run `doctor`. `localhost` means the machine doing the capture                      |
-| AI ran but the report has no AI notes           | Check the key or model. A failed AI call falls back to the normal comparison                                |
-| `Cannot bind dashboard project: fetch failed`   | The dashboard is not running or the port differs. Use the same URL in `--server` and `--dashboard`          |
-| Run missing, or history empty after a restart   | Start the dashboard from the same folder with the same `--env-file`. A new database starts empty            |
-| Login dashboard rejects uploads                 | Set `VISUALGUARD_DASHBOARD_URL` and a project `VISUALGUARD_UPLOAD_TOKEN` (section 12)                       |
-| Run test fails because Chromium is missing      | Run `npx playwright install chromium` on the dashboard machine, or connect a private runner                 |
-| Run test cannot reach your staging site         | Connect a private runner, or set `VISUALGUARD_BUILT_IN_RUNNER=off` to require one                           |
-| Cloud Run test stops as "disconnected"          | Redeploy with `--no-cpu-throttling --min-instances 1 --memory 2Gi`. Vercel needs a private runner           |
-| `role "USER" does not exist` (PostgreSQL)       | Use a real user in the URL, replace every placeholder, and grant that user schema permissions               |
-| Dashboard uses another app's database           | Set `VISUALGUARD_DATABASE_URL` (empty means SQLite) and check for an exported `DATABASE_URL`                |
-| `MongoDB URL must include a database name`      | Add `/visualguard` before the `?` options                                                                   |
-| MongoDB timeout, authentication or transactions | Check the Atlas IP list, user and encoded password. Full features need Atlas or a replica set               |
+| Problem                                          | Fix                                                                                                         |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Browser or Chromium not found                    | Run `npx playwright install chromium` on the machine that captures. On Linux or CI, add `--with-deps`       |
+| `test` exits nonzero                             | A change was found. Run `report`, then `accept` the intended ones                                           |
+| Pages fail to load or time out                   | Start both servers, then run `doctor`. `localhost` means the machine doing the capture                      |
+| AI ran but the report has no AI notes            | Check the key or model. A failed AI call falls back to the normal comparison                                |
+| `Cannot bind dashboard project: fetch failed`    | The dashboard is not running or the port differs. Use the same URL in `--server` and `--dashboard`          |
+| Run missing, or history empty after a restart    | Start the dashboard from the same folder with the same `--env-file`. A new database starts empty            |
+| Login dashboard rejects uploads                  | Set `VISUALGUARD_DASHBOARD_URL` and a project `VISUALGUARD_UPLOAD_TOKEN` (section 12)                       |
+| Run test fails because Chromium is missing       | Run `npx playwright install chromium` on the dashboard machine, or connect a private runner                 |
+| Run test cannot reach your staging site          | Connect a private runner, or set `VISUALGUARD_BUILT_IN_RUNNER=off` to require one                           |
+| Cloud Run test stops as "disconnected"           | Redeploy with `--no-cpu-throttling --min-instances 1 --memory 2Gi`. Vercel needs a private runner           |
+| `role "USER" does not exist` (PostgreSQL)        | Use a real user in the URL, replace every placeholder, and grant that user schema permissions               |
+| Dashboard uses another app's database            | Set `VISUALGUARD_DATABASE_URL` (empty means SQLite) and check for an exported `DATABASE_URL`                |
+| `MongoDB URL must include a database name`       | Add `/visualguard` before the `?` options                                                                   |
+| MongoDB timeout, authentication or transactions  | Check the Atlas IP list, user and encoded password. Full features need Atlas or a replica set               |
 | Hosted page reload returns 404, or data vanishes | Check the generated Vercel rewrites. Hosted dashboards need an external database, never a local SQLite file |
 
 More help: [installation](../apps/docs/src/content/docs/troubleshooting/installation.md), [capture](../apps/docs/src/content/docs/troubleshooting/capture.md), [dashboard](../apps/docs/src/content/docs/troubleshooting/dashboard.md) and [CI](../apps/docs/src/content/docs/troubleshooting/ci.md).
@@ -881,41 +885,41 @@ More help: [installation](../apps/docs/src/content/docs/troubleshooting/installa
 
 Put `npx --no-install visualguard` before each command, and add `--help` to any command for its options. Dashboard options such as `--env-file`, `--port`, `--host`, `--data-dir` and `--file` go before a subcommand.
 
-| Command                                                                        | What it does                                                   |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| `URL` or `PROD_URL STAGING_URL`                                                | Scan one site or compare two, with no config                   |
-| `init` / `init --yes --production URL --staging URL --ai none`                 | Create `visualguard.config.ts` (`--workflow` adds a CI file)   |
-| `doctor`                                                                       | Check browser, config and URLs                                 |
-| `test`                                                                         | Compare using the config                                       |
-| `test --no-ai` / `--provider gemini` / `--provider ollama --model ID`          | Turn AI off or choose a provider                               |
-| `test --list`                                                                  | Show the pages to test, without capturing                      |
-| `test --only GLOB --viewport NAME --route PATH`                                | Limit routes and viewports                                     |
-| `test --fail-on regression\|review\|any`                                       | Choose what makes the exit code nonzero                        |
-| `test --a11y --perf`                                                           | Add accessibility and performance checks                       |
-| `test --update-baselines`                                                      | Save screenshots as baselines (baseline mode)                  |
-| `test --ci --junit FILE`                                                       | Plain output and a JUnit report for CI                         |
-| `test --shard 1/2 --run-group ID`                                              | Run one part of the work                                       |
-| `test PROJECT --dashboard URL`                                                 | Run and publish to a dashboard project                         |
-| `test PROJECT --dashboard URL --run-name NAME --branch B --commit SHA --pr N`  | Label the dashboard run                                        |
-| `report`                                                                       | Open the latest report (`--run ID` for another)                |
-| `analyze`                                                                      | Re-run AI on a saved run (`--no-cache` skips the cache)        |
-| `accept --all` / `accept ROUTE --note TEXT`                                    | Accept intended changes                                        |
-| `auth ENV`                                                                     | Save a browser login for `production` or `staging`             |
-| `fix` / `fix --auto` / `fix --auto --pr`                                       | Propose and verify repairs, commit them, or open a pull request |
-| `watch`                                                                        | Re-test changed pages as you save                              |
-| `monitor URL` / `monitor --workflow CRON`                                      | Compare a live site with its last capture, or write a schedule |
-| `merge PATHS...`                                                               | Combine shard results into one report                          |
-| `comment`                                                                      | Post or update the pull request comment                        |
-| `dashboard --env-file FILE`                                                    | Start the dashboard                                            |
-| `dashboard project create ID --name NAME --server URL`                         | Create a dashboard project                                     |
-| `dashboard publish RUN_DIR --project ID --server URL`                          | Upload a saved run                                             |
-| `dashboard import RUN_DIR --project ID`                                        | Add a saved run straight into local dashboard storage          |
-| `dashboard runner --project ID --server URL`                                   | Connect an optional private runner                             |
-| `dashboard baseline pull SET --project ID --out DIR --server URL`              | Download an approved baseline                                  |
-| `dashboard policy assess --project ID --revision SHA --server URL`             | Check a commit against the visual policy                       |
-| `dashboard policy reconcile --project ID --pr N --server URL`                  | Refresh a pull request's policy check (`--all` for every one)  |
-| `dashboard export FILE` / `dashboard restore FILE`                             | Back up or restore evidence                                    |
-| `dashboard init --target vercel\|cloud-run --out DIR`                          | Generate hosting files                                         |
-| `dashboard assets --out DIR`                                                   | Copy the prebuilt dashboard pages for static hosting           |
+| Command                                                                       | What it does                                                    |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `URL` or `PROD_URL STAGING_URL`                                               | Scan one site or compare two, with no config                    |
+| `init` / `init --yes --production URL --staging URL --ai none`                | Create `visualguard.config.ts` (`--workflow` adds a CI file)    |
+| `doctor`                                                                      | Check browser, config and URLs                                  |
+| `test`                                                                        | Compare using the config                                        |
+| `test --no-ai` / `--provider gemini` / `--provider ollama --model ID`         | Turn AI off or choose a provider                                |
+| `test --list`                                                                 | Show the pages to test, without capturing                       |
+| `test --only GLOB --viewport NAME --route PATH`                               | Limit routes and viewports                                      |
+| `test --fail-on regression\|review\|any`                                      | Choose what makes the exit code nonzero                         |
+| `test --a11y --perf`                                                          | Add accessibility and performance checks                        |
+| `test --update-baselines`                                                     | Save screenshots as baselines (baseline mode)                   |
+| `test --ci --junit FILE`                                                      | Plain output and a JUnit report for CI                          |
+| `test --shard 1/2 --run-group ID`                                             | Run one part of the work                                        |
+| `test PROJECT --dashboard URL`                                                | Run and publish to a dashboard project                          |
+| `test PROJECT --dashboard URL --run-name NAME --branch B --commit SHA --pr N` | Label the dashboard run                                         |
+| `report`                                                                      | Open the latest report (`--run ID` for another)                 |
+| `analyze`                                                                     | Re-run AI on a saved run (`--no-cache` skips the cache)         |
+| `accept --all` / `accept ROUTE --note TEXT`                                   | Accept intended changes                                         |
+| `auth ENV`                                                                    | Save a browser login for `production` or `staging`              |
+| `fix` / `fix --auto` / `fix --auto --pr`                                      | Propose and verify repairs, commit them, or open a pull request |
+| `watch`                                                                       | Re-test changed pages as you save                               |
+| `monitor URL` / `monitor --workflow CRON`                                     | Compare a live site with its last capture, or write a schedule  |
+| `merge PATHS...`                                                              | Combine shard results into one report                           |
+| `comment`                                                                     | Post or update the pull request comment                         |
+| `dashboard --env-file FILE`                                                   | Start the dashboard                                             |
+| `dashboard project create ID --name NAME --server URL`                        | Create a dashboard project                                      |
+| `dashboard publish RUN_DIR --project ID --server URL`                         | Upload a saved run                                              |
+| `dashboard import RUN_DIR --project ID`                                       | Add a saved run straight into local dashboard storage           |
+| `dashboard runner --project ID --server URL`                                  | Connect an optional private runner                              |
+| `dashboard baseline pull SET --project ID --out DIR --server URL`             | Download an approved baseline                                   |
+| `dashboard policy assess --project ID --revision SHA --server URL`            | Check a commit against the visual policy                        |
+| `dashboard policy reconcile --project ID --pr N --server URL`                 | Refresh a pull request's policy check (`--all` for every one)   |
+| `dashboard export FILE` / `dashboard restore FILE`                            | Back up or restore evidence                                     |
+| `dashboard init --target vercel\|cloud-run --out DIR`                         | Generate hosting files                                          |
+| `dashboard assets --out DIR`                                                  | Copy the prebuilt dashboard pages for static hosting            |
 
 Every option of every command is in the [command reference](COMMAND-REFERENCE.md).

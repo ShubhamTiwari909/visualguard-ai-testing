@@ -5,8 +5,12 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/monitor.ts", "packages/visualguard/src/setup/workflow-template.ts"]
-sidebar: {"order": 17}
+sourcePaths:
+  [
+    "packages/visualguard/src/cli/commands/monitor.ts",
+    "packages/visualguard/src/setup/workflow-template.ts",
+  ]
+sidebar: { "order": 17 }
 ---
 
 Monitoring compares a live site with its previous saved appearance. Use it to spot production changes such as CMS edits or broken third-party content. It does not require a second deployment. Monitoring and [watching local source edits](/guides/watch/) are separate workflows.
@@ -71,11 +75,11 @@ Confirm the first run saves references, a second run compares against them and a
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| Every run behaves like a first run | Persist and restore the actual monitor directory before capture. |
-| Change disappears from the next result | Review the rolling update policy; use controlled baselines for approval workflows. |
-| Workflow never runs | Check the committed workflow/default branch, valid UTC schedule and provider execution history. |
-| Site unreachable in CI | Use the actual deployed URL or an authorized runner with network access. |
+| Problem                                | Fix                                                                                             |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Every run behaves like a first run     | Persist and restore the actual monitor directory before capture.                                |
+| Change disappears from the next result | Review the rolling update policy; use controlled baselines for approval workflows.              |
+| Workflow never runs                    | Check the committed workflow/default branch, valid UTC schedule and provider execution history. |
+| Site unreachable in CI                 | Use the actual deployed URL or an authorized runner with network access.                        |
 
 [Configure CI](/ci/overview/) and [report delivery](/guides/reporters/) after the local monitor works.

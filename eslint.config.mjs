@@ -19,6 +19,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/coverage/**",
       "**/.next/**",
+      "**/.astro/**",
       "**/.visualguard/**",
       "fixtures/site/**",
       "**/next-env.d.ts",

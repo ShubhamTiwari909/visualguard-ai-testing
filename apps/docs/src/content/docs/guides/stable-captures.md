@@ -5,8 +5,15 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/config/schema.ts", "packages/visualguard/src/capture/capture.ts", "packages/visualguard/src/capture/stabilize.ts", "packages/visualguard/src/capture/browser.ts", "packages/visualguard/src/core/findings.ts"]
-sidebar: {"order": 5}
+sourcePaths:
+  [
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/capture/capture.ts",
+    "packages/visualguard/src/capture/stabilize.ts",
+    "packages/visualguard/src/capture/browser.ts",
+    "packages/visualguard/src/core/findings.ts",
+  ]
+sidebar: { "order": 5 }
 ---
 
 A repeatable capture gives the same screenshot every time the page has not changed. Without it, a clock, a carousel or a slow image can make an unchanged page look different. This page explains what VisualGuard does to keep pages still, and the settings you can use for the rest.
@@ -43,23 +50,23 @@ If any step fails, VisualGuard tries the whole page again in a new context. It r
 
 Each step above has a setting. The defaults suit most sites.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `disableAnimations` | Sets CSS animation and transition times to zero. | `true` |
-| `freezeTime` | An ISO date such as `"2026-01-01T00:00:00Z"`. The page's `Date` always returns this time. `false` leaves the real time. | `false` |
-| `pauseClock` | Pauses JavaScript timers and `requestAnimationFrame` just before the screenshot, so script-driven animations stop. | `true` |
-| `pauseMedia` | Pauses videos and SVG animations at their first frame. | `true` |
-| `waitForFonts` | Waits for web fonts to load, for up to 5 seconds. | `true` |
-| `networkQuietMs` | How long no request may be in flight before the page counts as settled, in milliseconds. WebSocket and event-stream connections are ignored. | `500` |
-| `networkQuietTimeoutMs` | The longest wait for a quiet network. After this, the capture continues anyway. | `10000` |
-| `scrollToLoad` | Scrolls through the page to load lazy images and sections. | `true` |
-| `hideDefaults` | Hides common cookie banners and chat widgets. | `true` |
-| `hide` | CSS selectors to make invisible on every page. | `[]` |
-| `mask` | CSS selectors to cover with a solid box on every page. | `[]` |
-| `blockRequests` | URL patterns that are never loaded, such as `"**/analytics.js"`. | `[]` |
-| `retries` | How many more times to try a page after a failure (0 to 5). | `2` |
-| `stabilityAttempts` | How many extra screenshots to take while waiting for two identical ones (1 to 10). | `3` |
-| `stabilityIntervalMs` | The wait between those screenshots, in milliseconds. | `150` |
+| Option                  | What it does                                                                                                                                 | Default |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `disableAnimations`     | Sets CSS animation and transition times to zero.                                                                                             | `true`  |
+| `freezeTime`            | An ISO date such as `"2026-01-01T00:00:00Z"`. The page's `Date` always returns this time. `false` leaves the real time.                      | `false` |
+| `pauseClock`            | Pauses JavaScript timers and `requestAnimationFrame` just before the screenshot, so script-driven animations stop.                           | `true`  |
+| `pauseMedia`            | Pauses videos and SVG animations at their first frame.                                                                                       | `true`  |
+| `waitForFonts`          | Waits for web fonts to load, for up to 5 seconds.                                                                                            | `true`  |
+| `networkQuietMs`        | How long no request may be in flight before the page counts as settled, in milliseconds. WebSocket and event-stream connections are ignored. | `500`   |
+| `networkQuietTimeoutMs` | The longest wait for a quiet network. After this, the capture continues anyway.                                                              | `10000` |
+| `scrollToLoad`          | Scrolls through the page to load lazy images and sections.                                                                                   | `true`  |
+| `hideDefaults`          | Hides common cookie banners and chat widgets.                                                                                                | `true`  |
+| `hide`                  | CSS selectors to make invisible on every page.                                                                                               | `[]`    |
+| `mask`                  | CSS selectors to cover with a solid box on every page.                                                                                       | `[]`    |
+| `blockRequests`         | URL patterns that are never loaded, such as `"**/analytics.js"`.                                                                             | `[]`    |
+| `retries`               | How many more times to try a page after a failure (0 to 5).                                                                                  | `2`     |
+| `stabilityAttempts`     | How many extra screenshots to take while waiting for two identical ones (1 to 10).                                                           | `3`     |
+| `stabilityIntervalMs`   | The wait between those screenshots, in milliseconds.                                                                                         | `150`   |
 
 `hideDefaults` covers banners and widgets from OneTrust, Cookiebot, Usercentrics, TrustArc, Osano, Cookie Consent, Cookie Law Info, HubSpot, Intercom, Crisp, Drift and Zendesk.
 
@@ -69,11 +76,11 @@ Use `freezeTime` when the page shows "today", a countdown or a relative date lik
 
 ## 2. Choose screenshot settings
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `screenshot.fullPage` | Captures the whole page height. `false` captures only the visible window. | `true` |
-| `screenshot.selector` | Capture exactly one visible element matching this CSS selector. Overrides page framing; oversized sections error rather than truncate. See [section capture](/guides/section-capture/). | not set |
-| `screenshot.maxHeight` | The tallest full-page screenshot, in pixels. Longer pages are cut at this height. Scrolling for lazy content also stops here. | `15000` |
+| Option                 | What it does                                                                                                                                                                            | Default |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `screenshot.fullPage`  | Captures the whole page height. `false` captures only the visible window.                                                                                                               | `true`  |
+| `screenshot.selector`  | Capture exactly one visible element matching this CSS selector. Overrides page framing; oversized sections error rather than truncate. See [section capture](/guides/section-capture/). | not set |
+| `screenshot.maxHeight` | The tallest full-page screenshot, in pixels. Longer pages are cut at this height. Scrolling for lazy content also stops here.                                                           | `15000` |
 
 A page cut at the maximum height shows "cut at max height" in the report's page health details. Raise `maxHeight` if the bottom of the page matters. Very tall screenshots take longer to compare.
 
@@ -81,12 +88,12 @@ A page cut at the maximum height shows "cut at max height" in the report's page 
 
 Masking and hiding both stop an element from causing differences. They work differently:
 
-| | `mask` | `hide` |
-| --- | --- | --- |
-| What the screenshot shows | A solid magenta box (`#FF00FF`) where the element is, on both sides. | Nothing. The element is invisible and the page background shows through. |
-| Space in the layout | Kept. | Kept. It uses `visibility: hidden`, so the element still takes up its space. |
-| Is the element's position and size still compared? | Yes. If the box moves or changes size, that is a difference. | No. Only the space it leaves is compared. |
-| Use it for | Content that changes but whose place matters: a live price, a timestamp, an avatar, an order number. | Things that are not part of your design: a promo bar, a chat launcher, a third-party ad. |
+|                                                    | `mask`                                                                                               | `hide`                                                                                   |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| What the screenshot shows                          | A solid magenta box (`#FF00FF`) where the element is, on both sides.                                 | Nothing. The element is invisible and the page background shows through.                 |
+| Space in the layout                                | Kept.                                                                                                | Kept. It uses `visibility: hidden`, so the element still takes up its space.             |
+| Is the element's position and size still compared? | Yes. If the box moves or changes size, that is a difference.                                         | No. Only the space it leaves is compared.                                                |
+| Use it for                                         | Content that changes but whose place matters: a live price, a timestamp, an avatar, an order number. | Things that are not part of your design: a promo bar, a chat launcher, a third-party ad. |
 
 Set them for every page in `stabilize`, or for one page on the route:
 
@@ -190,16 +197,16 @@ Next, make a small visible change on staging and run again. The change must stil
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| "The page kept changing between screenshots" | Something is still moving. Mask or hide it, set `freezeTime`, or raise `stabilityAttempts` and `stabilityIntervalMs`. |
-| Dates or countdowns differ | Set `freezeTime` to a fixed ISO date. |
-| Lazy images are missing at the bottom | Keep `scrollToLoad: true`, raise `screenshot.maxHeight` if the page is long, and add a route `waitFor` for important content. |
-| Captures are slow on sites with constant polling | Lower `networkQuietTimeoutMs`, or add the polling URL to `blockRequests`. |
-| Text looks different on each run | Fonts were not ready. Keep `waitForFonts: true`, and serve fonts from both sites the same way. |
-| A cookie banner still shows | Add its selector to `stabilize.hide`, or set the consent cookie in `beforeNavigate`. |
-| A masked box changes size | Mask a fixed-size parent instead of the changing text. |
-| `Capture failed after 3 attempt(s)` | Read the error after the colon. It is usually a timeout or a page error. See [Capture troubleshooting](/troubleshooting/capture/). |
+| Problem                                          | Fix                                                                                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| "The page kept changing between screenshots"     | Something is still moving. Mask or hide it, set `freezeTime`, or raise `stabilityAttempts` and `stabilityIntervalMs`.              |
+| Dates or countdowns differ                       | Set `freezeTime` to a fixed ISO date.                                                                                              |
+| Lazy images are missing at the bottom            | Keep `scrollToLoad: true`, raise `screenshot.maxHeight` if the page is long, and add a route `waitFor` for important content.      |
+| Captures are slow on sites with constant polling | Lower `networkQuietTimeoutMs`, or add the polling URL to `blockRequests`.                                                          |
+| Text looks different on each run                 | Fonts were not ready. Keep `waitForFonts: true`, and serve fonts from both sites the same way.                                     |
+| A cookie banner still shows                      | Add its selector to `stabilize.hide`, or set the consent cookie in `beforeNavigate`.                                               |
+| A masked box changes size                        | Mask a fixed-size parent instead of the changing text.                                                                             |
+| `Capture failed after 3 attempt(s)`              | Read the error after the colon. It is usually a timeout or a page error. See [Capture troubleshooting](/troubleshooting/capture/). |
 
 ## Next steps
 

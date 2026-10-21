@@ -5,8 +5,15 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/capture/checks.ts", "packages/visualguard/src/core/findings.ts", "packages/visualguard/src/capture/capture.ts", "packages/visualguard/src/config/schema.ts", "packages/visualguard/src/cli/shared.ts"]
-sidebar: {"order": 13}
+sourcePaths:
+  [
+    "packages/visualguard/src/capture/checks.ts",
+    "packages/visualguard/src/core/findings.ts",
+    "packages/visualguard/src/capture/capture.ts",
+    "packages/visualguard/src/config/schema.ts",
+    "packages/visualguard/src/cli/shared.ts",
+  ]
+sidebar: { "order": 13 }
 ---
 
 This page shows how to add two optional checks to every capture: an **accessibility** check that uses [axe-core](https://github.com/dequelabs/axe-core), and a **performance** check that reads the browser's own load timings. Both run on the reference and the candidate, so VisualGuard reports only problems that are new. Use them to catch a missing label or a heavier bundle in the same run that catches visual changes.
@@ -26,23 +33,23 @@ Both checks are off by default. They can flag a page even when its screenshots m
 
 **Performance.** After the page loads and the network goes quiet, and before VisualGuard hides banners or scrolls, it reads the browser's performance timeline. It records:
 
-| Metric | Meaning |
-| --- | --- |
-| LCP | Largest Contentful Paint: when the biggest element appeared. |
-| CLS | Cumulative Layout Shift: how much content jumped while loading. |
-| TTFB, FCP, load time | Time to first byte, first contentful paint and the load event. |
-| Weight | Total transferred size of the page and its resources. |
-| JS | Transferred size of scripts. |
-| Requests and elements | Number of requests and DOM elements. |
+| Metric                | Meaning                                                         |
+| --------------------- | --------------------------------------------------------------- |
+| LCP                   | Largest Contentful Paint: when the biggest element appeared.    |
+| CLS                   | Cumulative Layout Shift: how much content jumped while loading. |
+| TTFB, FCP, load time  | Time to first byte, first contentful paint and the load event.  |
+| Weight                | Total transferred size of the page and its resources.           |
+| JS                    | Transferred size of scripts.                                    |
+| Requests and elements | Number of requests and DOM elements.                            |
 
 A finding is raised when the candidate is worse than the reference by more than your thresholds:
 
-| Finding | Raised when |
-| --- | --- |
-| `Slower load: LCP 1.2s → 2.6s` | LCP grew by more than `lcpIncreaseMs`. |
-| `More layout shift while loading: CLS 0.02 → 0.18` | CLS grew by more than `clsIncrease`. |
-| `Heavier page: 820 KB → 1.1 MB (+34%)` | Weight grew by more than `weightIncreaseKB` **and** more than `weightIncreasePercent`. |
-| `More JavaScript: 310 KB → 450 KB` | Script size grew by more than both of the same margins. |
+| Finding                                            | Raised when                                                                            |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `Slower load: LCP 1.2s → 2.6s`                     | LCP grew by more than `lcpIncreaseMs`.                                                 |
+| `More layout shift while loading: CLS 0.02 → 0.18` | CLS grew by more than `clsIncrease`.                                                   |
+| `Heavier page: 820 KB → 1.1 MB (+34%)`             | Weight grew by more than `weightIncreaseKB` **and** more than `weightIncreasePercent`. |
+| `More JavaScript: 310 KB → 450 KB`                 | Script size grew by more than both of the same margins.                                |
 
 Requiring both margins for weight stops tiny files from being flagged just because they doubled.
 
@@ -84,23 +91,23 @@ You should see the same findings as in step 1 on every `test`, without the flags
 
 ### Accessibility options
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `enabled` | Turn the check on or off. | `true` when you give an object |
-| `minImpact` | Lowest axe impact to report: `"minor"`, `"moderate"`, `"serious"` or `"critical"`. | `"serious"` |
-| `tags` | axe-core rule tags to run. | `["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]` |
-| `severity` | What a new violation does: `"review"`, or `"regression"` to fail the run. | `"review"` |
+| Option      | What it does                                                                       | Default                                        |
+| ----------- | ---------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `enabled`   | Turn the check on or off.                                                          | `true` when you give an object                 |
+| `minImpact` | Lowest axe impact to report: `"minor"`, `"moderate"`, `"serious"` or `"critical"`. | `"serious"`                                    |
+| `tags`      | axe-core rule tags to run.                                                         | `["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]` |
+| `severity`  | What a new violation does: `"review"`, or `"regression"` to fail the run.          | `"review"`                                     |
 
 ### Performance options
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `enabled` | Turn the check on or off. | `true` when you give an object |
-| `lcpIncreaseMs` | Flag the page when LCP is this many milliseconds slower. | `1000` |
-| `clsIncrease` | Flag the page when CLS is this much higher. | `0.1` |
-| `weightIncreasePercent` | Percent growth that page weight or JS must exceed. | `20` |
-| `weightIncreaseKB` | Kilobytes of growth that page weight or JS must also exceed. | `100` |
-| `severity` | What a finding does: `"review"`, or `"regression"` to fail the run. | `"review"` |
+| Option                  | What it does                                                        | Default                        |
+| ----------------------- | ------------------------------------------------------------------- | ------------------------------ |
+| `enabled`               | Turn the check on or off.                                           | `true` when you give an object |
+| `lcpIncreaseMs`         | Flag the page when LCP is this many milliseconds slower.            | `1000`                         |
+| `clsIncrease`           | Flag the page when CLS is this much higher.                         | `0.1`                          |
+| `weightIncreasePercent` | Percent growth that page weight or JS must exceed.                  | `20`                           |
+| `weightIncreaseKB`      | Kilobytes of growth that page weight or JS must also exceed.        | `100`                          |
+| `severity`              | What a finding does: `"review"`, or `"regression"` to fail the run. | `"review"`                     |
 
 Setting `checks.accessibility: false` (the default) turns the check off. The `--a11y` and `--perf` flags can only turn checks on, not off.
 
@@ -144,14 +151,14 @@ A refactor replaces the checkout button's text with an icon. The screenshot bare
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| No **Load** or **Weight** row in **Page health** | Performance is off. Add `--perf` or `checks.performance`. |
-| Every page is slower or heavier | One side is a dev server. Compare two production builds. |
-| No performance findings in baseline or monitor mode | Expected. Performance compares two live sites in one run. |
-| `nothing to compare with yet` on every page | The reference has no accessibility results. Use compare mode, or save baselines again with the check on. |
-| `Check failed: accessibility: axe-core did not finish in time` | The page is very large or busy. Try a smaller page, or hide heavy widgets with `stabilize.hide`. |
-| Too many low-impact findings | Raise `minImpact`, or narrow `tags`. |
+| Problem                                                        | Fix                                                                                                      |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| No **Load** or **Weight** row in **Page health**               | Performance is off. Add `--perf` or `checks.performance`.                                                |
+| Every page is slower or heavier                                | One side is a dev server. Compare two production builds.                                                 |
+| No performance findings in baseline or monitor mode            | Expected. Performance compares two live sites in one run.                                                |
+| `nothing to compare with yet` on every page                    | The reference has no accessibility results. Use compare mode, or save baselines again with the check on. |
+| `Check failed: accessibility: axe-core did not finish in time` | The page is very large or busy. Try a smaller page, or hide heavy widgets with `stabilize.hide`.         |
+| Too many low-impact findings                                   | Raise `minImpact`, or narrow `tags`.                                                                     |
 
 See [Capture problems](/troubleshooting/capture/) for pages that do not load.
 

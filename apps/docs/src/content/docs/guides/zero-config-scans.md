@@ -5,8 +5,9 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/zero-config.ts", "packages/visualguard/src/core/run.ts"]
-sidebar: {"order": 1}
+sourcePaths:
+  ["packages/visualguard/src/cli/commands/zero-config.ts", "packages/visualguard/src/core/run.ts"]
+sidebar: { "order": 1 }
 ---
 
 A zero-config command is the fastest way to inspect a reachable page. It uses the same browser and comparison engine as a configured test. You still need the installed package and browser; “zero config” does not mean zero dependencies.
@@ -71,12 +72,12 @@ Open the report and confirm the final page URL, captured route/viewport and find
 
 ## Troubleshooting
 
-| Problem | What to check |
-| --- | --- |
-| No meaningful difference | Both URLs may serve the same build, login page or error page. Inspect the actual screenshots. |
-| Too many or too few pages | A root URL permits discovery; a page URL scopes the comparison. Use a config for a stable explicit suite. |
-| A second scan no longer flags a change | Scans roll snapshots forward; use explicit baselines for controlled approval. |
-| Connection or browser error | Keep both app servers running, install Chromium and use the same machine/network as the command. |
+| Problem                                | What to check                                                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| No meaningful difference               | Both URLs may serve the same build, login page or error page. Inspect the actual screenshots.             |
+| Too many or too few pages              | A root URL permits discovery; a page URL scopes the comparison. Use a config for a stable explicit suite. |
+| A second scan no longer flags a change | Scans roll snapshots forward; use explicit baselines for controlled approval.                             |
+| Connection or browser error            | Keep both app servers running, install Chromium and use the same machine/network as the command.          |
 
 ## Next steps
 

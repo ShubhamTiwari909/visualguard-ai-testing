@@ -1,5 +1,7 @@
 dist
 coverage
+**/.astro/**
+**/.visualguard/**
 pnpm-lock.yaml
 PLAN.md
 .changeset/*.md

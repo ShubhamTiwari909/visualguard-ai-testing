@@ -13,12 +13,12 @@ VisualGuard tests anything a browser can open: React, Next.js, Vue or plain HTML
 
 A **run** is one execution. A **check** is one page at one viewport. A **baseline** is a saved expected look. A **project** groups one app's dashboard history and access.
 
-| If you are a...    | You will probably...                                          |
-| ------------------ | ------------------------------------------------------------- |
-| Developer          | Check a branch before opening a pull request                  |
-| QA engineer        | Compare key screens across releases                           |
-| Designer           | Look at screenshots and approve the intended appearance       |
-| Manager or lead    | See what changed and what still needs a decision              |
+| If you are a... | You will probably...                                    |
+| --------------- | ------------------------------------------------------- |
+| Developer       | Check a branch before opening a pull request            |
+| QA engineer     | Compare key screens across releases                     |
+| Designer        | Look at screenshots and approve the intended appearance |
+| Manager or lead | See what changed and what still needs a decision        |
 
 ## What you can do
 
@@ -28,6 +28,7 @@ A **run** is one execution. A **check** is one page at one viewport. A **baselin
 - **One site over time.** Save screenshots as local baselines, then compare later runs against them. Run `npx visualguard https://example.com` to scan one site and compare it on the next scan, or pass two URLs to compare them.
 - **Specific pages.** List routes, filter them, add dynamic examples such as blog slugs, or let VisualGuard find pages from Next.js files, a sitemap or a crawl. Pick viewports, locale, theme and Chromium, Firefox or WebKit.
 - **Interactive states.** The `visualguard/playwright` fixture checks a page after your Playwright test logs in or opens a dialog.
+- **Scripts and CI.** Call `runVisualGuard` from Node.js for typed configuration, structured verdicts, HTML/JUnit reports and progress. Your script controls its exit status; see the [SDK guide](SDK-GUIDE.md).
 - **One section at a time.** Mark a container with `data-visualguard="checkout"` and select it through `screenshot.selector` in `visualguard.config.ts`. Set different selectors per route, compare several sections of one page, or explicitly restore page capture. Requires a release containing section capture; see the [complete section-testing flow](SECTION-SCREENSHOT-TESTING.md).
 
 ### Understand
@@ -69,15 +70,16 @@ A **run** is one execution. A **check** is one page at one viewport. A **baselin
 
 ## Where to start
 
-| You want to                                | Read                                                                                                                           |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| Try VisualGuard inside your own app        | [NPM-PACKAGE-SETUP.md](NPM-PACKAGE-SETUP.md)                                                                                   |
-| Run it from this repository's source       | [LOCAL-SETUP.md](LOCAL-SETUP.md)                                                                                               |
-| Look up commands and configuration         | [Package README](../packages/visualguard/README.md)                                                                            |
-| Test only a marked section of a page       | [Section screenshot testing](SECTION-SCREENSHOT-TESTING.md) |
-| Learn the dashboard, reviews and policies  | [Dashboard overview](../apps/docs/src/content/docs/dashboard/overview.md)                                                      |
-| Deploy the dashboard                       | [Deployment overview](../apps/docs/src/content/docs/deployment/overview.md)                                                    |
-| Set up CI                                  | [CI overview](../apps/docs/src/content/docs/ci/overview.md)                                                                    |
+| You want to                               | Read                                                                        |
+| ----------------------------------------- | --------------------------------------------------------------------------- |
+| Try VisualGuard inside your own app       | [NPM-PACKAGE-SETUP.md](NPM-PACKAGE-SETUP.md)                                |
+| Run it from this repository's source      | [LOCAL-SETUP.md](LOCAL-SETUP.md)                                            |
+| Look up commands and configuration        | [Package README](../packages/visualguard/README.md)                         |
+| Test only a marked section of a page      | [Section screenshot testing](SECTION-SCREENSHOT-TESTING.md)                 |
+| Run visual checks from a Node.js script   | [SDK guide](SDK-GUIDE.md)                                                   |
+| Learn the dashboard, reviews and policies | [Dashboard overview](../apps/docs/src/content/docs/dashboard/overview.md)   |
+| Deploy the dashboard                      | [Deployment overview](../apps/docs/src/content/docs/deployment/overview.md) |
+| Set up CI                                 | [CI overview](../apps/docs/src/content/docs/ci/overview.md)                 |
 
 A good first step is one route and the local report, with no AI and no database. Add a dashboard when a team wants to review together.
 

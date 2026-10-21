@@ -5,8 +5,15 @@ audience: "operator"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/server/policy-github.ts", "apps/platform/server/policy-command.ts", "apps/platform/server/policies.ts", "apps/platform/.env.example", "packages/visualguard/src/cli/commands/dashboard.ts"]
-sidebar: {"order": 5}
+sourcePaths:
+  [
+    "apps/platform/server/policy-github.ts",
+    "apps/platform/server/policy-command.ts",
+    "apps/platform/server/policies.ts",
+    "apps/platform/.env.example",
+    "packages/visualguard/src/cli/commands/dashboard.ts",
+  ]
+sidebar: { "order": 5 }
 ---
 
 The dashboard can post a GitHub check run named `VisualGuard / <project>` on a pull request. The check says whether the PR's **head commit** meets the project's [visual policy](/dashboard/visual-policies/): fresh evidence, a current baseline and any required approvals. This page shows how to connect the dashboard to GitHub, keep the check current, and roll it out safely.
@@ -22,11 +29,11 @@ The dashboard can post a GitHub check run named `VisualGuard / <project>` on a p
 
 A VisualGuard PR can show three separate results. Each uses its own credential, and one can fail while another passes.
 
-| Result | Made by | Credential |
-| --- | --- | --- |
-| Job pass or fail | `visualguard test` exit code in CI | None |
-| PR comment | `visualguard comment` in CI | CI's `GITHUB_TOKEN` |
-| Policy check run | The dashboard server | `VISUALGUARD_GITHUB_TOKEN` on the server |
+| Result           | Made by                            | Credential                               |
+| ---------------- | ---------------------------------- | ---------------------------------------- |
+| Job pass or fail | `visualguard test` exit code in CI | None                                     |
+| PR comment       | `visualguard comment` in CI        | CI's `GITHUB_TOKEN`                      |
+| Policy check run | The dashboard server               | `VISUALGUARD_GITHUB_TOKEN` on the server |
 
 The check is a point-in-time snapshot. The dashboard updates it when it **reconciles**: it asks GitHub for the PR's current head commit, assesses the policy for that commit, and creates or updates the check. Reconciliation runs when you ask for it, when GitHub sends a webhook, and on your schedule.
 
@@ -34,16 +41,16 @@ The check is a point-in-time snapshot. The dashboard updates it when it **reconc
 
 Open **Visual regression policy** at `/policies` in the dashboard and select the project. Fill in the form:
 
-| Field | What to enter |
-| --- | --- |
-| Rollout mode | **Informative — report without blocking** for now. |
-| Approved baseline set | The [baseline set](/dashboard/approved-baselines/) the evidence must match. |
-| PR target branch | The branch your PRs merge into, such as `main`. Only PRs targeting it are checked. |
-| Evidence environment | The `--environment` label CI publishes with, such as `staging`. |
-| Evidence valid for (hours) | How old evidence may be before it counts as stale. |
-| GitHub repository (optional) | `owner/name`, such as `customer-org/customer-repo`. Required for checks. |
-| Required screenshot check IDs | One per line. Leave empty to require the baseline's full coverage. |
-| Require reviewer approval for changed screenshots | Tick to require a human approval for changes. |
+| Field                                             | What to enter                                                                      |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Rollout mode                                      | **Informative — report without blocking** for now.                                 |
+| Approved baseline set                             | The [baseline set](/dashboard/approved-baselines/) the evidence must match.        |
+| PR target branch                                  | The branch your PRs merge into, such as `main`. Only PRs targeting it are checked. |
+| Evidence environment                              | The `--environment` label CI publishes with, such as `staging`.                    |
+| Evidence valid for (hours)                        | How old evidence may be before it counts as stale.                                 |
+| GitHub repository (optional)                      | `owner/name`, such as `customer-org/customer-repo`. Required for checks.           |
+| Required screenshot check IDs                     | One per line. Leave empty to require the baseline's full coverage.                 |
+| Require reviewer approval for changed screenshots | Tick to require a human approval for changes.                                      |
 
 Enter a **Reason for policy change** and choose **Save new policy version**.
 
@@ -68,11 +75,11 @@ VISUALGUARD_GITHUB_REPOSITORIES=storefront=customer-org/customer-repo
 VISUALGUARD_GITHUB_WEBHOOK_SECRET=a-long-random-secret
 ```
 
-| Variable | What it does |
-| --- | --- |
-| `VISUALGUARD_GITHUB_TOKEN` | Credential the server uses to read PRs and write checks. |
-| `VISUALGUARD_GITHUB_REPOSITORIES` | Allowlist of `project=owner/repo` pairs, comma-separated. A project can only post to its listed repository. |
-| `VISUALGUARD_GITHUB_WEBHOOK_SECRET` | Shared secret used to verify GitHub webhook signatures. |
+| Variable                            | What it does                                                                                                |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `VISUALGUARD_GITHUB_TOKEN`          | Credential the server uses to read PRs and write checks.                                                    |
+| `VISUALGUARD_GITHUB_REPOSITORIES`   | Allowlist of `project=owner/repo` pairs, comma-separated. A project can only post to its listed repository. |
+| `VISUALGUARD_GITHUB_WEBHOOK_SECRET` | Shared secret used to verify GitHub webhook signatures.                                                     |
 
 The project side of each pair is the project's **internal ID**: the ID it was first created with. Renaming a project's public ID does not change it. Generate the webhook secret with a tool such as `openssl rand -hex 32`.
 
@@ -103,27 +110,27 @@ npx --no-install visualguard dashboard policy reconcile \
 
 Both print JSON. Against a hosted dashboard they need `VISUALGUARD_UPLOAD_TOKEN` for that project in the environment.
 
-| Command and option | What it does |
-| --- | --- |
-| `policy assess --project <id>` | Project to assess. Required. |
-| `--revision <sha>` | Exact source commit. Required. |
-| `--run <id>` | Assess one specific stored run. |
-| `--enforce` | Exit with code `2` unless the result is satisfied. |
-| `policy reconcile --project <id>` | Project to reconcile. Required. |
-| `--pr <number>` | Verify the live PR head and update its check. |
-| `--all` | Refresh every tracked PR for the project. Use either `--pr` or `--all`. |
-| `--server <url>` | Dashboard origin. Without it, the command opens local storage directly. |
+| Command and option                | What it does                                                            |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| `policy assess --project <id>`    | Project to assess. Required.                                            |
+| `--revision <sha>`                | Exact source commit. Required.                                          |
+| `--run <id>`                      | Assess one specific stored run.                                         |
+| `--enforce`                       | Exit with code `2` unless the result is satisfied.                      |
+| `policy reconcile --project <id>` | Project to reconcile. Required.                                         |
+| `--pr <number>`                   | Verify the live PR head and update its check.                           |
+| `--all`                           | Refresh every tracked PR for the project. Use either `--pr` or `--all`. |
+| `--server <url>`                  | Dashboard origin. Without it, the command opens local storage directly. |
 
 `reconcile` exits with `2` if any PR failed to update.
 
 The check's result depends on the rollout mode:
 
-| Mode | Policy result | GitHub check |
-| --- | --- | --- |
-| Informative | Any | Completed, `neutral` |
-| Required | Satisfied | Completed, `success` |
-| Required | Blocked | Completed, `failure` |
-| Required | Pending | In progress |
+| Mode        | Policy result | GitHub check         |
+| ----------- | ------------- | -------------------- |
+| Informative | Any           | Completed, `neutral` |
+| Required    | Satisfied     | Completed, `success` |
+| Required    | Blocked       | Completed, `failure` |
+| Required    | Pending       | In progress          |
 
 The check links back to `/policies` when `VISUALGUARD_PUBLIC_URL` is set.
 
@@ -131,12 +138,12 @@ The check links back to `/policies` when `VISUALGUARD_PUBLIC_URL` is set.
 
 A webhook makes the dashboard reconcile as soon as a PR changes. In the GitHub repository, open **Settings → Webhooks → Add webhook**:
 
-| Field | Value |
-| --- | --- |
-| Payload URL | `https://visualguard.example.com/api/github/webhook` |
-| Content type | `application/json` |
-| Secret | The same value as `VISUALGUARD_GITHUB_WEBHOOK_SECRET` |
-| Events | **Pull requests** only |
+| Field        | Value                                                 |
+| ------------ | ----------------------------------------------------- |
+| Payload URL  | `https://visualguard.example.com/api/github/webhook`  |
+| Content type | `application/json`                                    |
+| Secret       | The same value as `VISUALGUARD_GITHUB_WEBHOOK_SECRET` |
+| Events       | **Pull requests** only                                |
 
 The server reconciles on `opened`, `reopened`, `synchronize`, `ready_for_review`, `edited` and `closed`. It ignores other events.
 
@@ -173,15 +180,15 @@ A team adds checks to `customer-org/storefront`, policy target `main`:
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
+| Problem                                                                            | Fix                                                                                           |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | "Configure the GitHub credential and repository allowlist on the dashboard server" | Set `VISUALGUARD_GITHUB_TOKEN`, and list the repository in `VISUALGUARD_GITHUB_REPOSITORIES`. |
-| "Configure a GitHub repository in the project policy first" | Fill in **GitHub repository** on the policy and save a new version. |
-| "This repository is not allowed for this project" | Use the project's internal ID in `VISUALGUARD_GITHUB_REPOSITORIES`. |
-| "PR must be open and target the policy's configured branch" | Check the PR's base branch matches **PR target branch**. |
-| Webhook returns 401 "Invalid GitHub webhook signature" | Use the same secret in GitHub and on the server, and keep the raw body intact. |
-| "GitHub request failed (403)" | The token lacks Checks write or Pull requests read, or has expired. |
-| "Use a project upload token for a hosted dashboard" | Set `VISUALGUARD_UPLOAD_TOKEN` before running `policy` commands. |
+| "Configure a GitHub repository in the project policy first"                        | Fill in **GitHub repository** on the policy and save a new version.                           |
+| "This repository is not allowed for this project"                                  | Use the project's internal ID in `VISUALGUARD_GITHUB_REPOSITORIES`.                           |
+| "PR must be open and target the policy's configured branch"                        | Check the PR's base branch matches **PR target branch**.                                      |
+| Webhook returns 401 "Invalid GitHub webhook signature"                             | Use the same secret in GitHub and on the server, and keep the raw body intact.                |
+| "GitHub request failed (403)"                                                      | The token lacks Checks write or Pull requests read, or has expired.                           |
+| "Use a project upload token for a hosted dashboard"                                | Set `VISUALGUARD_UPLOAD_TOKEN` before running `policy` commands.                              |
 
 See [dashboard troubleshooting](/troubleshooting/dashboard/) for more.
 

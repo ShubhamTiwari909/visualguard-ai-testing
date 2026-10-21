@@ -9,6 +9,8 @@ and staging with Playwright, diffs them pixel by pixel, and tells you what chang
 
 New here? Read the [complete npm setup guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/NPM-PACKAGE-SETUP.md).
 
+For Node.js scripts and CI, use the [SDK guide](https://github.com/ShubhamTiwari909/visualguard-ai-testing/blob/main/docs/SDK-GUIDE.md): `runVisualGuard` returns structured results, HTML/JUnit paths and a policy verdict without setting your process exit status.
+
 ```bash
 npm install -D visualguard playwright
 npx playwright install chromium

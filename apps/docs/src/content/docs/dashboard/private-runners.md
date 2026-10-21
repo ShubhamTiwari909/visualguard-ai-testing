@@ -5,8 +5,15 @@ audience: "developer"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/client/project-tests.tsx", "packages/visualguard/src/cli/commands/dashboard.ts"]
-sidebar: {"order": 8}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "apps/platform/server/test-runner.ts",
+    "apps/platform/server/test-executions.ts",
+    "apps/platform/client/project-tests.tsx",
+    "packages/visualguard/src/cli/commands/dashboard.ts",
+  ]
+sidebar: { "order": 8 }
 ---
 
 A private runner is a small VisualGuard process you keep running on your own computer or CI worker. It picks up tests that people request with **Run test** in the dashboard, captures them there and uploads the result. This tutorial connects one to a project.
@@ -106,13 +113,13 @@ Runner connected. Waiting for dashboard tests.
 
 Leave this terminal open. The runner works only while it runs. Stop it with Ctrl+C.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `--project <id>` | The project ID. Display names are not accepted here | Required |
-| `--server <url>` | The dashboard address, without a path | Required |
-| `--poll <milliseconds>` | How often to ask for work, from 1000 to 30000 | `3000` |
-| `--work-dir <directory>` | Where captured evidence is written | `.visualguard/runner` |
-| `--once` | Ask once, run a waiting test if there is one, then exit | Off |
+| Option                   | What it does                                            | Default               |
+| ------------------------ | ------------------------------------------------------- | --------------------- |
+| `--project <id>`         | The project ID. Display names are not accepted here     | Required              |
+| `--server <url>`         | The dashboard address, without a path                   | Required              |
+| `--poll <milliseconds>`  | How often to ask for work, from 1000 to 30000           | `3000`                |
+| `--work-dir <directory>` | Where captured evidence is written                      | `.visualguard/runner` |
+| `--once`                 | Ask once, run a waiting test if there is one, then exit | Off                   |
 
 Run `npx --no-install visualguard dashboard runner --help` to see the options of your installed version.
 
@@ -175,14 +182,14 @@ Upgrade the dashboard and the runner together. An older runner can still run tes
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Set VISUALGUARD_RUNNER_TOKEN to this project's runner credential` | The variable is missing or is an upload token. Use the `vg_runner_...` credential and pass `--env-file .env.visualguard-runner` |
-| `Runner claim request rejected (403); check the runner credential, project and server` | The credential is revoked, expired or for another project, or `--project` is wrong. Create a new credential for this project |
-| `Use an HTTPS dashboard origin, or HTTP on loopback` | Use the dashboard's `https://` address with no path |
-| `Use the project's ID` | `--project` needs the project ID, such as `storefront`, not the display name |
-| The panel stays **Runner offline** | Check the runner terminal for errors, and that `--server` is the same address you open in the browser |
-| `Capture or upload failed...` | Read the runner output. Usually a URL the runner cannot reach, a missing browser, or a missing AI key |
+| Problem                                                                                | Fix                                                                                                                             |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `Set VISUALGUARD_RUNNER_TOKEN to this project's runner credential`                     | The variable is missing or is an upload token. Use the `vg_runner_...` credential and pass `--env-file .env.visualguard-runner` |
+| `Runner claim request rejected (403); check the runner credential, project and server` | The credential is revoked, expired or for another project, or `--project` is wrong. Create a new credential for this project    |
+| `Use an HTTPS dashboard origin, or HTTP on loopback`                                   | Use the dashboard's `https://` address with no path                                                                             |
+| `Use the project's ID`                                                                 | `--project` needs the project ID, such as `storefront`, not the display name                                                    |
+| The panel stays **Runner offline**                                                     | Check the runner terminal for errors, and that `--server` is the same address you open in the browser                           |
+| `Capture or upload failed...`                                                          | Read the runner output. Usually a URL the runner cannot reach, a missing browser, or a missing AI key                           |
 
 More fixes: [Dashboard troubleshooting](/troubleshooting/dashboard/).
 

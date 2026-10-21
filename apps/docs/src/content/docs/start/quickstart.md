@@ -5,8 +5,14 @@ audience: "developer"
 docType: "tutorial"
 channel: "published"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/cli/commands/test.ts", "packages/visualguard/src/cli/commands/report.ts", "scripts/docs/smoke-quickstart.mjs"]
-sidebar: {"order": 5}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "packages/visualguard/src/cli/commands/test.ts",
+    "packages/visualguard/src/cli/commands/report.ts",
+    "scripts/docs/smoke-quickstart.mjs",
+  ]
+sidebar: { "order": 5 }
 ---
 
 In this tutorial you run a full visual comparison on your own computer. You start two tiny demo pages that differ only in a button colour. VisualGuard captures both, finds the difference and writes an HTML report. You need no AI key, account, dashboard or database.
@@ -61,17 +67,20 @@ VisualGuard compares two running sites. This step starts two small demo pages. I
 Create a file called `demo-sites.mjs` at your project's root with exactly this content:
 
 ```js
-import { createServer } from 'node:http';
+import { createServer } from "node:http";
 
-for (const [port, color] of [[4100, '#146c43'], [4101, '#b42318']]) {
+for (const [port, color] of [
+  [4100, "#146c43"],
+  [4101, "#b42318"],
+]) {
   createServer((_request, response) => {
-    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     response.end(`<!doctype html><html lang="en"><head>
       <meta charset="utf-8"><title>Storefront demo</title>
       <style>body{font:20px system-ui;padding:64px}button{background:${color};color:white;padding:16px 24px;border:0;border-radius:8px}</style>
       </head><body><h1>Storefront</h1><p>Your order is ready.</p>
       <button>Continue to checkout</button></body></html>`);
-  }).listen(port, '127.0.0.1', () => console.log(`Demo: http://127.0.0.1:${port}`));
+  }).listen(port, "127.0.0.1", () => console.log(`Demo: http://127.0.0.1:${port}`));
 }
 ```
 
@@ -101,28 +110,28 @@ If a port is already in use, stop the other program, or change the port here and
 The config tells VisualGuard which two sites to compare, which pages and which screen size. In terminal B, create `visualguard.config.ts` at your project's root with exactly this content:
 
 ```ts
-import { defineConfig } from 'visualguard';
+import { defineConfig } from "visualguard";
 
 export default defineConfig({
   baseURL: {
-    production: 'http://127.0.0.1:4100',
-    staging: 'http://127.0.0.1:4101',
+    production: "http://127.0.0.1:4100",
+    staging: "http://127.0.0.1:4101",
   },
-  routes: ['/'],
+  routes: ["/"],
   viewports: { desktop: { width: 1280, height: 800 } },
-  ai: { provider: 'none' },
-  output: { dir: '.visualguard' },
+  ai: { provider: "none" },
+  output: { dir: ".visualguard" },
 });
 ```
 
-| Field | Meaning in this demo |
-| --- | --- |
-| `baseURL.production` | The reference site (green button). |
-| `baseURL.staging` | The candidate site (red button). |
-| `routes` | Test only the home page, `/`. |
-| `viewports` | One desktop screen, 1280 by 800 pixels. |
-| `ai.provider` | `'none'`: use only the built-in analysis. |
-| `output.dir` | Save runs under `.visualguard/`. |
+| Field                | Meaning in this demo                      |
+| -------------------- | ----------------------------------------- |
+| `baseURL.production` | The reference site (green button).        |
+| `baseURL.staging`    | The candidate site (red button).          |
+| `routes`             | Test only the home page, `/`.             |
+| `viewports`          | One desktop screen, 1280 by 800 pixels.   |
+| `ai.provider`        | `'none'`: use only the built-in analysis. |
+| `output.dir`         | Save runs under `.visualguard/`.          |
 
 Notes:
 
@@ -183,12 +192,12 @@ In the report:
 
 The report server keeps running. Press Ctrl+C in terminal B to stop it before you reuse that terminal.
 
-| `report` option | What it does | Default |
-| --- | --- | --- |
-| `--run RUN_ID` | Open a specific run | The latest run |
-| `--no-serve` | Write `index.html` and print its path, without a server | Starts a server |
-| `--no-open` | Do not open a browser | Opens a browser |
-| `--port N` | Serve on this port | A random free port |
+| `report` option | What it does                                            | Default            |
+| --------------- | ------------------------------------------------------- | ------------------ |
+| `--run RUN_ID`  | Open a specific run                                     | The latest run     |
+| `--no-serve`    | Write `index.html` and print its path, without a server | Starts a server    |
+| `--no-open`     | Do not open a browser                                   | Opens a browser    |
+| `--port N`      | Serve on this port                                      | A random free port |
 
 ### Where the files are
 
@@ -214,15 +223,15 @@ You should see a new run with the status **pass** and exit code `0`. Open its re
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `connect ECONNREFUSED` or doctor cannot reach a URL | Start terminal A. Check the ports. Use the same host spelling as the config (`127.0.0.1`, not `localhost`). |
-| `Executable doesn't exist` or the browser is missing | Run `npx playwright install chromium` again from this folder. On Linux add `--with-deps`. |
-| The run shows **pass** when you expected a change | Check the two URLs in the config and the second colour in `demo-sites.mjs`. Restart terminal A after any edit. |
-| The run still shows a change after you matched the colours | You did not restart terminal A, so the old page is still served. |
-| `report` cannot find a run | Use the same `--config` (and so the same output folder) as `test`. Read the test's error first if it did not finish. |
-| Exit code `2` | A config or command mistake. Read the message; it names the field or option. |
-| `EADDRINUSE` when starting the demo | Another program uses port 4100 or 4101. Stop it, or change both ports in the demo and the config. |
+| Problem                                                    | Fix                                                                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `connect ECONNREFUSED` or doctor cannot reach a URL        | Start terminal A. Check the ports. Use the same host spelling as the config (`127.0.0.1`, not `localhost`).          |
+| `Executable doesn't exist` or the browser is missing       | Run `npx playwright install chromium` again from this folder. On Linux add `--with-deps`.                            |
+| The run shows **pass** when you expected a change          | Check the two URLs in the config and the second colour in `demo-sites.mjs`. Restart terminal A after any edit.       |
+| The run still shows a change after you matched the colours | You did not restart terminal A, so the old page is still served.                                                     |
+| `report` cannot find a run                                 | Use the same `--config` (and so the same output folder) as `test`. Read the test's error first if it did not finish. |
+| Exit code `2`                                              | A config or command mistake. Read the message; it names the field or option.                                         |
+| `EADDRINUSE` when starting the demo                        | Another program uses port 4100 or 4101. Stop it, or change both ports in the demo and the config.                    |
 
 More fixes: [capture and report problems](/troubleshooting/capture/).
 

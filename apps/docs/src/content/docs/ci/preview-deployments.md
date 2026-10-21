@@ -5,8 +5,14 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["README.md", "packages/visualguard/src/config/resolve.ts", "packages/visualguard/src/cli/commands/test.ts", "action/action.yml"]
-sidebar: {"order": 3}
+sourcePaths:
+  [
+    "README.md",
+    "packages/visualguard/src/config/resolve.ts",
+    "packages/visualguard/src/cli/commands/test.ts",
+    "action/action.yml",
+  ]
+sidebar: { "order": 3 }
 ---
 
 Many hosts build a preview deployment for every pull request, such as `https://pr-123.preview.example.com`. This page shows how to compare that preview against production, wait until the preview is really ready, and label the result with the commit that was actually tested.
@@ -22,11 +28,11 @@ Many hosts build a preview deployment for every pull request, such as `https://p
 
 VisualGuard picks the candidate URL in this order. The first one that is set wins.
 
-| Source | Example | Use it when |
-| --- | --- | --- |
-| `--staging <url>` flag | `visualguard test --staging https://pr-123.preview.example.com` | You build the command yourself. |
-| `VISUALGUARD_STAGING_URL` environment variable | `VISUALGUARD_STAGING_URL=https://pr-123.preview.example.com` | Your CI sets variables per job. |
-| `baseURL.staging` in the config | `staging: "http://localhost:3000"` | Local runs. |
+| Source                                         | Example                                                         | Use it when                     |
+| ---------------------------------------------- | --------------------------------------------------------------- | ------------------------------- |
+| `--staging <url>` flag                         | `visualguard test --staging https://pr-123.preview.example.com` | You build the command yourself. |
+| `VISUALGUARD_STAGING_URL` environment variable | `VISUALGUARD_STAGING_URL=https://pr-123.preview.example.com`    | Your CI sets variables per job. |
+| `baseURL.staging` in the config                | `staging: "http://localhost:3000"`                              | Local runs.                     |
 
 The reference works the same way with `--production` and `VISUALGUARD_PRODUCTION_URL`. With the GitHub Action, use its `staging-url` input; it sets `VISUALGUARD_STAGING_URL` for you.
 
@@ -82,9 +88,9 @@ If the preview needs a login, VisualGuard captures the login page unless you set
 On `pull_request` events, `actions/checkout` checks out a temporary merge commit by default. That commit is not the PR head and is not what most hosts deploy. For dashboard history and [GitHub checks](/ci/github-checks/), record the PR **head** commit:
 
 ```yaml
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+- uses: actions/checkout@v4
+  with:
+    ref: ${{ github.event.pull_request.head.sha }}
 ```
 
 Then publish the run to a dashboard project with the real labels. Replace each uppercase value:
@@ -96,15 +102,15 @@ npx --no-install visualguard test storefront \
   --commit CAPTURED_FULL_SHA --pr 123 --environment staging --no-ai
 ```
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `[project]` | Dashboard project ID or exact unique name. Publishes the run when it finishes. | none |
-| `--dashboard <url>` | Dashboard origin. Can also come from `VISUALGUARD_DASHBOARD_URL`. | Local dashboard storage |
-| `--commit <sha>` | Source revision label. Use the full SHA of the code the preview was built from. | none |
-| `--pr <number>` | Pull request number. | none |
-| `--branch <name>` | Branch label. | none |
-| `--environment <name>` | Environment label. | `staging` |
-| `--deployment <id>` | Deployment label, such as your host's deployment ID. | none |
+| Option                 | What it does                                                                    | Default                 |
+| ---------------------- | ------------------------------------------------------------------------------- | ----------------------- |
+| `[project]`            | Dashboard project ID or exact unique name. Publishes the run when it finishes.  | none                    |
+| `--dashboard <url>`    | Dashboard origin. Can also come from `VISUALGUARD_DASHBOARD_URL`.               | Local dashboard storage |
+| `--commit <sha>`       | Source revision label. Use the full SHA of the code the preview was built from. | none                    |
+| `--pr <number>`        | Pull request number.                                                            | none                    |
+| `--branch <name>`      | Branch label.                                                                   | none                    |
+| `--environment <name>` | Environment label.                                                              | `staging`               |
+| `--deployment <id>`    | Deployment label, such as your host's deployment ID.                            | none                    |
 
 A hosted dashboard in login mode needs `VISUALGUARD_UPLOAD_TOKEN` in the job's secrets. This token can only publish evidence. Never give the CI job database or administrator credentials. Locally, `visualguard test` also loads ignored `.env` and `.env.local` files; in CI, set values in the job instead.
 
@@ -157,13 +163,13 @@ This job does not wait for the right build, only for any build. If the host may 
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| Screenshots show the previous build | The preview was not ready. Wait for a success event, or check a build marker in the wait loop. |
-| Screenshots show a login or error page | Turn off preview protection for CI, or configure [application authentication](/guides/application-auth/). |
-| The run's commit is a merge commit | Check out `github.event.pull_request.head.sha` and pass it to `--commit`. |
-| `Provide a project: visualguard test <PROJECT_ID> --dashboard <url>` | Put the project ID right after `test` when you use `--dashboard`. |
-| Upload is rejected with 401 | Set `VISUALGUARD_UPLOAD_TOKEN` to a valid token for that project. |
+| Problem                                                              | Fix                                                                                                       |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Screenshots show the previous build                                  | The preview was not ready. Wait for a success event, or check a build marker in the wait loop.            |
+| Screenshots show a login or error page                               | Turn off preview protection for CI, or configure [application authentication](/guides/application-auth/). |
+| The run's commit is a merge commit                                   | Check out `github.event.pull_request.head.sha` and pass it to `--commit`.                                 |
+| `Provide a project: visualguard test <PROJECT_ID> --dashboard <url>` | Put the project ID right after `test` when you use `--dashboard`.                                         |
+| Upload is rejected with 401                                          | Set `VISUALGUARD_UPLOAD_TOKEN` to a valid token for that project.                                         |
 
 See [CI troubleshooting](/troubleshooting/ci/) for more.
 

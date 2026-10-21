@@ -5,8 +5,14 @@ audience: "contributor"
 docType: "reference"
 channel: "source"
 lastReviewed: "2026-10-21"
-sourcePaths: ["docs/MCP-INTEGRATION-PLAN.md", "packages/visualguard/src/index.ts", "packages/visualguard/src/core/run.ts", "packages/visualguard/src/core/events.ts"]
-sidebar: {"order": 8}
+sourcePaths:
+  [
+    "docs/MCP-INTEGRATION-PLAN.md",
+    "packages/visualguard/src/index.ts",
+    "packages/visualguard/src/core/run.ts",
+    "packages/visualguard/src/core/events.ts",
+  ]
+sidebar: { "order": 8 }
 ---
 
 VisualGuard's proposed MCP server would let an AI agent run configured comparisons and inspect the results through a common interface. This is a planning page: there is no VisualGuard MCP command, published MCP package, hosted endpoint, or registered connector yet.
@@ -30,25 +36,25 @@ Step 1 works today from source containing section capture. The MCP connection in
 
 ## Proposed first tools
 
-| Capability | Purpose |
-| --- | --- |
+| Capability                       | Purpose                                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------------------- |
 | Capabilities and target planning | Discover configured profiles, routes, viewports, and section job IDs without capturing. |
-| Start and inspect a run | Start a comparison and return an operation ID for progress and completion. |
-| Read results and images | Retrieve bounded summaries and request specific evidence as needed. |
-| Cancel a run | Stop queued/running work and report partial evidence as incomplete. |
+| Start and inspect a run          | Start a comparison and return an operation ID for progress and completion.              |
+| Read results and images          | Retrieve bounded summaries and request specific evidence as needed.                     |
+| Cancel a run                     | Stop queued/running work and report partial evidence as incomplete.                     |
 
 The adapter should reuse VisualGuard's public API, existing section/baseline identity, progress events, and cancellation. The first version keeps baseline updates, approvals, fixing, publishing, and administrative changes outside its tool surface. VisualGuard's extra AI analysis can remain disabled while the connected agent explains deterministic results.
 
 ## Implementation phases
 
-| Phase | Deliverable |
-| --- | --- |
-| M01 | Verify SDK/protocol and actual client compatibility, including structured output and images. |
-| M02 | Add trusted workspace configuration, local inspection, and validated evidence access. |
-| M03 | Add comparison execution, status, cancellation, queue limits, and retry protection. |
-| M04 | Package and document the local MVP; complete a real section comparison in all three clients. |
-| M05 | Add authenticated hosted dashboard access using Streamable HTTP and project permissions. |
-| M06 | Evaluate optional client plugins/connectors and separately scoped mutation tools. |
+| Phase | Deliverable                                                                                  |
+| ----- | -------------------------------------------------------------------------------------------- |
+| M01   | Verify SDK/protocol and actual client compatibility, including structured output and images. |
+| M02   | Add trusted workspace configuration, local inspection, and validated evidence access.        |
+| M03   | Add comparison execution, status, cancellation, queue limits, and retry protection.          |
+| M04   | Package and document the local MVP; complete a real section comparison in all three clients. |
+| M05   | Add authenticated hosted dashboard access using Streamable HTTP and project permissions.     |
+| M06   | Evaluate optional client plugins/connectors and separately scoped mutation tools.            |
 
 The full engineering plan is maintained in `docs/MCP-INTEGRATION-PLAN.md` in the repository. It includes proposed tool schemas, package boundaries, future client configuration examples, operation lifecycle, evidence handling, authorization, and completion gates. Every command in its future-client section is explicitly a proposal until implementation exists.
 

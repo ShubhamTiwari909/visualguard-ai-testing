@@ -6,7 +6,7 @@ docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
 sourcePaths: ["docs/RELIABILITY-CHANGES.md"]
-sidebar: {"order": 7}
+sidebar: { "order": 7 }
 ---
 
 | Area           | Policy                                                                                                                           |

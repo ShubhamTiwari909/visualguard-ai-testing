@@ -29,16 +29,16 @@ Use explicit CLI steps for this integration: they make the original test outcome
 
 The default design assumes 10:30 AM in **Asia/Kolkata**, every day, and compares production against staging. The main workflow example assumes publicly reachable application URLs; IAM-protected and internal-ingress variants are covered separately in section 8. These assumptions must be confirmed before activation.
 
-| Input | Purpose | Where it belongs |
-| --- | --- | --- |
-| Application repository and default branch | Owns the workflow, config, dependencies, and lockfile. | GitHub repository. |
-| Production and staging URLs | Actual deployed pages to compare. Prefer stable Cloud Run revision/tag URLs for reproducible runs. | Repository/environment variables, without tokens in URLs. |
-| Routes, viewports, and section selectors | Defines coverage and capture scope. | Committed `visualguard.config.ci.ts`. |
-| GCP project ID, region, and report bucket | Cloud location and evidence destination. | Repository variables. |
-| Workload Identity provider resource | Trust relationship for the GitHub workload. | Repository variable. |
-| CI service-account email | Identity allowed to publish reports; optionally invoke protected services. | Repository variable. |
-| App test-user credentials/storage-state bootstrap | Required only for application login. | GitHub environment secrets or an approved secret store. |
-| Viewer URL and viewer access group | Optional permanent report browsing. | Configure in the viewer phase. |
+| Input                                             | Purpose                                                                                            | Where it belongs                                          |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Application repository and default branch         | Owns the workflow, config, dependencies, and lockfile.                                             | GitHub repository.                                        |
+| Production and staging URLs                       | Actual deployed pages to compare. Prefer stable Cloud Run revision/tag URLs for reproducible runs. | Repository/environment variables, without tokens in URLs. |
+| Routes, viewports, and section selectors          | Defines coverage and capture scope.                                                                | Committed `visualguard.config.ci.ts`.                     |
+| GCP project ID, region, and report bucket         | Cloud location and evidence destination.                                                           | Repository variables.                                     |
+| Workload Identity provider resource               | Trust relationship for the GitHub workload.                                                        | Repository variable.                                      |
+| CI service-account email                          | Identity allowed to publish reports; optionally invoke protected services.                         | Repository variable.                                      |
+| App test-user credentials/storage-state bootstrap | Required only for application login.                                                               | GitHub environment secrets or an approved secret store.   |
+| Viewer URL and viewer access group                | Optional permanent report browsing.                                                                | Configure in the viewer phase.                            |
 
 Do not infer the deployed application revision from `github.sha`. That value identifies the workflow checkout, which can differ from the code already running in Cloud Run. Record both identities when the application exposes a version endpoint or deployment metadata.
 
@@ -112,9 +112,10 @@ const criticalRoutes = [
 export default defineConfig({
   mode: "compare",
   baseURL: { production, staging },
-  routes: profile === "full"
-    ? [...criticalRoutes, { path: "/contact", name: "Contact" }]
-    : criticalRoutes,
+  routes:
+    profile === "full"
+      ? [...criticalRoutes, { path: "/contact", name: "Contact" }]
+      : criticalRoutes,
   viewports: {
     desktop: { width: 1440, height: 900 },
     mobile: { width: 390, height: 844 },
@@ -148,15 +149,15 @@ The `critical` profile above produces three targets at two viewports: six jobs a
 
 Important settings:
 
-| Setting | Recommended initial choice | What it controls |
-| --- | --- | --- |
-| Failure policy | CLI `--fail-on review`. | Makes both Review and Regression changes actionable; capture/config/environment errors must also fail. Use `regression` only if informational reviews are intentional. |
-| AI | `none` and `--no-ai`. | Establishes predictable capture/diff behavior without extra model calls. Add Gemini later with explicit budgets if useful. |
-| Viewports/browser | One Chromium engine, desktop and mobile. | Limits cost and keeps the rendering environment stable. |
-| Dynamic content | Stable test data and narrowly marked ignored descendants. | Reduces noise without masking an entire section or relaxing every threshold. |
-| Optional checks | Accessibility/performance off initially. | Enable separately after reviewing their expected findings. Section capture does not restrict these checks to the section. |
-| Baseline changes | Never update in the daily workflow. | Prevents a daily run from accepting the very change it should detect. |
-| Test profile | Fixed `critical` schedule; allowlisted manual `critical`/`full`. | Expands coverage without accepting arbitrary shell arguments or URLs from an input. |
+| Setting           | Recommended initial choice                                       | What it controls                                                                                                                                                       |
+| ----------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Failure policy    | CLI `--fail-on review`.                                          | Makes both Review and Regression changes actionable; capture/config/environment errors must also fail. Use `regression` only if informational reviews are intentional. |
+| AI                | `none` and `--no-ai`.                                            | Establishes predictable capture/diff behavior without extra model calls. Add Gemini later with explicit budgets if useful.                                             |
+| Viewports/browser | One Chromium engine, desktop and mobile.                         | Limits cost and keeps the rendering environment stable.                                                                                                                |
+| Dynamic content   | Stable test data and narrowly marked ignored descendants.        | Reduces noise without masking an entire section or relaxing every threshold.                                                                                           |
+| Optional checks   | Accessibility/performance off initially.                         | Enable separately after reviewing their expected findings. Section capture does not restrict these checks to the section.                                              |
+| Baseline changes  | Never update in the daily workflow.                              | Prevents a daily run from accepting the very change it should detect.                                                                                                  |
+| Test profile      | Fixed `critical` schedule; allowlisted manual `critical`/`full`. | Expands coverage without accepting arbitrary shell arguments or URLs from an input.                                                                                    |
 
 ## 6. What the CI run does
 
@@ -196,11 +197,11 @@ Authenticate near the upload rather than only at job startup: federation credent
 
 ## 8. Public, IAM-protected, and private-network Cloud Run services
 
-| Application access | CI approach | Additional work |
-| --- | --- | --- |
-| Publicly reachable application endpoints | GitHub-hosted Linux runner captures the configured HTTPS URLs. | Application login/test data if relevant. This is the main draft workflow below. |
-| IAM-protected endpoint with reachable ingress | Federate to an allowed identity, obtain a Google-signed ID token for each service audience, and attach it to that service's requests. | `roles/run.invoker`, token lifetime/refresh, authenticated preflight, and origin-scoped token delivery. |
-| Internal ingress/private network | Use a GitHub Actions runner with a supported route into the GCP network, typically a self-hosted runner in the VPC. | Networking, DNS, egress for GitHub/dependencies, and the IAM/app-login configuration above. Authentication alone cannot make an unreachable service reachable. |
+| Application access                            | CI approach                                                                                                                           | Additional work                                                                                                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Publicly reachable application endpoints      | GitHub-hosted Linux runner captures the configured HTTPS URLs.                                                                        | Application login/test data if relevant. This is the main draft workflow below.                                                                                |
+| IAM-protected endpoint with reachable ingress | Federate to an allowed identity, obtain a Google-signed ID token for each service audience, and attach it to that service's requests. | `roles/run.invoker`, token lifetime/refresh, authenticated preflight, and origin-scoped token delivery.                                                        |
+| Internal ingress/private network              | Use a GitHub Actions runner with a supported route into the GCP network, typically a self-hosted runner in the VPC.                   | Networking, DNS, egress for GitHub/dependencies, and the IAM/app-login configuration above. Authentication alone cannot make an unreachable service reachable. |
 
 For IAM authentication, Google supports `X-Serverless-Authorization: Bearer ID_TOKEN` when the application's own `Authorization` header is needed separately. The audience should be the service URL or an explicitly configured custom audience; traffic-tag requests still need the correct service audience. Mint separate tokens for separate services and avoid printing them. See [Cloud Run service-to-service authentication](https://docs.cloud.google.com/run/docs/authenticating/service-to-service).
 
@@ -434,14 +435,14 @@ Generate/update references in a separate explicit approval workflow, never in th
 
 ## 15. Implementation phases and acceptance criteria
 
-| Phase | Work | Completion criteria |
-| --- | --- | --- |
-| CI01 — confirm scope and local proof | Confirm time zone, URLs, app access model, branch, package manager, section support, profile and failure policy. Commit config/dependencies in the application repository. | A local run captures the intended application/sections and produces a complete report with the selected published package. |
-| CI02 — manual GitHub comparison | Add `workflow_dispatch`, pinned tools, preflight, helper scripts, summaries, and GitHub artifacts. Use production/staging public flow or complete required private access first. | Manual success and intentional visual failure both produce usable artifacts; missing section/config/browser conditions fail correctly. |
-| CI03 — GCP archive | Configure federation, least-privilege bucket access, unique prefixes, complete uploads, publication outcomes, and retention. | No long-lived GCP key is needed; upload failure stays visible; downloaded bucket evidence renders all images. |
-| CI04 — daily schedule | Add timezone-aware daily trigger on the default branch and nonoverlap policy. | Observe the first scheduled run, confirm the intended IST date/time and scope, retain manual triggering, and document delay/missed-run handling. |
-| CI05 — authenticated browser reports | Implement the optional read-only Cloud Run bucket viewer, user access, artifact routing, and completion metadata. | Authorized users open a report URL and all PNGs/crops load; unauthorized users cannot read reports; failed/partial uploads are clearly distinguished. |
-| CI06 — expand coverage | Add selected full profiles/browsers, optional AI/a11y/performance, notifications, or a separate post-deploy gate as requested. | New capabilities have measured duration/storage impact and their own focused validation. |
+| Phase                                | Work                                                                                                                                                                             | Completion criteria                                                                                                                                   |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CI01 — confirm scope and local proof | Confirm time zone, URLs, app access model, branch, package manager, section support, profile and failure policy. Commit config/dependencies in the application repository.       | A local run captures the intended application/sections and produces a complete report with the selected published package.                            |
+| CI02 — manual GitHub comparison      | Add `workflow_dispatch`, pinned tools, preflight, helper scripts, summaries, and GitHub artifacts. Use production/staging public flow or complete required private access first. | Manual success and intentional visual failure both produce usable artifacts; missing section/config/browser conditions fail correctly.                |
+| CI03 — GCP archive                   | Configure federation, least-privilege bucket access, unique prefixes, complete uploads, publication outcomes, and retention.                                                     | No long-lived GCP key is needed; upload failure stays visible; downloaded bucket evidence renders all images.                                         |
+| CI04 — daily schedule                | Add timezone-aware daily trigger on the default branch and nonoverlap policy.                                                                                                    | Observe the first scheduled run, confirm the intended IST date/time and scope, retain manual triggering, and document delay/missed-run handling.      |
+| CI05 — authenticated browser reports | Implement the optional read-only Cloud Run bucket viewer, user access, artifact routing, and completion metadata.                                                                | Authorized users open a report URL and all PNGs/crops load; unauthorized users cannot read reports; failed/partial uploads are clearly distinguished. |
+| CI06 — expand coverage               | Add selected full profiles/browsers, optional AI/a11y/performance, notifications, or a separate post-deploy gate as requested.                                                   | New capabilities have measured duration/storage impact and their own focused validation.                                                              |
 
 Keep this planning commit separate. Implement only the requested phase at each step, with phase implementation, docs, and focused checks together. Under the current repository instructions, formatting, lint, and type-check commands remain deferred. No live GitHub or GCP configuration has been changed by preparing this plan.
 

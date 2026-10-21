@@ -5,8 +5,14 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/server/scaffold.ts", "apps/platform/server/runtime.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/auth.ts"]
-sidebar: {"order": 5}
+sourcePaths:
+  [
+    "apps/platform/server/scaffold.ts",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/server/built-in-runner.ts",
+    "apps/platform/server/auth.ts",
+  ]
+sidebar: { "order": 5 }
 ---
 
 This tutorial deploys the VisualGuard dashboard to Google Cloud Run as one container. You will generate a deployment folder, write its settings, deploy from source, set the public URL and check that it works. Cloud Run keeps the container running, so with the right flags the dashboard can also run **Run test** itself.
@@ -31,13 +37,13 @@ cd deploy/visualguard-cloud-run
 
 You should see the full path of the new folder. It must be empty or not exist yet. It contains:
 
-| File | Purpose |
-| --- | --- |
-| `package.json` | Depends on `visualguard` and `playwright` when the scaffold includes host capture. |
-| `Dockerfile` | Builds a Node 22 image, runs as the `node` user, listens on port 8080 and starts `visualguard dashboard` in login mode. A scaffold with host-capture support also installs Chromium; inspect the generated image before deployment. |
-| `.dockerignore` | Keeps `node_modules`, `.git`, `.env*` and `.visualguard` out of the image. |
-| `.env.example` | The variables you must set. Do not put real secrets here. |
-| `.gitignore` | Keeps `node_modules/`, `.env*` and build output out of Git. |
+| File            | Purpose                                                                                                                                                                                                                             |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `package.json`  | Depends on `visualguard` and `playwright` when the scaffold includes host capture.                                                                                                                                                  |
+| `Dockerfile`    | Builds a Node 22 image, runs as the `node` user, listens on port 8080 and starts `visualguard dashboard` in login mode. A scaffold with host-capture support also installs Chromium; inspect the generated image before deployment. |
+| `.dockerignore` | Keeps `node_modules`, `.git`, `.env*` and `.visualguard` out of the image.                                                                                                                                                          |
+| `.env.example`  | The variables you must set. Do not put real secrets here.                                                                                                                                                                           |
+| `.gitignore`    | Keeps `node_modules/`, `.env*` and build output out of Git.                                                                                                                                                                         |
 
 ## 2. Pin the package version
 
@@ -107,16 +113,16 @@ gcloud run deploy visualguard-dashboard \
 
 You should see `Service [visualguard-dashboard] revision [...] has been deployed`. The first build takes several minutes.
 
-| Flag | Why |
-| --- | --- |
-| `--source .` | Build the image from this folder with Cloud Build. |
-| `--env-vars-file` | Load the settings from step 4. |
-| `--port 8080` | The port the `Dockerfile` listens on. |
-| `--max-instances 3` | A starting cap. Raise it after testing database connections (five per instance). |
-| `--no-allow-unauthenticated` | Keep the service private until the URL is set. |
-| `--no-cpu-throttling` | Keep CPU running after a response, so tests started from the UI can finish. |
-| `--min-instances 1` | Keep one container alive, so a running capture is not shut down. |
-| `--memory 2Gi` | Room for Chromium during captures. |
+| Flag                         | Why                                                                              |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| `--source .`                 | Build the image from this folder with Cloud Build.                               |
+| `--env-vars-file`            | Load the settings from step 4.                                                   |
+| `--port 8080`                | The port the `Dockerfile` listens on.                                            |
+| `--max-instances 3`          | A starting cap. Raise it after testing database connections (five per instance). |
+| `--no-allow-unauthenticated` | Keep the service private until the URL is set.                                   |
+| `--no-cpu-throttling`        | Keep CPU running after a response, so tests started from the UI can finish.      |
+| `--min-instances 1`          | Keep one container alive, so a running capture is not shut down.                 |
+| `--memory 2Gi`               | Room for Chromium during captures.                                               |
 
 These are starting values, not measured capacity limits.
 
@@ -186,15 +192,15 @@ A team using a dashboard with built-in capture deploys with the flags above and 
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| The container fails to start | Open the service's **Logs** tab in the Google Cloud console and read the first error. |
-| "Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data" | Add the database URL to the service and redeploy. |
-| `/api/health` returns `{"status":"unavailable"}` | The database is unreachable. Check its network rules and TLS options. |
-| Sign-in fails after a new deploy | The YAML still had `https://setup.invalid`. Fix the file and update the service. |
-| A variable is both a literal and a secret | Remove it from the env-vars file before using `--set-secrets`. |
-| "Runner disconnected or timed out" | Redeploy with `--no-cpu-throttling --min-instances 1 --memory 2Gi`. If host capture is unavailable, start a private runner. |
-| "Chromium is not installed on the dashboard host" | The folder was generated by an older release. Regenerate it with the current release, or connect a private runner. |
+| Problem                                                                     | Fix                                                                                                                         |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| The container fails to start                                                | Open the service's **Logs** tab in the Google Cloud console and read the first error.                                       |
+| "Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data" | Add the database URL to the service and redeploy.                                                                           |
+| `/api/health` returns `{"status":"unavailable"}`                            | The database is unreachable. Check its network rules and TLS options.                                                       |
+| Sign-in fails after a new deploy                                            | The YAML still had `https://setup.invalid`. Fix the file and update the service.                                            |
+| A variable is both a literal and a secret                                   | Remove it from the env-vars file before using `--set-secrets`.                                                              |
+| "Runner disconnected or timed out"                                          | Redeploy with `--no-cpu-throttling --min-instances 1 --memory 2Gi`. If host capture is unavailable, start a private runner. |
+| "Chromium is not installed on the dashboard host"                           | The folder was generated by an older release. Regenerate it with the current release, or connect a private runner.          |
 
 See [dashboard troubleshooting](/troubleshooting/dashboard/) for more.
 

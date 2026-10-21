@@ -5,8 +5,22 @@ audience: "contributor"
 docType: "tutorial"
 channel: "source"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/LOCAL-SETUP.md", "package.json", "apps/platform/package.json", "scripts/serve-fixtures.mjs", "apps/platform/server/dev.ts", "apps/platform/server/runtime.ts", "apps/platform/server/config.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/test-runner.ts", "apps/platform/server/test-executions.ts", "apps/platform/server/operations-command.ts", "apps/platform/client/project-tests.tsx"]
-sidebar: {"order": 1}
+sourcePaths:
+  [
+    "docs/LOCAL-SETUP.md",
+    "package.json",
+    "apps/platform/package.json",
+    "scripts/serve-fixtures.mjs",
+    "apps/platform/server/dev.ts",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/server/config.ts",
+    "apps/platform/server/built-in-runner.ts",
+    "apps/platform/server/test-runner.ts",
+    "apps/platform/server/test-executions.ts",
+    "apps/platform/server/operations-command.ts",
+    "apps/platform/client/project-tests.tsx",
+  ]
+sidebar: { "order": 1 }
 ---
 
 This tutorial runs VisualGuard from a clone of this repository, on your own computer. It walks through every local flow, from a first offline comparison to a team dashboard on PostgreSQL or MongoDB with sign-in, reviews, baselines and dashboard-run tests.
@@ -27,11 +41,11 @@ Run every command from the **repository root** unless a step says otherwise. Exa
 
 A local trial uses up to three separate processes. Open three terminals and keep them open.
 
-| Terminal | Runs | Needed for |
-| --- | --- | --- |
-| **A** | The demo "production" and "staging" websites on ports 4100 and 4101. | Every step after step 2. |
-| **B** | The dashboard on port 4400. | Steps 5 to 12. Skip it for offline comparisons. |
-| **C** | The `visualguard` commands that capture and compare pages. | Every comparison. |
+| Terminal | Runs                                                                 | Needed for                                      |
+| -------- | -------------------------------------------------------------------- | ----------------------------------------------- |
+| **A**    | The demo "production" and "staging" websites on ports 4100 and 4101. | Every step after step 2.                        |
+| **B**    | The dashboard on port 4400.                                          | Steps 5 to 12. Skip it for offline comparisons. |
+| **C**    | The `visualguard` commands that capture and compare pages.           | Every comparison.                               |
 
 Starting the dashboard does not start the demo sites and does not take screenshots. Each process does only its own job. AI runs wherever the capture runs, so you can add it to any step without changing the dashboard's database.
 
@@ -103,15 +117,15 @@ cat > output/local-demo.json <<'JSON'
 JSON
 ```
 
-| Field | What it does |
-| --- | --- |
-| `baseURL.production` | The reference site: what the page should look like. |
-| `baseURL.staging` | The candidate site: the version you are checking. |
-| `routes` | The pages to compare. Add `/identical`, `/hidden`, `/alignment` or `/dynamic-change` to try other cases. |
-| `viewports` | The browser window sizes to capture. |
-| `ai.provider` | `none` turns AI off. Step 4 turns it on. |
-| `stabilize.freezeTime` | Sets the page clock to a fixed time, so clocks and dates do not cause differences. |
-| `output.dir` | Where run results are saved. |
+| Field                  | What it does                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `baseURL.production`   | The reference site: what the page should look like.                                                      |
+| `baseURL.staging`      | The candidate site: the version you are checking.                                                        |
+| `routes`               | The pages to compare. Add `/identical`, `/hidden`, `/alignment` or `/dynamic-change` to try other cases. |
+| `viewports`            | The browser window sizes to capture.                                                                     |
+| `ai.provider`          | `none` turns AI off. Step 4 turns it on.                                                                 |
+| `stabilize.freezeTime` | Sets the page clock to a fixed time, so clocks and dates do not cause differences.                       |
+| `output.dir`           | Where run results are saved.                                                                             |
 
 ## 3. Run a comparison without a dashboard
 
@@ -130,11 +144,11 @@ A non-zero exit code from `test` can mean a regression was found, not that the i
 
 Useful extra commands:
 
-| Command | What it does |
-| --- | --- |
-| `node packages/visualguard/dist/cli.js doctor --config output/local-demo.json` | Checks the config and whether both sites are reachable. |
-| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --list` | Prints the page pairs it would compare, without capturing. |
-| `node packages/visualguard/dist/cli.js report --config output/local-demo.json --run RUN_ID` | Opens an older run instead of the latest. |
+| Command                                                                                     | What it does                                               |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `node packages/visualguard/dist/cli.js doctor --config output/local-demo.json`              | Checks the config and whether both sites are reachable.    |
+| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --list`         | Prints the page pairs it would compare, without capturing. |
+| `node packages/visualguard/dist/cli.js report --config output/local-demo.json --run RUN_ID` | Opens an older run instead of the latest.                  |
 
 ## 4. Add AI explanations
 
@@ -162,10 +176,10 @@ You should see AI analysis in the report's findings.
 
 If the key, quota, model or network fails, VisualGuard falls back to its built-in rules and still produces a report. So a saved report alone does not prove the AI call worked; check the findings. Two config options change how AI is used:
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `ai.analyze` | `"uncertain"` sends only unclear changes to AI. `"all"` also explains clear regressions. | `"uncertain"` |
-| `ai.advisory` | `true` keeps the rule-based status and adds the AI explanation alongside it. | `false` |
+| Option        | What it does                                                                             | Default       |
+| ------------- | ---------------------------------------------------------------------------------------- | ------------- |
+| `ai.analyze`  | `"uncertain"` sends only unclear changes to AI. `"all"` also explains clear regressions. | `"uncertain"` |
+| `ai.advisory` | `true` keeps the rule-based status and adds the AI explanation alongside it.             | `false`       |
 
 ### Use a local Ollama model
 
@@ -214,12 +228,12 @@ pnpm platform:dev
 
 You should see `VisualGuard dashboard: http://127.0.0.1:4400`. Open it. Keep this terminal running.
 
-| Setting | What it does | Default |
-| --- | --- | --- |
-| `VISUALGUARD_AUTH_MODE` | `local` trusts the person at this computer as the workspace owner. No login and no upload token. Only works on a loopback address such as `127.0.0.1`. `login` turns on accounts (step 8). | `local` |
-| `VISUALGUARD_PLATFORM_DATA_DIR` | The folder for the SQLite file and stored objects. Use an absolute path. | `.visualguard/platform` in the folder you ran the command from |
-| `VISUALGUARD_DATABASE_URL` | A PostgreSQL or MongoDB address. Empty means SQLite. | empty |
-| `VISUALGUARD_PLATFORM_PORT` | The port for `platform:dev` and `platform:start`. | `4400` |
+| Setting                         | What it does                                                                                                                                                                               | Default                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| `VISUALGUARD_AUTH_MODE`         | `local` trusts the person at this computer as the workspace owner. No login and no upload token. Only works on a loopback address such as `127.0.0.1`. `login` turns on accounts (step 8). | `local`                                                        |
+| `VISUALGUARD_PLATFORM_DATA_DIR` | The folder for the SQLite file and stored objects. Use an absolute path.                                                                                                                   | `.visualguard/platform` in the folder you ran the command from |
+| `VISUALGUARD_DATABASE_URL`      | A PostgreSQL or MongoDB address. Empty means SQLite.                                                                                                                                       | empty                                                          |
+| `VISUALGUARD_PLATFORM_PORT`     | The port for `platform:dev` and `platform:start`.                                                                                                                                          | `4400`                                                         |
 
 `pnpm platform:dev` runs the dashboard API and its web client with live reload. It does not start the demo sites or take screenshots.
 
@@ -375,12 +389,12 @@ VISUALGUARD_ADMIN_EMAIL=owner@example.com
 VISUALGUARD_ADMIN_PASSWORD='use-a-unique-password-of-12-to-256-characters'
 ```
 
-| Setting | What it does |
-| --- | --- |
-| `VISUALGUARD_AUTH_MODE=login` | Requires sign-in for people and an upload token for the CLI, even on this computer. |
-| `VISUALGUARD_USER_ADMISSION` | `invite` lets new people in only through an invitation. `legacy` keeps older open behavior. |
-| `VISUALGUARD_PUBLIC_URL` | The exact address people open. Sign-in cookies and Google callbacks use it. |
-| `VISUALGUARD_ADMIN_EMAIL`, `VISUALGUARD_ADMIN_PASSWORD` | Create the first administrator, once. |
+| Setting                                                 | What it does                                                                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `VISUALGUARD_AUTH_MODE=login`                           | Requires sign-in for people and an upload token for the CLI, even on this computer.         |
+| `VISUALGUARD_USER_ADMISSION`                            | `invite` lets new people in only through an invitation. `legacy` keeps older open behavior. |
+| `VISUALGUARD_PUBLIC_URL`                                | The exact address people open. Sign-in cookies and Google callbacks use it.                 |
+| `VISUALGUARD_ADMIN_EMAIL`, `VISUALGUARD_ADMIN_PASSWORD` | Create the first administrator, once.                                                       |
 
 Start with a **fresh, separate** workspace, so this trial does not mix with the local-mode data. In **terminal B**:
 
@@ -554,10 +568,10 @@ Recovery cannot create or promote users, merge identities, or add a password to 
 
 ### Back up
 
-| Backup type | What it contains | Use it for |
-| --- | --- | --- |
-| Native database backup | Everything: accounts, reviews, baselines, policies, dashboard state and images. | Recovering the whole installation. |
-| Portable evidence export | Projects, run evidence and images, without accounts or sign-in state. | Sharing evidence offline. Not for recovery. |
+| Backup type              | What it contains                                                                | Use it for                                  |
+| ------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------- |
+| Native database backup   | Everything: accounts, reviews, baselines, policies, dashboard state and images. | Recovering the whole installation.          |
+| Portable evidence export | Projects, run evidence and images, without accounts or sign-in state.           | Sharing evidence offline. Not for recovery. |
 
 For SQLite, stop every dashboard first, then copy the whole data folder, including any separate SQLite file you set with `VISUALGUARD_SQLITE_FILE`. Never copy only the main file while the dashboard is still writing. For PostgreSQL and MongoDB, use the provider's consistent backup tools.
 
@@ -578,13 +592,13 @@ Each project can store its own test settings, and anyone with the right role can
 1. In the dashboard, select the project and choose **Configure tests**.
 2. Fill in the form for this guide's demo:
 
-   | Field | Value |
-   | --- | --- |
-   | Production / reference URL | `http://127.0.0.1:4100` |
-   | Staging / candidate URL | `http://127.0.0.1:4101` |
-   | Routes (one per line) | `/color-change` |
-   | Viewports (JSON) | `{ "desktop": { "width": 1280, "height": 800 } }` |
-   | AI provider | None |
+   | Field                      | Value                                             |
+   | -------------------------- | ------------------------------------------------- |
+   | Production / reference URL | `http://127.0.0.1:4100`                           |
+   | Staging / candidate URL    | `http://127.0.0.1:4101`                           |
+   | Routes (one per line)      | `/color-change`                                   |
+   | Viewports (JSON)           | `{ "desktop": { "width": 1280, "height": 800 } }` |
+   | AI provider                | None                                              |
 
 3. Choose **Save test configuration**.
 
@@ -596,10 +610,10 @@ In the source checkout, the dashboard runs **Run test** itself. This is the **bu
 
 Keep terminals A and B running, then choose **Run test**. You should see live stages and a count of finished page-and-viewport comparisons. When it ends, choose **View result** to open the new run.
 
-| Setting | What it does | Default |
-| --- | --- | --- |
-| `VISUALGUARD_BUILT_IN_RUNNER` | `off`, `false`, `no` or `0` turns the built-in runner off. Any other value turns it on. | On, except on Vercel, where it is off |
-| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | How many projects can run a dashboard test at the same time. | `1` |
+| Setting                                   | What it does                                                                            | Default                               |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------- |
+| `VISUALGUARD_BUILT_IN_RUNNER`             | `off`, `false`, `no` or `0` turns the built-in runner off. Any other value turns it on. | On, except on Vercel, where it is off |
+| `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` | How many projects can run a dashboard test at the same time.                            | `1`                                   |
 
 How it behaves:
 
@@ -676,22 +690,22 @@ Check each flow you followed:
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| Browser executable is missing | Run `pnpm --filter visualguard exec playwright install chromium`. On Linux, add `--with-deps`. |
-| The dashboard history is empty or wrong | Use the same absolute data folder or database address in every terminal. Relative `.visualguard/` paths depend on the folder you run from. Use `test PROJECT --dashboard URL` to target the running dashboard. |
-| `role "USER" does not exist` | Replace placeholder credentials with the real PostgreSQL user and password, and make sure that user can create tables in the database. |
-| `MongoDB URL must include a database name` | Add `/visualguard` before the `?` in the address. |
-| MongoDB times out or rejects the login | Check the Atlas IP access list, the database user and its permissions, and URL-encoding in the password. |
-| The dashboard will not start with MongoDB and `invite` | Use a replica set or sharded cluster with transactions, or choose the limited `VISUALGUARD_USER_ADMISSION=legacy` mode on purpose. |
-| Google sign-in buttons are missing | Use login mode with all three `VISUALGUARD_OIDC_*` values, load them in the dashboard's own terminal, and restart. |
-| Google shows `redirect_uri_mismatch` | Match the scheme, host, port and `/api/auth/callback` exactly. Do not mix `localhost` and `127.0.0.1`. |
-| The upload token is rejected | Use the right project's token, the right dashboard address, and an account with access. Login mode needs a token even on this computer. |
-| A direct link returns 404 in development | Navigate from the dashboard sidebar, or run the built dashboard with `platform:start`. |
-| **Run test** says to connect a runner | The built-in runner is off. Unset `VISUALGUARD_BUILT_IN_RUNNER`, or start a private runner. |
-| **Run test** fails with "Chromium is not installed on the dashboard host" | Install Chromium where the dashboard runs, or connect a private runner. |
-| A feature is missing in the UI or CLI | Check you are on the right branch and rebuild. Old `dist` folders and npm installs do not update themselves. |
-| A baseline or policy is blocked | Read the exact reasons: evidence, commit, coverage, rendering, freshness or approval. Do not relabel old evidence. |
+| Problem                                                                   | Fix                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browser executable is missing                                             | Run `pnpm --filter visualguard exec playwright install chromium`. On Linux, add `--with-deps`.                                                                                                                 |
+| The dashboard history is empty or wrong                                   | Use the same absolute data folder or database address in every terminal. Relative `.visualguard/` paths depend on the folder you run from. Use `test PROJECT --dashboard URL` to target the running dashboard. |
+| `role "USER" does not exist`                                              | Replace placeholder credentials with the real PostgreSQL user and password, and make sure that user can create tables in the database.                                                                         |
+| `MongoDB URL must include a database name`                                | Add `/visualguard` before the `?` in the address.                                                                                                                                                              |
+| MongoDB times out or rejects the login                                    | Check the Atlas IP access list, the database user and its permissions, and URL-encoding in the password.                                                                                                       |
+| The dashboard will not start with MongoDB and `invite`                    | Use a replica set or sharded cluster with transactions, or choose the limited `VISUALGUARD_USER_ADMISSION=legacy` mode on purpose.                                                                             |
+| Google sign-in buttons are missing                                        | Use login mode with all three `VISUALGUARD_OIDC_*` values, load them in the dashboard's own terminal, and restart.                                                                                             |
+| Google shows `redirect_uri_mismatch`                                      | Match the scheme, host, port and `/api/auth/callback` exactly. Do not mix `localhost` and `127.0.0.1`.                                                                                                         |
+| The upload token is rejected                                              | Use the right project's token, the right dashboard address, and an account with access. Login mode needs a token even on this computer.                                                                        |
+| A direct link returns 404 in development                                  | Navigate from the dashboard sidebar, or run the built dashboard with `platform:start`.                                                                                                                         |
+| **Run test** says to connect a runner                                     | The built-in runner is off. Unset `VISUALGUARD_BUILT_IN_RUNNER`, or start a private runner.                                                                                                                    |
+| **Run test** fails with "Chromium is not installed on the dashboard host" | Install Chromium where the dashboard runs, or connect a private runner.                                                                                                                                        |
+| A feature is missing in the UI or CLI                                     | Check you are on the right branch and rebuild. Old `dist` folders and npm installs do not update themselves.                                                                                                   |
+| A baseline or policy is blocked                                           | Read the exact reasons: evidence, commit, coverage, rendering, freshness or approval. Do not relabel old evidence.                                                                                             |
 
 For more, see [dashboard troubleshooting](/troubleshooting/dashboard/) and [capture troubleshooting](/troubleshooting/capture/). For changes to VisualGuard itself, run the focused tests from [run the test suites](/contributing/testing/). The repository's `AGENTS.md` currently defers formatting, lint and type-check commands, so do not report them as passed.
 
@@ -701,18 +715,18 @@ Run these from the repository root after the build in step 1. In an app with the
 
 ### Common source commands
 
-| Command | What it does |
-| --- | --- |
-| `node scripts/serve-fixtures.mjs` | Starts the demo production and staging sites on ports 4100 and 4101. Keep it running while you capture. |
-| `pnpm platform:dev` | Starts the dashboard with live reload. Export its settings in the same terminal first. |
-| `pnpm platform:start` | Serves the built dashboard. Run `pnpm platform:build` first and export its settings. |
-| `node packages/visualguard/dist/cli.js dashboard --env-file .env.visualguard` | Starts the packaged dashboard with settings from a file, for SQLite, PostgreSQL or MongoDB. |
-| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --no-ai` | Runs an offline comparison and saves the evidence locally. |
-| `node packages/visualguard/dist/cli.js report --config output/local-demo.json` | Opens the latest report. Add `--run RUN_ID` for another run. |
-| `node packages/visualguard/dist/cli.js doctor --config output/local-demo.json` | Checks the config and whether the sites are reachable. |
-| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --list` | Shows the planned page pairs without capturing. |
-| `pnpm platform:operations status` | Shows host-side dashboard status for operators. |
-| `node packages/visualguard/dist/cli.js --help` | Lists commands. Every command and subcommand also accepts `--help`. |
+| Command                                                                              | What it does                                                                                            |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `node scripts/serve-fixtures.mjs`                                                    | Starts the demo production and staging sites on ports 4100 and 4101. Keep it running while you capture. |
+| `pnpm platform:dev`                                                                  | Starts the dashboard with live reload. Export its settings in the same terminal first.                  |
+| `pnpm platform:start`                                                                | Serves the built dashboard. Run `pnpm platform:build` first and export its settings.                    |
+| `node packages/visualguard/dist/cli.js dashboard --env-file .env.visualguard`        | Starts the packaged dashboard with settings from a file, for SQLite, PostgreSQL or MongoDB.             |
+| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --no-ai` | Runs an offline comparison and saves the evidence locally.                                              |
+| `node packages/visualguard/dist/cli.js report --config output/local-demo.json`       | Opens the latest report. Add `--run RUN_ID` for another run.                                            |
+| `node packages/visualguard/dist/cli.js doctor --config output/local-demo.json`       | Checks the config and whether the sites are reachable.                                                  |
+| `node packages/visualguard/dist/cli.js test --config output/local-demo.json --list`  | Shows the planned page pairs without capturing.                                                         |
+| `pnpm platform:operations status`                                                    | Shows host-side dashboard status for operators.                                                         |
+| `node packages/visualguard/dist/cli.js --help`                                       | Lists commands. Every command and subcommand also accepts `--help`.                                     |
 
 The demo sites, the dashboard and the test runner are separate processes. `dashboard init` creates hosting files; `dashboard project create` creates a project inside a running dashboard.
 

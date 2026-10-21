@@ -26,7 +26,6 @@ Search is generated during the build. Output is `apps/docs/dist`, and Astro's ca
 
 Formatting, lint and semantic type checks are deferred under the repository's current instructions. A documentation production build does not constitute a passed type check.
 
-
 ## Focused documentation checks
 
 From the repository root, after installing the workspace dependencies:

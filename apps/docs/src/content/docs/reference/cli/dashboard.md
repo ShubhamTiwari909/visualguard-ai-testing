@@ -5,8 +5,14 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/cli/commands/dashboard.ts", "apps/platform/server/runtime.ts", "apps/platform/server/test-runner.ts", "scripts/docs/generate-reference.mjs"]
-sidebar: {"order": 2}
+sourcePaths:
+  [
+    "packages/visualguard/src/cli/commands/dashboard.ts",
+    "apps/platform/server/runtime.ts",
+    "apps/platform/server/test-runner.ts",
+    "scripts/docs/generate-reference.mjs",
+  ]
+sidebar: { "order": 2 }
 ---
 
 This page lists every option of `visualguard dashboard` and its subcommands. Use it when you start a dashboard, connect a runner, create projects, upload runs, pull approved baselines, check policies, back up evidence or generate hosting files. For a shorter overview of all commands, see the [command reference](/reference/cli/).
@@ -31,20 +37,20 @@ Commands with a `--server` option talk to a running dashboard over HTTP. Without
 
 ## Commands at a glance
 
-| Command | What it is for | Example |
-| --- | --- | --- |
-| `dashboard` | Start the dashboard server. It listens on `127.0.0.1:4400` by default. | `visualguard dashboard --env-file .env.visualguard --port 4400` |
-| `dashboard runner` | Keep a private runner open that captures tests requested with **Run test**. Needs `VISUALGUARD_RUNNER_TOKEN`. | `visualguard dashboard runner --project my-app --server https://YOUR_DASHBOARD_HOST` |
-| `dashboard project create` | Create a project with a stable ID. Does nothing if it already exists. | `visualguard dashboard project create my-app --name "My Application"` |
-| `dashboard import` | Import a saved run folder into the local database. | `visualguard dashboard import .visualguard/runs/RUN_ID --project my-app` |
-| `dashboard publish` | Upload a saved run folder to a dashboard server. Needs `VISUALGUARD_UPLOAD_TOKEN`. | `visualguard dashboard publish .visualguard/runs/RUN_ID --project my-app --server https://YOUR_DASHBOARD_HOST` |
-| `dashboard baseline pull` | Download an approved baseline set into a new, read-only folder. | `visualguard dashboard baseline pull main --project my-app --out .visualguard/approved-v1 --version 1` |
-| `dashboard policy assess` | Print the policy result for one exact commit. `--enforce` makes it exit `2` unless satisfied. | `visualguard dashboard policy assess --project my-app --revision SHA --enforce` |
-| `dashboard policy reconcile` | Recheck and publish GitHub checks. Pass exactly one of `--pr` or `--all`. | `visualguard dashboard policy reconcile --project my-app --pr 42` |
-| `dashboard export` | Write a compressed, portable evidence file without account secrets. The file must not exist yet. | `visualguard dashboard export team-evidence.vgbackup.gz` |
-| `dashboard restore` | Merge a portable evidence file without overwriting existing evidence. | `visualguard dashboard restore team-evidence.vgbackup.gz` |
-| `dashboard assets` | Copy the prebuilt dashboard UI for static or serverless hosting. | `visualguard dashboard assets --out public` |
-| `dashboard init` | Generate a Cloud Run or Vercel deployment folder. | `visualguard dashboard init --target cloud-run --out visualguard-dashboard` |
+| Command                      | What it is for                                                                                                | Example                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `dashboard`                  | Start the dashboard server. It listens on `127.0.0.1:4400` by default.                                        | `visualguard dashboard --env-file .env.visualguard --port 4400`                                                |
+| `dashboard runner`           | Keep a private runner open that captures tests requested with **Run test**. Needs `VISUALGUARD_RUNNER_TOKEN`. | `visualguard dashboard runner --project my-app --server https://YOUR_DASHBOARD_HOST`                           |
+| `dashboard project create`   | Create a project with a stable ID. Does nothing if it already exists.                                         | `visualguard dashboard project create my-app --name "My Application"`                                          |
+| `dashboard import`           | Import a saved run folder into the local database.                                                            | `visualguard dashboard import .visualguard/runs/RUN_ID --project my-app`                                       |
+| `dashboard publish`          | Upload a saved run folder to a dashboard server. Needs `VISUALGUARD_UPLOAD_TOKEN`.                            | `visualguard dashboard publish .visualguard/runs/RUN_ID --project my-app --server https://YOUR_DASHBOARD_HOST` |
+| `dashboard baseline pull`    | Download an approved baseline set into a new, read-only folder.                                               | `visualguard dashboard baseline pull main --project my-app --out .visualguard/approved-v1 --version 1`         |
+| `dashboard policy assess`    | Print the policy result for one exact commit. `--enforce` makes it exit `2` unless satisfied.                 | `visualguard dashboard policy assess --project my-app --revision SHA --enforce`                                |
+| `dashboard policy reconcile` | Recheck and publish GitHub checks. Pass exactly one of `--pr` or `--all`.                                     | `visualguard dashboard policy reconcile --project my-app --pr 42`                                              |
+| `dashboard export`           | Write a compressed, portable evidence file without account secrets. The file must not exist yet.              | `visualguard dashboard export team-evidence.vgbackup.gz`                                                       |
+| `dashboard restore`          | Merge a portable evidence file without overwriting existing evidence.                                         | `visualguard dashboard restore team-evidence.vgbackup.gz`                                                      |
+| `dashboard assets`           | Copy the prebuilt dashboard UI for static or serverless hosting.                                              | `visualguard dashboard assets --out public`                                                                    |
+| `dashboard init`             | Generate a Cloud Run or Vercel deployment folder.                                                             | `visualguard dashboard init --target cloud-run --out visualguard-dashboard`                                    |
 
 :::note
 When the installed dashboard supports built-in capture, it can run **Run test** itself using the signed-in user's login if no private runner is connected. `VISUALGUARD_BUILT_IN_RUNNER` and `VISUALGUARD_BUILT_IN_RUNNER_CONCURRENCY` control this. If host capture is unavailable, use a connected `dashboard runner`. See [environment variables](/reference/environment/).
@@ -67,13 +73,13 @@ Run a dashboard, manage projects, import/publish evidence, or generate hosting f
 visualguard dashboard --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--port <number>` | not set | HTTP port (default: PORT or 4400) |
-| `--host <host>` | not set | Listener address; external access requires login |
-| `--data-dir <directory>` | not set | Local data directory |
-| `--file <sqlite-file>` | not set | Open a local SQLite database file |
-| `--env-file <file>` | not set | Load dashboard environment settings from a file |
+| Option                   | Default | Meaning                                          |
+| ------------------------ | ------- | ------------------------------------------------ |
+| `--port <number>`        | not set | HTTP port (default: PORT or 4400)                |
+| `--host <host>`          | not set | Listener address; external access requires login |
+| `--data-dir <directory>` | not set | Local data directory                             |
+| `--file <sqlite-file>`   | not set | Open a local SQLite database file                |
+| `--env-file <file>`      | not set | Load dashboard environment settings from a file  |
 
 ## visualguard dashboard runner
 
@@ -83,13 +89,13 @@ Connect a private browser runner for dashboard-requested tests
 visualguard dashboard runner --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--project <id>` | not set | Dashboard project ID |
-| `--server <url>` | not set | Dashboard origin |
-| `--once` | not set | Poll once, execute pending work if present, then exit |
-| `--poll <milliseconds>` | `"3000"` | Polling interval (1000–30000) |
-| `--work-dir <directory>` | not set | Private directory for runner evidence |
+| Option                   | Default  | Meaning                                               |
+| ------------------------ | -------- | ----------------------------------------------------- |
+| `--project <id>`         | not set  | Dashboard project ID                                  |
+| `--server <url>`         | not set  | Dashboard origin                                      |
+| `--once`                 | not set  | Poll once, execute pending work if present, then exit |
+| `--poll <milliseconds>`  | `"3000"` | Polling interval (1000–30000)                         |
+| `--work-dir <directory>` | not set  | Private directory for runner evidence                 |
 
 ## visualguard dashboard policy
 
@@ -101,33 +107,29 @@ visualguard dashboard policy --help
 
 ## visualguard dashboard policy assess
 
-
-
 ```sh
 visualguard dashboard policy assess --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--project <id>` | not set | Project ID |
-| `--revision <sha>` | not set | Exact source commit |
-| `--run <id>` | not set | Assess a specific stored run |
-| `--server <url>` | not set | Dashboard origin; otherwise use local storage |
-| `--enforce` | not set | Exit with failure unless the policy is satisfied |
+| Option             | Default | Meaning                                          |
+| ------------------ | ------- | ------------------------------------------------ |
+| `--project <id>`   | not set | Project ID                                       |
+| `--revision <sha>` | not set | Exact source commit                              |
+| `--run <id>`       | not set | Assess a specific stored run                     |
+| `--server <url>`   | not set | Dashboard origin; otherwise use local storage    |
+| `--enforce`        | not set | Exit with failure unless the policy is satisfied |
 
 ## visualguard dashboard policy reconcile
-
-
 
 ```sh
 visualguard dashboard policy reconcile --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--project <id>` | not set | Project ID |
-| `--pr <number>` | not set | Verify and publish the live PR head |
-| `--all` | not set | Refresh every tracked PR for this project |
+| Option           | Default | Meaning                                       |
+| ---------------- | ------- | --------------------------------------------- |
+| `--project <id>` | not set | Project ID                                    |
+| `--pr <number>`  | not set | Verify and publish the live PR head           |
+| `--all`          | not set | Refresh every tracked PR for this project     |
 | `--server <url>` | not set | Dashboard origin; otherwise use local storage |
 
 ## visualguard dashboard baseline
@@ -140,18 +142,16 @@ visualguard dashboard baseline --help
 
 ## visualguard dashboard baseline pull
 
-
-
 ```sh
 visualguard dashboard baseline pull <set> --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--project <id>` | not set | Project ID |
-| `--out <directory>` | not set | New baseline directory (must not exist) |
+| Option               | Default | Meaning                                               |
+| -------------------- | ------- | ----------------------------------------------------- |
+| `--project <id>`     | not set | Project ID                                            |
+| `--out <directory>`  | not set | New baseline directory (must not exist)               |
 | `--version <number>` | not set | Pin an earlier immutable version; defaults to current |
-| `--server <url>` | not set | Dashboard origin; otherwise use the local database |
+| `--server <url>`     | not set | Dashboard origin; otherwise use the local database    |
 
 ## visualguard dashboard project
 
@@ -171,9 +171,9 @@ visualguard dashboard project create <id> --help
 
 Aliases: `add`.
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--name <name>` | not set | Project display name (defaults to its ID) |
+| Option           | Default | Meaning                                                                                      |
+| ---------------- | ------- | -------------------------------------------------------------------------------------------- |
+| `--name <name>`  | not set | Project display name (defaults to its ID)                                                    |
 | `--server <url>` | not set | Dashboard origin (or VISUALGUARD_DASHBOARD_URL); otherwise use the configured local database |
 
 ## visualguard dashboard import
@@ -184,16 +184,16 @@ Import a saved run into the configured database
 visualguard dashboard import <run-directory> --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--project <id>` | not set | Project slug |
-| `--name <name>` | not set | Project display name |
-| `--environment <name>` | `"staging"` | Environment label |
-| `--run-name <name>` | not set | Custom dashboard run name |
-| `--branch <name>` | not set | Branch label |
-| `--commit <sha>` | not set | Source revision |
-| `--pr <number>` | not set | Pull request number |
-| `--deployment <id>` | not set | Deployment label |
+| Option                 | Default     | Meaning                   |
+| ---------------------- | ----------- | ------------------------- |
+| `--project <id>`       | not set     | Project slug              |
+| `--name <name>`        | not set     | Project display name      |
+| `--environment <name>` | `"staging"` | Environment label         |
+| `--run-name <name>`    | not set     | Custom dashboard run name |
+| `--branch <name>`      | not set     | Branch label              |
+| `--commit <sha>`       | not set     | Source revision           |
+| `--pr <number>`        | not set     | Pull request number       |
+| `--deployment <id>`    | not set     | Deployment label          |
 
 ## visualguard dashboard publish
 
@@ -203,16 +203,16 @@ Publish using VISUALGUARD_UPLOAD_TOKEN
 visualguard dashboard publish <run-directory> --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--project <id>` | not set | Project slug |
-| `--server <url>` | not set | Dashboard origin |
-| `--environment <name>` | `"staging"` | Environment label |
-| `--run-name <name>` | not set | Custom dashboard run name |
-| `--branch <name>` | not set | Branch label |
-| `--commit <sha>` | not set | Source revision |
-| `--pr <number>` | not set | Pull request number |
-| `--deployment <id>` | not set | Deployment label |
+| Option                 | Default     | Meaning                   |
+| ---------------------- | ----------- | ------------------------- |
+| `--project <id>`       | not set     | Project slug              |
+| `--server <url>`       | not set     | Dashboard origin          |
+| `--environment <name>` | `"staging"` | Environment label         |
+| `--run-name <name>`    | not set     | Custom dashboard run name |
+| `--branch <name>`      | not set     | Branch label              |
+| `--commit <sha>`       | not set     | Source revision           |
+| `--pr <number>`        | not set     | Pull request number       |
+| `--deployment <id>`    | not set     | Deployment label          |
 
 ## visualguard dashboard export
 
@@ -238,8 +238,8 @@ Copy prebuilt UI for static/serverless hosting
 visualguard dashboard assets --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
+| Option              | Default | Meaning          |
+| ------------------- | ------- | ---------------- |
 | `--out <directory>` | not set | Output directory |
 
 ## visualguard dashboard init
@@ -250,11 +250,10 @@ Generate a minimal Cloud Run or Vercel project
 visualguard dashboard init --help
 ```
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--target <host>` | not set | vercel or cloud-run |
-| `--out <directory>` | `"visualguard-dashboard"` | New deployment project directory |
-| `--package <tarball>` | not set | Use a local release-candidate package |
-
+| Option                | Default                   | Meaning                               |
+| --------------------- | ------------------------- | ------------------------------------- |
+| `--target <host>`     | not set                   | vercel or cloud-run                   |
+| `--out <directory>`   | `"visualguard-dashboard"` | New deployment project directory      |
+| `--package <tarball>` | not set                   | Use a local release-candidate package |
 
 Dashboard startup options such as `--env-file` and `--data-dir` belong before the subcommand. Use `visualguard dashboard --env-file FILE publish ...`, not an application `.env.local` assumption. Source-only host recovery is documented separately and is not a package CLI endpoint.

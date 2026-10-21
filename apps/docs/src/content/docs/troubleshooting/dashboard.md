@@ -5,8 +5,19 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "apps/platform/server/test-executions.ts", "apps/platform/server/built-in-runner.ts", "apps/platform/server/test-runner.ts", "apps/platform/server/test-binding.ts", "apps/platform/server/config.ts", "apps/platform/server/auth.ts", "apps/platform/client/project-tests.tsx", "packages/visualguard/src/cli/commands/test.ts"]
-sidebar: {"order": 4}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "apps/platform/server/test-executions.ts",
+    "apps/platform/server/built-in-runner.ts",
+    "apps/platform/server/test-runner.ts",
+    "apps/platform/server/test-binding.ts",
+    "apps/platform/server/config.ts",
+    "apps/platform/server/auth.ts",
+    "apps/platform/client/project-tests.tsx",
+    "packages/visualguard/src/cli/commands/test.ts",
+  ]
+sidebar: { "order": 4 }
 ---
 
 Use this page when the VisualGuard dashboard does not show what you expect, a test cannot publish to it, **Run test** fails, or sign-in and database settings go wrong. Each problem lists the likely cause, the exact fix and how to confirm it.
@@ -26,12 +37,12 @@ You ran `visualguard test "My Application"`, but `visualguard dashboard` shows d
 
 - **Likely cause:** the test and the dashboard read different settings, so they use different storage. Each process chooses its storage like this:
 
-  | Command | Settings it reads |
-  | --- | --- |
-  | `test PROJECT` | Its own process settings plus the app's `.env` and `.env.local`. With no dashboard URL, it writes to the database those settings select, or to local SQLite storage. |
-  | `test PROJECT --dashboard URL` | Publishes through that running dashboard, which chooses the database. The test needs no database URL. |
-  | `dashboard --env-file .env.visualguard` | Loads that file, then starts. Settings already in the process win over the file. |
-  | `dashboard` without `--env-file` | Uses process settings or defaults only. It does not read `.env.visualguard` or the app's `.env.local` by itself. |
+  | Command                                 | Settings it reads                                                                                                                                                    |
+  | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `test PROJECT`                          | Its own process settings plus the app's `.env` and `.env.local`. With no dashboard URL, it writes to the database those settings select, or to local SQLite storage. |
+  | `test PROJECT --dashboard URL`          | Publishes through that running dashboard, which chooses the database. The test needs no database URL.                                                                |
+  | `dashboard --env-file .env.visualguard` | Loads that file, then starts. Settings already in the process win over the file.                                                                                     |
+  | `dashboard` without `--env-file`        | Uses process settings or defaults only. It does not read `.env.visualguard` or the app's `.env.local` by itself.                                                     |
 
 - **Fix:** run one dashboard with an explicit settings file, and send tests to that exact server. Stop any older dashboard first.
 
@@ -78,6 +89,7 @@ You do not need to capture again. The test output prints the saved run folder, b
   ```
 
   Replace `RUN_ID` with the real folder name that contains `manifest.json`. Use `dashboard import` instead of `publish` to write straight into the local database without a server.
+
 - **Confirm:** the run appears in the project's history.
 
 :::note
@@ -113,13 +125,13 @@ The full message adds a reason in brackets, such as `(ECONNREFUSED)` or `(reques
 
 ### Other binding errors before capture
 
-| Message | Fix |
-| --- | --- |
-| `Dashboard URL must be an HTTP(S) origin without a path or credentials` | Use only the origin, such as `https://dashboard.example.com`. |
-| `Remote dashboards require HTTPS` | Use HTTPS for any host that is not `localhost`, `127.0.0.1` or `[::1]`. |
-| `Set VISUALGUARD_UPLOAD_TOKEN to an upload token for this project` | Create an upload token for the project and set it on the test machine. |
+| Message                                                                   | Fix                                                                            |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `Dashboard URL must be an HTTP(S) origin without a path or credentials`   | Use only the origin, such as `https://dashboard.example.com`.                  |
+| `Remote dashboards require HTTPS`                                         | Use HTTPS for any host that is not `localhost`, `127.0.0.1` or `[::1]`.        |
+| `Set VISUALGUARD_UPLOAD_TOKEN to an upload token for this project`        | Create an upload token for the project and set it on the test machine.         |
 | `...; set VISUALGUARD_UPLOAD_TOKEN to this project's active upload token` | The token is missing, revoked or belongs to another project. Create a new one. |
-| `Dashboard project lookup returned an invalid response (...)` | Upgrade the dashboard so it matches the test machine's VisualGuard version. |
+| `Dashboard project lookup returned an invalid response (...)`             | Upgrade the dashboard so it matches the test machine's VisualGuard version.    |
 
 Binding errors stop the test before capture. A `400` or `409` answer exits with code `2`; other failures exit with code `3`.
 
@@ -153,6 +165,7 @@ This applies only when the installed dashboard supports built-in capture.
   ```
 
   The Cloud Run image generated by `dashboard init --target cloud-run` installs Chromium already.
+
 - **Confirm:** click **Run test** again. The progress moves past "Starting the browser…" to "Capturing screenshots…".
 
 ### `Connect a runner for this project before running a test`
@@ -186,23 +199,23 @@ This applies to the built-in runner only.
 
 ### Other Run test messages
 
-| Message | Likely cause and fix |
-| --- | --- |
-| `Save or refresh this project's configuration before running` | The configuration changed since the page loaded. Save it, or reload the page. |
-| `This project already has an active test` | Wait for the current test to finish. |
-| `Another test was requested; refresh the project` | Someone else started a test at the same time. Reload the page. |
-| `Capture or upload failed on the dashboard host. Check the dashboard server logs.` | The built-in capture failed for another reason, such as an unreachable URL. Read the server logs. |
+| Message                                                                                       | Likely cause and fix                                                                              |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Save or refresh this project's configuration before running`                                 | The configuration changed since the page loaded. Save it, or reload the page.                     |
+| `This project already has an active test`                                                     | Wait for the current test to finish.                                                              |
+| `Another test was requested; refresh the project`                                             | Someone else started a test at the same time. Reload the page.                                    |
+| `Capture or upload failed on the dashboard host. Check the dashboard server logs.`            | The built-in capture failed for another reason, such as an unreachable URL. Read the server logs. |
 | `Capture or upload failed. Check runner output; any captured evidence remains on the runner.` | The private runner failed. Read its terminal output. Its saved run folder can be published later. |
 
 ### Runner start-up errors
 
-| Message | Fix |
-| --- | --- |
+| Message                                                            | Fix                                                                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | `Set VISUALGUARD_RUNNER_TOKEN to this project's runner credential` | Create a runner credential for the project and set it before `runner`. An upload token does not work here. |
-| `Use an HTTPS dashboard origin, or HTTP on loopback` | Use HTTPS for remote dashboards. |
-| `Use the project's ID` | Pass the project ID, not its display name, to `--project`. |
-| `Polling must be 1000–30000 milliseconds` | Fix `--poll`. |
-| `An active runner credential for this project is required` | The credential is revoked, expired or for another project. Create a new one. |
+| `Use an HTTPS dashboard origin, or HTTP on loopback`               | Use HTTPS for remote dashboards.                                                                           |
+| `Use the project's ID`                                             | Pass the project ID, not its display name, to `--project`.                                                 |
+| `Polling must be 1000–30000 milliseconds`                          | Fix `--poll`.                                                                                              |
+| `An active runner credential for this project is required`         | The credential is revoked, expired or for another project. Create a new one.                               |
 
 ### The runner still looks connected after it exits
 
@@ -260,18 +273,18 @@ This applies to the built-in runner only.
 
 ## Database and hosting
 
-| What you see | Likely cause and fix |
-| --- | --- |
-| `role "USER" does not exist` | The PostgreSQL URL still has placeholders or the wrong user. Use the real user and grant it access to the schema. |
-| `Database URL must use postgresql://, postgres://, mongodb:// or mongodb+srv://` | Fix the URL scheme. |
-| `MongoDB URL must include a database name` | Add `/visualguard` before any `?` options. Do not end the URL at the cluster host. |
-| MongoDB timeout or authentication failure | Check the Atlas IP access list, the database user and the URL-encoded password. Restart after you change the settings file. |
-| `Invitation admission requires transactional storage...` | Use a MongoDB replica set, SQLite or PostgreSQL, or set `VISUALGUARD_USER_ADMISSION=legacy`. |
-| MongoDB transaction errors | Check that the replica set primary is reachable and the URL is correct. Standalone MongoDB needs `legacy` admission. |
-| `Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data` | Set an external PostgreSQL or MongoDB database. A file inside the container is lost on restart. |
-| `Hosted login requires VISUALGUARD_PUBLIC_URL` | Set the exact public HTTPS origin. |
-| A Vercel page reload returns 404 | The deployment folder lacks a rewrite for that page. Regenerate it with a current release, or add the missing rewrite. |
-| Command, option or page is missing | The installed release may not have it. Compare with [release availability](/releases/). npm does not track the `main` branch. |
+| What you see                                                                     | Likely cause and fix                                                                                                          |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `role "USER" does not exist`                                                     | The PostgreSQL URL still has placeholders or the wrong user. Use the real user and grant it access to the schema.             |
+| `Database URL must use postgresql://, postgres://, mongodb:// or mongodb+srv://` | Fix the URL scheme.                                                                                                           |
+| `MongoDB URL must include a database name`                                       | Add `/visualguard` before any `?` options. Do not end the URL at the cluster host.                                            |
+| MongoDB timeout or authentication failure                                        | Check the Atlas IP access list, the database user and the URL-encoded password. Restart after you change the settings file.   |
+| `Invitation admission requires transactional storage...`                         | Use a MongoDB replica set, SQLite or PostgreSQL, or set `VISUALGUARD_USER_ADMISSION=legacy`.                                  |
+| MongoDB transaction errors                                                       | Check that the replica set primary is reachable and the URL is correct. Standalone MongoDB needs `legacy` admission.          |
+| `Cloud Run and Vercel require VISUALGUARD_DATABASE_URL for persistent data`      | Set an external PostgreSQL or MongoDB database. A file inside the container is lost on restart.                               |
+| `Hosted login requires VISUALGUARD_PUBLIC_URL`                                   | Set the exact public HTTPS origin.                                                                                            |
+| A Vercel page reload returns 404                                                 | The deployment folder lacks a rewrite for that page. Regenerate it with a current release, or add the missing rewrite.        |
+| Command, option or page is missing                                               | The installed release may not have it. Compare with [release availability](/releases/). npm does not track the `main` branch. |
 
 ## Before you share a hosted dashboard
 

@@ -5,8 +5,13 @@ audience: "developer"
 docType: "how-to"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/playwright/index.ts", "packages/visualguard/src/core/provenance.ts", "packages/visualguard/package.json"]
-sidebar: {"order": 8}
+sourcePaths:
+  [
+    "packages/visualguard/src/playwright/index.ts",
+    "packages/visualguard/src/core/provenance.ts",
+    "packages/visualguard/package.json",
+  ]
+sidebar: { "order": 8 }
 ---
 
 This page shows how to call VisualGuard from inside your own [Playwright Test](https://playwright.dev/docs/intro) files. The CLI captures pages straight after they load. The Playwright fixture lets you click, type and open menus first, then check the page in exactly that state. Use it for states a URL alone cannot reach, such as an open cart, a filled form or a modal.
@@ -55,7 +60,7 @@ import { defineConfig } from "visualguard";
 export default defineConfig({
   baseURL: {
     production: "http://127.0.0.1:4100", // the reference
-    staging: "http://127.0.0.1:4101",    // optional: helps map paths when they have a prefix
+    staging: "http://127.0.0.1:4101", // optional: helps map paths when they have a prefix
   },
 });
 ```
@@ -131,26 +136,26 @@ You should see both sides in the same state in the attached screenshots. Adapt t
 
 ### check() options
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `name` | Name of this checkpoint. Must be unique within the test. Used in attachments and baseline names. | `"page"` |
-| `referenceSetup` | Async function that receives the fresh reference `Page` and brings it to the same state. | none |
-| `waitFor` | Selector that must be visible on both sides before the screenshot. | none |
-| `selector` | Capture one section matching this CSS selector. `null` restores page capture. See [section capture](/guides/section-capture/). | inherits `screenshot.selector` |
-| `mask` | Selectors to cover with a solid box. Masked areas keep their size. | `[]` |
-| `hide` | Selectors to hide. | `[]` |
-| `failOn` | What fails the test: `"regression"`, `"review"` or `"any"`. Overrides `visualguardOptions.failOn`. | `"regression"` |
+| Option           | What it does                                                                                                                   | Default                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
+| `name`           | Name of this checkpoint. Must be unique within the test. Used in attachments and baseline names.                               | `"page"`                       |
+| `referenceSetup` | Async function that receives the fresh reference `Page` and brings it to the same state.                                       | none                           |
+| `waitFor`        | Selector that must be visible on both sides before the screenshot.                                                             | none                           |
+| `selector`       | Capture one section matching this CSS selector. `null` restores page capture. See [section capture](/guides/section-capture/). | inherits `screenshot.selector` |
+| `mask`           | Selectors to cover with a solid box. Masked areas keep their size.                                                             | `[]`                           |
+| `hide`           | Selectors to hide.                                                                                                             | `[]`                           |
+| `failOn`         | What fails the test: `"regression"`, `"review"` or `"any"`. Overrides `visualguardOptions.failOn`.                             | `"regression"`                 |
 
 ### visualguardOptions
 
 Set these with `test.use({ visualguardOptions: { ... } })`, at file level or inside a `describe` block.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| `configPath` | Path to the VisualGuard config file. | `visualguard.config.*` in the working folder |
-| `config` | Inline config merged over the file. Top-level keys replace the file's keys, so `config: { ai: { provider: "none" } }` replaces the whole `ai` block. | none |
-| `failOn` | Default `failOn` for every check in scope. | `"regression"` |
-| `collectHealth` | Record console errors and failed requests on the test's page from the start of the test. | `false` |
+| Option          | What it does                                                                                                                                         | Default                                      |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `configPath`    | Path to the VisualGuard config file.                                                                                                                 | `visualguard.config.*` in the working folder |
+| `config`        | Inline config merged over the file. Top-level keys replace the file's keys, so `config: { ai: { provider: "none" } }` replaces the whole `ai` block. | none                                         |
+| `failOn`        | Default `failOn` for every check in scope.                                                                                                           | `"regression"`                               |
+| `collectHealth` | Record console errors and failed requests on the test's page from the start of the test.                                                             | `false`                                      |
 
 ## 5. Use stored baselines instead of production
 
@@ -178,29 +183,29 @@ When a check saves or updates a baseline, it does not compare anything for that 
 
 After each comparison, the test gets these attachments:
 
-| Attachment | Content |
-| --- | --- |
-| `visualguard <name>: result` | `result.json`: status, findings, regions, analysis and AI usage. |
-| `visualguard <name>: production` | The reference screenshot (production or baseline). |
-| `visualguard <name>: staging` | The test page's screenshot. |
-| `visualguard <name>: diff` | The diff image, when pixels differ. |
+| Attachment                       | Content                                                          |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `visualguard <name>: result`     | `result.json`: status, findings, regions, analysis and AI usage. |
+| `visualguard <name>: production` | The reference screenshot (production or baseline).               |
+| `visualguard <name>: staging`    | The test page's screenshot.                                      |
+| `visualguard <name>: diff`       | The diff image, when pixels differ.                              |
 
 Open them with `npx playwright show-report`. All files also stay in the test's output folder under `test-results/…/visualguard/<name>/`.
 
 ## How the fixture differs from the CLI
 
-| Capability | CLI | Fixture |
-| --- | --- | --- |
-| Comparison, DOM mapping and findings | Shared | Shared |
-| AI analysis, cache and budgets | One session per run | One session per test; the cache is shared |
-| Accepted changes (`visualguard.accepted.json`) | Applied | Applied |
-| Accessibility and performance checks | Run during capture | Run at `check()` time if enabled in config |
-| Console errors and failed requests | Recorded from page load | Only with `collectHealth: true`; events before the fixture started cannot be recovered |
-| Page clock | Paused before the screenshot | Left to your test |
-| Noise map (second load) | Yes | Only when comparing with live production |
-| Interactive state | Hooks only | `referenceSetup` per check, plus hooks |
-| Missing baseline | Error by default | Error by default; `--update-snapshots` or `missing: "create"` |
-| Output | Run folder, manifest, HTML report | Playwright attachments and `result.json` |
+| Capability                                     | CLI                               | Fixture                                                                                |
+| ---------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------- |
+| Comparison, DOM mapping and findings           | Shared                            | Shared                                                                                 |
+| AI analysis, cache and budgets                 | One session per run               | One session per test; the cache is shared                                              |
+| Accepted changes (`visualguard.accepted.json`) | Applied                           | Applied                                                                                |
+| Accessibility and performance checks           | Run during capture                | Run at `check()` time if enabled in config                                             |
+| Console errors and failed requests             | Recorded from page load           | Only with `collectHealth: true`; events before the fixture started cannot be recovered |
+| Page clock                                     | Paused before the screenshot      | Left to your test                                                                      |
+| Noise map (second load)                        | Yes                               | Only when comparing with live production                                               |
+| Interactive state                              | Hooks only                        | `referenceSetup` per check, plus hooks                                                 |
+| Missing baseline                               | Error by default                  | Error by default; `--update-snapshots` or `missing: "create"`                          |
+| Output                                         | Run folder, manifest, HTML report | Playwright attachments and `result.json`                                               |
 
 Fixture checks do not create a run in `.visualguard/runs`, so `visualguard report`, `accept` and `fix` do not see them.
 
@@ -217,16 +222,16 @@ Your Playwright config has `desktop` and `mobile` projects. A test fills in the 
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `Missing baseline …` | Run `npx playwright test --update-snapshots`, or set `baseline.missing: "create"`, or set `baseURL.production`. |
-| `Baseline rendering settings do not match` | Run with the same browser, viewport and theme as when it was saved, or update the baselines. |
-| `Approved snapshots cannot be updated locally` | Pull a newer approved set instead, or use a separate baseline folder. |
-| Reference shows the wrong page | The reference uses the test page's path on `baseURL.production`. Check both base URLs, including any path prefix. |
-| Reference shows a closed menu | Add the same clicks in `referenceSetup`. |
-| Reference shows a login form | Add `environments.production.storageState`. See [Authenticated pages](/guides/application-auth/). |
-| `visualguard.check needs a browser-backed page.` | Pass the `page` fixture, not a page from a remote or non-browser context. |
-| Import error for `visualguard/playwright` | Use ES modules or TypeScript in tests. The package has no CommonJS build. |
+| Problem                                          | Fix                                                                                                               |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `Missing baseline …`                             | Run `npx playwright test --update-snapshots`, or set `baseline.missing: "create"`, or set `baseURL.production`.   |
+| `Baseline rendering settings do not match`       | Run with the same browser, viewport and theme as when it was saved, or update the baselines.                      |
+| `Approved snapshots cannot be updated locally`   | Pull a newer approved set instead, or use a separate baseline folder.                                             |
+| Reference shows the wrong page                   | The reference uses the test page's path on `baseURL.production`. Check both base URLs, including any path prefix. |
+| Reference shows a closed menu                    | Add the same clicks in `referenceSetup`.                                                                          |
+| Reference shows a login form                     | Add `environments.production.storageState`. See [Authenticated pages](/guides/application-auth/).                 |
+| `visualguard.check needs a browser-backed page.` | Pass the `page` fixture, not a page from a remote or non-browser context.                                         |
+| Import error for `visualguard/playwright`        | Use ES modules or TypeScript in tests. The package has no CommonJS build.                                         |
 
 See [Capture problems](/troubleshooting/capture/) for more.
 

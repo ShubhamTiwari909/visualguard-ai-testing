@@ -21,7 +21,8 @@
     "fixtures/site/README.md",
     "PLAN.md",
     "packages/visualguard/CHANGELOG.md",
-    "docs/SECTION-SCREENSHOT-TESTING.md"
+    "docs/SECTION-SCREENSHOT-TESTING.md",
+    "docs/SDK-GUIDE.md"
   ],
   "sections": [
     {
@@ -3770,6 +3771,120 @@
       "destination": "/guides/section-capture/",
       "disposition": "migrated",
       "reason": "Section markup, configuration, source/package commands, and verification are maintained in the section-capture tutorial."
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "VisualGuard SDK for scripts and CI",
+      "anchor": "visualguard-sdk-for-scripts-and-ci",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "1. Install and prepare your application",
+      "anchor": "1-install-and-prepare-your-application",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "2. Create and run the script",
+      "anchor": "2-create-and-run-the-script",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "3. Use inline configuration or capture one section",
+      "anchor": "3-use-inline-configuration-or-capture-one-section",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "4. Understand results and errors",
+      "anchor": "4-understand-results-and-errors",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "5. Reports, diffs and progress",
+      "anchor": "5-reports-diffs-and-progress",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "6. Baseline mode",
+      "anchor": "6-baseline-mode",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "7. Configure GitHub Actions",
+      "anchor": "7-configure-github-actions",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "8. Environment, overrides and cancellation",
+      "anchor": "8-environment-overrides-and-cancellation",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "docs/SDK-GUIDE.md",
+      "heading": "Troubleshooting and verification",
+      "anchor": "troubleshooting-and-verification",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "The script and CI SDK guide is maintained in repository Markdown and the Astro programmatic API page.",
+      "reviewedAgainst": "SDK implementation on codex/script-ci-sdk"
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.4.0",
+      "anchor": "340",
+      "destination": "/guides/programmatic-api/",
+      "disposition": "migrated",
+      "reason": "SDK release preparation; installation and usage are documented in the programmatic SDK guide."
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.3.0",
+      "anchor": "330",
+      "destination": "/releases/",
+      "disposition": "migrated",
+      "reason": "Preserve the published 3.3.0 changelog and its documentation notes as release history."
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "Documentation",
+      "anchor": "Documentation",
+      "destination": "/releases/",
+      "disposition": "migrated",
+      "reason": "Preserve the published 3.3.0 changelog and its documentation notes as release history."
     }
   ]
 }

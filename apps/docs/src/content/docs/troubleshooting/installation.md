@@ -5,8 +5,15 @@ audience: "developer"
 docType: "reference"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["docs/NPM-PACKAGE-SETUP.md", "packages/visualguard/src/config/load.ts", "packages/visualguard/src/capture/browser.ts", "packages/visualguard/src/cli/commands/doctor.ts", "packages/visualguard/package.json"]
-sidebar: {"order": 2}
+sourcePaths:
+  [
+    "docs/NPM-PACKAGE-SETUP.md",
+    "packages/visualguard/src/config/load.ts",
+    "packages/visualguard/src/capture/browser.ts",
+    "packages/visualguard/src/cli/commands/doctor.ts",
+    "packages/visualguard/package.json",
+  ]
+sidebar: { "order": 2 }
 ---
 
 Use this page when VisualGuard will not start, cannot find a browser, or reports a version you did not expect. Each problem below lists the likely cause, the exact fix and how to confirm it.

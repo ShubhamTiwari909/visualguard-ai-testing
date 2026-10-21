@@ -5,8 +5,15 @@ audience: "operator"
 docType: "tutorial"
 channel: "both"
 lastReviewed: "2026-10-20"
-sourcePaths: ["apps/platform/server/mongo.ts", "apps/platform/server/config.ts", "apps/platform/server/auth.ts", "apps/platform/.env.example", ".github/workflows/ci.yml"]
-sidebar: {"order": 3}
+sourcePaths:
+  [
+    "apps/platform/server/mongo.ts",
+    "apps/platform/server/config.ts",
+    "apps/platform/server/auth.ts",
+    "apps/platform/.env.example",
+    ".github/workflows/ci.yml",
+  ]
+sidebar: { "order": 3 }
 ---
 
 This tutorial stores the dashboard in MongoDB instead of its default SQLite file. You will get a connection URL (from Atlas, a local Docker replica set or your own cluster), start the dashboard, and prove that runs survive a restart. The app you test needs no MongoDB code.
@@ -27,10 +34,10 @@ The MongoDB path is reviewed against the source and runs in the project's own CI
 
 Some team features need database **transactions** (several writes that succeed or fail together). MongoDB supports them only on a **replica set** or a **sharded cluster**. Atlas clusters are always replica sets.
 
-| Deployment | Admission setting | What works |
-| --- | --- | --- |
-| Replica set or sharded cluster | `VISUALGUARD_USER_ADMISSION=invite` (the default for new workspaces) | Everything. |
-| Standalone server | `VISUALGUARD_USER_ADMISSION=legacy` (required) | Runs, reviews and publishing. **Not** invitations, Google account linking, managed lifecycle changes, baseline changes or administrator recovery. |
+| Deployment                     | Admission setting                                                    | What works                                                                                                                                        |
+| ------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Replica set or sharded cluster | `VISUALGUARD_USER_ADMISSION=invite` (the default for new workspaces) | Everything.                                                                                                                                       |
+| Standalone server              | `VISUALGUARD_USER_ADMISSION=legacy` (required)                       | Runs, reviews and publishing. **Not** invitations, Google account linking, managed lifecycle changes, baseline changes or administrator recovery. |
 
 `invite` means unknown people need an invitation to join. `legacy` keeps the older behavior of creating accounts on first sign-in. Use a replica set for any new team install.
 
@@ -99,12 +106,12 @@ Keep your cluster's authentication, TLS and replica-set options. Allow the dashb
 
 ## 2. Check the URL
 
-| Rule | Right | Wrong |
-| --- | --- | --- |
-| Include a database name after the host | `...mongodb.net/visualguard?...` | `...mongodb.net/?...` |
-| Use letters, digits, `_` or `-` in the name | `visualguard`, `vg_team` | `visual.guard` |
-| URL-encode special characters in user and password only | `p%40ss` for `p@ss` | Encoding the whole URL |
-| Start with `mongodb://` or `mongodb+srv://` | `mongodb+srv://...` | `mongo://...` |
+| Rule                                                    | Right                            | Wrong                  |
+| ------------------------------------------------------- | -------------------------------- | ---------------------- |
+| Include a database name after the host                  | `...mongodb.net/visualguard?...` | `...mongodb.net/?...`  |
+| Use letters, digits, `_` or `-` in the name             | `visualguard`, `vg_team`         | `visual.guard`         |
+| URL-encode special characters in user and password only | `p%40ss` for `p@ss`              | Encoding the whole URL |
+| Start with `mongodb://` or `mongodb+srv://`             | `mongodb+srv://...`              | `mongo://...`          |
 
 A URL without a database name fails with "MongoDB URL must include a database name". You do not need to create collections; VisualGuard creates them and their indexes on start. See [connection string rules](https://www.mongodb.com/docs/manual/reference/connection-string/).
 
@@ -156,6 +163,7 @@ The first command creates the project. The second captures your app and uploads 
    ```
 
    The count should be at least `1`.
+
 3. Stop the dashboard with Ctrl+C and start it again with the same command.
 4. The run should still be there with its screenshots.
 
@@ -167,15 +175,15 @@ A team tries VisualGuard on a free Atlas cluster. They create the `visualguard` 
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| `MongoDB URL must include a database name` | Add `/visualguard` right after the host, before `?`. |
-| `Server selection timed out` | Your IP is not in **Network Access**, the replica set is not initiated, or TLS options are wrong. |
-| `bad auth` or `Authentication failed` | Fix the user or password, URL-encode special characters, or add `authSource=admin`. |
-| `Invitation admission requires transactional storage` | Use a replica set or Atlas, or set `VISUALGUARD_USER_ADMISSION=legacy` for a standalone server. |
-| `Account linking requires transactional storage` | Google linking needs a replica set or sharded cluster. |
-| An error says the `mongodb` package cannot be found | Reinstall without skipping optional dependencies (for example, without `--omit=optional`). |
-| Docker `rs.initiate` reports `already initialized` | The replica set is already set up. Continue with the next step. |
+| Problem                                               | Fix                                                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `MongoDB URL must include a database name`            | Add `/visualguard` right after the host, before `?`.                                              |
+| `Server selection timed out`                          | Your IP is not in **Network Access**, the replica set is not initiated, or TLS options are wrong. |
+| `bad auth` or `Authentication failed`                 | Fix the user or password, URL-encode special characters, or add `authSource=admin`.               |
+| `Invitation admission requires transactional storage` | Use a replica set or Atlas, or set `VISUALGUARD_USER_ADMISSION=legacy` for a standalone server.   |
+| `Account linking requires transactional storage`      | Google linking needs a replica set or sharded cluster.                                            |
+| An error says the `mongodb` package cannot be found   | Reinstall without skipping optional dependencies (for example, without `--omit=optional`).        |
+| Docker `rs.initiate` reports `already initialized`    | The replica set is already set up. Continue with the next step.                                   |
 
 See [dashboard troubleshooting](/troubleshooting/dashboard/) for more.
 
