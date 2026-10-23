@@ -10,8 +10,8 @@
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { lstatSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { isAbsolute, join, relative } from "node:path";
 import { matchesAny } from "../config/glob.js";
 
 const SOURCE_EXTENSIONS =
@@ -53,6 +53,36 @@ export function isProtected(path: string): boolean {
  */
 export function isEditable(path: string, include: readonly string[]): boolean {
   return SOURCE_EXTENSIONS.test(path) && !isProtected(path) && matchesAny(path, include);
+}
+
+/**
+ * Resolve a project-relative edit path to its file, or throw when it could reach outside the
+ * project. Edit paths can come from a model, so only plain forward-slash paths are accepted: no
+ * absolute or drive paths, backslashes, or empty, `.` and `..` segments. No existing component
+ * may be a symbolic link, so a link inside the project cannot redirect a write elsewhere.
+ */
+export function resolveEditPath(cwd: string, path: string): string {
+  const segments = path.split("/");
+  if (
+    isAbsolute(path) ||
+    /^[a-zA-Z]:/.test(path) ||
+    path.includes("\\") ||
+    segments.some((segment) => segment === "" || segment === "." || segment === "..")
+  )
+    throw new Error(`${path} is not a relative path inside the project.`);
+  let current = cwd;
+  for (const segment of segments) {
+    current = join(current, segment);
+    let isLink: boolean;
+    try {
+      isLink = lstatSync(current).isSymbolicLink();
+    } catch {
+      break; // Missing; callers decide whether the file must exist.
+    }
+    if (isLink)
+      throw new Error(`${path} goes through a symbolic link; the fixer only edits real files.`);
+  }
+  return join(cwd, ...segments);
 }
 
 export interface SourceFile {

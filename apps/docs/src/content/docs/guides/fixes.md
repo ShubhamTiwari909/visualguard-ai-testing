@@ -94,6 +94,7 @@ Whatever `fix.include` says, VisualGuard never reads or edits:
 
 - `.env` files, lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`), any `*.config.js` or `*.config.ts` style file, and `visualguard.*` files.
 - Files in `node_modules`, `.git`, `.next`, `dist`, `build`, `out`, `.turbo`, `.visualguard` and `coverage`, and other hidden folders.
+- Anything outside the project, or reached through a symbolic link. Edit paths must be plain relative paths, so absolute paths, `..` segments and backslashes are rejected.
 - Files larger than 300 KB, and files that are not source files (it reads `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.vue`, `.svelte`, `.astro`, `.html`, `.css`, `.scss`, `.sass`, `.less`, `.md` and `.mdx`).
 
 An AI edit is also rejected if it touches a file the model was not shown, or if its search text is missing or appears more than once.
