@@ -133,7 +133,10 @@ export function applyEdits(
 ): Map<string, string> {
   for (const edit of edits) {
     const path = edit.file.replace(/^\.\//, "");
-    if (expected?.has(path) && readFileSync(resolveEditPath(cwd, path), "utf8") !== expected.get(path))
+    if (
+      expected?.has(path) &&
+      readFileSync(resolveEditPath(cwd, path), "utf8") !== expected.get(path)
+    )
       throw new Error(`${path} changed since the proposal; generate a new proposal.`);
   }
   const preview = previewEdits(cwd, edits);

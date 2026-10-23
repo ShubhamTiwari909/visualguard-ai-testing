@@ -10,7 +10,7 @@
  * Beginner reference: docs/READING-THE-CODE.md in the repository root.
  */
 
-import { lstatSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { lstatSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, relative } from "node:path";
 import { matchesAny } from "../config/glob.js";
 
@@ -70,8 +70,7 @@ export function resolveEditPath(cwd: string, path: string): string {
     segments.some((segment) => segment === "" || segment === "." || segment === "..")
   )
     throw new Error(`${path} is not a relative path inside the project.`);
-  const root = realpathSync(cwd);
-  let current = root;
+  let current = cwd;
   for (const segment of segments) {
     current = join(current, segment);
     let isLink: boolean;
@@ -83,7 +82,7 @@ export function resolveEditPath(cwd: string, path: string): string {
     if (isLink)
       throw new Error(`${path} goes through a symbolic link; the fixer only edits real files.`);
   }
-  return join(root, ...segments);
+  return join(cwd, ...segments);
 }
 
 export interface SourceFile {
