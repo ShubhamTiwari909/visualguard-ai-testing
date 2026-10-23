@@ -11,9 +11,9 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { createTwoFilesPatch } from "diff";
-import { isEditable } from "./files.js";
+import { errorMessage } from "../core/errors.js";
+import { isEditable, resolveEditPath } from "./files.js";
 
 /**
  * One change: replace `search` (copied exactly from the file, occurring once) with `replace`.
@@ -55,18 +55,25 @@ export function validateEdits(cwd: string, edits: Edit[], include: readonly stri
   const contents = new Map<string, string>();
   for (const edit of edits) {
     const path = edit.file.replace(/^\.\//, "");
+    let full: string;
+    try {
+      full = resolveEditPath(cwd, path);
+    } catch (error) {
+      problems.push(errorMessage(error));
+      continue;
+    }
     if (!isEditable(path, include)) {
       problems.push(
         `${edit.file} is not an editable source file (fix.include, lockfiles, configs and .env are off limits).`,
       );
       continue;
     }
-    if (!existsSync(join(cwd, path))) {
+    if (!existsSync(full)) {
       problems.push(`${edit.file} does not exist.`);
       continue;
     }
     // Earlier edits to the same file apply first.
-    const content = contents.get(path) ?? readFileSync(join(cwd, path), "utf8");
+    const content = contents.get(path) ?? readFileSync(full, "utf8");
     const count = countOccurrences(content, edit.search);
     if (edit.search === edit.replace) problems.push(`The edit to ${edit.file} changes nothing.`);
     else if (count === 0)
@@ -101,7 +108,7 @@ export function previewEdits(
   for (const edit of edits) {
     const path = edit.file.replace(/^\.\//, "");
     const current = result.get(path) ?? {
-      before: readFileSync(join(cwd, path), "utf8"),
+      before: readFileSync(resolveEditPath(cwd, path), "utf8"),
       after: "",
     };
     const base = result.has(path) ? current.after : current.before;
@@ -126,7 +133,7 @@ export function applyEdits(
 ): Map<string, string> {
   for (const edit of edits) {
     const path = edit.file.replace(/^\.\//, "");
-    if (expected?.has(path) && readFileSync(join(cwd, path), "utf8") !== expected.get(path))
+    if (expected?.has(path) && readFileSync(resolveEditPath(cwd, path), "utf8") !== expected.get(path))
       throw new Error(`${path} changed since the proposal; generate a new proposal.`);
   }
   const preview = previewEdits(cwd, edits);
@@ -134,13 +141,13 @@ export function applyEdits(
   try {
     for (const [path, { before, after }] of preview) {
       originals.set(path, before);
-      writeFileSync(join(cwd, path), after);
+      writeFileSync(resolveEditPath(cwd, path), after);
     }
   } catch (error) {
     const failures: unknown[] = [error];
     for (const [path, content] of originals) {
       try {
-        writeFileSync(join(cwd, path), content);
+        writeFileSync(resolveEditPath(cwd, path), content);
       } catch (rollback) {
         failures.push(rollback);
       }
@@ -162,7 +169,7 @@ export function revertEdits(cwd: string, originals: Map<string, string>): void {
   const failures: unknown[] = [];
   for (const [path, content] of originals) {
     try {
-      writeFileSync(join(cwd, path), content);
+      writeFileSync(resolveEditPath(cwd, path), content);
     } catch (error) {
       failures.push(error);
     }

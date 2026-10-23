@@ -10,10 +10,17 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config/load.js";
 import { resolveConfig } from "../src/config/resolve.js";
@@ -103,6 +110,81 @@ describe("edits", () => {
     expect(readFileSync(join(dir, "src/a.css"), "utf8")).toBe(
       ".a { color: red; }\n.b { color: red; }\n",
     );
+  });
+});
+
+describe("edit path confinement", () => {
+  const victim = "export const secret = 1;\n";
+  const edit = (file: string) => ({
+    file,
+    search: "secret = 1",
+    replace: "secret = 2",
+    reason: "",
+  });
+
+  /**
+   * Create a project plus a separate folder holding a file the fixer must never touch. Return
+   * the victim's path relative to the project so tests can try to reach it with `..`.
+   */
+  const setup = () => {
+    const dir = project({ "src/a.tsx": victim });
+    const outside = project({ "victim.tsx": victim });
+    const target = join(outside, "victim.tsx");
+    return { dir, outside, target, escape: relative(dir, target).split("\\").join("/") };
+  };
+
+  it("rejects paths that leave the project, whatever fix.include allows", () => {
+    const { dir, target, escape } = setup();
+    const paths = [
+      escape,
+      `src/${escape}`,
+      "src/../src/a.tsx",
+      "src/./a.tsx",
+      "src//a.tsx",
+      target.split("\\").join("/"),
+      "C:/victim.tsx",
+      "src\\..\\a.tsx",
+    ];
+    for (const path of paths) {
+      expect(validateEdits(dir, [edit(path)], ["**", "**/*"]), path).toEqual([
+        expect.stringMatching(/not a relative path inside the project/),
+      ]);
+      expect(() => applyEdits(dir, [edit(path)]), path).toThrow(/not a relative path/);
+    }
+    expect(readFileSync(target, "utf8")).toBe(victim);
+    expect(readFileSync(join(dir, "src/a.tsx"), "utf8")).toBe(victim);
+  });
+
+  it("rejects edits through a linked directory", () => {
+    const { dir, outside, target } = setup();
+    // A junction needs no extra privileges on Windows and is a plain symlink elsewhere.
+    symlinkSync(outside, join(dir, "src/linked"), "junction");
+    expect(validateEdits(dir, [edit("src/linked/victim.tsx")], ["src/**"])).toEqual([
+      expect.stringMatching(/symbolic link/),
+    ]);
+    expect(() => applyEdits(dir, [edit("src/linked/victim.tsx")])).toThrow(/symbolic link/);
+    expect(() => revertEdits(dir, new Map([["src/linked/victim.tsx", "pwned"]]))).toThrow(
+      AggregateError,
+    );
+    expect(readFileSync(target, "utf8")).toBe(victim);
+  });
+
+  // File symlinks need Developer Mode or admin rights on Windows.
+  it.skipIf(process.platform === "win32")("rejects edits to a linked file", () => {
+    const { dir, target } = setup();
+    symlinkSync(target, join(dir, "src/link.tsx"));
+    expect(validateEdits(dir, [edit("src/link.tsx")], ["src/**"])).toEqual([
+      expect.stringMatching(/symbolic link/),
+    ]);
+    expect(() => applyEdits(dir, [edit("src/link.tsx")])).toThrow(/symbolic link/);
+    expect(readFileSync(target, "utf8")).toBe(victim);
+  });
+
+  it("still edits ordinary files, including with a leading ./", () => {
+    const { dir } = setup();
+    expect(validateEdits(dir, [edit("./src/a.tsx")], ["src/**"])).toEqual([]);
+    applyEdits(dir, [edit("./src/a.tsx")]);
+    expect(readFileSync(join(dir, "src/a.tsx"), "utf8")).toBe("export const secret = 2;\n");
   });
 });
 
