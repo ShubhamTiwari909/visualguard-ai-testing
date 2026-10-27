@@ -37,13 +37,14 @@ Historical version-specific changes belong in the [package changelog](https://gi
 
 ## Confirm feature availability
 
-| What you need                        | What to check                                                                                                                                                                                             |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A CLI command or option              | Run `npx --no-install visualguard COMMAND --help` for the installed package.                                                                                                                              |
-| Dashboard-host capture               | The project should show **Runs on this dashboard**. The host needs Chromium and network access to the app. If unsupported or unavailable, upgrade or use a [private runner](/dashboard/private-runners/). |
-| Private-runner capture               | The project should show **Runner connected** after a compatible worker checks in.                                                                                                                         |
-| Shared review, baselines or policies | Confirm the relevant dashboard controls, your project role and the [migration requirements](/releases/migration/).                                                                                        |
-| A feature seen only in source        | Follow [source setup](/contributing/local-setup/) or wait for a package release that contains it. A manifest version bump alone is not proof of npm publication.                                          |
+| What you need                        | What to check                                                                                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A CLI command or option              | Run `npx --no-install visualguard COMMAND --help` for the installed package.                                                                                                                                             |
+| Dashboard-host capture               | The project should show **Runs on this dashboard**. The host needs Chromium and network access to the app. If unsupported or unavailable, upgrade or use a [private runner](/dashboard/private-runners/).                |
+| Private-runner capture               | The project should show **Runner connected** after a compatible worker checks in.                                                                                                                                        |
+| Shared review, baselines or policies | Confirm the relevant dashboard controls, your project role and the [migration requirements](/releases/migration/).                                                                                                       |
+| Quarantine or object storage         | Both need 3.6.0 or later. Check `npx --no-install visualguard --version`. For object storage, also install the provider SDK; see [object storage](/deployment/storage-and-backups/#store-screenshots-in-object-storage). |
+| A feature seen only in source        | Follow [source setup](/contributing/local-setup/) or wait for a package release that contains it. A manifest version bump alone is not proof of npm publication.                                                         |
 
 ## Inspect generated deployment folders
 

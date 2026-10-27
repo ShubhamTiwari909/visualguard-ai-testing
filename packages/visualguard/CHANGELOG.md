@@ -1,5 +1,16 @@
 # visualguard
 
+## 3.6.0
+
+### Minor Changes
+
+- 6e04cb1: Raise fewer false alarms. Differences caused only by moving an element less than one pixel now pass as rendering noise. Videos in pages VisualGuard loads never start playing, so they always show their first frame instead of whichever frame was playing, and pausing media no longer hangs a test that has paused Playwright's page clock. Add a `quarantine` config option: a check with an owner, reason and expiry date still runs and reports its status but no longer fails the run, JUnit or the exit code; capture errors and health problems still fail, and expired or unmatched entries warn. The evals gain stabilization fixtures (slow web font, slow lazy images, video, sticky header), a false-alarm rate and a `--max-false-alarm-rate` gate.
+- 3f8e5ba: Store dashboard screenshots outside the database. Set `VISUALGUARD_ARTIFACT_STORAGE_URL` to `s3://…` (including S3-compatible services such as R2 and MinIO), `gs://…` or `azure://…` and install the provider's SDK; new evidence bytes go to that private bucket while the database keeps only the digest index. Without the setting, evidence stays in the database as before. Existing database evidence remains readable, bucket reads are checksum-verified, deleting runs removes unreferenced bucket objects, and portable export/restore read and write through the configured storage.
+
+### Patch Changes
+
+- 3b73702: Confine `visualguard fix` edits to the project. Proposed edit paths with `..` segments, absolute or drive paths, or backslashes are rejected, as are paths through a symbolic link, so a model-suggested patch can no longer read or write files outside the project, even when `fix.include` matches.
+
 ## 3.5.0
 
 ### Minor Changes

@@ -3864,6 +3864,14 @@
     },
     {
       "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.6.0",
+      "anchor": "360",
+      "destination": "/releases/",
+      "disposition": "migrated",
+      "reason": "False-alarm, quarantine and object-storage release; the features are documented in the noise, stable-capture and storage guides."
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
       "heading": "3.5.0",
       "anchor": "350",
       "destination": "/guides/programmatic-api/",
