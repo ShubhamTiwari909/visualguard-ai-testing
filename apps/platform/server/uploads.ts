@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
 import type { AuthService, Actor } from "./auth.js";
 import type { ArtifactStore } from "./artifacts.js";
-import { sha256 } from "./artifacts.js";
+import { MissingArtifactError, sha256 } from "./artifacts.js";
 import type { PlatformRepository, StateStore } from "./storage-contracts.js";
 import type { ArtifactDescriptor, RunMetadata } from "../shared/contracts.js";
 import { PlatformError } from "./errors.js";
@@ -224,6 +224,7 @@ export class Uploads {
         } catch (error) {
           const missing =
             (error instanceof Error && error.message === "Artifact object not found") ||
+            error instanceof MissingArtifactError ||
             (error && typeof error === "object" && "code" in error && error.code === "ENOENT");
           if (!missing) throw error;
           // A deletion can reclaim a shared object just before a new upload registers it.

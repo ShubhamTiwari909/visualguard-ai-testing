@@ -96,6 +96,8 @@ async function bucketContract(bucket: ObjectBucket, stored: Map<string, Buffer>)
   await bucket.put("objects/aa/one", data);
   expect([...stored.keys()]).toEqual(["team/objects/aa/one"]);
   expect((await bucket.get("objects/aa/one"))?.equals(data)).toBe(true);
+  expect((await bucket.getRange("objects/aa/one", 9, 5))?.toString()).toBe("bytes");
+  expect(await bucket.getRange("objects/aa/missing", 0, 5)).toBeUndefined();
   expect(await bucket.exists("objects/aa/one")).toBe(true);
   expect(await bucket.get("objects/aa/missing")).toBeUndefined();
   expect(await bucket.exists("objects/aa/missing")).toBe(false);
@@ -110,10 +112,11 @@ describe("provider adapters", () => {
     const sent: string[] = [];
     const client = {
       async send(command: { constructor: { name: string }; input: Record<string, unknown> }) {
-        const { Bucket, Key, Body } = command.input as {
+        const { Bucket, Key, Body, Range } = command.input as {
           Bucket: string;
           Key: string;
           Body?: Buffer;
+          Range?: string;
         };
         expect(Bucket).toBe("evidence");
         sent.push(command.constructor.name);
@@ -124,9 +127,14 @@ describe("provider adapters", () => {
           case "PutObjectCommand":
             stored.set(Key, Buffer.from(Body!));
             return {};
-          case "GetObjectCommand":
+          case "GetObjectCommand": {
             if (!stored.has(Key)) throw Object.assign(missing, { name: "NoSuchKey" });
-            return { Body: { transformToByteArray: async () => stored.get(Key)! } };
+            const [, first, last] = /^bytes=(\d+)-(\d+)$/.exec(Range ?? "") ?? [];
+            const body = Range
+              ? stored.get(Key)!.subarray(Number(first), Number(last) + 1)
+              : stored.get(Key)!;
+            return { Body: { transformToByteArray: async () => body } };
+          }
           case "HeadObjectCommand":
             if (!stored.has(Key)) throw Object.assign(missing, { name: "NotFound" });
             return {};
@@ -163,9 +171,10 @@ describe("provider adapters", () => {
           expect(options.resumable).toBe(false);
           stored.set(name, data);
         },
-        async download(): Promise<[Buffer]> {
+        async download(range?: { start: number; end: number }): Promise<[Buffer]> {
           if (!stored.has(name)) throw Object.assign(new Error("No such object"), { code: 404 });
-          return [stored.get(name)!];
+          const data = stored.get(name)!;
+          return [range ? data.subarray(range.start, range.end + 1) : data];
         },
         exists: async (): Promise<[boolean]> => [stored.has(name)],
         async delete(options: { ignoreNotFound: boolean }) {
@@ -184,10 +193,11 @@ describe("provider adapters", () => {
         async uploadData(data: Buffer) {
           stored.set(name, data);
         },
-        async downloadToBuffer() {
+        async downloadToBuffer(offset?: number, count?: number) {
           if (!stored.has(name))
             throw Object.assign(new Error("BlobNotFound"), { statusCode: 404 });
-          return stored.get(name)!;
+          const data = stored.get(name)!;
+          return offset === undefined ? data : data.subarray(offset, offset + count!);
         },
         exists: async () => stored.has(name),
         async deleteIfExists() {
@@ -267,7 +277,15 @@ describe("SQL evidence with object storage", () => {
     ]);
     expect(await db.query("SELECT chunk FROM vg_object_chunks WHERE hash=?", [hash])).toEqual([]);
     expect((await store.get(hash)).equals(after)).toBe(true);
+    // Chunk reads fetch only their range, never the whole object.
+    let fullReads = 0;
+    const get = bucket.get.bind(bucket);
+    bucket.get = (key) => (fullReads++, get(key));
+    expect(
+      (await store.getChunk!(hash, 1)).equals(after.subarray(1024 * 1024, 2 * 1024 * 1024)),
+    ).toBe(true);
     expect((await store.getChunk!(hash, 3)).equals(after.subarray(3 * 1024 * 1024))).toBe(true);
+    expect(fullReads).toBe(0);
     await expect(store.getChunk!(hash, 4)).rejects.toThrow("not found");
   });
 
@@ -320,5 +338,64 @@ describe("SQL evidence with object storage", () => {
     await repository.deleteRun(other.run.id);
     await expect(new SqlArtifactStore(db, bucket).get(hash)).rejects.toThrow("not found");
     expect(bucket.objects.has(artifactKey(hash))).toBe(false);
+  });
+
+  it("deletes the reachable objects of a batch even when one bucket delete fails", async () => {
+    const bucket = new MemoryBucket();
+    const store = new SqlArtifactStore(db, bucket);
+    const [a, b] = [randomBytes(128), randomBytes(128)];
+    const [hashA, hashB] = [await store.put(a), await store.put(b)];
+    const repository = new Repository(db, undefined, bucket);
+    // One run referencing both objects, so one cleanup batch handles both.
+    const { run } = await publish(repository, hashA, a.length);
+    const document = {
+      ...run,
+      artifacts: [...run.artifacts, { ...run.artifacts[0]!, path: "b.png", hash: hashB }],
+    };
+    await db.query("UPDATE vg_runs SET document=? WHERE id=?", [JSON.stringify(document), run.id]);
+    const remove = bucket.delete.bind(bucket);
+    bucket.delete = async (key) =>
+      key === artifactKey(hashB) ? Promise.reject(new Error("bucket unavailable")) : remove(key);
+
+    expect(await repository.deleteRun(run.id)).toMatchObject({
+      artifactsDeleted: 1,
+      cleanupPending: true,
+    });
+    // A is gone from both the index and the bucket; B keeps both, still queued.
+    expect(bucket.objects.has(artifactKey(hashA))).toBe(false);
+    await expect(store.get(hashA)).rejects.toThrow("not found");
+    expect((await store.get(hashB)).equals(b)).toBe(true);
+
+    bucket.delete = remove;
+    const other = await publish(repository, await store.put(randomBytes(32)), 32);
+    await repository.deleteRun(other.run.id);
+    expect(bucket.objects.has(artifactKey(hashB))).toBe(false);
+    await expect(store.get(hashB)).rejects.toThrow("not found");
+  });
+
+  it("keeps bucket objects queued while the setting is missing instead of orphaning them", async () => {
+    const bucket = new MemoryBucket();
+    const bytes = randomBytes(128);
+    const hash = await new SqlArtifactStore(db, bucket).put(bytes);
+    const { run } = await publish(new Repository(db, undefined, bucket), hash, bytes.length);
+
+    expect(await new Repository(db).deleteRun(run.id)).toMatchObject({
+      runs: 1,
+      artifactsDeleted: 0,
+      cleanupPending: true,
+    });
+    expect(bucket.objects.has(artifactKey(hash))).toBe(true);
+    expect(await db.query("SELECT hash FROM vg_objects WHERE hash=?", [hash])).toHaveLength(1);
+
+    // With the setting back, the next deletion finishes the job.
+    const repository = new Repository(db, undefined, bucket);
+    const other = await publish(
+      repository,
+      await new SqlArtifactStore(db, bucket).put(randomBytes(32)),
+      32,
+    );
+    await repository.deleteRun(other.run.id);
+    expect(bucket.objects.has(artifactKey(hash))).toBe(false);
+    expect(await db.query("SELECT hash FROM vg_objects WHERE hash=?", [hash])).toHaveLength(0);
   });
 });

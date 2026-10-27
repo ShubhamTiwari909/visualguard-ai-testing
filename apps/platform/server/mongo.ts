@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { MongoClient, type ClientSession, type Collection, type Db, type Document } from "mongodb";
 import type { ArtifactStore } from "./artifacts.js";
-import { OBJECT_CHUNK_BYTES, readExternal, sha256, sliceChunk } from "./artifacts.js";
+import { OBJECT_CHUNK_BYTES, readExternal, readExternalChunk, sha256 } from "./artifacts.js";
 import { artifactKey, type ObjectBucket } from "./object-storage.js";
 import { cleanupMongoArtifacts, queueMongoArtifactCleanup } from "./mongo-cleanup.js";
 import type { EvidenceRepository, StateRecord, StateStore } from "./storage-contracts.js";
@@ -542,7 +542,12 @@ export class MongoArtifactStore implements ArtifactStore {
       // Restore bytes if the index outlived them, e.g. after an interrupted cleanup.
       if (existing.chunks === 0 && existing.generation && this.bucket) {
         const key = artifactKey(hash, existing.generation);
-        if (!(await this.bucket.exists(key))) await this.bucket.put(key, bytes);
+        if (!(await this.bucket.exists(key))) {
+          await this.bucket.put(key, bytes);
+          // Cleanup may have removed this index entry meanwhile; never leave an unowned copy.
+          const current = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
+          if (current?.generation !== existing.generation) await this.bucket.delete(key);
+        }
       }
       return hash;
     }
@@ -632,7 +637,8 @@ export class MongoArtifactStore implements ArtifactStore {
     if (!/^[a-f0-9]{64}$/.test(hash) || !Number.isSafeInteger(index) || index < 0)
       throw new Error("Invalid artifact chunk");
     const meta = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
-    if (meta?.chunks === 0) return sliceChunk(await this.get(hash), index);
+    if (meta?.chunks === 0)
+      return readExternalChunk(this.bucket, artifactKey(hash, meta.generation), meta.size, index);
     const row = meta
       ? await this.db
           .collection("vg_object_chunks")
