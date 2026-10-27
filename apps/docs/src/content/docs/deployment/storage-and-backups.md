@@ -50,7 +50,7 @@ Screenshots usually make up most of a dashboard's data. To keep the database sma
    npm install @aws-sdk/client-s3
    ```
 
-   Without it, the dashboard stops at start-up with `VISUALGUARD_ARTIFACT_STORAGE_URL uses Amazon S3; install its SDK next to VisualGuard: npm install @aws-sdk/client-s3`.
+   Without it, the dashboard stops at start-up with exit code 3 and `VISUALGUARD_ARTIFACT_STORAGE_URL uses Amazon S3; install its SDK next to VisualGuard: npm install @aws-sdk/client-s3`. A mistake in the URL itself, such as an unknown option, stops it with exit code 2.
 
 4. Set the variable, for example in `.env.visualguard` or the host's settings, and restart the dashboard:
 

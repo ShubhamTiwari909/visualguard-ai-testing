@@ -282,6 +282,7 @@ Every page exists in a `production/` and a `staging/` variant. The fixture serve
 | `/blog-list`                            | different posts                              | review (AI: content)                      |
 | `/footer-year`                          | © 2025 to © 2026                             | review (AI: content)                      |
 | `/subpixel`                             | text nudged 0.4px                            | pass: sub-pixel rendering noise           |
+| `/subpixel-paragraph`                   | full-width paragraphs nudged 0.4px           | pass: sub-pixel rendering noise           |
 | `/web-font`                             | none (web font arrives after 800 ms)         | pass                                      |
 | `/lazy-images`                          | none (slow lazy images, some unsized)        | pass                                      |
 | `/video`                                | none (autoplaying looping video)             | pass                                      |

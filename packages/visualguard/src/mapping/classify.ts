@@ -11,7 +11,7 @@
  */
 
 import type { DomSnapshot } from "../capture/dom-snapshot.js";
-import type { Delta, DiffResult, Finding, RegionResult, Status } from "../core/types.js";
+import type { Box, Delta, DiffResult, Finding, RegionResult, Status } from "../core/types.js";
 import { describeDeltas } from "./describe.js";
 import { mapRegion, MAX_DELTAS } from "./deltas.js";
 import { textContrast } from "./contrast.js";
@@ -29,10 +29,18 @@ const INTERACTIVE = new Set(["a", "button", "input", "select", "textarea", "form
 const NOISE_MAX_RATIO = 0.001;
 const NOISE_MAX_REGION_AREA = 64 * 64;
 /**
- * Sub-pixel position changes repaint anti-aliased edges across a whole text block, so they get
- * a larger pixel budget than unexplained noise. Regions must still be small.
+ * Sub-pixel position changes repaint anti-aliased edges across whole text blocks, so they get a
+ * larger pixel budget than unexplained noise: two nudged paragraphs are about 1% of a phone
+ * screen. Each region must also be small, or sparse and inside the moved elements.
  */
-const SUBPIXEL_MAX_RATIO = 0.005;
+const SUBPIXEL_MAX_RATIO = 0.03;
+/**
+ * A changed region larger than NOISE_MAX_REGION_AREA still counts as sub-pixel noise when its
+ * changed pixels are sparse, as repainted edges are (a nudged paragraph is a few percent), and
+ * it stays within the moved elements. A real content change fills its area or reaches past them.
+ */
+const SUBPIXEL_MAX_DENSITY = 0.25;
+const SUBPIXEL_EDGE_MARGIN = 2;
 const SUBPIXEL_PROPERTIES = /^(transform|translate|left|top|right|bottom|inset|margin|padding)/;
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
@@ -101,7 +109,11 @@ export function classifyJob(input: ClassifyInput): ClassifyOutput {
     !diff.shift &&
     !diff.sizeMismatch &&
     diff.diffRatio <= (subpixelOnly ? SUBPIXEL_MAX_RATIO : NOISE_MAX_RATIO) &&
-    regions.every((region) => area(region.box) <= NOISE_MAX_REGION_AREA)
+    regions.every(
+      (region) =>
+        area(region.box) <= NOISE_MAX_REGION_AREA ||
+        (subpixelOnly && withinSubpixelMoves(region, staging)),
+    )
   ) {
     const count = `${regions.length} tiny difference${regions.length === 1 ? "" : "s"}`;
     return {
@@ -228,6 +240,39 @@ export function onlySubpixelMoves(regions: readonly RegionResult[]): boolean {
   for (const { selector, shift } of moves.values())
     perElement.set(selector, (perElement.get(selector) ?? 0) + shift);
   return [...perElement.values()].every((total) => total < 1);
+}
+
+/**
+ * True when a large region is sparse and lies inside the elements whose sub-pixel moves explain
+ * it: the bounds of the staging elements named by its deltas that overlap it, plus a small
+ * margin for anti-aliasing.
+ */
+export function withinSubpixelMoves(region: RegionResult, staging: DomIndex | undefined): boolean {
+  if (!staging || region.diffPixels > area(region.box) * SUBPIXEL_MAX_DENSITY) return false;
+  const selectors = new Set(region.deltas.map((delta) => delta.selector));
+  let bounds: Box | undefined;
+  for (const node of staging.nodes) {
+    if (!selectors.has(node.sel)) continue;
+    const box = staging.box(node.i);
+    if (intersection(box, region.box) === 0) continue;
+    bounds = bounds
+      ? {
+          x: Math.min(bounds.x, box.x),
+          y: Math.min(bounds.y, box.y),
+          width: Math.max(bounds.x + bounds.width, box.x + box.width) - Math.min(bounds.x, box.x),
+          height:
+            Math.max(bounds.y + bounds.height, box.y + box.height) - Math.min(bounds.y, box.y),
+        }
+      : box;
+  }
+  if (!bounds) return false;
+  const margin = SUBPIXEL_EDGE_MARGIN;
+  return (
+    region.box.x >= bounds.x - margin &&
+    region.box.y >= bounds.y - margin &&
+    region.box.x + region.box.width <= bounds.x + bounds.width + margin &&
+    region.box.y + region.box.height <= bounds.y + bounds.height + margin
+  );
 }
 
 /**

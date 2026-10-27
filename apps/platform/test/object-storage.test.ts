@@ -12,10 +12,13 @@ import {
 import { SqlArtifactStore, sha256 } from "../server/artifacts.js";
 import { openPlatform } from "../server/config.js";
 import { openDatabase, type Database } from "../server/database.js";
+import { PassThrough } from "node:stream";
+import { ConfigError, EnvironmentError } from "../../../packages/visualguard/src/core/errors.js";
 import {
   artifactKey,
   AzureBlobBucket,
   GcsBucket,
+  loadSdk,
   MemoryBucket,
   openObjectBucket,
   S3Bucket,
@@ -77,6 +80,45 @@ describe("VISUALGUARD_ARTIFACT_STORAGE_URL", () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
+  });
+
+  it("reports a missing SDK as a setup problem, not an unexpected error", async () => {
+    const missing = Object.assign(new Error("Cannot find package '@aws-sdk/client-s3'"), {
+      code: "ERR_MODULE_NOT_FOUND",
+    });
+    const error = await loadSdk("@aws-sdk/client-s3", "Amazon S3", () =>
+      Promise.reject(missing),
+    ).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(EnvironmentError);
+    expect(error).toMatchObject({
+      exitCode: 3,
+      message:
+        "VISUALGUARD_ARTIFACT_STORAGE_URL uses Amazon S3; install its SDK next to VisualGuard: npm install @aws-sdk/client-s3",
+      hint: "Or unset VISUALGUARD_ARTIFACT_STORAGE_URL to keep screenshots in the database.",
+    });
+    // The CLI module reads a build-time version constant that the platform tests do not define.
+    Object.assign(globalThis, { __VISUALGUARD_VERSION__: "test" });
+    const { reportError } = await import("../../../packages/visualguard/src/cli/shared.js");
+    const output = new PassThrough();
+    let printed = "";
+    output.on("data", (chunk) => (printed += chunk));
+    expect(reportError(error, output)).toBe(3);
+    expect(printed).toContain("npm install @aws-sdk/client-s3");
+    expect(printed).toContain("Or unset VISUALGUARD_ARTIFACT_STORAGE_URL");
+    expect(printed).not.toContain("Unexpected error");
+
+    // Other load failures, such as a broken install, are not disguised as "missing".
+    const broken = new SyntaxError("Unexpected token");
+    await expect(
+      loadSdk("@aws-sdk/client-s3", "Amazon S3", () => Promise.reject(broken)),
+    ).rejects.toBe(broken);
+  });
+
+  it("reports storage URL mistakes as configuration errors", async () => {
+    for (const value of ["evidence-bucket", "s3://key:secret@evidence", "s3://evidence?bucket=x"])
+      await expect(open(value)).rejects.toMatchObject({ exitCode: 2 });
+    await expect(open("s3://evidence?bucket=x")).rejects.toBeInstanceOf(ConfigError);
+    await expect(open("azure://evidence")).rejects.toBeInstanceOf(EnvironmentError);
   });
 
   it("names objects by digest and optional upload generation", () => {

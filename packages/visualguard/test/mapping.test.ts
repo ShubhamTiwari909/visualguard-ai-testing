@@ -352,6 +352,48 @@ describe("classifyJob", () => {
     expect(onlySubpixelMoves([])).toBe(true);
   });
 
+  it("passes a sparse sub-pixel nudge of a large text block, but not a dense or wider change", () => {
+    const paragraphs = (transform: string) =>
+      snapshot({
+        tag: "body",
+        box: [0, 0, 1440, 3000],
+        children: [
+          {
+            tag: "p",
+            key: "p1",
+            text: "Visual testing for every pull request",
+            box: [40, 100, 1360, 24],
+            style: { transform },
+          },
+          {
+            tag: "p",
+            key: "p2",
+            text: "Second paragraph of body copy",
+            box: [40, 140, 1360, 24],
+            style: { transform },
+          },
+        ],
+      });
+    const production = paragraphs("none");
+    const staging = paragraphs("matrix(1, 0, 0, 1, 0.4, 0)");
+    const classify = (box: RegionResult["box"], diffPixels: number) =>
+      classifyJob({
+        diff: { width: 1440, height: 3000, diffPixels, diffRatio: diffPixels / (1440 * 3000) },
+        regions: [{ ...region(box), diffPixels }],
+        production,
+        staging,
+      });
+    // 535×54 is far above the 64×64 noise area, as measured on a real nudged paragraph.
+    const text = { x: 40, y: 100, width: 535, height: 54 };
+    const nudged = classify(text, 1504);
+    expect(nudged.status).toBe("pass");
+    expect(nudged.findings[0]!.message).toMatch(/position change under 1px/);
+    // Changed pixels fill a third of the area: more than repainted edges.
+    expect(classify(text, 10_000).status).toBe("review");
+    // The changed area reaches 60px below the moved paragraphs.
+    expect(classify({ ...text, height: 124 }, 1504).status).toBe("review");
+  });
+
   it("flags a removed control as a regression", () => {
     const result = classifyJob({
       diff: { width: 1000, height: 800, diffPixels: 3000, diffRatio: 0.004 },
