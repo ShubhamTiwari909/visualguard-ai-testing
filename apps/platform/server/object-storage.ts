@@ -8,6 +8,8 @@
  * so installs that keep evidence in the database do not need it.
  */
 
+import { ConfigError, EnvironmentError } from "../../../packages/visualguard/src/core/errors.js";
+
 export interface ObjectBucket {
   /** A credential-free description for logs and errors, e.g. "s3://evidence/visualguard/". */
   readonly description: string;
@@ -44,7 +46,7 @@ function prefixFrom(path: string): string {
   // Decode first, so an encoded slash cannot hide a ".." segment.
   const segments = decodeURIComponent(path).split("/").filter(Boolean);
   if (segments.some((segment) => segment === "." || segment === ".."))
-    throw new Error(`${STORAGE_URL_VARIABLE} must not contain "." or ".." path segments`);
+    throw new ConfigError(`${STORAGE_URL_VARIABLE} must not contain "." or ".." path segments`);
   return segments.length ? `${segments.join("/")}/` : "";
 }
 
@@ -263,12 +265,19 @@ export class MemoryBucket implements ObjectBucket {
   }
 }
 
+const UNSET_HINT = `Or unset ${STORAGE_URL_VARIABLE} to keep screenshots in the database.`;
+
 /**
- * Load an optional provider SDK, explaining how to install it when it is missing.
+ * Load an optional provider SDK. A missing SDK is a setup problem (exit code 3) with install
+ * guidance, not an unexpected failure. `load` is replaceable for tests.
  */
-async function sdk<T>(name: string, provider: string): Promise<T> {
+export async function loadSdk<T>(
+  name: string,
+  provider: string,
+  load: (name: string) => Promise<unknown> = (specifier) => import(specifier),
+): Promise<T> {
   try {
-    return (await import(name)) as T;
+    return (await load(name)) as T;
   } catch (error) {
     if (
       error &&
@@ -276,9 +285,9 @@ async function sdk<T>(name: string, provider: string): Promise<T> {
       "code" in error &&
       (error.code === "ERR_MODULE_NOT_FOUND" || error.code === "MODULE_NOT_FOUND")
     )
-      throw new Error(
+      throw new EnvironmentError(
         `${STORAGE_URL_VARIABLE} uses ${provider}; install its SDK next to VisualGuard: npm install ${name}`,
-        { cause: error },
+        { hint: UNSET_HINT, cause: error },
       );
     throw error;
   }
@@ -304,29 +313,32 @@ export async function openObjectBucket(
   try {
     url = new URL(value);
   } catch {
-    throw new Error(
+    throw new ConfigError(
       `${STORAGE_URL_VARIABLE} must be a URL such as s3://bucket/prefix, gs://bucket/prefix or azure://container/prefix`,
     );
   }
   if (url.username || url.password)
-    throw new Error(
+    throw new ConfigError(
       `${STORAGE_URL_VARIABLE} must not contain credentials; use the provider's standard credential settings`,
     );
   const name = decodeURIComponent(url.hostname);
-  if (!name) throw new Error(`${STORAGE_URL_VARIABLE} must name a bucket or container`);
+  if (!name) throw new ConfigError(`${STORAGE_URL_VARIABLE} must name a bucket or container`);
   const prefix = prefixFrom(url.pathname);
   switch (url.protocol) {
     case "s3:": {
       const allowed = new Set(["region", "endpoint", "forcePathStyle"]);
       for (const key of url.searchParams.keys())
         if (!allowed.has(key))
-          throw new Error(
+          throw new ConfigError(
             `${STORAGE_URL_VARIABLE}: unknown option "${key}"; use region, endpoint or forcePathStyle`,
           );
       const endpoint = url.searchParams.get("endpoint") ?? undefined;
       if (endpoint && !/^https?:\/\//.test(endpoint))
-        throw new Error(`${STORAGE_URL_VARIABLE}: endpoint must be an http(s) URL`);
-      const s3 = await sdk<typeof import("@aws-sdk/client-s3")>("@aws-sdk/client-s3", "Amazon S3");
+        throw new ConfigError(`${STORAGE_URL_VARIABLE}: endpoint must be an http(s) URL`);
+      const s3 = await loadSdk<typeof import("@aws-sdk/client-s3")>(
+        "@aws-sdk/client-s3",
+        "Amazon S3",
+      );
       const client = new s3.S3Client({
         region: url.searchParams.get("region") ?? env.AWS_REGION ?? env.AWS_DEFAULT_REGION,
         endpoint,
@@ -335,21 +347,23 @@ export async function openObjectBucket(
       return new S3Bucket(client, s3, name, prefix);
     }
     case "gs:": {
-      if (url.search) throw new Error(`${STORAGE_URL_VARIABLE}: gs:// URLs take no options`);
-      const gcs = await sdk<typeof import("@google-cloud/storage")>(
+      if (url.search) throw new ConfigError(`${STORAGE_URL_VARIABLE}: gs:// URLs take no options`);
+      const gcs = await loadSdk<typeof import("@google-cloud/storage")>(
         "@google-cloud/storage",
         "Google Cloud Storage",
       );
       return new GcsBucket(new gcs.Storage().bucket(name), name, prefix);
     }
     case "azure:": {
-      if (url.search) throw new Error(`${STORAGE_URL_VARIABLE}: azure:// URLs take no options`);
+      if (url.search)
+        throw new ConfigError(`${STORAGE_URL_VARIABLE}: azure:// URLs take no options`);
       const connection = env.AZURE_STORAGE_CONNECTION_STRING;
       if (!connection)
-        throw new Error(
+        throw new EnvironmentError(
           `${STORAGE_URL_VARIABLE} uses Azure Blob Storage; set AZURE_STORAGE_CONNECTION_STRING`,
+          { hint: UNSET_HINT },
         );
-      const azure = await sdk<typeof import("@azure/storage-blob")>(
+      const azure = await loadSdk<typeof import("@azure/storage-blob")>(
         "@azure/storage-blob",
         "Azure Blob Storage",
       );
@@ -358,7 +372,7 @@ export async function openObjectBucket(
       return new AzureBlobBucket(container, name, prefix);
     }
     default:
-      throw new Error(
+      throw new ConfigError(
         `${STORAGE_URL_VARIABLE} must start with s3://, gs:// or azure:// (got ${url.protocol}//)`,
       );
   }

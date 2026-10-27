@@ -22,6 +22,7 @@
   "/footer-year": "content",
   "/dynamic": "content",
   "/subpixel": "noise",
+  "/subpixel-paragraph": "noise",
   "/web-font": "noise",
   "/lazy-images": "noise",
   "/video": "noise",

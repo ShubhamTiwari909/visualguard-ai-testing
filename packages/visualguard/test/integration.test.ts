@@ -186,7 +186,7 @@ describe("false alarms", () => {
   it("passes a sub-pixel nudge as rendering noise but still flags a real spacing change", async () => {
     const config = testConfig({
       baseURL: { production: production.url, staging: staging.url },
-      routes: ["/subpixel", "/spacing"],
+      routes: ["/subpixel", "/subpixel-paragraph", "/spacing"],
       viewports: {
         desktop: { width: 1440, height: 900 },
         mobile: { width: 390, height: 844, isMobile: true },
@@ -196,6 +196,8 @@ describe("false alarms", () => {
     expect(statuses(manifest)).toEqual({
       "/subpixel desktop": "pass",
       "/subpixel mobile": "pass",
+      "/subpixel-paragraph desktop": "pass",
+      "/subpixel-paragraph mobile": "pass",
       "/spacing desktop": "review",
       "/spacing mobile": "review",
     });

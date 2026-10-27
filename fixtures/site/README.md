@@ -36,6 +36,7 @@ serves `/name` from `name.html` and replaces `{{origin}}` in `.xml` and `.txt` f
 | `/blog-list`                            | different posts                             | review (AI: content)                     |
 | `/footer-year`                          | © 2025 → © 2026                             | review (AI: content)                     |
 | `/subpixel`                             | text nudged 0.4px                           | pass: sub-pixel rendering noise          |
+| `/subpixel-paragraph`                   | full-width paragraphs nudged 0.4px          | pass: sub-pixel rendering noise          |
 | `/web-font`                             | none (web font arrives after 800 ms)        | pass                                     |
 | `/lazy-images`                          | none (slow lazy images, some unsized)       | pass                                     |
 | `/video`                                | none (autoplaying looping video)            | pass                                     |
