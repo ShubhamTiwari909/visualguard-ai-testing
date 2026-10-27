@@ -3864,6 +3864,14 @@
     },
     {
       "source": "packages/visualguard/CHANGELOG.md",
+      "heading": "3.6.1",
+      "anchor": "361",
+      "destination": "/guides/diff-and-noise/",
+      "disposition": "migrated",
+      "reason": "Sub-pixel noise and storage setup-error patch; the sub-pixel rule is documented in the noise guide and the storage errors in the storage guide."
+    },
+    {
+      "source": "packages/visualguard/CHANGELOG.md",
       "heading": "3.6.0",
       "anchor": "360",
       "destination": "/releases/",
