@@ -21,7 +21,11 @@ const TYPES = {
   ".svg": "image/svg+xml",
   ".xml": "application/xml",
   ".txt": "text/plain",
+  ".ttf": "font/ttf",
+  ".webm": "video/webm",
 };
+// `?delay=<ms>` (capped at 5 s) holds a response back to simulate a slow asset.
+const MAX_DELAY_MS = 5_000;
 
 /**
  * Starts a server for one variant; resolves to { url, close }. Port 0 picks a free port.
@@ -32,7 +36,8 @@ const TYPES = {
 export function startFixtureServer(variant, port = 0) {
   const dir = join(FIXTURE_ROOT, variant);
   const server = createServer((request, response) => {
-    let path = decodeURIComponent(new URL(request.url ?? "/", "http://x").pathname);
+    const url = new URL(request.url ?? "/", "http://x");
+    let path = decodeURIComponent(url.pathname);
     if (path.endsWith("/")) path += "index";
     const file = [join(dir, path), join(dir, `${path}.html`)].find(
       (candidate) =>
@@ -45,7 +50,8 @@ export function startFixtureServer(variant, port = 0) {
     if (type === "application/xml" || type === "text/plain") {
       body = body.toString("utf8").replaceAll("{{origin}}", `http://${request.headers.host}`);
     }
-    response.writeHead(200, { "content-type": type }).end(body);
+    const delay = Math.min(Number(url.searchParams.get("delay")) || 0, MAX_DELAY_MS);
+    setTimeout(() => response.writeHead(200, { "content-type": type }).end(body), delay);
   });
   return new Promise((resolvePromise) =>
     server.listen(port, "127.0.0.1", () =>

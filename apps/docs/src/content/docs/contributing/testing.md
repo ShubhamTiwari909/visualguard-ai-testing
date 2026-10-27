@@ -4,7 +4,7 @@ description: "Run every VisualGuard test suite, know what each one covers, and p
 audience: "contributor"
 docType: "how-to"
 channel: "source"
-lastReviewed: "2026-10-20"
+lastReviewed: "2026-10-27"
 sourcePaths:
   [
     "CONTRIBUTING.md",
@@ -194,15 +194,16 @@ pnpm eval -- --provider ollama --model qwen2.5vl
 
 `pnpm eval` builds the package first. After a build you can call `node evals/run.mjs` directly with the same options.
 
-| Option                       | What it does                                                   | Default                |
-| ---------------------------- | -------------------------------------------------------------- | ---------------------- |
-| `--provider`                 | The AI provider: `none`, `gemini` or `ollama`.                 | `none`                 |
-| `--model`                    | The model ID for the provider.                                 | The provider's default |
-| `--viewports`                | A comma-separated list from `desktop` and `mobile`.            | `desktop,mobile`       |
-| `--cache`                    | Reuses cached AI answers.                                      | off                    |
-| `--all-ai`                   | Sends every difference to the AI, not only the uncertain ones. | off (uncertain only)   |
-| `--min-regression-recall`    | Fails the run if regression recall is below this number.       | not set                |
-| `--min-regression-precision` | Fails the run if regression precision is below this number.    | not set                |
+| Option                       | What it does                                                        | Default                |
+| ---------------------------- | ------------------------------------------------------------------- | ---------------------- |
+| `--provider`                 | The AI provider: `none`, `gemini` or `ollama`.                      | `none`                 |
+| `--model`                    | The model ID for the provider.                                      | The provider's default |
+| `--viewports`                | A comma-separated list from `desktop` and `mobile`.                 | `desktop,mobile`       |
+| `--cache`                    | Reuses cached AI answers.                                           | off                    |
+| `--all-ai`                   | Sends every difference to the AI, not only the uncertain ones.      | off (uncertain only)   |
+| `--min-regression-recall`    | Fails the run if regression recall is below this number.            | not set                |
+| `--min-regression-precision` | Fails the run if regression precision is below this number.         | not set                |
+| `--max-false-alarm-rate`     | Fails the run if more than this share of `noise` cases do not pass. | not set                |
 
 You should see precision and recall per class, a confusion matrix and the misses. The results are saved to `evals/results/`. Run it before changing prompts or default models. The 1.0 target is regression precision of at least 0.85 and recall of at least 0.90 on the default Gemini model.
 
@@ -211,24 +212,24 @@ Without AI, statuses stand in for classes: `regression` counts as regression, `r
 ### Evaluation rules and gates
 
 - Whether a case counts comes from its label, never from the detector result. An unexpected `pass` stays in the total. A missing or failed capture is scored as an error.
-- Results report hybrid-policy precision, recall and false-green rate separately from model-only accuracy. They also include the sample size, fallback count, dataset and prompt versions, and confidence bins.
+- Results report hybrid-policy precision, recall, false-green rate and false-alarm rate separately from model-only accuracy. The false-alarm rate is the share of `noise` cases that ended as anything other than `pass` or `accepted`: a page a person would have been asked to look at for nothing. They also include the sample size, fallback count, dataset and prompt versions, and confidence bins.
 - Every applicable case stays scored, even when AI is skipped or a budget runs out.
 - Confidence bins show calibration and should guide changes to `noiseConfidence`. A model's self-reported confidence is not a probability.
 
 These are the gates CI uses, after a build:
 
 ```bash
-node evals/run.mjs --provider none --min-regression-recall 0.6 --min-regression-precision 0.85
+node evals/run.mjs --provider none --min-regression-recall 0.64 --min-regression-precision 0.85 --max-false-alarm-rate 0
 node evals/run.mjs --provider gemini --all-ai --min-regression-recall 0.9 --min-regression-precision 0.85
 ```
 
-The heuristic gate runs on every pull request. The Gemini gate runs weekly and by hand in the **Evals** workflow when a `GEMINI_API_KEY` secret exists; without it, that workflow runs the heuristic gate. The thresholds are targets to test against, not a claim about measured live model performance.
+The heuristic gate runs on every pull request. Its recall floor matches today's heuristic score, so a change that loses a detection fails, and no `noise` page may need review. The Gemini gate runs weekly and by hand in the **Evals** workflow when a `GEMINI_API_KEY` secret exists; without it, that workflow runs the heuristic gate. The thresholds are targets to test against, not a claim about measured live model performance.
 
 ## Add a regression fixture
 
 Add a fixture when you fix a detection bug, so the bug cannot come back.
 
-1. Add matching HTML and assets under `fixtures/site/production/` and `fixtures/site/staging/`. Keep the content deterministic unless you are deliberately testing noise.
+1. Add matching HTML and assets under `fixtures/site/production/` and `fixtures/site/staging/`. Keep the content deterministic unless you are deliberately testing noise. For a page that should never differ, such as one with slow or moving content, keep both variants identical, label it `noise`, and add it to the determinism test in `test/integration.test.ts`.
 2. Add the route and its expected class to `evals/labels.json`. Use a per-viewport map if the case applies only to mobile.
 3. Build and run the heuristic evaluation:
 
@@ -249,7 +250,7 @@ node scripts/serve-fixtures.mjs
 
 ### Included site fixtures
 
-Every page exists in a `production/` and a `staging/` variant. The fixture server serves `/name` from `name.html` and replaces `{{origin}}` in `.xml` and `.txt` files. The test helper is `packages/visualguard/test/helpers/fixture-server.ts`; the scripts use `scripts/fixture-server.mjs`.
+Every page exists in a `production/` and a `staging/` variant. The fixture server serves `/name` from `name.html` and replaces `{{origin}}` in `.xml` and `.txt` files. Add `?delay=<ms>` (up to 5000) to an asset URL to make it arrive late. The web font and video are generated by `node scripts/make-fixture-assets.mjs`, which needs ffmpeg. The test helper is `packages/visualguard/test/helpers/fixture-server.ts`; the scripts use `scripts/fixture-server.mjs`.
 
 | Page                                    | Difference on staging                        | Expected without AI                       |
 | --------------------------------------- | -------------------------------------------- | ----------------------------------------- |
@@ -280,7 +281,11 @@ Every page exists in a `production/` and a `staging/` variant. The fixture serve
 | `/price`                                | $49 to $59                                   | review (AI: content)                      |
 | `/blog-list`                            | different posts                              | review (AI: content)                      |
 | `/footer-year`                          | © 2025 to © 2026                             | review (AI: content)                      |
-| `/subpixel`                             | text nudged 0.4px                            | review (AI: noise)                        |
+| `/subpixel`                             | text nudged 0.4px                            | pass: sub-pixel rendering noise           |
+| `/web-font`                             | none (web font arrives after 800 ms)         | pass                                      |
+| `/lazy-images`                          | none (slow lazy images, some unsized)        | pass                                      |
+| `/video`                                | none (autoplaying looping video)             | pass                                      |
+| `/sticky-header`                        | none (sticky header, fixed buttons)          | pass                                      |
 
 ## What CI runs
 

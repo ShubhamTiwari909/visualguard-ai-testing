@@ -437,6 +437,19 @@ page changes between loads.
 
 This works in `visualguard test`, `monitor`, `watch` and the Playwright fixture, with no config.
 
+**Rendering noise.** Tiny differences with no change in the page, and changes that only move an
+element by less than one pixel (a `transform: translateX(0.4px)`, say), pass as rendering noise.
+
+**Flaky checks.** While a fix is on the way, quarantine one check for a limited time. It still
+runs and reports its real status, but no longer fails the run; errors and health problems still
+do, and an expired entry warns on every run:
+
+```ts
+quarantine: [
+  { route: "/pricing", viewport: "mobile", owner: "web-team", reason: "carousel timing", expires: "2026-12-31" },
+],
+```
+
 ## Output
 
 Every run writes `.visualguard/runs/<run>/` with `manifest.json`, the screenshots, a diff image,

@@ -29,12 +29,12 @@ pass → noise), so heuristics can never score on `content`.
 
 ## Evaluation contract and gates
 
-Applicability comes from labels, never from the detector result. An unexpected `pass` stays in the denominator; a missing/errored capture is scored as an error. Results separate hybrid policy precision/recall/false-green rate from model-only classification accuracy, and include sample size, fallback count, dataset/prompt versions, and confidence calibration bins.
+Applicability comes from labels, never from the detector result. An unexpected `pass` stays in the denominator; a missing/errored capture is scored as an error. Results separate hybrid policy precision/recall/false-green rate and false-alarm rate (the share of `noise` cases that did not pass) from model-only classification accuracy, and include sample size, fallback count, dataset/prompt versions, and confidence calibration bins.
 
 After building, run deterministic quality gates with:
 
 ```sh
-node evals/run.mjs --provider none --min-regression-recall 0.6 --min-regression-precision 0.85
+node evals/run.mjs --provider none --min-regression-recall 0.64 --min-regression-precision 0.85 --max-false-alarm-rate 0
 node evals/run.mjs --provider gemini --all-ai --min-regression-recall 0.9 --min-regression-precision 0.85
 ```
 

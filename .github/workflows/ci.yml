@@ -146,7 +146,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter visualguard exec playwright install --with-deps chromium
       - run: pnpm build
-      - run: node evals/run.mjs --provider none --min-regression-recall 0.6 --min-regression-precision 0.85
+      # Floors match today's heuristic scores; noise pages must never need review.
+      - run: node evals/run.mjs --provider none --min-regression-recall 0.64 --min-regression-precision 0.85 --max-false-alarm-rate 0
       - uses: actions/upload-artifact@v4
         if: always()
         with:

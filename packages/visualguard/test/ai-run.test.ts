@@ -136,4 +136,26 @@ describe("test with AI", () => {
       "AI says intentional on /alignment",
     );
   });
+
+  it("`analyze` applies the current quarantine to the re-analysed statuses", async () => {
+    const quarantine = [
+      { route: "/alignment", owner: "web", reason: "known flake", expires: "2999-12-31" },
+      { route: "/missing-image", owner: "web", reason: "CDN move", expires: "2999-12-31" },
+    ];
+    const result = await reanalyzeRun(
+      { ...config, quarantine },
+      { provider: provider(), runId: manifest.id, useCache: false },
+    );
+    const updated = (route: string) =>
+      result.manifest.jobs.find((candidate) => candidate.route === route)!;
+    expect(updated("/alignment").quarantined?.reason).toBe("known flake");
+    // A broken image is a health finding, which quarantine never covers.
+    expect(updated("/missing-image").quarantined).toBeUndefined();
+    const cleared = await reanalyzeRun(config, {
+      provider: provider(),
+      runId: manifest.id,
+      useCache: false,
+    });
+    expect(cleared.manifest.jobs.some((job) => job.quarantined)).toBe(false);
+  });
 });

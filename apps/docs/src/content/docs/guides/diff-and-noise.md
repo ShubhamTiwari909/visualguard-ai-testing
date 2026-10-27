@@ -1,10 +1,10 @@
 ---
 title: "Tune differences and noise"
-description: "Learn how VisualGuard compares two screenshots, how much change it allows, how the noise map ignores areas that change on every load, and when to change each diff setting."
+description: "Learn how VisualGuard compares two screenshots, how much change it allows, how it ignores rendering noise and areas that change on every load, how to quarantine a flaky check, and when to change each diff setting."
 audience: "developer"
 docType: "how-to"
 channel: "both"
-lastReviewed: "2026-10-20"
+lastReviewed: "2026-10-27"
 sourcePaths:
   [
     "packages/visualguard/src/config/schema.ts",
@@ -14,6 +14,8 @@ sourcePaths:
     "packages/visualguard/src/diff/shift.ts",
     "packages/visualguard/src/core/run.ts",
     "packages/visualguard/src/core/provenance.ts",
+    "packages/visualguard/src/mapping/classify.ts",
+    "packages/visualguard/src/core/quarantine.ts",
   ]
 sidebar: { "order": 6 }
 ---
@@ -38,7 +40,16 @@ For each job (one page at one viewport), VisualGuard:
 4. Builds a noise map, if the job did not pass. It loads the reference page a second time and ignores areas that differ between the two loads. Then it checks the total again.
 5. Looks for a layout shift. When content was inserted or removed, everything below moves. VisualGuard reports this as one "shift" region instead of many changes.
 6. Groups the remaining changed pixels into rectangles called regions. It writes a diff image and crops of each region.
-7. Decides the job's status, usually `review` or `regression`, using the regions and the page structure. AI can add an explanation. See [Read result statuses](/concepts/results/).
+7. Decides the job's status, usually `review` or `regression`, using the regions and the page structure. Small differences that are only rendering noise pass instead (see below). AI can add an explanation. See [Read result statuses](/concepts/results/).
+
+### Rendering noise passes automatically
+
+Some differences are real pixels but nothing a person could see. VisualGuard passes them as rendering noise, with a finding that says so:
+
+- **Tiny changes with no page change.** At most 0.1% of the page differs, in small areas, and the page structure and styles are the same on both sides. This is usually font smoothing or image decoding.
+- **Sub-pixel position changes.** The only change is an element moving by less than one CSS pixel, through `transform`, `translate`, `left`/`top`/`right`/`bottom`/`inset`, `margin` or `padding`. Moving text by 0.4px repaints the smoothed edge of every letter, so up to 0.5% of the page may differ, still only in small areas. The finding reads `… from a position change under 1px: treated as rendering noise`.
+
+A change of 1px or more, any other style change, a text change, or a large changed area is never treated as noise.
 
 ## 1. Set the allowed change
 
@@ -105,7 +116,44 @@ Set `noiseMap: false` when:
 - The changing area is what you want to test, such as a rotating hero banner you just redesigned.
 - Your pages are already stable, and you want to save the extra page load.
 
-## 3. Control how changes are grouped
+## 3. Quarantine a flaky check
+
+Sometimes one check keeps failing for a reason you already know about, such as a third-party widget that renders differently on every load, while the fix is planned. Instead of loosening tolerances for every page, quarantine that one check for a limited time:
+
+```ts
+quarantine: [
+  {
+    route: "/pricing",
+    viewport: "mobile", // optional: leave out to cover every viewport
+    owner: "web-team",
+    reason: "Carousel timing differs between loads; fix in WEB-482",
+    expires: "2026-12-31",
+  },
+],
+```
+
+| Field      | What it does                                                                             |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `route`    | The route path, exactly as the check's route.                                            |
+| `viewport` | Optional. Limits the entry to one viewport name.                                         |
+| `owner`    | Required. Who is fixing the check. Shown with the result.                                |
+| `reason`   | Required. Why the check is quarantined.                                                  |
+| `expires`  | Required. A date such as `2026-12-31`. The entry applies until the end of that day, UTC. |
+
+A quarantined check still runs and keeps its real status, so you keep seeing what happened:
+
+- It does **not** fail the run or change the exit code, whatever `--fail-on` says. JUnit reports it as skipped.
+- The terminal, the report and the pull request comment say it is quarantined, until when and by whom.
+- A quarantine covers visual differences only. A check still fails if it has a capture **error** or a **health** problem, such as a broken image, a failed request, or a failing accessibility or performance check.
+- After `expires`, the entry stops applying and every run warns: `Quarantine for /pricing (mobile) expired on 2026-12-31; it counts again.` An entry that matches no check in the run also warns, which usually means a typo.
+
+Quarantine applies to `visualguard test`, `monitor`, `merge`, `analyze` and `runVisualGuard`. The `visualguard/playwright` fixture checks pages inside your own tests and does not read it.
+
+:::caution
+Quarantine hides failures. Keep the expiry close, fix the cause, then delete the entry. To record a change you intended, [accept it](/guides/accepting-changes/) instead.
+:::
+
+## 4. Control how changes are grouped
 
 These settings change how regions look in the report and how many reach the AI. They do not change whether a job passes.
 
@@ -145,7 +193,7 @@ Check both directions after each change:
    npx visualguard test --production http://localhost:3000 --staging http://localhost:3000 --no-ai
    ```
 
-   You should see every job as `pass`.
+   You should see every job as `pass`. A page that stays `review` against itself has moving content: [stabilize it](/guides/stable-captures/), mask it, or, while a fix is on the way, quarantine it.
 
 2. **Real changes still show.** Make a small visible change on staging, such as a changed button label. Run the normal test and open the report:
 
@@ -168,6 +216,9 @@ If step 2 passes the page, your allowances are too loose.
 | `Noise map not applied: …% of the page changes between loads`           | The page is not stable. See [Make captures repeatable](/guides/stable-captures/).                                  |
 | One change shows as many small regions                                  | Raise `regionMergeDistance`.                                                                                       |
 | Everything below a new element is marked as changed                     | Make sure `detectShift` is `true`.                                                                                 |
+| `Quarantine for … expired on …; it counts again`                        | Fix the check and delete the entry, or, if the fix is still on the way, agree a new `expires` date with its owner. |
+| `Quarantine for … matches no check in this run`                         | Check that `route` and `viewport` match the check exactly, including a leading `/`.                                |
+| A quarantined check still fails the run                                 | It has a capture error or a health finding, which quarantine never covers. Open the report to see which.           |
 | A page fails with a size difference                                     | The two pages have different heights. Look at the **Side by side** view to see which content is extra.             |
 
 For other capture problems, see [Capture troubleshooting](/troubleshooting/capture/).
@@ -175,6 +226,6 @@ For other capture problems, see [Capture troubleshooting](/troubleshooting/captu
 ## Next steps
 
 - [Inspect and share reports](/guides/reports/): read regions, the diff view and findings.
-- [Accept intentional local changes](/guides/accepting-changes/): record a change instead of loosening tolerances.
+- [Accept intentional local changes](/guides/accepting-changes/): record a change instead of loosening tolerances or quarantining.
 - [Make captures repeatable](/guides/stable-captures/): remove the cause of noise.
 - [Configuration reference](/reference/configuration/): every `diff` field and its limits.

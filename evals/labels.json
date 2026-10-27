@@ -21,5 +21,9 @@
   "/blog-list": "content",
   "/footer-year": "content",
   "/dynamic": "content",
-  "/subpixel": "noise"
+  "/subpixel": "noise",
+  "/web-font": "noise",
+  "/lazy-images": "noise",
+  "/video": "noise",
+  "/sticky-header": "noise"
 }

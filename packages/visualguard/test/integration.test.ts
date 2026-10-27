@@ -182,6 +182,29 @@ describe("dynamic content", () => {
   });
 });
 
+describe("false alarms", () => {
+  it("passes a sub-pixel nudge as rendering noise but still flags a real spacing change", async () => {
+    const config = testConfig({
+      baseURL: { production: production.url, staging: staging.url },
+      routes: ["/subpixel", "/spacing"],
+      viewports: {
+        desktop: { width: 1440, height: 900 },
+        mobile: { width: 390, height: 844, isMobile: true },
+      },
+    });
+    const { manifest } = await createRun(config).start();
+    expect(statuses(manifest)).toEqual({
+      "/subpixel desktop": "pass",
+      "/subpixel mobile": "pass",
+      "/spacing desktop": "review",
+      "/spacing mobile": "review",
+    });
+    const subpixel = manifest.jobs.find((job) => job.route === "/subpixel")!;
+    expect(subpixel.diff!.diffPixels).toBeGreaterThan(0);
+    expect(subpixel.findings![0]!.message).toMatch(/position change under 1px/);
+  });
+});
+
 describe("determinism", () => {
   const runs = Number.parseInt(process.env.VG_DETERMINISM_RUNS ?? "2", 10);
 
@@ -197,6 +220,11 @@ describe("determinism", () => {
         "/layout-shift",
         "/overflow",
         "/missing-image",
+        // Slow web font, slow lazy images, autoplaying video, sticky and fixed elements.
+        "/web-font",
+        "/lazy-images",
+        "/video",
+        "/sticky-header",
       ],
       viewports: {
         desktop: { width: 1440, height: 900 },

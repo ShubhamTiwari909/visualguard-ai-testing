@@ -373,6 +373,11 @@ export interface JobResult {
    * `match` says whether the screenshots were identical or the same change was found again.
    */
   acceptedBy?: { hash: string; at: string; note?: string; match?: "exact" | "similar" };
+  /**
+   * Set when a `quarantine` entry covers this check. The status stays as found, but the check
+   * no longer fails the run.
+   */
+  quarantined?: { owner: string; reason: string; expires: string };
   error?: { stage: "capture" | "diff" | "mapping" | "ai"; message: string };
   durationMs: number;
 }

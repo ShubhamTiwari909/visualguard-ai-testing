@@ -56,12 +56,17 @@ export function evaluationCases(manifest, labels, viewports) {
 export function policyMetrics(cases) {
   const regressions = cases.filter((c) => c.label === "regression");
   const detections = cases.filter((c) => c.status === "regression");
+  const noise = cases.filter((c) => c.label === "noise");
   return {
     regressionRecall: regressions.length
       ? regressions.filter((c) => c.status === "regression").length / regressions.length
       : 0,
     regressionPrecision: detections.length
       ? detections.filter((c) => c.label === "regression").length / detections.length
+      : 0,
+    // Noise-labelled checks that still asked a person to look, or failed outright.
+    falseAlarmRate: noise.length
+      ? noise.filter((c) => c.status !== "pass" && c.status !== "accepted").length / noise.length
       : 0,
     falseGreenRate: regressions.length
       ? regressions.filter((c) => c.status === "pass" || c.status === "accepted").length /

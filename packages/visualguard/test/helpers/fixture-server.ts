@@ -23,7 +23,11 @@ const TYPES: Record<string, string> = {
   ".png": "image/png",
   ".css": "text/css",
   ".js": "text/javascript",
+  ".ttf": "font/ttf",
+  ".webm": "video/webm",
 };
+// `?delay=<ms>` (capped at 5 s) holds a response back to simulate a slow asset.
+const MAX_DELAY_MS = 5_000;
 
 export interface FixtureServer {
   url: string;
@@ -60,7 +64,8 @@ export async function startFixtureServer(
     if (type.startsWith("application/xml") || type.startsWith("text/plain")) {
       body = body.toString("utf8").replaceAll("{{origin}}", `http://${request.headers.host}`);
     }
-    response.writeHead(200, { "content-type": type }).end(body);
+    const delay = Math.min(Number(url.searchParams.get("delay")) || 0, MAX_DELAY_MS);
+    setTimeout(() => response.writeHead(200, { "content-type": type }).end(body), delay);
   });
   await new Promise<void>((resolveListen) => server.listen(0, "127.0.0.1", resolveListen));
   const { port } = server.address() as AddressInfo;

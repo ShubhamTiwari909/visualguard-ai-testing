@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { classifyJob } from "../src/mapping/classify.js";
+import { classifyJob, isSubpixelDelta } from "../src/mapping/classify.js";
 import { mapRegion } from "../src/mapping/deltas.js";
 import { describeDeltas, formatValue } from "../src/mapping/describe.js";
 import { DomIndex, shiftBox } from "../src/mapping/dom.js";
@@ -276,6 +276,45 @@ describe("classifyJob", () => {
     });
     expect(result.status).toBe("pass");
     expect(result.findings[0]!.message).toMatch(/rendering noise/);
+  });
+
+  it("treats only position changes under one pixel as sub-pixel noise", () => {
+    const style = (property: string, production: string, staging: string) => ({
+      kind: "style" as const,
+      selector: "p",
+      property,
+      production,
+      staging,
+    });
+    const box = (dx: number, dw = 0) => ({
+      kind: "box" as const,
+      selector: "p",
+      production: { x: 10, y: 10, width: 100, height: 20 },
+      staging: { x: 10 + dx, y: 10, width: 100 + dw, height: 20 },
+    });
+    const subpixel = [
+      style("transform", "none", "matrix(1, 0, 0, 1, 0.4, 0)"),
+      style("transform", "matrix(1, 0, 0, 1, 10, 4)", "matrix(1, 0, 0, 1, 10.6, 3.5)"),
+      style("translate", "none", "0.5px"),
+      style("left", "12px", "12.75px"),
+      style("margin", "0px 8px", "0px 8.5px"),
+      box(0.5, -0.4),
+    ];
+    const visible = [
+      style("transform", "none", "matrix(1, 0, 0, 1, 1, 0)"),
+      style("transform", "none", "matrix(1.01, 0, 0, 1, 0, 0)"),
+      style("transform", "none", "matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0.2, 0, 0, 1)"),
+      style("left", "12px", "13px"),
+      style("left", "12px", "auto"),
+      style("margin", "0px 8px", "0px 8px 1px"),
+      style("left", "12px", "12px"),
+      style("color", "rgb(0, 0, 0)", "rgb(1, 0, 0)"),
+      style("width", "100px", "100.5px"),
+      box(1),
+      { kind: "text" as const, selector: "p", production: "a", staging: "b" },
+    ];
+    for (const delta of subpixel) expect(isSubpixelDelta(delta), JSON.stringify(delta)).toBe(true);
+    for (const delta of visible) expect(isSubpixelDelta(delta), JSON.stringify(delta)).toBe(false);
   });
 
   it("flags a removed control as a regression", () => {

@@ -28,6 +28,7 @@ import { pngSize } from "./util.js";
 import { applyAccepted, readAccepted } from "./accepted.js";
 import { ConfigError, errorMessage } from "./errors.js";
 import { applyFindings, healthFindings } from "./findings.js";
+import { applyQuarantine, quarantineWarnings } from "./quarantine.js";
 import { RunEmitter, type RunEvent } from "./events.js";
 import { planJobs } from "./jobs.js";
 import { checkReachable } from "./reachability.js";
@@ -240,7 +241,10 @@ export class Run extends RunEmitter {
 
     // AI is optional: without a provider (or a key) the heuristics explain everything.
     let provider: AIProvider | undefined;
-    const warnings = [...plan.warnings];
+    const warnings = [
+      ...plan.warnings,
+      ...quarantineWarnings(config.quarantine ?? [], plan.jobs, new Date()),
+    ];
     if (this.options.ai !== false) {
       if (this.options.ai) {
         provider = this.options.ai;
@@ -301,6 +305,7 @@ export class Run extends RunEmitter {
           if (session && needsAnalysis(result, config.ai.analyze)) {
             result = await aiLimit(() => session.analyze(result, run.dir, mode));
           }
+          result = applyQuarantine(result, config.quarantine ?? [], run.startedAt);
           this.options.signal?.throwIfAborted();
           this.emitAll({ type: "job:end", job: result });
           return result;

@@ -4,8 +4,13 @@ description: "Distinguish visual failure, usage errors, environment errors and i
 audience: "developer"
 docType: "reference"
 channel: "both"
-lastReviewed: "2026-10-20"
-sourcePaths: ["packages/visualguard/src/core/errors.ts", "packages/visualguard/src/core/status.ts"]
+lastReviewed: "2026-10-27"
+sourcePaths:
+  [
+    "packages/visualguard/src/core/errors.ts",
+    "packages/visualguard/src/core/status.ts",
+    "packages/visualguard/src/core/quarantine.ts",
+  ]
 sidebar: { "order": 4 }
 ---
 
@@ -17,5 +22,7 @@ sidebar: { "order": 4 }
 | `3`  | Environment failure, such as unavailable browser/URL/provider prerequisites. | Run doctor and fix the dependency/network environment.                                    |
 
 `--fail-on regression` fails regressions and errors. `review` also fails review statuses; `any` currently selects the same failing statuses as `review`. Incomplete evidence always fails. A finished worker/upload is a lifecycle state, not a visual pass. [Read statuses](/concepts/results/).
+
+A check covered by an active `quarantine` entry never fails the run, whatever its status, unless it has a capture error or a health finding. JUnit reports it as skipped. See [Quarantine a flaky check](/guides/diff-and-noise/#3-quarantine-a-flaky-check).
 
 Operational policy assessment errors fail even without `--enforce`; `--enforce` additionally requires policy satisfaction. Follow the command's actual installed help and error output.

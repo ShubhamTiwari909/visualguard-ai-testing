@@ -183,21 +183,42 @@ export async function waitForImages(page: Page, timeoutMs = 5_000): Promise<void
 /**
  * Pauses videos and SVG (SMIL) animations at their first frame.
  *
- * Reset video and SVG animations to a stable first frame inside the page. Catch unsupported
- * browser operations so optional stabilization does not abort capture.
+ * Reset video and SVG animations to a stable first frame inside the page. Seeking is
+ * asynchronous, so wait until each video has finished seeking and shown the first frame;
+ * otherwise a busy machine can screenshot whichever frame was playing. Each video waits at most
+ * `timeoutMs`. Catch unsupported browser operations so optional stabilization does not abort
+ * capture.
  */
-export async function pauseMedia(page: Page): Promise<void> {
+export async function pauseMedia(page: Page, timeoutMs = 3_000): Promise<void> {
   await page
-    .evaluate(() => {
-      for (const video of Array.from(document.querySelectorAll("video"))) {
-        video.pause();
-        video.currentTime = 0;
-      }
+    .evaluate(async (limit) => {
       for (const svg of Array.from(document.querySelectorAll("svg"))) {
         svg.pauseAnimations?.();
         svg.setCurrentTime?.(0);
       }
-    })
+      await Promise.all(
+        Array.from(document.querySelectorAll("video")).map(
+          (video) =>
+            new Promise<void>((resolve) => {
+              const timer = setTimeout(resolve, limit);
+              const finish = () => {
+                clearTimeout(timer);
+                resolve();
+              };
+              // Two animation frames after seeking, the seeked frame has been painted.
+              // (requestVideoFrameCallback does not fire for a paused video in headless Chromium.)
+              const shown = () => requestAnimationFrame(() => requestAnimationFrame(finish));
+              video.pause();
+              if (video.readyState >= 2 && video.currentTime === 0 && !video.seeking) {
+                finish();
+                return;
+              }
+              video.addEventListener("seeked", shown, { once: true });
+              video.currentTime = 0;
+            }),
+        ),
+      );
+    }, timeoutMs)
     .catch(() => {});
 }
 

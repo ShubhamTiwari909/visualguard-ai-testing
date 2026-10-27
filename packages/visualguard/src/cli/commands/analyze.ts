@@ -23,6 +23,7 @@ import { matchesAny } from "../../config/glob.js";
 import { EnvironmentError } from "../../core/errors.js";
 import { findRun, readManifest, recordRun, writeManifest } from "../../core/runs.js";
 import { exitCodeFor, FAIL_ON_VALUES, summarize } from "../../core/status.js";
+import { applyQuarantine } from "../../core/quarantine.js";
 import type { FailOn, JobResult, RunManifest } from "../../core/types.js";
 import { pluralize } from "../../core/util.js";
 import { writeReport } from "../../reporters/html.js";
@@ -126,7 +127,13 @@ export async function reanalyzeRun(
     ),
   );
 
-  const jobs = manifest.jobs.map((job) => analyzed.get(job.id) ?? job);
+  // Re-check quarantine against the current config: AI may have changed a status, and entries
+  // may have been added, removed or expired since the run.
+  const now = new Date();
+  const jobs = manifest.jobs.map((job) => {
+    const { quarantined: _previous, ...result } = analyzed.get(job.id) ?? job;
+    return applyQuarantine(result, config.quarantine ?? [], now);
+  });
   const previous = manifest.usage ?? { aiCalls: 0, inputTokens: 0, outputTokens: 0 };
   const updated: RunManifest = {
     ...manifest,

@@ -15,6 +15,7 @@
 //   pnpm eval                                 heuristics only (no AI), the baseline
 //   pnpm eval -- --provider gemini            needs GEMINI_API_KEY
 //   pnpm eval -- --provider ollama --model qwen2.5vl
+//   pnpm eval -- --max-false-alarm-rate 0     fail when a noise page needs review
 //
 // Results are printed and saved to evals/results/.
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -32,6 +33,7 @@ const { values: args } = parseArgs({
     cache: { type: "boolean", default: false },
     "min-regression-recall": { type: "string" },
     "min-regression-precision": { type: "string" },
+    "max-false-alarm-rate": { type: "string" },
     "all-ai": { type: "boolean", default: false },
   },
 });
@@ -150,7 +152,7 @@ try {
   const name = `${stamp}-${manifest.config.ai.provider}${manifest.config.ai.model ? `-${manifest.config.ai.model.replace(/[^a-z0-9.-]/gi, "_")}` : ""}.json`;
   writeFileSync(
     join(resultsDir, name),
-    `${JSON.stringify({ datasetVersion: 2, promptVersion: "diff-v2", sampleSize: cases.length, calibration: calibrationMetrics(cases), policy, modelAccuracy, provider: manifest.config.ai, usage: manifest.usage, accuracy, statusAccuracy, perClass, matrix, cases }, null, 2)}\n`,
+    `${JSON.stringify({ datasetVersion: 3, promptVersion: "diff-v2", sampleSize: cases.length, calibration: calibrationMetrics(cases), policy, modelAccuracy, provider: manifest.config.ai, usage: manifest.usage, accuracy, statusAccuracy, perClass, matrix, cases }, null, 2)}\n`,
   );
   console.log(`\n  Saved evals/results/${name}`);
   console.log(`  Report ${join(runDir, "index.html")}\n`);
@@ -160,16 +162,17 @@ try {
     "Model-only classification accuracy:",
     modelAccuracy,
   );
-  for (const [flag, value] of [
-    ["min-regression-recall", policy.regressionRecall],
-    ["min-regression-precision", policy.regressionPrecision],
+  for (const [flag, value, direction] of [
+    ["min-regression-recall", policy.regressionRecall, "min"],
+    ["min-regression-precision", policy.regressionPrecision, "min"],
+    ["max-false-alarm-rate", policy.falseAlarmRate, "max"],
   ]) {
     if (args[flag] !== undefined) {
-      const minimum = Number(args[flag]);
-      if (!Number.isFinite(minimum) || minimum < 0 || minimum > 1)
+      const limit = Number(args[flag]);
+      if (!Number.isFinite(limit) || limit < 0 || limit > 1)
         throw new Error(`${flag} must be between 0 and 1`);
-      if (value < minimum) {
-        console.error(`${flag} gate failed: ${value} < ${minimum}`);
+      if (direction === "min" ? value < limit : value > limit) {
+        console.error(`${flag} gate failed: ${value} ${direction === "min" ? "<" : ">"} ${limit}`);
         process.exitCode = 1;
       }
     }
