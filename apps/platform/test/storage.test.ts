@@ -10,17 +10,23 @@ import { SqlArtifactStore } from "../server/artifacts.js";
 import { openMongo } from "../server/mongo.js";
 import type { PlatformRepository, StateStore } from "../server/storage-contracts.js";
 import type { ArtifactStore } from "../server/artifacts.js";
+import { MemoryBucket } from "../server/object-storage.js";
 import type { RunDetail } from "../shared/contracts.js";
 import { AuthService } from "../server/auth.js";
 import { Reviews } from "../server/reviews.js";
 import { reviewRun } from "./fixtures/review-run.js";
 
-for (const backend of ["sqlite", "postgres", "mongo"] as const) {
+for (const [backend, bucket] of (["sqlite", "postgres", "mongo"] as const).flatMap((name) => [
+  [name, undefined] as const,
+  // The same contract with evidence bytes in external object storage.
+  [name, new MemoryBucket()] as const,
+])) {
   const url =
     backend === "postgres"
       ? process.env.VISUALGUARD_TEST_DATABASE_URL
       : process.env.VISUALGUARD_TEST_MONGODB_URL;
-  describe.skipIf(backend !== "sqlite" && !url)(`${backend} shared storage contract`, () => {
+  const label = `${backend}${bucket ? " + object storage" : ""}`;
+  describe.skipIf(backend !== "sqlite" && !url)(`${label} shared storage contract`, () => {
     let repository: PlatformRepository,
       state: StateStore,
       store: ArtifactStore,
@@ -29,15 +35,16 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
     const prefix = `storage-${randomUUID()}`;
     beforeAll(async () => {
       root = await mkdtemp(join(tmpdir(), "vg-storage-"));
-      if (backend === "mongo") ({ repository, state, store, close } = await openMongo(url!));
+      if (backend === "mongo")
+        ({ repository, state, store, close } = await openMongo(url!, bucket));
       else {
         const db = await openDatabase({
           url: backend === "postgres" ? url : undefined,
           sqlitePath: join(root, "test.sqlite"),
         });
-        repository = new Repository(db);
+        repository = new Repository(db, undefined, bucket);
         state = new SqlStateStore(db);
-        store = new SqlArtifactStore(db);
+        store = new SqlArtifactStore(db, bucket);
         close = () => db.close();
       }
     });
@@ -196,6 +203,9 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       const [a, b] = await Promise.all([store.put(bytes), store.put(bytes)]);
       expect(a).toBe(b);
       expect((await store.get(a)).equals(bytes)).toBe(true);
+      // With a bucket the bytes live there once, under one key, not as database chunks.
+      if (bucket)
+        expect([...bucket.objects.keys()].filter((key) => key.includes(a))).toHaveLength(1);
       expect(store.getChunk).toBeTypeOf("function");
       expect(
         (await store.getChunk!(a, 2)).equals(bytes.subarray(2 * 1024 * 1024, 3 * 1024 * 1024)),
@@ -308,6 +318,7 @@ for (const backend of ["sqlite", "postgres", "mongo"] as const) {
       expect((await repository.projects([first]))[0]?.runCount).toBe(0);
       expect((await repository.deleteRun(b.run.id)).artifactsDeleted).toBeGreaterThanOrEqual(1);
       await expect(store.get(hash)).rejects.toThrow("not found");
+      if (bucket) expect([...bucket.objects.keys()].some((key) => key.includes(hash))).toBe(false);
       await store.put(bytes);
       const c = await repository.insertRun(input);
       const [deletion, publication] = await Promise.allSettled([

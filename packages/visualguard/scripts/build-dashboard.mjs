@@ -27,7 +27,18 @@ if (!assetsOnly) {
     splitting: true,
     sourcemap: true,
     removeNodeProtocol: false,
-    external: ["playwright", "@playwright/test", "pg", "mongodb", "openid-client", "vite"],
+    external: [
+      "playwright",
+      "@playwright/test",
+      "pg",
+      "mongodb",
+      "openid-client",
+      "vite",
+      // Object storage SDKs: loaded only when VISUALGUARD_ARTIFACT_STORAGE_URL selects them.
+      "@aws-sdk/client-s3",
+      "@google-cloud/storage",
+      "@azure/storage-blob",
+    ],
     define: { __VISUALGUARD_VERSION__: JSON.stringify(pkg.version) },
   });
 }

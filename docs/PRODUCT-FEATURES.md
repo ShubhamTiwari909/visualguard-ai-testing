@@ -64,7 +64,7 @@ A **run** is one execution. A **check** is one page at one viewport. A **baselin
 ### Hosting and data
 
 - **Your data.** You own the database, domain and secrets. Application logins and source code stay on the machine that runs the tests.
-- **Databases.** The local dashboard uses SQLite with no extra service. Shared installs use PostgreSQL or MongoDB. Screenshots are stored in the database.
+- **Databases.** The local dashboard uses SQLite with no extra service. Shared installs use PostgreSQL or MongoDB. Screenshots are stored in the database, or, with `VISUALGUARD_ARTIFACT_STORAGE_URL`, in a private S3, Google Cloud Storage or Azure Blob Storage bucket.
 - **Deploy.** `npx visualguard dashboard init` generates Vercel or Cloud Run files. Both need an external database. Cloud Run can run tests itself, but Vercel cannot.
 - **Backups.** Export portable evidence, or take native database backups to restore a whole installation. The Audit & recovery page lists changes to access and settings. A password administrator can be recovered by an operator.
 
@@ -89,6 +89,6 @@ A good first step is one route and the local report, with no AI and no database.
 - Automated accessibility and performance checks are not a full audit. Local timings are not a production benchmark.
 - Passing a run does not mean the team approved it. Approval is a separate dashboard decision.
 - Hosting the dashboard does not schedule tests or monitoring. Use CI or another scheduler.
-- There is no managed runner fleet, billing, automatic invitation emails, Slack or Teams integration, or external screenshot bucket.
+- There is no managed runner fleet, billing, automatic invitation emails, or Slack or Teams integration. Object storage holds screenshots only; it does not delete old history automatically.
 - A GitHub check does not authorize a release, and VisualGuard does not set branch protection.
 - Generated Vercel and Cloud Run files are not a tested production deployment.

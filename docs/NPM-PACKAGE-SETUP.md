@@ -779,7 +779,7 @@ To publish from your app or CI, create a project and its upload token and use th
 
 ## 14. Storage, backups and recovery
 
-Run files stay on the machine that ran the test, normally in `.visualguard/runs/`. Published screenshots and page snapshots are also stored in the dashboard database (the SQLite file, PostgreSQL or MongoDB), so plan database size for them. A storage bucket setting does not move images, and nothing deletes old history automatically.
+Run files stay on the machine that ran the test, normally in `.visualguard/runs/`. Published screenshots and page snapshots are also stored in the dashboard database (the SQLite file, PostgreSQL or MongoDB), so plan database size for them. To keep them in a private S3, Google Cloud Storage or Azure Blob Storage bucket instead, set `VISUALGUARD_ARTIFACT_STORAGE_URL` and install the provider's SDK; see the [storage guide](../apps/docs/src/content/docs/deployment/storage-and-backups.md). Back up the bucket together with the database. Nothing deletes old history automatically.
 
 ### Portable export and restore
 

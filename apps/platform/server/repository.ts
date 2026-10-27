@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Database, Sql } from "./database.js";
 import type { FileArtifactStore } from "./artifacts.js";
+import { artifactKey, type ObjectBucket } from "./object-storage.js";
 import { PlatformError } from "./errors.js";
 import { projectId } from "./validation.js";
 import { normalizeRunName, runSearchText } from "./run-labels.js";
@@ -27,6 +28,7 @@ class SqlEvidenceRepository implements EvidenceRepository {
   constructor(
     readonly db: Database,
     private legacy?: FileArtifactStore,
+    private bucket?: ObjectBucket,
   ) {}
   async isDeletedProject(id: string) {
     return (
@@ -98,7 +100,23 @@ class SqlEvidenceRepository implements EvidenceRepository {
         throw new PlatformError(404, "Project not found; create it before importing runs");
       // Recheck availability while deletion is excluded; old workspaces may use file artifacts.
       for (const hash of new Set(run.artifacts.map((item) => item.hash))) {
-        if (!(await sql.query("SELECT hash FROM vg_objects WHERE hash=?", [hash])).length) {
+        const [object] = await sql.query<{ chunks: number }>(
+          "SELECT chunks FROM vg_objects WHERE hash=?",
+          [hash],
+        );
+        if (object && Number(object.chunks) === 0) {
+          if (!this.bucket)
+            throw new PlatformError(
+              503,
+              "Evidence is in external object storage; set VISUALGUARD_ARTIFACT_STORAGE_URL",
+            );
+          if (!(await this.bucket.exists(artifactKey(hash))))
+            throw new PlatformError(
+              409,
+              "Evidence is missing from object storage; upload or import the run again",
+            );
+        }
+        if (!object) {
           try {
             if (!this.legacy) throw new Error("Object missing");
             await this.legacy.get(hash);
@@ -246,6 +264,8 @@ class SqlEvidenceRepository implements EvidenceRepository {
             await this.legacy?.remove(hash);
             await sql.query("DELETE FROM vg_object_chunks WHERE hash=?", [hash]);
             await sql.query("DELETE FROM vg_objects WHERE hash=?", [hash]);
+            // Last, so a failed delete rolls the index back while the bytes still exist.
+            await this.bucket?.delete(artifactKey(hash));
             artifactsDeleted++;
           }
           await sql.query("DELETE FROM vg_state WHERE namespace='artifact-cleanup' AND id=?", [
@@ -390,7 +410,8 @@ export class Repository extends ProjectDirectory {
   constructor(
     readonly db: Database,
     legacy?: FileArtifactStore,
+    bucket?: ObjectBucket,
   ) {
-    super(new SqlEvidenceRepository(db, legacy), new SqlStateStore(db));
+    super(new SqlEvidenceRepository(db, legacy, bucket), new SqlStateStore(db));
   }
 }

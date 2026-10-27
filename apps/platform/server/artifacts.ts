@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Database } from "./database.js";
+import { artifactKey, type ObjectBucket } from "./object-storage.js";
 
 export const OBJECT_CHUNK_BYTES = 1024 * 1024;
 
@@ -50,12 +51,62 @@ export class FileArtifactStore implements ArtifactStore {
 }
 
 /** Database-backed objects keep a database dump self-contained and survive ephemeral hosts. */
+/**
+ * Read an object kept in external storage and verify it, so a bucket can never serve changed
+ * evidence. `chunks = 0` in the object index marks these objects.
+ */
+export async function readExternal(
+  bucket: ObjectBucket | undefined,
+  key: string,
+  hash: string,
+  size: number,
+): Promise<Buffer> {
+  if (!bucket)
+    throw new Error(
+      "Artifact is in external object storage; set VISUALGUARD_ARTIFACT_STORAGE_URL to read it",
+    );
+  const data = await bucket.get(key);
+  if (!data) throw new Error(`Stored artifact is missing from ${bucket.description}`);
+  if (data.length !== size || sha256(data) !== hash)
+    throw new Error("Stored artifact checksum mismatch");
+  return data;
+}
+
+/** One OBJECT_CHUNK_BYTES slice of an object, or "not found" past its end. */
+export function sliceChunk(data: Buffer, index: number): Buffer {
+  if (index >= Math.max(1, Math.ceil(data.length / OBJECT_CHUNK_BYTES)))
+    throw new Error("Artifact object not found");
+  return data.subarray(index * OBJECT_CHUNK_BYTES, (index + 1) * OBJECT_CHUNK_BYTES);
+}
+
+/**
+ * Objects indexed in vg_objects. Without a bucket, bytes are stored as database chunks. With
+ * one, new bytes go to the bucket (chunks = 0) while existing database objects stay readable.
+ */
 export class SqlArtifactStore implements ArtifactStore {
-  constructor(private db: Database) {}
+  constructor(
+    private db: Database,
+    private bucket?: ObjectBucket,
+  ) {}
   async put(data: Uint8Array): Promise<string> {
     const hash = sha256(data);
     await this.db.transaction(async (sql) => {
-      const [existing] = await sql.query("SELECT hash FROM vg_objects WHERE hash=?", [hash]);
+      const [existing] = await sql.query<{ chunks: number }>(
+        "SELECT chunks FROM vg_objects WHERE hash=?",
+        [hash],
+      );
+      if (this.bucket) {
+        const key = artifactKey(hash);
+        // The transaction lock also covers cleanup, so a deletion cannot interleave. Re-upload
+        // when the index outlived its bytes, e.g. after an interrupted cleanup.
+        if (existing && (Number(existing.chunks) > 0 || (await this.bucket.exists(key)))) return;
+        await this.bucket.put(key, data);
+        await sql.query(
+          "INSERT INTO vg_objects(hash, size, chunks) VALUES(?, ?, 0) ON CONFLICT(hash) DO NOTHING",
+          [hash, data.length],
+        );
+        return;
+      }
       if (existing) return;
       const chunks = Math.max(1, Math.ceil(data.length / OBJECT_CHUNK_BYTES));
       for (let index = 0; index < chunks; index++) {
@@ -81,6 +132,8 @@ export class SqlArtifactStore implements ArtifactStore {
       [hash],
     );
     if (!meta) throw new Error("Artifact object not found");
+    if (Number(meta.chunks) === 0)
+      return readExternal(this.bucket, artifactKey(hash), hash, Number(meta.size));
     const rows = await this.db.query<{ data: string }>(
       "SELECT data FROM vg_object_chunks WHERE hash=? ORDER BY chunk",
       [hash],
@@ -93,6 +146,11 @@ export class SqlArtifactStore implements ArtifactStore {
   async getChunk(hash: string, index: number): Promise<Buffer> {
     if (!/^[a-f0-9]{64}$/.test(hash) || !Number.isSafeInteger(index) || index < 0)
       throw new Error("Invalid artifact chunk");
+    const [meta] = await this.db.query<{ chunks: number }>(
+      "SELECT chunks FROM vg_objects WHERE hash=?",
+      [hash],
+    );
+    if (meta && Number(meta.chunks) === 0) return sliceChunk(await this.get(hash), index);
     const [row] = await this.db.query<{ data: string; size: number; chunks: number }>(
       "SELECT c.data, o.size, o.chunks FROM vg_object_chunks c JOIN vg_objects o ON o.hash=c.hash WHERE c.hash=? AND c.chunk=?",
       [hash, index],
