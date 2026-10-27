@@ -47,7 +47,7 @@ jobs:
           if [ "$VG_EVAL_PROVIDER" = gemini ]; then
             node evals/run.mjs --provider gemini "${model_args[@]}" --all-ai --min-regression-recall 0.9 --min-regression-precision 0.85
           else
-            node evals/run.mjs --provider none --min-regression-recall 0.6 --min-regression-precision 0.85
+            node evals/run.mjs --provider none --min-regression-recall 0.64 --min-regression-precision 0.85 --max-false-alarm-rate 0
           fi
       - uses: actions/upload-artifact@v4
         if: always()

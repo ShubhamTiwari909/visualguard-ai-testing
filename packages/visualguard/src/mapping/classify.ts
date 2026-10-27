@@ -11,7 +11,7 @@
  */
 
 import type { DomSnapshot } from "../capture/dom-snapshot.js";
-import type { DiffResult, Finding, RegionResult, Status } from "../core/types.js";
+import type { Delta, DiffResult, Finding, RegionResult, Status } from "../core/types.js";
 import { describeDeltas } from "./describe.js";
 import { mapRegion } from "./deltas.js";
 import { textContrast } from "./contrast.js";
@@ -28,6 +28,13 @@ const INTERACTIVE = new Set(["a", "button", "input", "select", "textarea", "form
  */
 const NOISE_MAX_RATIO = 0.001;
 const NOISE_MAX_REGION_AREA = 64 * 64;
+/**
+ * Sub-pixel position changes repaint anti-aliased edges across a whole text block, so they get
+ * a larger pixel budget than unexplained noise. Regions must still be small.
+ */
+const SUBPIXEL_MAX_RATIO = 0.005;
+const SUBPIXEL_PROPERTIES = /^(transform|translate|left|top|right|bottom|inset|margin|padding)/;
+const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
 export interface ClassifyInput {
   diff: DiffResult;
@@ -87,24 +94,30 @@ export function classifyJob(input: ClassifyInput): ClassifyOutput {
   }
 
   const hasDeltas = regions.some((region) => region.deltas.length > 0);
+  const subpixelOnly = hasDeltas && regions.every((region) => region.deltas.every(isSubpixelDelta));
   if (
     match &&
-    !hasDeltas &&
+    (!hasDeltas || subpixelOnly) &&
     !diff.shift &&
     !diff.sizeMismatch &&
-    diff.diffRatio <= NOISE_MAX_RATIO &&
+    diff.diffRatio <= (subpixelOnly ? SUBPIXEL_MAX_RATIO : NOISE_MAX_RATIO) &&
     regions.every((region) => area(region.box) <= NOISE_MAX_REGION_AREA)
   ) {
+    const count = `${regions.length} tiny difference${regions.length === 1 ? "" : "s"}`;
     return {
       status: "pass",
       regions: regions.map((region) => ({
         ...region,
-        heuristic: "Rendering noise (no DOM change)",
+        heuristic: subpixelOnly
+          ? "Rendering noise (sub-pixel position change)"
+          : "Rendering noise (no DOM change)",
       })),
       findings: [
         finding(
           "info",
-          `${regions.length} tiny difference${regions.length === 1 ? "" : "s"} with no DOM change: treated as rendering noise`,
+          subpixelOnly
+            ? `${count} from a position change under 1px: treated as rendering noise`
+            : `${count} with no DOM change: treated as rendering noise`,
         ),
       ],
     };
@@ -169,6 +182,67 @@ export function classifyJob(input: ClassifyInput): ClassifyOutput {
  * Describe the direction and distance of a detected vertical shift, optionally including its
  * suspected cause. Positive deltaY means content moved down in staging.
  */
+/**
+ * True when a delta only moves something by less than one CSS pixel: a 2D transform or
+ * position/spacing length whose values differ by under 1px and otherwise match. Such a change
+ * repaints anti-aliased edges but is not visible to a person.
+ */
+export function isSubpixelDelta(delta: Delta): boolean {
+  if (delta.kind === "box") {
+    const { production: a, staging: b } = delta;
+    return [a.x - b.x, a.y - b.y, a.width - b.width, a.height - b.height].every(
+      (difference) => Math.abs(difference) < 1,
+    );
+  }
+  if (delta.kind !== "style" || !SUBPIXEL_PROPERTIES.test(delta.property)) return false;
+  if (delta.property === "transform") {
+    const before = transformMatrix(delta.production);
+    const after = transformMatrix(delta.staging);
+    if (!before || !after) return false;
+    return (
+      before.slice(0, 4).every((value, index) => Math.abs(value - after[index]!) < 1e-3) &&
+      Math.abs(before[4]! - after[4]!) < 1 &&
+      Math.abs(before[5]! - after[5]!) < 1
+    );
+  }
+  return pixelValuesClose(delta.production, delta.staging);
+}
+
+/**
+ * Parse a computed 2D transform ("none" or "matrix(a, b, c, d, e, f)") into six numbers.
+ * Other forms, such as matrix3d, return undefined so they are never treated as noise.
+ */
+function transformMatrix(value: string): number[] | undefined {
+  if (value === "none") return IDENTITY_MATRIX;
+  const match = /^matrix\(([^)]*)\)$/.exec(value.trim());
+  const numbers = match?.[1]!.split(",").map(Number);
+  return numbers?.length === 6 && numbers.every(Number.isFinite) ? numbers : undefined;
+}
+
+/**
+ * Compare two computed values token by token: identical apart from px lengths that differ by
+ * under 1px. "none" for `translate` counts as a zero offset.
+ */
+function pixelValuesClose(production: string, staging: string): boolean {
+  const tokens = (value: string) => (value === "none" ? "0px" : value).trim().split(/\s+/);
+  const before = tokens(production);
+  const after = tokens(staging);
+  const length = Math.max(before.length, after.length);
+  let changed = false;
+  for (let index = 0; index < length; index++) {
+    // Computed `translate` drops trailing zero components ("4px" means "4px 0px").
+    const a = before[index] ?? "0px";
+    const b = after[index] ?? "0px";
+    if (a === b) continue;
+    const pixelsA = /^(-?[\d.]+)px$/.exec(a);
+    const pixelsB = /^(-?[\d.]+)px$/.exec(b);
+    if (!pixelsA || !pixelsB || Math.abs(Number(pixelsA[1]) - Number(pixelsB[1])) >= 1)
+      return false;
+    changed = true;
+  }
+  return changed;
+}
+
 function describeShift(
   shift: { fromY: number; deltaY: number },
   cause: string | undefined,

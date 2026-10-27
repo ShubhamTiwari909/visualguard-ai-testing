@@ -12,7 +12,7 @@
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Reporter } from "../core/run.js";
-import { isFailing } from "../core/status.js";
+import { blocksRun, isFailing } from "../core/status.js";
 import type { FailOn, JobResult, RunManifest } from "../core/types.js";
 import { renderMarkdown } from "./markdown.js";
 
@@ -57,6 +57,10 @@ export function renderJUnit(manifest: RunManifest, failOn: FailOn): string {
     if (job.error) {
       return `${open}\n      <error message="${xml(job.error.message.split("\n")[0]!)}" type="${job.error.stage}">${xml(job.error.message)}</error>\n    </testcase>`;
     }
+    if (isFailing(job.status, failOn) && job.quarantined) {
+      const { owner, reason, expires } = job.quarantined;
+      return `${open}\n      <skipped message="${xml(`Quarantined until ${expires} (owner: ${owner}): ${reason}`)}"/>\n    </testcase>`;
+    }
     if (isFailing(job.status, failOn)) {
       const details = [
         `status: ${job.status}`,
@@ -76,14 +80,15 @@ export function renderJUnit(manifest: RunManifest, failOn: FailOn): string {
       ? `${open}\n      <system-out>${xml(note)}</system-out>\n    </testcase>`
       : `${open}</testcase>`;
   });
-  const failures = manifest.jobs.filter(
-    (job) => !job.error && isFailing(job.status, failOn),
+  const failures = manifest.jobs.filter((job) => !job.error && blocksRun(job, failOn)).length;
+  const skipped = manifest.jobs.filter(
+    (job) => !job.error && isFailing(job.status, failOn) && job.quarantined,
   ).length;
   const errors = manifest.jobs.filter((job) => job.error).length;
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<testsuites name="VisualGuard" tests="${manifest.jobs.length}" failures="${failures}" errors="${errors}" time="${(manifest.durationMs / 1000).toFixed(3)}">`,
-    `  <testsuite name="VisualGuard run #${manifest.number}" tests="${manifest.jobs.length}" failures="${failures}" errors="${errors}" timestamp="${manifest.startedAt}">`,
+    `<testsuites name="VisualGuard" tests="${manifest.jobs.length}" failures="${failures}" errors="${errors}" skipped="${skipped}" time="${(manifest.durationMs / 1000).toFixed(3)}">`,
+    `  <testsuite name="VisualGuard run #${manifest.number}" tests="${manifest.jobs.length}" failures="${failures}" errors="${errors}" skipped="${skipped}" timestamp="${manifest.startedAt}">`,
     ...cases,
     "  </testsuite>",
     "</testsuites>",

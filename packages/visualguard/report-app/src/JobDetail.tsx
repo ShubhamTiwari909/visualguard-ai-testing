@@ -480,6 +480,12 @@ export function JobDetail(props: JobDetailProps) {
             {job.acceptedBy.note ? `: ${job.acceptedBy.note}` : ""}
           </p>
         )}
+        {job.quarantined && (
+          <p className="text-xs text-slate-700 dark:text-slate-300" data-testid="quarantine-note">
+            Quarantined until {job.quarantined.expires} (owner: {job.quarantined.owner}):{" "}
+            {job.quarantined.reason}. This check does not fail the run.
+          </p>
+        )}
         <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
           {(["production", "staging"] as const)
             .filter(

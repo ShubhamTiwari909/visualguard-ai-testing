@@ -18,6 +18,7 @@ export function evaluationCases(
 export function policyMetrics(cases: EvaluationCase[]): {
   regressionRecall: number;
   regressionPrecision: number;
+  falseAlarmRate: number;
   falseGreenRate: number;
   errorCases: number;
   modelCases: number;

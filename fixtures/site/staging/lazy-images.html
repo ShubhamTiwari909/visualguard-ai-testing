@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lazy images</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; line-height: 1.5; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid #e2e8f0; background: #ffffff; }
+  header .logo { font-size: 20px; }
+  nav a { margin-left: 16px; color: #334155; text-decoration: none; font-size: 14px; }
+  main { padding: 32px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 36px; margin: 0 0 16px; }
+  p { margin: 0 0 16px; color: #475569; }
+  .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  footer { padding: 32px; text-align: center; color: #94a3b8; font-size: 13px; border-top: 1px solid #e2e8f0; margin-top: 48px; }
+  .spacer { height: 1600px; background: linear-gradient(#f8fafc, #e2e8f0); border-radius: 12px; margin-bottom: 24px; }
+  .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .gallery img { width: 100%; display: block; border-radius: 8px; }
+</style>
+</head>
+<body>
+<header><strong class="logo">Acme</strong><nav><a href="/">Home</a><a href="/identical">Identical</a><a href="/pricing">Pricing</a></nav></header>
+<main>
+<section class="card" data-testid="hero"><h1>Gallery</h1><p>Images below the fold load lazily and slowly.</p></section>
+<div class="spacer"></div>
+<div class="gallery">
+  <img loading="lazy" width="240" height="180" alt="Product 1" src="/product.svg?delay=300&amp;n=1">
+  <img loading="lazy" width="240" height="180" alt="Product 2" src="/product.svg?delay=600&amp;n=2">
+  <img loading="lazy" width="240" height="180" alt="Product 3" src="/product.svg?delay=900&amp;n=3">
+  <!-- No intrinsic size: these shift the layout when they arrive. -->
+  <img loading="lazy" alt="Product 4" src="/product.svg?delay=400&amp;n=4">
+  <img loading="lazy" alt="Product 5" src="/product.svg?delay=700&amp;n=5">
+  <img loading="lazy" alt="Product 6" src="/product.svg?delay=1000&amp;n=6">
+</div>
+<div class="card"><p>Content after the gallery moves if images load late.</p></div>
+</main>
+<footer>Acme Inc. · VisualGuard fixture</footer>
+</body>
+</html>

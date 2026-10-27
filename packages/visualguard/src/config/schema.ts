@@ -183,6 +183,23 @@ const checkSchema = <T extends z.ZodObject>(schema: T) =>
  * The full config schema. Everything is optional for users; defaults are filled in here. Nested
  * objects use `.prefault({})` so their own defaults are applied (zod 4 semantics).
  */
+/**
+ * One quarantined check: a route, optionally limited to one viewport. `expires` is a calendar
+ * date (YYYY-MM-DD); the entry applies through the end of that day, UTC.
+ */
+export const quarantineEntrySchema = z.object({
+  route: routePathSchema,
+  viewport: z.string().min(1).optional(),
+  owner: z.string().trim().min(1, { message: "name who owns fixing this check" }),
+  reason: z.string().trim().min(1, { message: "say why the check is quarantined" }),
+  expires: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "use a date such as 2026-12-31" })
+    .refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), {
+      message: "not a real calendar date",
+    }),
+});
+
 export const configSchema = z.object({
   /**
    * "compare": production vs staging, both live. "baseline": the site (baseURL.staging) vs
@@ -487,6 +504,12 @@ export const configSchema = z.object({
     })
     .prefault({}),
 
+  /**
+   * Flaky checks that should not fail the run until a fix lands. Each entry needs an owner, a
+   * reason and an expiry date; after that date the check counts again and the run warns.
+   */
+  quarantine: z.array(quarantineEntrySchema).default([]),
+
   concurrency: z.number().int().min(1).max(32).optional(),
 
   /**
@@ -515,3 +538,4 @@ export type RouteObject = z.output<typeof routeObjectSchema>;
 export type RouteDiscovery = z.output<typeof routeDiscoverySchema>;
 export type DiscoverySource = z.output<typeof discoverySourceSchema>;
 export type ViewportConfig = z.output<typeof viewportSchema>;
+export type QuarantineEntry = z.output<typeof quarantineEntrySchema>;

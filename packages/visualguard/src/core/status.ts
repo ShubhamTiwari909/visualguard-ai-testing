@@ -48,12 +48,25 @@ export function isFailing(status: Status, failOn: FailOn): boolean {
  * exit code is returned only when the recorded evidence meets that policy.
  */
 export function exitCodeFor(
-  manifest: Pick<RunManifest, "summary" | "incomplete">,
+  manifest: Pick<RunManifest, "summary" | "incomplete"> & {
+    jobs?: ReadonlyArray<Pick<JobResult, "status" | "quarantined">>;
+  },
   failOn: FailOn,
 ): ExitCode {
-  return manifest.incomplete || FAILING[failOn].some((status) => manifest.summary[status] > 0)
-    ? ExitCode.Failed
-    : ExitCode.Ok;
+  if (manifest.incomplete) return ExitCode.Failed;
+  // Prefer the jobs, so quarantined checks are skipped; a bare summary cannot tell.
+  const failing = manifest.jobs
+    ? manifest.jobs.some((job) => blocksRun(job, failOn))
+    : FAILING[failOn].some((status) => manifest.summary[status] > 0);
+  return failing ? ExitCode.Failed : ExitCode.Ok;
+}
+
+/**
+ * Whether one check fails the run: its status fails under `failOn` and no active quarantine
+ * entry covers it.
+ */
+export function blocksRun(job: Pick<JobResult, "status" | "quarantined">, failOn: FailOn): boolean {
+  return isFailing(job.status, failOn) && !job.quarantined;
 }
 
 export const FAIL_ON_VALUES: readonly FailOn[] = ["regression", "review", "any"];

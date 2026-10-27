@@ -72,6 +72,16 @@ export function codeBlock(text: string, language = ""): string {
  * analysis. This supplies summary table text rather than changing the job verdict.
  */
 function finding(job: JobResult): string {
+  const text = baseFinding(job);
+  if (!job.quarantined) return text;
+  const { owner, expires } = job.quarantined;
+  return `Quarantined until ${expires} (${owner})${text ? `: ${text}` : ""}`;
+}
+
+/**
+ * The summary-table text for a job before any quarantine note is added.
+ */
+function baseFinding(job: JobResult): string {
   if (job.error) return `${job.error.stage} failed: ${job.error.message.split("\n")[0]}`;
   if (job.status === "accepted") return "matches an accepted change";
   if (job.analysis) return job.analysis.title;
@@ -103,6 +113,7 @@ export interface MarkdownOptions {
  */
 export function renderMarkdown(manifest: RunManifest, options: MarkdownOptions = {}): string {
   const { summary } = manifest;
+  const quarantined = manifest.jobs.filter((job) => job.quarantined).length;
   const maxRows = options.maxRows ?? 30;
   const maxDetails = options.maxDetails ?? 5;
   const lines: string[] = [];
@@ -117,6 +128,7 @@ export function renderMarkdown(manifest: RunManifest, options: MarkdownOptions =
     summary.review > 0 ? `🟡 ${summary.review} to review` : "",
     `✅ ${summary.pass} passed`,
     summary.accepted > 0 ? `☑️ ${summary.accepted} accepted` : "",
+    quarantined > 0 ? `🧊 ${quarantined} quarantined` : "",
   ].filter(Boolean);
   const link = options.reportURL ? ` · [View full report](${encodeURI(options.reportURL)})` : "";
   lines.push(`${counts.join(" · ")}${link}`, "");

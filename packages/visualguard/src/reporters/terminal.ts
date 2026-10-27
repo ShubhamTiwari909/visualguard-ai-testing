@@ -70,6 +70,16 @@ export function statusColor(colors: Colors, status: Status): (text: string) => s
  * and fall back to measured pixel changes.
  */
 export function jobDetail(job: JobResult): string {
+  const detail = baseDetail(job);
+  if (!job.quarantined) return detail;
+  const note = `quarantined until ${job.quarantined.expires} (${job.quarantined.owner})`;
+  return detail ? `${note}: ${detail}` : note;
+}
+
+/**
+ * The detail text for a job before any quarantine note is added.
+ */
+function baseDetail(job: JobResult): string {
   if (job.error) return `${job.error.stage} failed: ${job.error.message.split("\n")[0]}`;
   if (job.status === "accepted") return "matches an accepted change";
   if (job.analysis) return job.analysis.title;
@@ -176,6 +186,7 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
         case "run:end": {
           const { manifest, runDir } = event;
           const { summary } = manifest;
+          const quarantined = manifest.jobs.filter((job) => job.quarantined).length;
           const parts = [
             colors.green(`${summary.pass} passed`),
             summary.accepted > 0 ? colors.green(`${summary.accepted} accepted`) : undefined,
@@ -184,6 +195,7 @@ export function terminalReporter(options: TerminalReporterOptions = {}): Reporte
               `${pluralize(summary.regression, "regression")}`,
             ),
             (summary.error > 0 ? colors.red : colors.dim)(`${pluralize(summary.error, "error")}`),
+            quarantined > 0 ? colors.dim(`${quarantined} quarantined`) : undefined,
           ].filter(Boolean);
           const rule = plain ? "-".repeat(60) : colors.dim("━".repeat(60));
           write();
