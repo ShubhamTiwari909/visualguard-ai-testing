@@ -1,5 +1,6 @@
 import { MongoBulkWriteError, type Db } from "mongodb";
 import type { DeletionResult } from "../shared/contracts.js";
+import { artifactKey, type ObjectBucket } from "./object-storage.js";
 
 interface MongoObject {
   hash: string;
@@ -56,7 +57,15 @@ export async function queueMongoArtifactCleanup(db: Db, hashes: Iterable<string>
   }
 }
 
-export async function cleanupMongoArtifacts(db: Db, runs: number): Promise<DeletionResult> {
+export async function cleanupMongoArtifacts(
+  db: Db,
+  runs: number,
+  bucket?: ObjectBucket,
+): Promise<DeletionResult> {
+  // Bucket copies are generation-scoped like chunks; database-only objects have neither.
+  const removeExternal = async (hash: string, generation: string | null | undefined) => {
+    if (bucket && generation) await bucket.delete(artifactKey(hash, generation));
+  };
   let artifactsDeleted = 0,
     cleanupPending = false;
   try {
@@ -127,6 +136,7 @@ export async function cleanupMongoArtifacts(db: Db, runs: number): Promise<Delet
         await db
           .collection("vg_object_chunks")
           .deleteMany({ hash, generation: object.generation ?? { $exists: false } });
+        await removeExternal(hash, object.generation);
         artifactsDeleted++;
         await db.collection("vg_state").deleteOne({
           namespace: "artifact-generations",
@@ -159,6 +169,7 @@ export async function cleanupMongoArtifacts(db: Db, runs: number): Promise<Delet
       await db
         .collection("vg_object_chunks")
         .deleteMany({ hash, generation: generation ?? { $exists: false } });
+      await removeExternal(hash, generation);
       await db.collection("vg_state").deleteOne({ _id: task._id });
     });
     if (

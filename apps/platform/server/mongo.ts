@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { MongoClient, type ClientSession, type Collection, type Db, type Document } from "mongodb";
 import type { ArtifactStore } from "./artifacts.js";
-import { OBJECT_CHUNK_BYTES, sha256 } from "./artifacts.js";
+import { OBJECT_CHUNK_BYTES, readExternal, sha256, sliceChunk } from "./artifacts.js";
+import { artifactKey, type ObjectBucket } from "./object-storage.js";
 import { cleanupMongoArtifacts, queueMongoArtifactCleanup } from "./mongo-cleanup.js";
 import type { EvidenceRepository, StateRecord, StateStore } from "./storage-contracts.js";
 import { ProjectDirectory } from "./project-directory.js";
@@ -30,7 +31,10 @@ interface MongoObject {
 }
 
 class MongoEvidenceRepository implements EvidenceRepository {
-  constructor(private db: Db) {}
+  constructor(
+    private db: Db,
+    private bucket?: ObjectBucket,
+  ) {}
   async isDeletedProject(id: string) {
     return Boolean(await this.db.collection("vg_project_tombstones").findOne({ id }));
   }
@@ -164,7 +168,7 @@ class MongoEvidenceRepository implements EvidenceRepository {
             409,
             "Evidence was removed during publication; upload or import the run again",
           );
-        await new MongoArtifactStore(this.db).get(hash);
+        await new MongoArtifactStore(this.db, this.bucket).get(hash);
       }
       await this.db.collection("vg_runs").insertOne({ ...document, searchText, artifactRef });
       published = true;
@@ -232,7 +236,7 @@ class MongoEvidenceRepository implements EvidenceRepository {
   }
 
   private cleanup(runs: number): Promise<DeletionResult> {
-    return cleanupMongoArtifacts(this.db, runs);
+    return cleanupMongoArtifacts(this.db, runs, this.bucket);
   }
 
   async deleteRun(id: string, expectedProject?: string): Promise<DeletionResult> {
@@ -341,8 +345,8 @@ class MongoEvidenceRepository implements EvidenceRepository {
 }
 
 export class MongoRepository extends ProjectDirectory {
-  constructor(db: Db) {
-    super(new MongoEvidenceRepository(db), new MongoStateStore(db));
+  constructor(db: Db, bucket?: ObjectBucket) {
+    super(new MongoEvidenceRepository(db, bucket), new MongoStateStore(db));
   }
 }
 
@@ -519,13 +523,30 @@ export class MongoStateStore implements StateStore {
   }
 }
 
+/**
+ * Objects indexed in vg_objects. Without a bucket, bytes are stored as generation-scoped
+ * chunks. With one, new bytes go to a generation-scoped bucket key (chunks = 0) while existing
+ * database objects stay readable.
+ */
 export class MongoArtifactStore implements ArtifactStore {
-  constructor(private db: Db) {}
+  constructor(
+    private db: Db,
+    private bucket?: ObjectBucket,
+  ) {}
   async put(bytes: Uint8Array) {
     const hash = sha256(bytes),
       chunks = Math.max(1, Math.ceil(bytes.length / OBJECT_CHUNK_BYTES)),
       generation = randomUUID();
-    if (await this.db.collection<MongoObject>("vg_objects").findOne({ hash })) return hash;
+    const existing = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
+    if (existing) {
+      // Restore bytes if the index outlived them, e.g. after an interrupted cleanup.
+      if (existing.chunks === 0 && existing.generation && this.bucket) {
+        const key = artifactKey(hash, existing.generation);
+        if (!(await this.bucket.exists(key))) await this.bucket.put(key, bytes);
+      }
+      return hash;
+    }
+    if (this.bucket) return this.putExternal(this.bucket, hash, generation, bytes);
     for (let index = 0; index < chunks; index++) {
       const key = `${hash}:${generation}:${index}`;
       try {
@@ -566,10 +587,37 @@ export class MongoArtifactStore implements ArtifactStore {
       await this.db.collection("vg_object_chunks").deleteMany({ hash, generation });
     return hash;
   }
+  private async putExternal(
+    bucket: ObjectBucket,
+    hash: string,
+    generation: string,
+    bytes: Uint8Array,
+  ) {
+    const key = artifactKey(hash, generation);
+    await bucket.put(key, bytes);
+    try {
+      await this.db
+        .collection<MongoObject>("vg_objects")
+        .updateOne(
+          { hash },
+          { $setOnInsert: { hash, generation, size: bytes.length, chunks: 0, runRefs: [] } },
+          { upsert: true },
+        );
+    } catch (error) {
+      if (!(error && typeof error === "object" && "code" in error && error.code === 11000))
+        throw error;
+    }
+    // A concurrent writer won the index entry; its copy is the one readers use.
+    const winner = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
+    if (winner?.generation !== generation) await bucket.delete(key);
+    return hash;
+  }
   async get(hash: string) {
     if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error("Invalid artifact digest");
     const meta = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
     if (!meta) throw new Error("Artifact object not found");
+    if (meta.chunks === 0)
+      return readExternal(this.bucket, artifactKey(hash, meta.generation), hash, meta.size);
     const rows = await this.db
       .collection("vg_object_chunks")
       .find({ hash, generation: meta.generation ?? { $exists: false } })
@@ -584,6 +632,7 @@ export class MongoArtifactStore implements ArtifactStore {
     if (!/^[a-f0-9]{64}$/.test(hash) || !Number.isSafeInteger(index) || index < 0)
       throw new Error("Invalid artifact chunk");
     const meta = await this.db.collection<MongoObject>("vg_objects").findOne({ hash });
+    if (meta?.chunks === 0) return sliceChunk(await this.get(hash), index);
     const row = meta
       ? await this.db
           .collection("vg_object_chunks")
@@ -597,7 +646,7 @@ export class MongoArtifactStore implements ArtifactStore {
   }
 }
 
-export async function openMongo(url: string) {
+export async function openMongo(url: string, bucket?: ObjectBucket) {
   const client = new MongoClient(url, {
     maxPoolSize: 5,
     serverSelectionTimeoutMS: 10_000,
@@ -625,9 +674,9 @@ export async function openMongo(url: string) {
       db.collection("vg_object_chunks").createIndex({ hash: 1, generation: 1, chunk: 1 }),
     ]);
     return {
-      repository: new MongoRepository(db),
+      repository: new MongoRepository(db, bucket),
       state: new MongoStateStore(db, client),
-      store: new MongoArtifactStore(db),
+      store: new MongoArtifactStore(db, bucket),
       close: () => client.close(),
     };
   } catch (error) {
