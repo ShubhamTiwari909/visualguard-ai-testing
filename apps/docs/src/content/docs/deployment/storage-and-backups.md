@@ -64,7 +64,7 @@ How it behaves:
 - **Existing evidence** stays in the database and keeps working. Nothing is copied or moved, so you can turn object storage on at any time. To move old evidence too, export it, then restore it into a fresh installation that has object storage set.
 - **Reads are verified.** Every object read from the bucket is checked against its digest and size, so a changed or truncated object is reported instead of shown.
 - **Deleting** a run or project also deletes its objects from the bucket once no other run uses them. If the bucket cannot be reached, the deletion still completes and the object cleanup is retried on the next deletion.
-- **Do not remove the setting** after evidence has been stored in the bucket. Without it, those runs report `Artifact is in external object storage; set VISUALGUARD_ARTIFACT_STORAGE_URL to read it`. Restore the setting to read them again.
+- **Do not remove the setting** after evidence has been stored in the bucket. Without it, those runs report `Artifact is in external object storage; set VISUALGUARD_ARTIFACT_STORAGE_URL to read it`. Restore the setting to read them again. Runs deleted in the meantime keep their bucket objects queued, and the next deletion with the setting back removes them.
 
 :::caution
 A database backup no longer contains the screenshots. Back up the bucket too, for example with versioning or replication, and restore both together. A [portable export](#portable-evidence-backup) still includes every object, because it reads them through the dashboard.

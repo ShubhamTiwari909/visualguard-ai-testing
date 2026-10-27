@@ -5,6 +5,7 @@ import { artifactKey, type ObjectBucket } from "./object-storage.js";
 interface MongoObject {
   hash: string;
   generation?: string;
+  chunks?: number;
   runRefs?: string[];
 }
 
@@ -102,7 +103,12 @@ export async function cleanupMongoArtifacts(
       }
       const current = await db
         .collection<MongoObject>("vg_objects")
-        .findOne({ hash }, { projection: { hash: 1, generation: 1 } });
+        .findOne({ hash }, { projection: { hash: 1, generation: 1, chunks: 1 } });
+      // Bucket bytes cannot be deleted without the setting; keep them queued, not orphaned.
+      if (current?.chunks === 0 && !bucket) {
+        cleanupPending = true;
+        return;
+      }
       if (current) {
         const id = `${hash}:${current.generation ?? "legacy"}`;
         try {
@@ -112,7 +118,11 @@ export async function cleanupMongoArtifacts(
               $setOnInsert: {
                 namespace: "artifact-generations",
                 id,
-                value: { hash, generation: current.generation ?? null },
+                value: {
+                  hash,
+                  generation: current.generation ?? null,
+                  external: current.chunks === 0,
+                },
                 version: 1,
                 expiresAt: null,
               },
@@ -158,7 +168,11 @@ export async function cleanupMongoArtifacts(
       .limit(1000)
       .toArray();
     await cleanupBatch(generations, async (task) => {
-      const { hash, generation } = task.value;
+      const { hash, generation, external } = task.value;
+      if (external && !bucket) {
+        cleanupPending = true;
+        return;
+      }
       const current = await db
         .collection<MongoObject>("vg_objects")
         .findOne({ hash }, { projection: { hash: 1, generation: 1 } });

@@ -14,6 +14,8 @@ export interface ObjectBucket {
   put(key: string, data: Uint8Array): Promise<void>;
   /** The object's bytes, or undefined when it does not exist. */
   get(key: string): Promise<Buffer | undefined>;
+  /** `length` bytes from `start` (a ranged read), or undefined when the object does not exist. */
+  getRange(key: string, start: number, length: number): Promise<Buffer | undefined>;
   exists(key: string): Promise<boolean>;
   /** Removes the object; removing a missing object succeeds. */
   delete(key: string): Promise<void>;
@@ -76,7 +78,7 @@ export interface S3Commands {
     Body: Uint8Array;
     ContentType: string;
   }) => unknown;
-  GetObjectCommand: new (input: { Bucket: string; Key: string }) => unknown;
+  GetObjectCommand: new (input: { Bucket: string; Key: string; Range?: string }) => unknown;
   HeadObjectCommand: new (input: { Bucket: string; Key: string }) => unknown;
   DeleteObjectCommand: new (input: { Bucket: string; Key: string }) => unknown;
 }
@@ -101,10 +103,16 @@ export class S3Bucket implements ObjectBucket {
       }),
     );
   }
-  async get(key: string) {
+  get(key: string) {
+    return this.read(key);
+  }
+  getRange(key: string, start: number, length: number) {
+    return this.read(key, `bytes=${start}-${start + length - 1}`);
+  }
+  private async read(key: string, Range?: string) {
     try {
       const response = (await this.client.send(
-        new this.commands.GetObjectCommand({ Bucket: this.bucket, Key: this.prefix + key }),
+        new this.commands.GetObjectCommand({ Bucket: this.bucket, Key: this.prefix + key, Range }),
       )) as { Body?: { transformToByteArray(): Promise<Uint8Array> } };
       if (!response.Body) return undefined;
       return Buffer.from(await response.Body.transformToByteArray());
@@ -136,7 +144,7 @@ export class S3Bucket implements ObjectBucket {
 export interface GcsBucketLike {
   file(name: string): {
     save(data: Buffer, options: { resumable: boolean; contentType: string }): Promise<unknown>;
-    download(): Promise<[Buffer]>;
+    download(options?: { start: number; end: number }): Promise<[Buffer]>;
     exists(): Promise<[boolean]>;
     delete(options: { ignoreNotFound: boolean }): Promise<unknown>;
   };
@@ -156,9 +164,16 @@ export class GcsBucket implements ObjectBucket {
       .file(this.prefix + key)
       .save(Buffer.from(data), { resumable: false, contentType: OCTET_STREAM });
   }
-  async get(key: string) {
+  get(key: string) {
+    return this.read(key);
+  }
+  getRange(key: string, start: number, length: number) {
+    // GCS ranges are inclusive at both ends.
+    return this.read(key, { start, end: start + length - 1 });
+  }
+  private async read(key: string, range?: { start: number; end: number }) {
     try {
-      const [data] = await this.bucket.file(this.prefix + key).download();
+      const [data] = await this.bucket.file(this.prefix + key).download(range);
       return data;
     } catch (error) {
       if (notFound(error)) return undefined;
@@ -181,7 +196,7 @@ export interface AzureContainerLike {
       data: Buffer,
       options: { blobHTTPHeaders: { blobContentType: string } },
     ): Promise<unknown>;
-    downloadToBuffer(): Promise<Buffer>;
+    downloadToBuffer(offset?: number, count?: number): Promise<Buffer>;
     exists(): Promise<boolean>;
     deleteIfExists(): Promise<unknown>;
   };
@@ -201,9 +216,17 @@ export class AzureBlobBucket implements ObjectBucket {
       .getBlockBlobClient(this.prefix + key)
       .uploadData(Buffer.from(data), { blobHTTPHeaders: { blobContentType: OCTET_STREAM } });
   }
-  async get(key: string) {
+  get(key: string) {
+    return this.read(key);
+  }
+  getRange(key: string, start: number, length: number) {
+    return this.read(key, start, length);
+  }
+  private async read(key: string, offset?: number, count?: number) {
     try {
-      return await this.container.getBlockBlobClient(this.prefix + key).downloadToBuffer();
+      return await this.container
+        .getBlockBlobClient(this.prefix + key)
+        .downloadToBuffer(offset, count);
     } catch (error) {
       if (notFound(error)) return undefined;
       throw error;
@@ -227,6 +250,10 @@ export class MemoryBucket implements ObjectBucket {
   async get(key: string) {
     const data = this.objects.get(key);
     return data && Buffer.from(data);
+  }
+  async getRange(key: string, start: number, length: number) {
+    const data = this.objects.get(key);
+    return data && Buffer.from(data.subarray(start, start + length));
   }
   async exists(key: string) {
     return this.objects.has(key);

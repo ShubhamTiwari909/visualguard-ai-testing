@@ -261,11 +261,29 @@ class SqlEvidenceRepository implements EvidenceRepository {
           if (!referenced.has(hash)) {
             // Publication and new object writes use the same database transaction lock.
             // A failed cleanup leaves its queue entry available for the next deletion.
+            const [object] = await sql.query<{ chunks: number }>(
+              "SELECT chunks FROM vg_objects WHERE hash=?",
+              [hash],
+            );
+            if (object && Number(object.chunks) === 0) {
+              // Bucket bytes: without the setting they cannot be deleted, so keep them queued
+              // rather than orphaning them. A failed delete only keeps this one object queued,
+              // instead of rolling back objects already removed from the bucket.
+              if (!this.bucket) {
+                cleanupPending = true;
+                continue;
+              }
+              try {
+                await this.bucket.delete(artifactKey(hash));
+              } catch (error) {
+                console.error(`Artifact ${hash} stays queued for deletion`, error);
+                cleanupPending = true;
+                continue;
+              }
+            }
             await this.legacy?.remove(hash);
             await sql.query("DELETE FROM vg_object_chunks WHERE hash=?", [hash]);
             await sql.query("DELETE FROM vg_objects WHERE hash=?", [hash]);
-            // Last, so a failed delete rolls the index back while the bytes still exist.
-            await this.bucket?.delete(artifactKey(hash));
             artifactsDeleted++;
           }
           await sql.query("DELETE FROM vg_state WHERE namespace='artifact-cleanup' AND id=?", [

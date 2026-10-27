@@ -50,7 +50,19 @@ export class FileArtifactStore implements ArtifactStore {
   }
 }
 
-/** Database-backed objects keep a database dump self-contained and survive ephemeral hosts. */
+/** Bytes the index lists in external object storage are gone from the bucket. */
+export class MissingArtifactError extends Error {
+  constructor(bucket: ObjectBucket) {
+    super(`Stored artifact is missing from ${bucket.description}`);
+    this.name = "MissingArtifactError";
+  }
+}
+
+const unconfigured = () =>
+  new Error(
+    "Artifact is in external object storage; set VISUALGUARD_ARTIFACT_STORAGE_URL to read it",
+  );
+
 /**
  * Read an object kept in external storage and verify it, so a bucket can never serve changed
  * evidence. `chunks = 0` in the object index marks these objects.
@@ -61,27 +73,40 @@ export async function readExternal(
   hash: string,
   size: number,
 ): Promise<Buffer> {
-  if (!bucket)
-    throw new Error(
-      "Artifact is in external object storage; set VISUALGUARD_ARTIFACT_STORAGE_URL to read it",
-    );
+  if (!bucket) throw unconfigured();
   const data = await bucket.get(key);
-  if (!data) throw new Error(`Stored artifact is missing from ${bucket.description}`);
+  if (!data) throw new MissingArtifactError(bucket);
   if (data.length !== size || sha256(data) !== hash)
     throw new Error("Stored artifact checksum mismatch");
   return data;
 }
 
-/** One OBJECT_CHUNK_BYTES slice of an object, or "not found" past its end. */
-export function sliceChunk(data: Buffer, index: number): Buffer {
-  if (index >= Math.max(1, Math.ceil(data.length / OBJECT_CHUNK_BYTES)))
+/**
+ * Read one OBJECT_CHUNK_BYTES slice of an external object with a ranged request, so chunked
+ * downloads do not fetch the whole object per chunk. Like database chunks, a slice is checked
+ * for length; the whole-object digest is checked by full reads.
+ */
+export async function readExternalChunk(
+  bucket: ObjectBucket | undefined,
+  key: string,
+  size: number,
+  index: number,
+): Promise<Buffer> {
+  if (index >= Math.max(1, Math.ceil(size / OBJECT_CHUNK_BYTES)))
     throw new Error("Artifact object not found");
-  return data.subarray(index * OBJECT_CHUNK_BYTES, (index + 1) * OBJECT_CHUNK_BYTES);
+  if (!bucket) throw unconfigured();
+  const length = Math.min(OBJECT_CHUNK_BYTES, size - index * OBJECT_CHUNK_BYTES);
+  if (length === 0) return Buffer.alloc(0);
+  const data = await bucket.getRange(key, index * OBJECT_CHUNK_BYTES, length);
+  if (!data) throw new MissingArtifactError(bucket);
+  if (data.length !== length) throw new Error("Stored artifact chunk length mismatch");
+  return data;
 }
 
 /**
- * Objects indexed in vg_objects. Without a bucket, bytes are stored as database chunks. With
- * one, new bytes go to the bucket (chunks = 0) while existing database objects stay readable.
+ * Objects indexed in vg_objects. Without a bucket, bytes are stored as database chunks, which
+ * keeps a database dump self-contained and survives ephemeral hosts. With one, new bytes go to
+ * the bucket (chunks = 0) while existing database objects stay readable.
  */
 export class SqlArtifactStore implements ArtifactStore {
   constructor(
@@ -146,11 +171,12 @@ export class SqlArtifactStore implements ArtifactStore {
   async getChunk(hash: string, index: number): Promise<Buffer> {
     if (!/^[a-f0-9]{64}$/.test(hash) || !Number.isSafeInteger(index) || index < 0)
       throw new Error("Invalid artifact chunk");
-    const [meta] = await this.db.query<{ chunks: number }>(
-      "SELECT chunks FROM vg_objects WHERE hash=?",
+    const [meta] = await this.db.query<{ chunks: number; size: number }>(
+      "SELECT chunks, size FROM vg_objects WHERE hash=?",
       [hash],
     );
-    if (meta && Number(meta.chunks) === 0) return sliceChunk(await this.get(hash), index);
+    if (meta && Number(meta.chunks) === 0)
+      return readExternalChunk(this.bucket, artifactKey(hash), Number(meta.size), index);
     const [row] = await this.db.query<{ data: string; size: number; chunks: number }>(
       "SELECT c.data, o.size, o.chunks FROM vg_object_chunks c JOIN vg_objects o ON o.hash=c.hash WHERE c.hash=? AND c.chunk=?",
       [hash, index],
