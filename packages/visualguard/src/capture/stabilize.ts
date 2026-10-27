@@ -181,17 +181,44 @@ export async function waitForImages(page: Page, timeoutMs = 5_000): Promise<void
 }
 
 /**
+ * Keeps media from ever starting playback in pages this capture loads, so a video shows its
+ * first decoded frame with no seek. A paused video that seeks may not repaint before the
+ * screenshot on a busy machine, which made identical pages differ.
+ *
+ * Runs as an init script before the page's own scripts: `play()` resolves without playing, and
+ * `autoplay` is removed from media elements as they are inserted, before any data loads.
+ */
+export async function holdMedia(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    HTMLMediaElement.prototype.play = function play() {
+      return Promise.resolve();
+    };
+    const hold = (node: Node) => {
+      if (node instanceof HTMLMediaElement) node.autoplay = false;
+      else if (node instanceof Element)
+        for (const media of Array.from(node.querySelectorAll("video, audio")))
+          (media as HTMLMediaElement).autoplay = false;
+    };
+    new MutationObserver((records) => {
+      for (const record of records) record.addedNodes.forEach(hold);
+    }).observe(document, { childList: true, subtree: true });
+  });
+}
+
+/**
  * Pauses videos and SVG (SMIL) animations at their first frame.
  *
  * Reset video and SVG animations to a stable first frame inside the page. Seeking is
- * asynchronous, so wait until each video has finished seeking and shown the first frame;
- * otherwise a busy machine can screenshot whichever frame was playing. Each video waits at most
- * `timeoutMs`. Catch unsupported browser operations so optional stabilization does not abort
- * capture.
+ * asynchronous, so wait until every video has finished seeking to its first frame; otherwise a
+ * busy machine can screenshot whichever frame was playing. The capture's stability loop then
+ * confirms the painted frame stopped changing. All videos together wait at most `timeoutMs`.
+ * Catch unsupported browser operations so optional stabilization does not abort capture.
  */
 export async function pauseMedia(page: Page, timeoutMs = 3_000): Promise<void> {
-  await page
-    .evaluate(async (limit) => {
+  // Only events settle the page-side promise: a test may have paused Playwright's page clock,
+  // which stops page timers and animation frames. The time limit is enforced here, in Node.
+  const settled = page
+    .evaluate(async () => {
       for (const svg of Array.from(document.querySelectorAll("svg"))) {
         svg.pauseAnimations?.();
         svg.setCurrentTime?.(0);
@@ -200,26 +227,34 @@ export async function pauseMedia(page: Page, timeoutMs = 3_000): Promise<void> {
         Array.from(document.querySelectorAll("video")).map(
           (video) =>
             new Promise<void>((resolve) => {
-              const timer = setTimeout(resolve, limit);
-              const finish = () => {
-                clearTimeout(timer);
-                resolve();
+              // Always seek, even when currentTime already reads 0: a video paused just after
+              // it started can report 0 while still showing a later decoded frame.
+              const seek = () => {
+                video.addEventListener("seeked", () => resolve(), { once: true });
+                video.currentTime = 0;
               };
-              // Two animation frames after seeking, the seeked frame has been painted.
-              // (requestVideoFrameCallback does not fire for a paused video in headless Chromium.)
-              const shown = () => requestAnimationFrame(() => requestAnimationFrame(finish));
               video.pause();
-              if (video.readyState >= 2 && video.currentTime === 0 && !video.seeking) {
-                finish();
-                return;
-              }
-              video.addEventListener("seeked", shown, { once: true });
-              video.currentTime = 0;
+              video.addEventListener("error", () => resolve(), { once: true });
+              if (
+                video.readyState === 0 &&
+                (video.preload === "none" ||
+                  video.networkState === HTMLMediaElement.NETWORK_EMPTY ||
+                  video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)
+              )
+                // Nothing will load: the poster or blank box is already stable.
+                resolve();
+              else if (video.played.length === 0 && video.currentTime === 0) {
+                // Never played (see holdMedia): the first frame needs no seek, only decoding.
+                if (video.readyState >= 2) resolve();
+                else video.addEventListener("loadeddata", () => resolve(), { once: true });
+              } else if (video.readyState >= 1) seek();
+              else video.addEventListener("loadedmetadata", seek, { once: true });
             }),
         ),
       );
-    }, timeoutMs)
+    })
     .catch(() => {});
+  await withTimeout(settled, timeoutMs, undefined);
 }
 
 /**

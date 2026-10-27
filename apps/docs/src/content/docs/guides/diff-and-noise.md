@@ -47,7 +47,7 @@ For each job (one page at one viewport), VisualGuard:
 Some differences are real pixels but nothing a person could see. VisualGuard passes them as rendering noise, with a finding that says so:
 
 - **Tiny changes with no page change.** At most 0.1% of the page differs, in small areas, and the page structure and styles are the same on both sides. This is usually font smoothing or image decoding.
-- **Sub-pixel position changes.** The only change is an element moving by less than one CSS pixel, through `transform`, `translate`, `left`/`top`/`right`/`bottom`/`inset`, `margin` or `padding`. Moving text by 0.4px repaints the smoothed edge of every letter, so up to 0.5% of the page may differ, still only in small areas. The finding reads `… from a position change under 1px: treated as rendering noise`.
+- **Sub-pixel position changes.** Every changed area is explained by elements moving, each by less than one CSS pixel in total, through `transform`, `translate`, `left`/`top`/`right`/`bottom`/`inset`, `margin` or `padding`. A changed area with no page change, or one with many changes, is not covered. Moving text by 0.4px repaints the smoothed edge of every letter, so up to 0.5% of the page may differ, still only in small areas. The finding reads `… from a position change under 1px: treated as rendering noise`.
 
 A change of 1px or more, any other style change, a text change, or a large changed area is never treated as noise.
 

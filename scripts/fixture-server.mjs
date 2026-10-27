@@ -24,7 +24,7 @@ const TYPES = {
   ".ttf": "font/ttf",
   ".webm": "video/webm",
 };
-// `?delay=<ms>` (capped at 5 s) holds a response back to simulate a slow asset.
+// `?delay=<ms>` (0 to 5000) holds a response back to simulate a slow asset.
 const MAX_DELAY_MS = 5_000;
 
 /**
@@ -50,7 +50,12 @@ export function startFixtureServer(variant, port = 0) {
     if (type === "application/xml" || type === "text/plain") {
       body = body.toString("utf8").replaceAll("{{origin}}", `http://${request.headers.host}`);
     }
-    const delay = Math.min(Number(url.searchParams.get("delay")) || 0, MAX_DELAY_MS);
+    const delay = Number(url.searchParams.get("delay") ?? 0);
+    // Reject out-of-range values instead of clamping, so the timer is always bounded.
+    if (!(delay >= 0 && delay <= MAX_DELAY_MS)) {
+      response.writeHead(400, { "content-type": "text/plain" }).end("delay must be 0-5000 ms");
+      return;
+    }
     setTimeout(() => response.writeHead(200, { "content-type": type }).end(body), delay);
   });
   return new Promise((resolvePromise) =>

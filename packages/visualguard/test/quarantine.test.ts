@@ -84,6 +84,12 @@ describe("quarantine configuration", () => {
     expect(() => parse([{ ...entry(), reason: "" }])).toThrow(/why the check/);
     expect(() => parse([{ ...entry(), expires: "next week" }])).toThrow(/2026-12-31/);
     expect(() => parse([{ ...entry(), expires: "2026-13-45" }])).toThrow(/real calendar date/);
+    // Date.parse would roll these over into March.
+    expect(() => parse([{ ...entry(), expires: "2026-02-30" }])).toThrow(/real calendar date/);
+    expect(() => parse([{ ...entry(), expires: "2026-02-29" }])).toThrow(/real calendar date/);
+    expect(parse([{ ...entry(), expires: "2028-02-29" }]).quarantine[0]!.expires).toBe(
+      "2028-02-29",
+    );
     expect(() => parse([{ ...entry(), route: "https://example.com/pricing" }])).toThrow(/paths/);
   });
 

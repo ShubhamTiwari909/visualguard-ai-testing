@@ -23,6 +23,7 @@ import { preservePerformanceTimeline, readPerformance, runAccessibilityCheck } f
 import {
   DEFAULT_HIDE_SELECTORS,
   hideScrollbars,
+  holdMedia,
   IGNORE_HIDE_SELECTOR,
   IGNORE_MASK_SELECTOR,
   NetworkTracker,
@@ -171,6 +172,7 @@ async function captureOnce(
     await page.clock.install({ time: clockBase });
   }
   if (stabilize.freezeTime) await page.clock.setFixedTime(new Date(stabilize.freezeTime));
+  if (stabilize.pauseMedia) await holdMedia(page);
   await config.hooks.beforeNavigate?.(hookContext);
 
   const response = await page.goto(url, { waitUntil: "load" });

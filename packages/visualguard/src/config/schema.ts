@@ -195,9 +195,14 @@ export const quarantineEntrySchema = z.object({
   expires: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "use a date such as 2026-12-31" })
-    .refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), {
-      message: "not a real calendar date",
-    }),
+    // Date.parse rolls 2026-02-30 over to March, so require the date to round-trip.
+    .refine(
+      (value) => {
+        const time = Date.parse(`${value}T00:00:00Z`);
+        return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
+      },
+      { message: "not a real calendar date" },
+    ),
 });
 
 export const configSchema = z.object({

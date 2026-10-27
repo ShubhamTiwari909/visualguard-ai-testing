@@ -13,7 +13,7 @@
 import type { DomSnapshot } from "../capture/dom-snapshot.js";
 import type { Delta, DiffResult, Finding, RegionResult, Status } from "../core/types.js";
 import { describeDeltas } from "./describe.js";
-import { mapRegion } from "./deltas.js";
+import { mapRegion, MAX_DELTAS } from "./deltas.js";
 import { textContrast } from "./contrast.js";
 import { area, DomIndex, intersection, shiftBox } from "./dom.js";
 import { matchTrees, type TreeMatch } from "./match.js";
@@ -94,7 +94,7 @@ export function classifyJob(input: ClassifyInput): ClassifyOutput {
   }
 
   const hasDeltas = regions.some((region) => region.deltas.length > 0);
-  const subpixelOnly = hasDeltas && regions.every((region) => region.deltas.every(isSubpixelDelta));
+  const subpixelOnly = hasDeltas && onlySubpixelMoves(regions);
   if (
     match &&
     (!hasDeltas || subpixelOnly) &&
@@ -179,33 +179,55 @@ export function classifyJob(input: ClassifyInput): ClassifyOutput {
 }
 
 /**
- * Describe the direction and distance of a detected vertical shift, optionally including its
- * suspected cause. Positive deltaY means content moved down in staging.
+ * How far a delta moves something, in CSS pixels, when moving is all it does: a 2D transform
+ * translation, or a position/spacing length that differs only in px values. Undefined for any
+ * other change, which is never treated as noise.
  */
-/**
- * True when a delta only moves something by less than one CSS pixel: a 2D transform or
- * position/spacing length whose values differ by under 1px and otherwise match. Such a change
- * repaints anti-aliased edges but is not visible to a person.
- */
-export function isSubpixelDelta(delta: Delta): boolean {
-  if (delta.kind === "box") {
-    const { production: a, staging: b } = delta;
-    return [a.x - b.x, a.y - b.y, a.width - b.width, a.height - b.height].every(
-      (difference) => Math.abs(difference) < 1,
-    );
-  }
-  if (delta.kind !== "style" || !SUBPIXEL_PROPERTIES.test(delta.property)) return false;
+export function subpixelShift(delta: Delta): number | undefined {
+  if (delta.kind !== "style" || !SUBPIXEL_PROPERTIES.test(delta.property)) return undefined;
   if (delta.property === "transform") {
     const before = transformMatrix(delta.production);
     const after = transformMatrix(delta.staging);
-    if (!before || !after) return false;
-    return (
-      before.slice(0, 4).every((value, index) => Math.abs(value - after[index]!) < 1e-3) &&
-      Math.abs(before[4]! - after[4]!) < 1 &&
-      Math.abs(before[5]! - after[5]!) < 1
-    );
+    if (!before || !after) return undefined;
+    if (!before.slice(0, 4).every((value, index) => Math.abs(value - after[index]!) < 1e-3))
+      return undefined;
+    return Math.hypot(before[4]! - after[4]!, before[5]! - after[5]!);
   }
-  return pixelValuesClose(delta.production, delta.staging);
+  return pixelDistance(delta.production, delta.staging);
+}
+
+/**
+ * True when a delta on its own moves something by more than zero and less than one CSS pixel.
+ */
+export function isSubpixelDelta(delta: Delta): boolean {
+  const shift = subpixelShift(delta);
+  return shift !== undefined && shift > 0 && shift < 1;
+}
+
+/**
+ * True when every changed region is explained only by sub-pixel moves. Each region needs at
+ * least one delta (an unexplained region is not covered), its delta list must be complete (a
+ * truncated list could hide another change), and all moves of one element must add up to less
+ * than one pixel, so `left` and `margin-left` cannot each move it 0.9px.
+ */
+export function onlySubpixelMoves(regions: readonly RegionResult[]): boolean {
+  const moves = new Map<string, { selector: string; shift: number }>();
+  for (const region of regions) {
+    if (region.deltas.length === 0 || region.deltas.length >= MAX_DELTAS) return false;
+    for (const delta of region.deltas) {
+      if (!isSubpixelDelta(delta)) return false;
+      // The same delta can be reported by overlapping regions; count it once.
+      const property = delta.kind === "style" ? delta.property : delta.kind;
+      moves.set(`${delta.selector}\n${property}`, {
+        selector: delta.selector,
+        shift: subpixelShift(delta)!,
+      });
+    }
+  }
+  const perElement = new Map<string, number>();
+  for (const { selector, shift } of moves.values())
+    perElement.set(selector, (perElement.get(selector) ?? 0) + shift);
+  return [...perElement.values()].every((total) => total < 1);
 }
 
 /**
@@ -220,15 +242,15 @@ function transformMatrix(value: string): number[] | undefined {
 }
 
 /**
- * Compare two computed values token by token: identical apart from px lengths that differ by
- * under 1px. "none" for `translate` counts as a zero offset.
+ * Total px distance between two computed values that are identical apart from px lengths.
+ * Undefined when any other part differs. "none" for `translate` counts as a zero offset.
  */
-function pixelValuesClose(production: string, staging: string): boolean {
+function pixelDistance(production: string, staging: string): number | undefined {
   const tokens = (value: string) => (value === "none" ? "0px" : value).trim().split(/\s+/);
   const before = tokens(production);
   const after = tokens(staging);
   const length = Math.max(before.length, after.length);
-  let changed = false;
+  let distance = 0;
   for (let index = 0; index < length; index++) {
     // Computed `translate` drops trailing zero components ("4px" means "4px 0px").
     const a = before[index] ?? "0px";
@@ -236,13 +258,16 @@ function pixelValuesClose(production: string, staging: string): boolean {
     if (a === b) continue;
     const pixelsA = /^(-?[\d.]+)px$/.exec(a);
     const pixelsB = /^(-?[\d.]+)px$/.exec(b);
-    if (!pixelsA || !pixelsB || Math.abs(Number(pixelsA[1]) - Number(pixelsB[1])) >= 1)
-      return false;
-    changed = true;
+    if (!pixelsA || !pixelsB) return undefined;
+    distance += Math.abs(Number(pixelsA[1]) - Number(pixelsB[1]));
   }
-  return changed;
+  return distance;
 }
 
+/**
+ * Describe the direction and distance of a detected vertical shift, optionally including its
+ * suspected cause. Positive deltaY means content moved down in staging.
+ */
 function describeShift(
   shift: { fromY: number; deltaY: number },
   cause: string | undefined,
