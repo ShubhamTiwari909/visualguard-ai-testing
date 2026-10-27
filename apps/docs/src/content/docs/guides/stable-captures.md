@@ -41,7 +41,7 @@ You rarely need to change anything, because VisualGuard already does a lot by de
 9. Waits for images to finish loading.
 10. Waits until the network is quiet.
 11. Runs your `beforeCapture` hook.
-12. Pauses videos and SVG animations at their first frame, waiting up to 3 seconds per video for it to finish seeking, then pauses the page clock.
+12. Pauses videos and SVG animations at their first frame, then pauses the page clock. In pages VisualGuard loads itself, videos never start playing, so they show their first frame without seeking. In pages your Playwright test opened, they are paused and rewound, waiting up to 3 seconds.
 13. Takes screenshots until two in a row are the same, with masked elements covered.
 
 If any step fails, VisualGuard tries the whole page again in a new context. It retries 2 times by default.
@@ -55,7 +55,7 @@ Each step above has a setting. The defaults suit most sites.
 | `disableAnimations`     | Sets CSS animation and transition times to zero.                                                                                             | `true`  |
 | `freezeTime`            | An ISO date such as `"2026-01-01T00:00:00Z"`. The page's `Date` always returns this time. `false` leaves the real time.                      | `false` |
 | `pauseClock`            | Pauses JavaScript timers and `requestAnimationFrame` just before the screenshot, so script-driven animations stop.                           | `true`  |
-| `pauseMedia`            | Pauses videos and SVG animations at their first frame, and waits for each video to show that frame.                                          | `true`  |
+| `pauseMedia`            | Keeps videos from playing (`autoplay` and `play()` have no effect) and pauses SVG animations, so both show their first frame.                | `true`  |
 | `waitForFonts`          | Waits for web fonts to load, for up to 5 seconds.                                                                                            | `true`  |
 | `networkQuietMs`        | How long no request may be in flight before the page counts as settled, in milliseconds. WebSocket and event-stream connections are ignored. | `500`   |
 | `networkQuietTimeoutMs` | The longest wait for a quiet network. After this, the capture continues anyway.                                                              | `10000` |
