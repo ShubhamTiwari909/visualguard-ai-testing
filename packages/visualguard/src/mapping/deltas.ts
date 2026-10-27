@@ -83,7 +83,7 @@ export const LAYOUT_PROPERTIES = new Set([
   "z-index",
 ]);
 
-const MAX_DELTAS = 16;
+export const MAX_DELTAS = 16;
 const MOVE_TOLERANCE = 1;
 
 /**

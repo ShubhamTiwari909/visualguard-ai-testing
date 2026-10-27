@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { classifyJob, isSubpixelDelta } from "../src/mapping/classify.js";
+import { classifyJob, isSubpixelDelta, onlySubpixelMoves } from "../src/mapping/classify.js";
 import { mapRegion } from "../src/mapping/deltas.js";
 import { describeDeltas, formatValue } from "../src/mapping/describe.js";
 import { DomIndex, shiftBox } from "../src/mapping/dom.js";
@@ -286,6 +286,7 @@ describe("classifyJob", () => {
       production,
       staging,
     });
+    // mapRegion records box deltas only for moves over 1px, so a box delta is never noise.
     const box = (dx: number, dw = 0) => ({
       kind: "box" as const,
       selector: "p",
@@ -298,7 +299,6 @@ describe("classifyJob", () => {
       style("translate", "none", "0.5px"),
       style("left", "12px", "12.75px"),
       style("margin", "0px 8px", "0px 8.5px"),
-      box(0.5, -0.4),
     ];
     const visible = [
       style("transform", "none", "matrix(1, 0, 0, 1, 1, 0)"),
@@ -310,11 +310,46 @@ describe("classifyJob", () => {
       style("left", "12px", "12px"),
       style("color", "rgb(0, 0, 0)", "rgb(1, 0, 0)"),
       style("width", "100px", "100.5px"),
+      box(0.5, -0.4),
       box(1),
       { kind: "text" as const, selector: "p", production: "a", staging: "b" },
     ];
     for (const delta of subpixel) expect(isSubpixelDelta(delta), JSON.stringify(delta)).toBe(true);
     for (const delta of visible) expect(isSubpixelDelta(delta), JSON.stringify(delta)).toBe(false);
+  });
+
+  it("needs every region explained by complete, sub-pixel moves that add up to under 1px", () => {
+    const nudge = (
+      selector: string,
+      property = "transform",
+      staging = "matrix(1, 0, 0, 1, 0.4, 0)",
+    ) => ({
+      kind: "style" as const,
+      selector,
+      property,
+      production: property === "transform" ? "none" : "0px",
+      staging,
+    });
+    const withDeltas = (...deltas: RegionResult["deltas"]) => ({
+      ...region({ x: 0, y: 0, width: 40, height: 20 }),
+      deltas,
+    });
+    expect(onlySubpixelMoves([withDeltas(nudge("p")), withDeltas(nudge("h2"))])).toBe(true);
+    // The same delta reported by two overlapping regions counts once.
+    expect(onlySubpixelMoves([withDeltas(nudge("p")), withDeltas(nudge("p"))])).toBe(true);
+    // A region with no DOM explanation (a canvas, an image) is not covered by a nudge elsewhere.
+    expect(onlySubpixelMoves([withDeltas(nudge("p")), withDeltas()])).toBe(false);
+    // A full delta list may have dropped a real change.
+    const sixteen = Array.from({ length: 16 }, (_, index) => nudge(`p:nth-child(${index + 1})`));
+    expect(onlySubpixelMoves([withDeltas(...sixteen.slice(0, 15))])).toBe(true);
+    expect(onlySubpixelMoves([withDeltas(...sixteen)])).toBe(false);
+    // left and margin-left each move the image 0.9px: 1.8px in total.
+    expect(
+      onlySubpixelMoves([
+        withDeltas(nudge("img", "left", "0.9px"), nudge("img", "margin-left", "0.9px")),
+      ]),
+    ).toBe(false);
+    expect(onlySubpixelMoves([])).toBe(true);
   });
 
   it("flags a removed control as a regression", () => {
